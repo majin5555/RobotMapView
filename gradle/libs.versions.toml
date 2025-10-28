@@ -1,18 +1,66 @@
 [versions]
 agp = "8.3.2"
 kotlin = "1.9.0"
-coreKtx = "1.10.1"
+coreKtx = "1.13.0"
 junit = "4.14-SNAPSHOT"
 junitVersion = "1.1.5"
 espressoCore = "3.5.1"
-lifecycleRuntimeKtx = "2.6.1"
-activityCompose = "1.7.0"
+lifecycleRuntimeKtx = "2.6.2"
+activityCompose = "1.8.1"
 composeBom = "2023.08.00"
-appcompat = "1.6.1"
 material = "1.10.0"
+constraintlayout = "2.2.1"
+
+
+# 官方依赖相关
+androidMaterial = "1.10.0"
+androidxLifecycle = "2.6.2"
+androidxNavigation = "2.6.0"
+androidxRecyclerview = "1.3.0"
+androidxRecyclerviewSelection = "1.1.0"
+room = "2.6.1"
+work = "2.8.1"
+gson = "2.10.1"
+jetbrainsAnko = "0.10.8"
+annotations = "23.0.0"
+
+
+
+# 第三方框架相关
+glide = "4.16.0"
+appcompatVersion = "1.7.1"
+fragmentKtx = "1.8.9"
+databindingRuntime = "8.13.0"
+
+
+# 第三方框架相关
+retrofit = "2.9.0"
+okhttp = "4.12.0"
+tencentMMKV = "1.3.3"
+tencentTBS = "44132"
+tencentMars = "1.2.6"
+dianpingLogan = "1.2.4"
+smartRefreshLayout = "2.1.0"
+reactivexJava = "3.1.8"
+reactivexAndroid = "3.0.2"
+xxPermissions = "21.3"
+niceSpinner = "1.4.4"
+liveEventBus = "1.8.0"
+androidUtilCode = "1.31.1"
+xUpdate = "2.1.4"
+okHttpUtils = "2.6.2"
+jxdUtil = "v1.02"
+apacheCommonsMath = "3.6.1"
+snakeYaml = "1.25"
+androidPdfViewer = "3.2.0-beta.1"
+dialogX = "0.0.49"
+xcrash = "3.0.0"
+baseRecyclerViewVersion = "4.1.4"
+
+
 
 [libraries]
-androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -26,8 +74,62 @@ androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
-androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+
+android-material = { group = "com.google.android.material", name = "material", version.ref = "androidMaterial" }
+androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "androidxLifecycle" }
+androidx-lifecycle-livedata-ktx = { group = "androidx.lifecycle", name = "lifecycle-livedata-ktx", version.ref = "androidxLifecycle" }
+androidx-lifecycle-common-java8 = { group = "androidx.lifecycle", name = "lifecycle-common-java8", version.ref = "androidxLifecycle" }
+androidx-navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "androidxNavigation" }
+androidx-navigation-ui-ktx = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "androidxNavigation" }
+androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "androidxRecyclerview" }
+androidx-recyclerview-selection = { group = "androidx.recyclerview", name = "recyclerview-selection", version.ref = "androidxRecyclerviewSelection" }
+roomtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+roomktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+annotations = { group = "org.jetbrains", name = "annotations", version.ref = "annotations" }
+
+work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+jetbrains-anko-common = { group = "org.jetbrains.anko", name = "anko-common", version.ref = "jetbrainsAnko" }
+
+retrofit-core = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+retrofit-converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
+okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
+glide-core = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
+glide-ksp = { group = "com.github.bumptech.glide", name = "ksp", version.ref = "glide" }
+tencent-MMKV = { group = "com.tencent", name = "mmkv", version.ref = "tencentMMKV" }
+tencent-TBS = { group = "com.tencent.tbs", name = "tbssdk", version.ref = "tencentTBS" }
+tencent-mars-xlog = { group = "com.tencent.mars", name = "mars-xlog", version.ref = "tencentMars" }
+dianping-logan = { group = "com.dianping.android.sdk", name = "logan", version.ref = "dianpingLogan" }
+iqiyi-xcrash = { group = "com.iqiyi.xcrash", name = "xcrash-android-lib", version.ref = "xcrash" }
+smartRefreshLayout-layout-kernel = { group = "io.github.scwang90", name = "refresh-layout-kernel", version.ref = "smartRefreshLayout" }
+smartRefreshLayout-header-classics = { group = "io.github.scwang90", name = "refresh-header-classics", version.ref = "smartRefreshLayout" }
+smartRefreshLayout-footer-classics = { group = "io.github.scwang90", name = "refresh-footer-classics", version.ref = "smartRefreshLayout" }
+reactivex-java = { group = "io.reactivex.rxjava3", name = "rxjava", version.ref = "reactivexJava" }
+reactivex-android = { group = "io.reactivex.rxjava3", name = "rxandroid", version.ref = "reactivexAndroid" }
+xxPermissions = { group = "com.github.getActivity", name = "XXPermissions", version.ref = "xxPermissions" }
+niceSpinner = { group = "com.github.arcadefire", name = "nice-spinner", version.ref = "niceSpinner" }
+liveEventBus-core = { group = "io.github.jeremyliao", name = "live-event-bus-x", version.ref = "liveEventBus" }
+liveEventBus-gson = { group = "io.github.jeremyliao", name = "lebx-processor-gson", version.ref = "liveEventBus" }
+androidUtilCode = { group = "com.blankj", name = "utilcodex", version.ref = "androidUtilCode" }
+xupdate = { group = "com.github.xuexiangjys", name = "XUpdate", version.ref = "xUpdate" }
+okHttpUtils = { group = "com.zhy", name = "okhttputils", version.ref = "okHttpUtils" }
+jxdUtil = { group = "com.github.AlfredjinAndroid", name = "JxdUtil", version.ref = "jxdUtil" }
+apache-commons-math = { group = "org.apache.commons", name = "commons-math3", version.ref = "apacheCommonsMath" }
+# yaml解析
+snakeYaml = { group = "org.yaml", name = "snakeyaml", version.ref = "snakeYaml" }
+# PDF预览
+androidPdfViewer = { group = "com.github.barteksc", name = "android-pdf-viewer", version.ref = "androidPdfViewer" }
+dialogX = { group = "com.github.kongzue.DialogX", name = "DialogX", version.ref = "dialogX" }
+
+baseRecyclerView = { group = "io.github.cymchad", name = "BaseRecyclerViewAdapterHelper4", version.ref = "baseRecyclerViewVersion" }
+
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompatVersion" }
+androidx-fragment-ktx = { group = "androidx.fragment", name = "fragment-ktx", version.ref = "fragmentKtx" }
+androidx-databinding-runtime = { group = "androidx.databinding", name = "databinding-runtime", version.ref = "databindingRuntime" }
+
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

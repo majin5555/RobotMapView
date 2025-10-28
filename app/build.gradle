@@ -34,21 +34,63 @@ android {
         jvmTarget = '1.8'
     }
     buildFeatures {
-        compose true
+        //noinspection DataBindingWithoutKapt
+        dataBinding = true
+        viewBinding = true
     }
+
     composeOptions {
         kotlinCompilerExtensionVersion '1.5.1'
     }
+    
+    // 强制使用AndroidX，迁移旧版Support库
+    configurations.all {
+        resolutionStrategy {
+            // 强制使用AndroidX版本的库
+            force 'androidx.core:core:1.13.0'
+            force 'androidx.appcompat:appcompat:1.7.1'
+            // 强制使用AndroidX版本的Lifecycle库，而不是旧版的android.arch.lifecycle
+            force 'androidx.lifecycle:lifecycle-runtime:2.6.2'
+            force 'androidx.lifecycle:lifecycle-extensions:2.2.0'
+            force 'androidx.lifecycle:lifecycle-common:2.6.2'
+            
+            // 排除所有旧版Support库
+            exclude group: 'com.android.support', module: 'support-compat'
+            exclude group: 'com.android.support', module: 'support-core-utils'
+            exclude group: 'com.android.support', module: 'support-core-ui'
+            exclude group: 'com.android.support', module: 'support-media-compat'
+            exclude group: 'com.android.support', module: 'support-v4'
+            exclude group: 'com.android.support', module: 'appcompat-v7'
+            // 排除旧版的Architecture Components库
+            exclude group: 'android.arch.lifecycle', module: 'runtime'
+            exclude group: 'android.arch.lifecycle', module: 'extensions'
+            exclude group: 'android.arch.lifecycle', module: 'common'
+        }
+    }
+
+    // 解决JNI库冲突问题
     packaging {
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
+        }
+        // 处理重复的so库文件
+        jniLibs {
+            // 保留第一个遇到的libc++_shared.so文件
+            pickFirsts += ['lib/arm64-v8a/libc++_shared.so']
+            // 也添加其他架构以确保完整性
+            pickFirsts += ['lib/armeabi-v7a/libc++_shared.so']
+            pickFirsts += ['lib/x86/libc++_shared.so']
+            pickFirsts += ['lib/x86_64/libc++_shared.so']
         }
     }
 }
 
 dependencies {
+    implementation(project(":dslibrary")) {
+        // 排除dslibrary模块可能引入的旧版Support库
+//        exclude group: 'com.android.support'
+    }
 
-    implementation libs.androidx.core.ktx
     implementation libs.androidx.lifecycle.runtime.ktx
     implementation libs.androidx.activity.compose
     implementation platform(libs.androidx.compose.bom)
@@ -56,6 +98,64 @@ dependencies {
     implementation libs.androidx.ui.graphics
     implementation libs.androidx.ui.tooling.preview
     implementation libs.androidx.material3
+    implementation libs.appcompat
+    implementation libs.androidx.fragment.ktx
+    implementation libs.androidx.databinding.runtime
+
+    api(libs.androidx.core.ktx)
+    api(libs.android.material)
+    api(libs.androidx.constraintlayout)
+    api(libs.androidx.lifecycle.viewmodel.ktx)
+    api(libs.androidx.lifecycle.livedata.ktx)
+    api(libs.androidx.lifecycle.common.java8)
+    api(libs.androidx.navigation.fragment.ktx)
+    api(libs.androidx.navigation.ui.ktx)
+    api(libs.androidx.recyclerview)
+    api(libs.androidx.recyclerview.selection)
+    api(libs.gson)
+    api(libs.jetbrains.anko.common)
+    api(libs.work.runtime.ktx)
+
+    api(libs.retrofit.core)
+    api(libs.retrofit.converter.gson)
+    api(libs.okhttp.logging)
+    api(libs.glide.core)
+//    ksp(libs.glide.ksp)
+    api(libs.tencent.MMKV)
+    api(libs.tencent.TBS)
+    api(libs.tencent.mars.xlog)
+    api(libs.smartRefreshLayout.layout.kernel)
+    api(libs.smartRefreshLayout.header.classics)
+    api(libs.smartRefreshLayout.footer.classics)
+    api(libs.reactivex.java)
+    api(libs.reactivex.android)
+//    api(libs.reactivex.permissions)
+    api(libs.xxPermissions)
+    api(libs.niceSpinner)
+    api(libs.liveEventBus.core)
+    api(libs.liveEventBus.gson)
+    api(libs.androidUtilCode)
+    api(libs.dianping.logan)
+    api(libs.xupdate)
+    api(libs.okHttpUtils)
+    api(libs.jxdUtil)
+    api(libs.apache.commons.math)
+    api(libs.snakeYaml)
+    api(libs.androidPdfViewer)
+    api(libs.dialogX)
+    api(libs.iqiyi.xcrash)
+    api(libs.baseRecyclerView)
+
+    // 以 Room 为例
+    api(libs.roomtime) {
+        exclude group: 'com.intellij', module: 'annotations'
+    }
+    api(libs.roomktx) {
+        exclude group: 'com.intellij', module: 'annotations'
+    }
+
+    // 显式添加 org.jetbrains:annotations
+    api(libs.annotations)
     testImplementation libs.junit
     androidTestImplementation libs.androidx.junit
     androidTestImplementation libs.androidx.espresso.core
