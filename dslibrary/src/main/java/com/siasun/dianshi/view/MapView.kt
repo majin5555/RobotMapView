@@ -141,7 +141,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
 //            setMargins(16, 16, 16, 16)
 //        })
 
-//        setCentred()
+        setCentred()
     }
 
 
@@ -358,6 +358,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     fun setBitmap(mapData: MapData, bitmap: Bitmap) {
         mSrf.mapData = mapData
         mPngMapView!!.setBitmap(bitmap)
+        // 设置地图后自动居中显示
+        setCentred()
     }
 
 

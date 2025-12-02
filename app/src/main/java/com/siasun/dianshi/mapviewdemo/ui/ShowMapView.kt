@@ -38,8 +38,7 @@ class ShowMapView : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMapViewMode
                         resource.height.toFloat(),
                         resource.width.toFloat(),
                     )
-                    mBinding.mapView.setBitmap(resource)
-                    mBinding.mapView.setMapData(mPngMapData)
+                    mBinding.mapView.setBitmap(mPngMapData,resource)
                 }
             })
 
