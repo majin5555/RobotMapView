@@ -350,22 +350,16 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      */
 
     /**
+     * 设置地图数据信息
      * 设置地图
      *
      * @param bitmap
      */
-    fun setBitmap(bitmap: Bitmap) {
+    fun setBitmap(mapData: MapData, bitmap: Bitmap) {
+        mSrf.mapData = mapData
         mPngMapView!!.setBitmap(bitmap)
     }
 
-    /**
-     * 设置地图数据信息
-     *
-     * @param
-     */
-    fun setMapData(mapData: MapData) {
-        mSrf.mapData = mapData
-    }
 
     /**
      * 设置当前地图名称
