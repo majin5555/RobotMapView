@@ -1,0 +1,3 @@
+controller包 
+以eventbus为核心完成消息分发，遵守VDA5050协议
+包含LCM和TCP

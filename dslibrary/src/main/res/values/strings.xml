@@ -1,0 +1,15 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="current_map">当前地图:</string>
+    <string name="up_point_cloud">上激光点云</string>
+    <string name="lower_laser_point_cloud">下激光点云</string>
+    <string name="top_view_route">顶视路线</string>
+    <string name="virtual_wall">虚拟墙</string>
+    <string name="mix_area">混行区</string>
+    <string name="on_line_pose">上线点</string>
+    <string name="charge_station">充电站</string>
+    <string name="area">区域</string>
+    <string name="world_path">路线</string>
+    <string name="stations">站点</string>
+    <string name="world_coordinate">世界坐标</string>
+    <string name="screen_coordinate">屏幕->世界坐标</string>
+</resources>

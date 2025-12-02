@@ -56,7 +56,8 @@ androidPdfViewer = "3.2.0-beta.1"
 dialogX = "0.0.49"
 xcrash = "3.0.0"
 baseRecyclerViewVersion = "4.1.4"
-
+shapeViewVersion = "9.6"
+shapeDrawableVersion = "3.3"
 
 
 [libraries]
@@ -124,6 +125,10 @@ androidPdfViewer = { group = "com.github.barteksc", name = "android-pdf-viewer",
 dialogX = { group = "com.github.kongzue.DialogX", name = "DialogX", version.ref = "dialogX" }
 
 baseRecyclerView = { group = "io.github.cymchad", name = "BaseRecyclerViewAdapterHelper4", version.ref = "baseRecyclerViewVersion" }
+shapeView = { group = "com.github.getActivity", name = "ShapeView", version.ref = "shapeViewVersion" }
+shapeDrawable = { group = "com.github.getActivity", name = "ShapeDrawable", version.ref = "shapeDrawableVersion" }
+
+
 
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompatVersion" }

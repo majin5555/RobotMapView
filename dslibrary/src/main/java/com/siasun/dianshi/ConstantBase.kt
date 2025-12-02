@@ -34,6 +34,7 @@ object ConstantBase {
     private const val QD750E = "qd750e.json"
     private const val D700C = "d700c.json"
     private const val KD450C = "kd450c.json"
+    private const val KD750F = "kd450c.json"
 
 
 
