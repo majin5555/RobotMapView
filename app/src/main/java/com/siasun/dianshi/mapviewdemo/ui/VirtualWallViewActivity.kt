@@ -11,12 +11,14 @@ import com.ngu.lcmtypes.laser_t
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.ConstantBase
 import com.siasun.dianshi.controller.MainController
+import com.siasun.dianshi.framework.ext.onClick
 import com.siasun.dianshi.mapviewdemo.KEY_BOTTOM_CURRENT_POINT_CLOUD
 import com.siasun.dianshi.mapviewdemo.KEY_CURRENT_POINT_CLOUD
 import com.siasun.dianshi.mapviewdemo.R
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityVirtualwallBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.ShowMapViewModel
 import com.siasun.dianshi.utils.YamlNew
+import com.siasun.dianshi.view.MapView
 import java.io.File
 
 /**
@@ -76,29 +78,32 @@ class VirtualWallViewActivity : BaseMvvmActivity<ActivityVirtualwallBinding, Sho
         mBinding.rgTabType.setOnCheckedChangeListener { _, checkedId ->
 
             when (checkedId) {
-                R.id.rb_move_map -> {
-//                    mMapView.setWorkMode(SLAMMapView.MODE_SHOW_MAP)
-//                    btnConfirm.gone()
-                }
+
 
                 R.id.rb_create -> {
-//                    mMapView.setWorkMode(SLAMMapView.MODE_VIRTUAL_WALL_ADD)
-//                    VmChoiceDialog.Builder(this)
-//                        .setOnChoiceVMListener { mMapView.addVirtualWall(it) }.create().show()
-//                    btnConfirm.visible()
+                    // 创建虚拟墙模式
+                    mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_ADD)
+                    // 默认创建普通虚拟墙
+                    mBinding.mapView.addVirtualWall(3)
                 }
 
                 R.id.rb_edit -> {
-//                    mMapView.setWorkMode(SLAMMapView.MODE_VIRTUAL_WALL_EDIT)
-//                    btnConfirm.visible()
+                    // 编辑虚拟墙模式
+                    mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_EDIT)
                 }
 
                 R.id.rb_delete -> {
-//                    mMapView.setWorkMode(SLAMMapView.MODE_VIRTUAL_WALL_DELETE)
-//                    btnConfirm.visible()
+                    // 删除虚拟墙模式
+                    mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_DELETE)
                 }
             }
         }
+        //保存
+        mBinding.btnConfirm.onClick {
+            mBinding.mapView.getVirtualWall()
+                ?.let { it1 -> mViewModel.saveVirtualWall(mapId, it1) }
+        }
+
     }
 
 }

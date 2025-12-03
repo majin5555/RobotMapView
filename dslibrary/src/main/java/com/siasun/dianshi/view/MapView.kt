@@ -33,7 +33,18 @@ import kotlin.math.sin
 class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(context, attrs),
     SlamGestureDetector.OnRPGestureListener {
 
-    private var mSrf = CoordinateConversion()//坐标转化工具类
+    // 工作模式枚举
+    enum class WorkMode {
+        MODE_SHOW_MAP,         // 移动地图模式
+        MODE_VIRTUAL_WALL_ADD, // 创建虚拟墙模式
+        MODE_VIRTUAL_WALL_EDIT,// 编辑虚拟墙模式
+        MODE_VIRTUAL_WALL_DELETE // 删除虚拟墙模式
+    }
+
+    // 当前工作模式
+    private var currentWorkMode = WorkMode.MODE_SHOW_MAP
+
+    var mSrf = CoordinateConversion()//坐标转化工具类
     private var mOuterMatrix = Matrix()
     private var VIEW_WIDTH = 0 //视图宽度
     private var VIEW_HEIGHT = 0
@@ -381,6 +392,12 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     }
 
     /**
+     * 获取虚拟墙数据
+     */
+    fun getVirtualWall() = mWallView?.getVirtualWall()
+
+
+    /**
      * 设置上线点
      */
 //    fun setInitPosts(initPoseList: MutableList<InitPose>) {
@@ -477,5 +494,36 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      */
     fun setChargeStation() {
 //        mHomeDockView?.setHomePose()
+    }
+
+    /**
+     * 设置工作模式
+     */
+    fun setWorkMode(mode: WorkMode) {
+        currentWorkMode = mode
+        // 将工作模式传递给虚拟墙视图
+        mWallView?.setWorkMode(mode)
+    }
+
+    /**
+     * 获取当前工作模式
+     */
+    fun getCurrentWorkMode(): WorkMode {
+        return currentWorkMode
+    }
+
+    /**
+     * 添加虚拟墙
+     * @param config 虚拟墙类型：1-重点虚拟墙，2-虚拟门，3-普通虚拟墙
+     */
+    fun addVirtualWall(config: Int) {
+        mWallView?.addVirtualWall(config)
+    }
+
+    /**
+     * 确认编辑虚拟墙
+     */
+    fun confirmEditVirtualWall() {
+        mWallView?.confirmEditVirtualWall()
     }
 }

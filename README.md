@@ -1,11 +1,12 @@
+# 作者 MJ
 # RobotMapView 机器人分层地图加载
 
 -----------------------------------------
 # 布局引用
-<com.siasun.dianshi.view.MapView
-android:id="@+id/map_view"
-android:layout_width="match_parent"
-android:layout_height="match_parent" />
+# <com.siasun.dianshi.view.MapView
+# android:id="@+id/map_view"
+# android:layout_width="match_parent"
+# android:layout_height="match_parent" />
 -----------------------------------------
 
 # 加载地图png图片
@@ -26,5 +27,25 @@ android:layout_height="match_parent" />
 # mBinding.mapView.setDownLaserScan(it)
 
 -----------------------------------------
-# 加载虚拟墙
+# 加载虚拟墙数据
 # mBinding.mapView.setVirtualWall(it)
+-----------------------------------------
+
+# 获取虚拟墙数据
+# mBinding.mapView.getVirtualWall()
+-----------------------------------------
+# 添加虚拟墙
+# 创建虚拟墙模式      1 红色实线 重点虚拟墙  2 红色虚线 虚拟门  3蓝色实线 普通虚拟墙
+# mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_ADD)
+# 默认创建普通虚拟墙
+# mBinding.mapView.addVirtualWall(3)
+
+-----------------------------------------
+# 编辑虚拟墙
+# mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_EDIT)
+
+-----------------------------------------
+# 删除虚拟墙
+# mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_DELETE)
+
+-----------------------------------------

@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import com.siasun.dianshi.network.request.RequestCommonMapId
 import com.pnc.core.network.callback.IApiErrorCallback
 import com.siasun.dianshi.network.manager.ApiManager
+import com.siasun.dianshi.network.request.RequestSaveVirtualWall
 
 
 /**
@@ -19,20 +20,20 @@ class ShowMapViewModel : BaseViewModel() {
     /**
      * 保存虚拟墙
      */
-//    fun saveVirtualWall(layerId: Int, virtualWallNew: VirtualWallNew) {
-//        launchUIWithResult(responseBlock = {
-//            val requestVirtualWall = RequestSaveVirtualWall(layerId, virtualWallNew)
-//            ApiManager.api.saveVirtualWall(requestVirtualWall)
-//        }, errorCall = object : IApiErrorCallback {
-//            override fun onError(code: Int?, error: String?) {
-//                saveVirtualWall.postValue(false)
-//            }
-//        }, successBlock = {
-//            it?.let {
-//                saveVirtualWall.postValue(true)
-//            }
-//        })
-//    }
+    fun saveVirtualWall(layerId: Int, virtualWallNew: VirtualWallNew) {
+        launchUIWithResult(responseBlock = {
+            val requestVirtualWall = RequestSaveVirtualWall(layerId, virtualWallNew)
+            ApiManager.api.saveVirtualWall(requestVirtualWall)
+        }, errorCall = object : IApiErrorCallback {
+            override fun onError(code: Int?, error: String?) {
+                saveVirtualWall.postValue(false)
+            }
+        }, successBlock = {
+            it?.let {
+                saveVirtualWall.postValue(true)
+            }
+        })
+    }
 
     /**
      * 获取虚拟墙

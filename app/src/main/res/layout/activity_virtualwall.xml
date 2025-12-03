@@ -23,12 +23,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent">
 
-            <RadioButton
-                android:id="@+id/rb_move_map"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:checked="true"
-                android:textColor="@color/black" />
+
 
             <RadioButton
                 android:id="@+id/rb_create"

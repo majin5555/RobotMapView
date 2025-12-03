@@ -3,6 +3,7 @@ package com.siasun.dianshi.network.api
 import VirtualWallNew
 import com.siasun.dianshi.network.request.RequestCommonMapId
 import com.pnc.core.network.response.BaseResponse
+import com.siasun.dianshi.network.request.RequestSaveVirtualWall
 import retrofit2.http.Body
 import retrofit2.http.POST
 
@@ -13,7 +14,7 @@ import retrofit2.http.POST
  */
 interface ApiInterface {
 
-//    /**
+    //    /**
 //     * 上传地图信息
 //     */
 //    @POST("/save_map")
@@ -108,9 +109,10 @@ interface ApiInterface {
 //    @POST("/save_pad_areas")
 //    suspend fun saveAreas(@Body area: RequestSaveArea): BaseResponse<CleanAreaRootNew>
 //
-//    @POST("/save_virtual_wall")
-//    suspend fun saveVirtualWall(@Body vw: RequestSaveVirtualWall): BaseResponse<Any>
-//
+    @POST("/save_virtual_wall")
+    suspend fun saveVirtualWall(@Body vw: RequestSaveVirtualWall): BaseResponse<Any>
+
+    //
     @POST("/get_virtual_wall")
     suspend fun getVirtualWall(@Body vw: RequestCommonMapId): BaseResponse<VirtualWallNew>
 //
