@@ -1,5 +1,6 @@
 package com.siasun.dianshi.view
 
+import VirtualWallNew
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
@@ -47,8 +48,9 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     private var mapLayers: MutableList<SlamWareBaseView> = CopyOnWriteArrayList()
     private var mPngMapView: PngMapView? = null //png地图
 
-    //    var mWallView: VirtualLineView? = null//虚拟墙
-//    var mHomeDockView: HomeDockView? = null//充电站
+    var mWallView: VirtualLineView? = null//虚拟墙
+
+    //    var mHomeDockView: HomeDockView? = null//充电站
 //    var mStationView: StationsView? = null//站点
 //    var mOnlinePoseView: OnlinePoseView? = null//上线点
 //    private var mLegendView: LegendView? = null//图例
@@ -83,7 +85,6 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     }
 
 
-
     private fun setDefaultBackground(colorId: Int) = setBackgroundColor(colorId)
 
 
@@ -91,7 +92,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         val lp =
             LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         mPngMapView = PngMapView(context)
-//        mWallView = VirtualLineView(context, mMapView, Color.BLUE)
+        mWallView = VirtualLineView(context, mMapView)
+        mWallView = VirtualLineView(context, mMapView)
 //        mHomeDockView = HomeDockView(context, mMapView)
 //        mStationView = StationsView(context, mMapView)
 //        mOnlinePoseView = OnlinePoseView(context, mMapView)
@@ -117,7 +119,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         addMapLayers(mDownLaserScanView)
 
         //显示虚拟墙
-//        addMapLayers(mWallView)
+        addMapLayers(mWallView)
         //顶视路线
 //        addMapLayers(mTopViewPathView)
         //清扫区域 区域
@@ -371,11 +373,12 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     }
 
     /**
-     * 设置虚拟墙
+     * 显示虚拟墙
+     * 设置虚拟墙数据
      */
-//    fun setVirtualWallLines(lines: MutableList<VirtualWallLineNew>) {
-//        mWallView?.setLines(lines)
-//    }
+    fun setVirtualWall(virtualWall: VirtualWallNew) {
+        mWallView?.setVirtualWall(virtualWall)
+    }
 
     /**
      * 设置上线点

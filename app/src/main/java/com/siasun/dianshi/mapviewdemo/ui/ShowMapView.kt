@@ -38,7 +38,7 @@ class ShowMapView : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMapViewMode
                         resource.height.toFloat(),
                         resource.width.toFloat(),
                     )
-                    mBinding.mapView.setBitmap(mPngMapData,resource)
+                    mBinding.mapView.setBitmap(mPngMapData, resource)
                 }
             })
 
@@ -66,7 +66,18 @@ class ShowMapView : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMapViewMode
 //        }
     }
 
+    override fun initData() {
+        super.initData()
+        mViewModel.getVirtualWall(mapId)
+
+        //加载虚拟墙
+        mViewModel.getVirtualWall.observe(this) {
+            mBinding.mapView.setVirtualWall(it)
+        }
+    }
+
     private fun loadData() {
+
 //        lifecycleScope.launch(Dispatchers.IO) {
 //            loadVirtualWall(mapId)?.let {
 //                mBinding.mapView.setVirtualWallLines(it.LAYER[0].LINE)

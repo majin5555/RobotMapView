@@ -1,7 +1,7 @@
 package com.pnc.core.network.interceptor
 
-import com.pnc.core.network.constant.HTTP_PORT
-import com.pnc.core.network.constant.URL
+import com.siasun.dianshi.network.constant.HTTP_PORT
+import com.siasun.dianshi.network.constant.URL
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Interceptor
 import okhttp3.Response

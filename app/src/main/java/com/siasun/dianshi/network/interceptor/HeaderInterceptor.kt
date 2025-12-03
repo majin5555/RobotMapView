@@ -1,11 +1,11 @@
 package com.pnc.core.network.interceptor
 
 import com.siasun.dianshi.framework.log.LogUtil
-import com.pnc.core.network.constant.ARTICLE_WEBSITE
-import com.pnc.core.network.constant.COIN_WEBSITE
-import com.pnc.core.network.constant.COLLECTION_WEBSITE
-import com.pnc.core.network.constant.KEY_COOKIE
-import com.pnc.core.network.constant.NOT_COLLECTION_WEBSITE
+import com.siasun.dianshi.network.constant.ARTICLE_WEBSITE
+import com.siasun.dianshi.network.constant.COIN_WEBSITE
+import com.siasun.dianshi.network.constant.COLLECTION_WEBSITE
+import com.siasun.dianshi.network.constant.KEY_COOKIE
+import com.siasun.dianshi.network.constant.NOT_COLLECTION_WEBSITE
 import com.siasun.dianshi.network.manager.CookiesManager
 import okhttp3.Interceptor
 import okhttp3.Response

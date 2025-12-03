@@ -1,9 +1,9 @@
 package com.pnc.core.network.interceptor
 
 import com.siasun.dianshi.framework.log.LogUtil
-import com.pnc.core.network.constant.KEY_SAVE_USER_LOGIN
-import com.pnc.core.network.constant.KEY_SAVE_USER_REGISTER
-import com.pnc.core.network.constant.KEY_SET_COOKIE
+import com.siasun.dianshi.network.constant.KEY_SAVE_USER_LOGIN
+import com.siasun.dianshi.network.constant.KEY_SAVE_USER_REGISTER
+import com.siasun.dianshi.network.constant.KEY_SET_COOKIE
 import com.siasun.dianshi.network.manager.CookiesManager
 import okhttp3.Interceptor
 import okhttp3.Response

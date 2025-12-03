@@ -3,7 +3,7 @@ package com.pnc.core.network.manager
 import android.util.Log
 import com.siasun.dianshi.framework.helper.AppHelper
 import com.siasun.dianshi.framework.utils.NetworkUtil
-import com.pnc.core.network.constant.BASE_URL
+import com.siasun.dianshi.network.constant.BASE_URL
 import com.pnc.core.network.error.NoNetWorkException
 import com.pnc.core.network.error.ERROR
 import com.pnc.core.network.interceptor.CookiesInterceptor

@@ -1,6 +1,7 @@
-package com.pnc.core.network.manager
+package com.siasun.dianshi.network.manager
 
-import com.pnc.core.network.api.ApiInterface
+import com.pnc.core.network.manager.HttpManager
+import com.siasun.dianshi.network.api.ApiInterface
 
 /**
  * @author fuxing.che

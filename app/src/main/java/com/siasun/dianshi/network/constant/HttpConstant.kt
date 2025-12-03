@@ -1,4 +1,4 @@
-package com.pnc.core.network.constant
+package com.siasun.dianshi.network.constant
 
 import com.tencent.mmkv.MMKV
 
@@ -14,8 +14,8 @@ import com.tencent.mmkv.MMKV
 const val KEY_NEY_IP = "NET_IP"
 const val HTTP_PORT = 9000
 var IP = MMKV.defaultMMKV().decodeString(KEY_NEY_IP, "192.168.3.101")
-var URL = "http://${IP}"
-var BASE_URL = "http://${IP}:${HTTP_PORT}"
+var URL = "http://$IP"
+var BASE_URL = "http://$IP:$HTTP_PORT"
 
 const val KEY_TOKEN = "token"
 const val KEY_COOKIE = "Cookie"

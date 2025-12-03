@@ -1,10 +1,10 @@
-package com.pnc.core.network.api
+package com.siasun.dianshi.network.api
 
-import okhttp3.ResponseBody
-import retrofit2.Call
-import retrofit2.http.GET
-import retrofit2.http.Streaming
-import retrofit2.http.Url
+import VirtualWallNew
+import com.siasun.dianshi.network.request.RequestCommonMapId
+import com.pnc.core.network.response.BaseResponse
+import retrofit2.http.Body
+import retrofit2.http.POST
 
 /**
  * @author fuxing.che
@@ -14,16 +14,44 @@ import retrofit2.http.Url
 interface ApiInterface {
 
 //    /**
-//     * map_id 地图ID
-//     * type 区域类型 -1查询全部
+//     * 上传地图信息
 //     */
-//    @POST("/get_regions")
-//    suspend fun getZone(@Body data: RequestGetRegions): BaseResponse<MutableList<CleanAreaNew>>?
+//    @POST("/save_map")
+//    suspend fun upLoadMapInfo(@Body mapInfo: RequestSaveMap): BaseResponse<MutableList<MapInfo>>
 //
-//    @POST("/set_regions")
-//    suspend fun setZone(
-//        @Body data: SaveRegionsRequest
-//    ): BaseResponse<MutableList<CleanAreaNew>>?
+//    /**
+//     * 获取地图ID
+//     */
+//    @POST("/get_new_map_id")
+//    suspend fun getMapId(): BaseResponse<MapIdBean>
+//
+//    /**
+//     * 获取地图列表
+//     */
+//    @POST("/get_map")
+//    suspend fun getMapListData(): BaseResponse<MutableList<MapInfo>>
+//
+//    /**
+//     * 切换地图
+//     */
+//    @POST("/switch_map")
+//    suspend fun switchMap(@Body mapInfo: SwitchMapBean): BaseResponse<MapInfo>
+//
+//    @POST("/delete_map")
+//    suspend fun deleteMapInfo(@Body mapIdBean: DeleteMapIdBean): BaseResponse<MutableList<MapInfo>>
+//
+//    /**
+//     * 获取当前地图
+//     */
+//    @POST("/get_current_mapId")
+//    suspend fun getCurrentMap(): BaseResponse<MapInfo?>
+//
+//    /**/
+//    @POST("/get_zone")
+//    suspend fun getZone(): BaseResponse<MutableList<CleanArea>>?
+//
+//    @POST("/set_zone")
+//    suspend fun setZone(@Body data: MutableList<SaveZoneRequest>): BaseResponse<MutableList<CleanArea>>?
 //
 //    /**
 //     * @description 获取版本号
@@ -51,13 +79,12 @@ interface ApiInterface {
 //    @POST("/restore")
 //    suspend fun oneClickRestore(): BaseResponse<BackupMigrationBean>
 //
-    /**
-     * 文件下载
-     */
-    @GET
-    @Streaming // 使用 Streaming 避免下载大文件时内存溢出
-    fun downloadFile(@Url fileUrl: String): Call<ResponseBody>
-//
+//    /**
+//     * 文件下载
+//     */
+//    @GET
+//    @Streaming // 使用 Streaming 避免下载大文件时内存溢出
+//    fun downloadFile(@Url fileUrl: String): Call<ResponseBody>
 //
 //    /**
 //     * 获取错误日志
@@ -69,87 +96,23 @@ interface ApiInterface {
 //
 //
 //    /**
-//     * 版本更新
-//     */
-//    @POST("/check_apk")
-//    suspend fun checkApk(@Body data: RequestCheckApk): BaseResponse<CheckApkBean>?
-//
-//
-//    /**
-//     * 获取地图列表
-//     */
-//    @POST("/get_map")
-//    suspend fun getMapListData(): BaseResponse<MutableList<MapInfo>>
-//
-//
-//    /**
-//     * 获取当前地图
-//     */
-//    @POST("/get_current_mapId")
-//    suspend fun getCurrentMap(): BaseResponse<MapInfo>
-//
-//
-//    /**
-//     * 切换地图
-//     */
-//    @POST("/switch_map")
-//    suspend fun switchMap(@Body mapInfo: SwitchMapBean): BaseResponse<MapInfo>
-//
-//    /**
-//     * 保存任务
-//     */
-//    @POST("/save_pad_jobs")
-//    suspend fun savePadJobs(@Body task: Task): BaseResponse<Task>
-//
-//    /**
-//     * 获取所有任务
-//     */
-//    @POST("/get_pad_jobs_list")
-//    suspend fun getPadJobsList(): BaseResponse<MutableList<Task>>
-//
-//    /**
-//     * 获取任务详情
-//     */
-//    @POST("/get_pad_jobs")
-//    suspend fun getPadJobs(@Body task: RequestGetPadJobs): BaseResponse<Task>
-//
-//    /**
-//     * 任务删除
-//     */
-//    @POST("/delete_pad_jobs")
-//    suspend fun deletePadJobs(@Body task: RequestDeletePadJobs): BaseResponse<DeleteTask>
-//
-//
-//    /**
-//     * 任务下发
-//     */
-//    @POST("/run_pad_job_task")
-//    suspend fun runPadJobTask(@Body task: Task): BaseResponse<Task>
-//
-//
-//    /**
 //     * 区域删除校验
 //     */
 //    @POST("/check_region_usage")
 //    suspend fun checkRegionUsage(@Body task: RequestDeletePadArea): BaseResponse<TaskVerification>
 //
-//    /**
-//     * 清扫模式删除校验
-//     */
-//    @POST("/check_clean_mode_usage")
-//    suspend fun checkCleanModeUsage(@Body mode: RequestDeletePadCleanMode): BaseResponse<TaskVerification>
 //
-//    /**
-//     * 新建电梯
-//     */
-//    @POST("/add_elevator")
-//    suspend fun addElevator(@Body elevator: RequestSaveElevator): BaseResponse<ElevatorBean?>
+//    @POST("/get_pad_areas")
+//    suspend fun getAreas(@Body area: RequestCommonMapId): BaseResponse<CleanAreaRootNew>
 //
-//    /**
-//     * 删除电梯
-//     */
-//    @POST("/delete_elevator")
-//    suspend fun deleteElevator(@Body elevator: RequestDeleteElevator): BaseResponse<ElevatorBean?>
+//    @POST("/save_pad_areas")
+//    suspend fun saveAreas(@Body area: RequestSaveArea): BaseResponse<CleanAreaRootNew>
+//
+//    @POST("/save_virtual_wall")
+//    suspend fun saveVirtualWall(@Body vw: RequestSaveVirtualWall): BaseResponse<Any>
+//
+    @POST("/get_virtual_wall")
+    suspend fun getVirtualWall(@Body vw: RequestCommonMapId): BaseResponse<VirtualWallNew>
 //
 //    /**
 //     * 查询电梯
@@ -158,52 +121,93 @@ interface ApiInterface {
 //    suspend fun getElevators(): BaseResponse<MutableList<ElevatorBean>?>
 //
 //    /**
-//     * update_elevator
+//     * 新建电梯
+//     */
+//    @POST("/add_elevator")
+//    suspend fun addElevator(@Body elevator: RequestSaveElevator): BaseResponse<ElevatorBean?>
+//
+//    /**
+//     * 更新电梯
 //     */
 //    @POST("/update_elevator")
 //    suspend fun updateElevator(@Body elevator: RequestUpdateElevator): BaseResponse<ElevatorBean?>
 //
+//    /**
+//     * 删除电梯
+//     */
+//    @POST("/delete_elevator")
+//    suspend fun deleteElevator(@Body elevator: RequestDeleteElevator): BaseResponse<ElevatorBean?>
 //
 //    /**
-//     * 获取mrc05时间
+//     * 设置特殊区域
 //     */
-//    @POST("/get_date_time")
-//    suspend fun getDatTime(): BaseResponse<DateTimeBean>?
+//    @POST("/set_regions")
+//    suspend fun setSpecialArea(@Body data: RequestSaveSpecialArea): BaseResponse<MutableList<CleanAreaNew>>?
 //
 //    /**
-//     * 获取当前楼层下的当前任务的区域
+//     * 获取特殊区域
 //     */
-//    @POST("/get_area_vertex_points")
-//    suspend fun getCurrentJobAreas(@Body req: RequestCurrentJobsAreas): BaseResponse<MutableList<CleanAreaNew>?>
+//    @POST("/get_regions")
+//    suspend fun getSpecialArea(@Body data: RequestGetSpecialArea): BaseResponse<MutableList<CleanAreaNew>>?
+//
 //
 //    /**
-//     * 获取当前楼层下的清扫区域
+//     * 保存过门区
 //     */
-//    @POST("/get_pad_areas")
-//    suspend fun getAreas(@Body area: RequestCommonMapId): BaseResponse<CleanAreaRootNew>
+//    @POST("/save_cms_doors")
+//    suspend fun saveCmsDoors(@Body data: RequestSaveDoors): BaseResponse<Any>
 //
 //    /**
-//     * 获取当前楼层下的虚拟墙
+//     * 获取过门区
 //     */
-//    @POST("/get_virtual_wall")
-//    suspend fun getVirtualWall(@Body vw: RequestCommonMapId): BaseResponse<VirtualWallNew>
+//    @POST("/get_cms_doors")
+//    suspend fun getCmsDoors(@Body data: RequestCommonMapId): BaseResponse<MutableList<AreasDoor>>
 //
 //    /**
-//     * 保存当前楼层的上线点
+//     * 版本更新
 //     */
+//    @POST("/check_apk")
+//    suspend fun checkApk(@Body data: RequestCheckApk): BaseResponse<CheckApkBean>?
+//
+//
+//    /**
+//     * 获取混行区
+//     */
+//    @POST("/get_cms_work_areas_list")
+//    suspend fun getCmsWorkAreas(@Body data: RequestCommonMapId): BaseResponse<CmsWorkAreasListRoot>
+//
+//    @POST("/save_cms_work_areas_list")
+//    suspend fun saveCmsWorkAreas(@Body data: RequestSaveCmsWorkArea): BaseResponse<Any>
+//
+//
+//    @POST("/save_integrated_machine")
+//    suspend fun saveMachineStation(@Body date: RequestMachineStation): BaseResponse<Any>
+//
+//    @POST("/get_integrated_machine")
+//    suspend fun getMachineStation(): BaseResponse<MutableList<MachineStation>>
+//
+//    @POST("/save_cms_stations_data")
+//    suspend fun saveCmsStation(@Body data: RequestCmsStation): BaseResponse<Any>
+//
+//    @POST("/get_cms_stations_data")
+//    suspend fun getCmsStation(@Body data: RequestCommonMapId): BaseResponse<MutableList<CmsStation>>
+//
 //    @POST("/save_init_pose")
 //    suspend fun saveInitPose(@Body init: RequestInitPose): BaseResponse<Any>
 //
-//    /**
-//     * 获取当前楼层下的上线点
-//     */
 //    @POST("/get_init_pose")
 //    suspend fun getInitPose(@Body data: RequestCommonMapId): BaseResponse<InitPoseRoot>
 //
-//    /**
-//     * 获取当前楼层下的顶视路线
-//     */
 //    @POST("/get_merged_pose")
 //    suspend fun getMergedPose(@Body date: RequestCommonMapId): BaseResponse<MergedPoseBean>
+//
+//    @POST("/save_cms_elevator")
+//    suspend fun saveCmsElevator(@Body data: RequestCmsElevator): BaseResponse<Any>
+//
+//    @POST("/get_cms_elevator")
+//    suspend fun getCmsElevator(@Body date: RequestCommonMapId): BaseResponse<ElevatorRoot>
+//
+//    @POST("/trigger_hot_reload")
+//    suspend fun hotReload(@Body date:RequestHotReload):BaseResponse<BaseResponse<Any>>
 
 }
