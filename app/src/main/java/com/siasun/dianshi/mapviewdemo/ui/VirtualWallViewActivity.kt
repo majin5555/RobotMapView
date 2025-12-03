@@ -13,15 +13,16 @@ import com.siasun.dianshi.ConstantBase
 import com.siasun.dianshi.controller.MainController
 import com.siasun.dianshi.mapviewdemo.KEY_BOTTOM_CURRENT_POINT_CLOUD
 import com.siasun.dianshi.mapviewdemo.KEY_CURRENT_POINT_CLOUD
-import com.siasun.dianshi.mapviewdemo.databinding.ActivityShowMapViewBinding
+import com.siasun.dianshi.mapviewdemo.R
+import com.siasun.dianshi.mapviewdemo.databinding.ActivityVirtualwallBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.ShowMapViewModel
 import com.siasun.dianshi.utils.YamlNew
 import java.io.File
 
 /**
- * 显示地图
+ * 虚拟墙
  */
-class ShowMapView : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMapViewModel>() {
+class VirtualWallViewActivity : BaseMvvmActivity<ActivityVirtualwallBinding, ShowMapViewModel>() {
 
     val mapId = 1
     override fun initView(savedInstanceState: Bundle?) {
@@ -43,7 +44,13 @@ class ShowMapView : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMapViewMode
             })
 
 
-        loadData()
+        initListener()
+
+
+    }
+
+    override fun initData() {
+        super.initData()
 
         //上激光点云
         LiveEventBus.get<laser_t>(KEY_CURRENT_POINT_CLOUD).observe(this) {
@@ -54,38 +61,44 @@ class ShowMapView : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMapViewMode
         LiveEventBus.get<laser_t>(KEY_BOTTOM_CURRENT_POINT_CLOUD).observe(this) {
             mBinding.mapView.setDownLaserScan(it)
         }
-//
-//        //接收车体坐标 AGV->PAD
-//        LiveEventBus.get<robot_control_t>(KEY_AGV_COORDINATE).observe(this) {
-//            mBinding.mapView.setAgvPose(it)
-//
-//            //有任务才显示车体位置
-//            if (RunningState.CURRENT_TASK_STATE == TaskState.HAVE_TASK) {
-//                mBinding.mapView.setWorkingPath(it.dparams)
-//            }
-//        }
-    }
 
-    override fun initData() {
-        super.initData()
         mViewModel.getVirtualWall(mapId)
 
         //加载虚拟墙
         mViewModel.getVirtualWall.observe(this) {
             mBinding.mapView.setVirtualWall(it)
         }
+
     }
 
-    private fun loadData() {
+    private fun initListener() {
 
-//        lifecycleScope.launch(Dispatchers.IO) {
-//            loadVirtualWall(mapId)?.let {
-//                mBinding.mapView.setVirtualWallLines(it.LAYER[0].LINE)
-//            }
-//            //读取上线点文件
-//            loadInitPose(mapId)?.let {
-//                mBinding.mapView.setInitPosts(it.Initposes)
-//            }
-//        }
+        mBinding.rgTabType.setOnCheckedChangeListener { _, checkedId ->
+
+            when (checkedId) {
+                R.id.rb_move_map -> {
+//                    mMapView.setWorkMode(SLAMMapView.MODE_SHOW_MAP)
+//                    btnConfirm.gone()
+                }
+
+                R.id.rb_create -> {
+//                    mMapView.setWorkMode(SLAMMapView.MODE_VIRTUAL_WALL_ADD)
+//                    VmChoiceDialog.Builder(this)
+//                        .setOnChoiceVMListener { mMapView.addVirtualWall(it) }.create().show()
+//                    btnConfirm.visible()
+                }
+
+                R.id.rb_edit -> {
+//                    mMapView.setWorkMode(SLAMMapView.MODE_VIRTUAL_WALL_EDIT)
+//                    btnConfirm.visible()
+                }
+
+                R.id.rb_delete -> {
+//                    mMapView.setWorkMode(SLAMMapView.MODE_VIRTUAL_WALL_DELETE)
+//                    btnConfirm.visible()
+                }
+            }
+        }
     }
+
 }

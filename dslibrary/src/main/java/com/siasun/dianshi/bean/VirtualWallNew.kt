@@ -23,7 +23,11 @@ data class VirWallLayerNew(
     var LINESUM: Int
 ) : LiveEvent
 
-
+/***
+ * 1重点虚拟墙
+ * 2虚拟门
+ * 普通虚拟墙
+ */
 data class VirtualWallLineNew(
     var BEGIN: PointNew,
     var END: PointNew,

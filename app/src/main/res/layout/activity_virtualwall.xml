@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.siasun.dianshi.view.MapView
+        android:id="@+id/map_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!--Footer-->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <RadioGroup
+            android:id="@+id/rg_tab_type"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
+
+            <RadioButton
+                android:id="@+id/rb_move_map"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:checked="true"
+                android:textColor="@color/black" />
+
+            <RadioButton
+                android:id="@+id/rb_create"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="创建"
+                android:textColor="@color/black" />
+
+            <RadioButton
+                android:id="@+id/rb_edit"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="编辑"
+                android:textColor="@color/black" />
+
+            <RadioButton
+                android:id="@+id/rb_delete"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="删除"
+                android:textColor="@color/black" />
+
+        </RadioGroup>
+
+        <!--确定-->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_confirm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@mipmap/btn_confirm"
+            android:text="保存"
+            android:textSize="17sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
