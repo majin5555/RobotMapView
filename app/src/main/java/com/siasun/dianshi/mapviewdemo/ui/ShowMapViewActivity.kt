@@ -12,6 +12,7 @@ import com.ngu.lcmtypes.robot_control_t
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.ConstantBase
 import com.siasun.dianshi.controller.MainController
+import com.siasun.dianshi.framework.log.LogUtil
 import com.siasun.dianshi.mapviewdemo.KEY_AGV_COORDINATE
 import com.siasun.dianshi.mapviewdemo.KEY_BOTTOM_CURRENT_POINT_CLOUD
 import com.siasun.dianshi.mapviewdemo.KEY_CURRENT_POINT_CLOUD
@@ -93,5 +94,12 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mViewModel.getStationData(mapId, onComplete = { cmsStation ->
             mBinding.mapView.setCmsStations(cmsStation)
         })
+        //加载充电站
+        mViewModel.getMachineStation(onComplete = { machineStation ->
+            LogUtil.d("获取充电站信息 $machineStation")
+            val result = machineStation?.find { it.mapId == mapId }
+            mBinding.mapView.setMachineStation(result)
+        })
+
     }
 }

@@ -42,7 +42,7 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
             val point = parent.get()!!.worldToScreen(it.x, it.y)
             drawCircle(
                 canvas,
-                point.x, point.y, radius * scale, mPaint
+                point, radius * scale, mPaint
             )
         }
     }

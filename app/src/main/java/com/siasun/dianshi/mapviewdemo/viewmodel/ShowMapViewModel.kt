@@ -98,10 +98,22 @@ class ShowMapViewModel : BaseViewModel() {
         }
     }
 
+    //获取充电站
+    fun getMachineStation(
+        onComplete: (machineStations: MutableList<MachineStation>?) -> Unit
+    ) {
+        viewModelScope.launch {
+
+            val machineStationsDeferred = async {
+                ApiManager.api.getMachineStation()
+            }
+            val machineStations = machineStationsDeferred.await()
+            onComplete.invoke(machineStations.data)
+        }
+    }
 
     fun getStationData(
-        layerId: Int,
-        onComplete: (cmsStations: MutableList<CmsStation>?) -> Unit
+        layerId: Int, onComplete: (cmsStations: MutableList<CmsStation>?) -> Unit
     ) {
         viewModelScope.launch {
 

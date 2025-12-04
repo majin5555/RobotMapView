@@ -98,6 +98,14 @@ class StationViewActivity : BaseMvvmActivity<ActivityStationBinding, ShowMapView
             LogUtil.d(cmsStation.toString())
             mBinding.mapView.setCmsStations(cmsStation)
         })
+
+        mViewModel.getMachineStation(onComplete = { machineStation ->
+            LogUtil.d("获取充电站信息 $machineStation")
+            val result = machineStation?.find { it.mapId == mapId }
+            mBinding.mapView.setMachineStation(result)
+
+        })
+
     }
 
     /**

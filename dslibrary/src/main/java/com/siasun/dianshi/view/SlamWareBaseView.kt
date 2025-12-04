@@ -5,6 +5,8 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.PointF
 import android.view.ViewGroup
 import com.siasun.dianshi.utils.RadianUtil
 import java.lang.ref.WeakReference
@@ -51,11 +53,55 @@ abstract class SlamWareBaseView(context: Context?, parent: WeakReference<MapView
      * @param x 图标中心 x 坐标
      * @param y 图标中心 y 坐标
      */
-    fun drawLabel(canvas: Canvas, text: String, x: Float, y: Float, paint: Paint) {
-        canvas.drawText(text, x, y, paint)
+    fun drawLabel(canvas: Canvas, text: String, mPoint: PointF, paint: Paint) {
+        canvas.drawText(text, mPoint.x, mPoint.y, paint)
     }
 
-    fun drawCircle(canvas: Canvas, x: Float, y: Float, radius: Float, paint: Paint) {
-        canvas.drawCircle(x, y, radius, paint)
+    /**
+     * 绘制圆
+     */
+    fun drawCircle(canvas: Canvas, mPoint: PointF, radius: Float, paint: Paint) {
+        canvas.drawCircle(mPoint.x, mPoint.y, radius, paint)
     }
+
+    /**
+     * 绘制等边三角形（朝上的）
+     */
+    fun drawTriangle(canvas: Canvas, mPoint: PointF, paint: Paint, size: Float = 10f) {
+        val path = Path().apply {
+            moveTo(mPoint.x, mPoint.y - size) // 顶点（上）
+            lineTo(mPoint.x - size, mPoint.y + size) // 左下
+            lineTo(mPoint.x + size, mPoint.y + size) // 右下
+            close()
+        }
+        canvas.drawPath(path, paint)
+    }
+
+    /**
+     * 绘制菱形
+     */
+    fun drawDiamond(canvas: Canvas, mPoint: PointF, paint: Paint, size: Float = 10f) {
+        val path = Path().apply {
+            moveTo(mPoint.x, mPoint.y - size) // 上
+            lineTo(mPoint.x + size, mPoint.y) // 右
+            lineTo(mPoint.x, mPoint.y + size) // 下
+            lineTo(mPoint.x - size, mPoint.y) // 左
+            close()
+        }
+        canvas.drawPath(path, paint)
+    }
+
+    /**
+     * 绘制矩形
+     */
+    fun drawRect(
+        canvas: Canvas, mPoint: PointF, paint: Paint, width: Float = 20f, height: Float = 20f
+    ) {
+        val left = mPoint.x - width / 2
+        val top = mPoint.y - height / 2
+        val right = mPoint.x + width / 2
+        val bottom = mPoint.y + height / 2
+        canvas.drawRect(left, top, right, bottom, paint)
+    }
+
 }

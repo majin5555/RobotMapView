@@ -5,6 +5,7 @@ import com.siasun.dianshi.network.request.RequestCommonMapId
 import com.pnc.core.network.response.BaseResponse
 import com.siasun.dianshi.bean.CmsStation
 import com.siasun.dianshi.bean.InitPoseRoot
+import com.siasun.dianshi.bean.MachineStation
 import com.siasun.dianshi.bean.MergedPoseBean
 import com.siasun.dianshi.network.request.RequestSaveVirtualWall
 import retrofit2.http.Body
@@ -188,8 +189,8 @@ interface ApiInterface {
 //    @POST("/save_integrated_machine")
 //    suspend fun saveMachineStation(@Body date: RequestMachineStation): BaseResponse<Any>
 //
-//    @POST("/get_integrated_machine")
-//    suspend fun getMachineStation(): BaseResponse<MutableList<MachineStation>>
+    @POST("/get_integrated_machine")
+    suspend fun getMachineStation(): BaseResponse<MutableList<MachineStation>>
 //
 //    @POST("/save_cms_stations_data")
 //    suspend fun saveCmsStation(@Body data: RequestCmsStation): BaseResponse<Any>

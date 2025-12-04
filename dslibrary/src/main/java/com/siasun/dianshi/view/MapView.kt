@@ -17,6 +17,7 @@ import com.ngu.lcmtypes.laser_t
 import com.ngu.lcmtypes.robot_control_t
 import com.siasun.dianshi.bean.CmsStation
 import com.siasun.dianshi.bean.InitPose
+import com.siasun.dianshi.bean.MachineStation
 import com.siasun.dianshi.bean.MapData
 import com.siasun.dianshi.bean.MergedPoseItem
 import com.siasun.dianshi.utils.CoordinateConversion
@@ -61,10 +62,9 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     private var mPngMapView: PngMapView? = null //png地图
 
     var mWallView: VirtualLineView? = null//虚拟墙
-
-    //    var mHomeDockView: HomeDockView? = null//充电站
-    var mStationView: StationsView? = null//站点
-    var mOnlinePoseView: OnlinePoseView? = null//上线点
+    private var mHomeDockView: HomeDockView? = null//充电站
+    private var mStationView: StationsView? = null//站点
+    private var mOnlinePoseView: OnlinePoseView? = null//上线点
     private var mLegendView: LegendView? = null//图例
     var mUpLaserScanView: UpLaserScanView? = null//上激光点云
     var mDownLaserScanView: DownLaserScanView? = null//下激光点云
@@ -98,7 +98,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
             LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         mPngMapView = PngMapView(context)
         mWallView = VirtualLineView(context, mMapView)
-//        mHomeDockView = HomeDockView(context, mMapView)
+        mHomeDockView = HomeDockView(context, mMapView)
         mStationView = StationsView(context, mMapView)
         mOnlinePoseView = OnlinePoseView(context, mMapView)
         mUpLaserScanView = UpLaserScanView(context, mMapView)
@@ -113,8 +113,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         //底图的View
         addView(mPngMapView, lp)
 
-
-//        addMapLayers(mHomeDockView)
+        //充电站
+        addMapLayers(mHomeDockView)
         //显示避让点
         addMapLayers(mStationView)
         //上线点
@@ -345,6 +345,9 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         super.onDetachedFromWindow()
     }
 
+    /***
+     * 设置地图显示
+     */
     fun setSlamMapViewShow(visibility: Int) {
         mPngMapView!!.visibility = visibility
     }
@@ -450,19 +453,20 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     /**
      * 设置充电站
      */
-    fun setChargeStation() {
-//        mHomeDockView?.setHomePose()
-    }
+    fun setMachineStation(machineStation: MachineStation?) =
+        mHomeDockView?.setHomePose(machineStation)
+
 
     /**
      * 设置避让点
      */
     fun setCmsStations(list: MutableList<CmsStation>?) = mStationView?.setCmsStations(list)
-    
+
     /**
      * 设置避让点点击监听器
      */
-    fun setOnStationClickListener(listener: StationsView.OnStationClickListener) = mStationView?.setOnStationClickListener(listener)
+    fun setOnStationClickListener(listener: StationsView.OnStationClickListener) =
+        mStationView?.setOnStationClickListener(listener)
 
     /**
      * 设置工作模式

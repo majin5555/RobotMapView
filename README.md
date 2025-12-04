@@ -3,7 +3,8 @@
 # RobotMapView 机器人分层地图加载
 
 -----------------------------------------
-地图的所有工作模式
+
+# ****************地图的所有工作模式****************
 
 # enum class WorkMode {
 
@@ -119,4 +120,8 @@
 # mBinding.mapView.setCmsStations(cmsStation)
 
 -----------------------------------------
+
+# 加载充电站
+
+# mBinding.mapView.setMachineStation(result)
 

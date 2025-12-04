@@ -7,6 +7,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.PointF
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import com.siasun.dianshi.R
@@ -92,11 +93,10 @@ class OnlinePoseView(context: Context?, parent: WeakReference<MapView>) :
 
             // 绘制原点标签
             drawLabel(
-                canvas,
-                context!!.getString(R.string.origin_point),
-                originPoint.x + LABEL_OFFSET,
-                originPoint.y + LABEL_OFFSET,
-                paint
+                canvas, context!!.getString(R.string.origin_point), PointF(
+                    originPoint.x + LABEL_OFFSET,
+                    originPoint.y + LABEL_OFFSET,
+                ), paint
             )
 
         }
@@ -127,7 +127,7 @@ class OnlinePoseView(context: Context?, parent: WeakReference<MapView>) :
                 )
 
                 // 绘制上线点标签
-                drawLabel(canvas, initPose.name, point.x, point.y, paint)
+                drawLabel(canvas, initPose.name, point, paint)
             }
         }
     }
