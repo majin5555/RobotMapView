@@ -59,6 +59,9 @@ class VirtualLineView(
     // 用于绘制虚线的路径效果
     private var dashPathEffect: DashPathEffect? = null
 
+    // 控制是否绘制
+    private var isDrawingEnabled: Boolean = true
+
     init {
         mPaint.isAntiAlias = true
         mPaint.color = Color.BLUE
@@ -84,101 +87,102 @@ class VirtualLineView(
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        if (isDrawingEnabled) {
+            // 安全获取MapView引用
+            val mapView = mapViewRef?.get() ?: return
 
-        // 安全获取MapView引用
-        val mapView = mapViewRef?.get() ?: return
+            if (virtualWall.LAYER.size > 0) virtualWall.LAYER[0].let {
+                mPaint.strokeWidth = LINE_WIDTH
+                mSelectedPaint.strokeWidth = 4f
+                val scaledRadius = radius
 
-        if (virtualWall.LAYER.size > 0) virtualWall.LAYER[0].let {
-            mPaint.strokeWidth = LINE_WIDTH
-            mSelectedPaint.strokeWidth = 4f
-            val scaledRadius = radius
+                for ((index, line) in it.LINE.withIndex()) {
+                    // 根据 CONFIG 值设置不同的画笔样式和颜色
+                    when (line.CONFIG) {
+                        1 -> {
+                            // 红色实线 重点虚拟墙
+                            mPaint.color = Color.RED
+                            mPaint.pathEffect = null
+                        }
 
-            for ((index, line) in it.LINE.withIndex()) {
-                // 根据 CONFIG 值设置不同的画笔样式和颜色
-                when (line.CONFIG) {
+                        2 -> {
+                            // 红色虚线 虚拟门
+                            mPaint.color = Color.RED
+                            mPaint.pathEffect = dashPathEffect
+                        }
+
+                        3 -> {
+                            // 蓝色实线 普通虚拟墙
+                            mPaint.color = Color.BLUE
+                            mPaint.pathEffect = null
+                        }
+                    }
+                    //起点
+                    val start = mapView.worldToScreen(
+                        line.BEGIN.X / PROPORTION, line.BEGIN.Y / PROPORTION
+                    )
+                    //终点
+                    val end = mapView.worldToScreen(
+                        line.END.X / PROPORTION, line.END.Y / PROPORTION
+                    )
+
+                    // 如果是选中的线，使用选中画笔
+                    if (currentWorkMode == MapView.WorkMode.MODE_VIRTUAL_WALL_EDIT && index == selectedLineIndex) {
+                        canvas.drawLine(start.x, start.y, end.x, end.y, mSelectedPaint)
+
+                        // 绘制绿色实心端点圆
+                        val originalSelectedStyle = mSelectedPaint.style
+                        mSelectedPaint.style = Paint.Style.FILL
+                        canvas.drawCircle(start.x, start.y, scaledRadius, mSelectedPaint)
+                        canvas.drawCircle(end.x, end.y, scaledRadius, mSelectedPaint)
+                        mSelectedPaint.style = originalSelectedStyle
+                    } else {
+                        canvas.drawLine(start.x, start.y, end.x, end.y, mPaint)
+
+                        // 绘制实心端点圆
+                        val originalStyle = mPaint.style
+                        mPaint.style = Paint.Style.FILL
+                        canvas.drawCircle(start.x, start.y, scaledRadius, mPaint)
+                        canvas.drawCircle(end.x, end.y, scaledRadius, mPaint)
+                        mPaint.style = originalStyle
+                    }
+                }
+            }
+
+            // 绘制正在创建的虚拟墙
+            if (isCreating && startPoint != null && currentPoint != null) {
+                mPaint.strokeWidth = LINE_WIDTH
+                when (selectedConfig) {
                     1 -> {
-                        // 红色实线 重点虚拟墙
                         mPaint.color = Color.RED
                         mPaint.pathEffect = null
                     }
 
                     2 -> {
-                        // 红色虚线 虚拟门
                         mPaint.color = Color.RED
                         mPaint.pathEffect = dashPathEffect
                     }
 
                     3 -> {
-                        // 蓝色实线 普通虚拟墙
                         mPaint.color = Color.BLUE
                         mPaint.pathEffect = null
                     }
                 }
-                //起点
-                val start = mapView.worldToScreen(
-                    line.BEGIN.X / PROPORTION, line.BEGIN.Y / PROPORTION
+                canvas.drawLine(
+                    startPoint!!.x,
+                    startPoint!!.y,
+                    currentPoint!!.x,
+                    currentPoint!!.y,
+                    mPaint
                 )
-                //终点
-                val end = mapView.worldToScreen(
-                    line.END.X / PROPORTION, line.END.Y / PROPORTION
-                )
-
-                // 如果是选中的线，使用选中画笔
-                if (currentWorkMode == MapView.WorkMode.MODE_VIRTUAL_WALL_EDIT && index == selectedLineIndex) {
-                    canvas.drawLine(start.x, start.y, end.x, end.y, mSelectedPaint)
-
-                    // 绘制绿色实心端点圆
-                    val originalSelectedStyle = mSelectedPaint.style
-                    mSelectedPaint.style = Paint.Style.FILL
-                    canvas.drawCircle(start.x, start.y, scaledRadius, mSelectedPaint)
-                    canvas.drawCircle(end.x, end.y, scaledRadius, mSelectedPaint)
-                    mSelectedPaint.style = originalSelectedStyle
-                } else {
-                    canvas.drawLine(start.x, start.y, end.x, end.y, mPaint)
-
-                    // 绘制实心端点圆
-                    val originalStyle = mPaint.style
-                    mPaint.style = Paint.Style.FILL
-                    canvas.drawCircle(start.x, start.y, scaledRadius, mPaint)
-                    canvas.drawCircle(end.x, end.y, scaledRadius, mPaint)
-                    mPaint.style = originalStyle
-                }
+                val scaledRadius = radius
+                // 绘制实心端点圆
+                val originalStyle = mPaint.style
+                mPaint.style = Paint.Style.FILL
+                canvas.drawCircle(startPoint!!.x, startPoint!!.y, scaledRadius, mPaint)
+                canvas.drawCircle(currentPoint!!.x, currentPoint!!.y, scaledRadius, mPaint)
+                mPaint.style = originalStyle
             }
-        }
-
-        // 绘制正在创建的虚拟墙
-        if (isCreating && startPoint != null && currentPoint != null) {
-            mPaint.strokeWidth = LINE_WIDTH
-            when (selectedConfig) {
-                1 -> {
-                    mPaint.color = Color.RED
-                    mPaint.pathEffect = null
-                }
-
-                2 -> {
-                    mPaint.color = Color.RED
-                    mPaint.pathEffect = dashPathEffect
-                }
-
-                3 -> {
-                    mPaint.color = Color.BLUE
-                    mPaint.pathEffect = null
-                }
-            }
-            canvas.drawLine(
-                startPoint!!.x,
-                startPoint!!.y,
-                currentPoint!!.x,
-                currentPoint!!.y,
-                mPaint
-            )
-            val scaledRadius = radius
-            // 绘制实心端点圆
-            val originalStyle = mPaint.style
-            mPaint.style = Paint.Style.FILL
-            canvas.drawCircle(startPoint!!.x, startPoint!!.y, scaledRadius, mPaint)
-            canvas.drawCircle(currentPoint!!.x, currentPoint!!.y, scaledRadius, mPaint)
-            mPaint.style = originalStyle
         }
     }
 
@@ -601,6 +605,13 @@ class VirtualLineView(
         super.onDetachedFromWindow()
     }
 
+    /**
+     * 设置是否启用绘制
+     */
+    fun setDrawingEnabled(enabled: Boolean) {
+        this.isDrawingEnabled = enabled
+        postInvalidate()
+    }
 }
 
 

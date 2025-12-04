@@ -19,7 +19,6 @@ class RobotView(context: Context?, val parent: WeakReference<MapView>) :
     private var radius = 8f
 
     private var mPaint: Paint = Paint()
-    private var pathList: MutableList<PointF>? = null
     private var agvPose: DoubleArray? = null
     private val onRobotMatrix = Matrix()
 
@@ -38,15 +37,8 @@ class RobotView(context: Context?, val parent: WeakReference<MapView>) :
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-    
-        //绘制实时路径
-        pathList?.forEach {
-            val point = parent.get()!!.worldToScreen(it.x, it.y)
-            canvas.drawCircle(
-                point.x, point.y, radius * scale, mPaint
-            )
-        }
-    
+
+
         agvPose?.let { pose ->
             robotBitmap?.let { bitmap ->
                 val point = parent.get()!!
@@ -67,14 +59,6 @@ class RobotView(context: Context?, val parent: WeakReference<MapView>) :
                 canvas.drawBitmap(bitmap, onRobotMatrix, mPaint)
             }
         }
-    }
-
-    /**
-     * 机器人有任务实时路径
-     */
-    fun setData(list: MutableList<PointF>) {
-        pathList = list
-        postInvalidate()
     }
 
     /**

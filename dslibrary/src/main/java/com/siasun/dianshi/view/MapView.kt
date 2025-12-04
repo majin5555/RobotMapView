@@ -64,7 +64,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     //    var mHomeDockView: HomeDockView? = null//充电站
 //    var mStationView: StationsView? = null//站点
 //    var mOnlinePoseView: OnlinePoseView? = null//上线点
-//    private var mLegendView: LegendView? = null//图例
+    private var mLegendView: LegendView? = null//图例
     var mUpLaserScanView: UpLaserScanView? = null//上激光点云
     var mDownLaserScanView: DownLaserScanView? = null//下激光点云
 
@@ -73,20 +73,13 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
 //    var mMixAreasView: MixedAreasView? = null//混行区域
 //    var mPathView: PathView? = null//路线PP
     var mRobotView: RobotView? = null //机器人图标
+    var mWorkIngPathView: WorkIngPathView? = null //机器人工作路径
 
     private var mSingleTapListener: ISingleTapListener? = null
 
     //手势监听
     private var mGestureDetector: SlamGestureDetector? = null
 
-    //上激光点云
-    private val upPointsCloudList = Collections.synchronizedList(mutableListOf<PointF>())
-
-    //下激光点云
-    private val downPointsCloudList = Collections.synchronizedList(mutableListOf<PointF>())
-
-    //机器人有任务 实时路径
-    private val cartPosList = Collections.synchronizedList(mutableListOf<PointF>())
 
     init {
         setDefaultBackground(defaultBackGroundColor)
@@ -113,8 +106,9 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
 //        mTopViewPathView = TopViewPathView(context, mMapView)
 //        mAreasView = AreasView(context, mMapView)
 //        mMixAreasView = MixedAreasView(context, mMapView)
-//        mLegendView = LegendView(context, attrs, mMapView)
+        mLegendView = LegendView(context, attrs, mMapView)
         mRobotView = RobotView(context, mMapView)
+        mWorkIngPathView = WorkIngPathView(context, mMapView)
 //        val mPolygonEditView = PolygonEditView(context, mMapView)
         //底图的View
         addView(mPngMapView, lp)
@@ -146,13 +140,13 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
 //        addMapLayers(mPathView)
 //        addMapLayers(mHomeDockView)
 
-        // 修改LegendView的布局参数，使其显示在右上角
-//        addView(mLegendView, LayoutParams(
-//            LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT
-//        ).apply {
-//            gravity = android.view.Gravity.TOP or android.view.Gravity.END
-//            setMargins(16, 16, 16, 16)
-//        })
+        //  修改LegendView的布局参数，使其显示在右上角
+        addView(mLegendView, LayoutParams(
+            LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT
+        ).apply {
+            gravity = android.view.Gravity.TOP or android.view.Gravity.END
+            setMargins(16, 16, 16, 16)
+        })
 
         setCentred()
     }
@@ -161,7 +155,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     override fun onTouchEvent(event: MotionEvent): Boolean {
         super.onTouchEvent(event)
         val point = screenToWorld(event.x, event.y)
-//        mLegendView?.setScreen(point)
+        mLegendView?.setScreen(point)
         return mGestureDetector!!.onTouchEvent(event)
     }
 
@@ -405,67 +399,33 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
 //    }
 
     /**
-     * 设置上激光点云
+     * 设置上激光点云数据源
      */
-    fun setUpLaserScan(laser: laser_t) {
-        upPointsCloudList.clear()
-        val robotX = laser.ranges[0]
-        val robotY = laser.ranges[1]
-        val robotT = laser.ranges[2]
-        if (laser.ranges.size > 3) {
-            for (i in 1 until laser.ranges.size / 3) {
-                val laserX = laser.ranges[3 * i]
-                val laserY = laser.ranges[3 * i + 1]
-                upPointsCloudList.add(
-                    PointF(
-                        laserX * cos(robotT) - laserY * sin(robotT) + robotX,
-                        laserX * sin(robotT) + laserY * cos(robotT) + robotY
-                    )
-                )
-            }
-            mUpLaserScanView?.updateUpLaserScan(upPointsCloudList)
-        }
-    }
+    fun setUpLaserScan(laser: laser_t) = mUpLaserScanView?.updateUpLaserScan(laser)
 
     /**
-     * 设置下激光点云
+     * 设置下激光点云数据源
      */
-    fun setDownLaserScan(laser: laser_t) {
-        val robotX: Float = laser.ranges[0]
-        val robotY: Float = laser.ranges[1]
-        val theta: Float = laser.ranges[2]
-        downPointsCloudList.clear()
-        if (laser.ranges.isNotEmpty()) {
-            for (i in 1 until laser.ranges.size / 3) {
-                val laserX: Float = laser.ranges[3 * i]
-                val laserY: Float = laser.ranges[3 * i + 1]
-                downPointsCloudList.add(
-                    PointF(
-                        (laserX * cos(theta) - laserY * sin(theta) + robotX),
-                        (laserX * sin(theta) + laserY * cos(theta) + robotY)
-                    )
-                )
-            }
-        }
-        mDownLaserScanView?.updateDownLaserScan(downPointsCloudList)
-    }
+    fun setDownLaserScan(laser: laser_t) = mDownLaserScanView?.updateDownLaserScan(laser)
+
 
     /**
-     * 设置AGV 位姿
+     * 设置AGV 位姿 机器人图标的实时位置
      */
-    private var num = 0
-
     @SuppressLint("SuspiciousIndentation")
     fun setAgvPose(rt: robot_control_t) {
         val dParams = rt.dparams
-//        mLegendView?.setAgvX(dParams[0])
-//        mLegendView?.setAgvY(dParams[1])
-//        mLegendView?.setAgvT(dParams[2])
-//        if (dParams.size > 8) {
-//            mLegendView?.setAgvZ(dParams[8])
-//        }
+        mLegendView?.setAgvX(dParams[0])
+        mLegendView?.setAgvY(dParams[1])
+        mLegendView?.setAgvT(dParams[2])
+        if (dParams.size > 8) {
+            mLegendView?.setAgvZ(dParams[8])
+        }
         mRobotView?.setAgvData(dParams)
     }
+
+
+    private var num = 0
 
     /**
      * 机器人有任务状态下行走的路径
@@ -476,8 +436,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
             val mCarPoint = PointF()
             mCarPoint.x = String.format("%.1f", array[0]).toFloat()
             mCarPoint.y = String.format("%.1f", array[1]).toFloat()
-            cartPosList.add(mCarPoint)
-            mRobotView?.setData(cartPosList)
+            mWorkIngPathView?.setData(mCarPoint)
             num = 0
         }
     }

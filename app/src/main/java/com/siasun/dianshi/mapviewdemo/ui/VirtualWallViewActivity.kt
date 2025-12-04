@@ -8,13 +8,17 @@ import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
 import com.jeremyliao.liveeventbus.LiveEventBus
 import com.ngu.lcmtypes.laser_t
+import com.ngu.lcmtypes.robot_control_t
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.ConstantBase
 import com.siasun.dianshi.controller.MainController
 import com.siasun.dianshi.framework.ext.onClick
+import com.siasun.dianshi.mapviewdemo.KEY_AGV_COORDINATE
 import com.siasun.dianshi.mapviewdemo.KEY_BOTTOM_CURRENT_POINT_CLOUD
 import com.siasun.dianshi.mapviewdemo.KEY_CURRENT_POINT_CLOUD
 import com.siasun.dianshi.mapviewdemo.R
+import com.siasun.dianshi.mapviewdemo.RunningState
+import com.siasun.dianshi.mapviewdemo.TaskState
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityVirtualwallBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.ShowMapViewModel
 import com.siasun.dianshi.utils.YamlNew
@@ -64,6 +68,15 @@ class VirtualWallViewActivity : BaseMvvmActivity<ActivityVirtualwallBinding, Sho
             mBinding.mapView.setDownLaserScan(it)
         }
 
+        //接收车体坐标 AGV->PAD
+        LiveEventBus.get<robot_control_t>(KEY_AGV_COORDINATE).observe(this) {
+            mBinding.mapView.setAgvPose(it)
+
+            //有任务才显示车体位置
+            if (RunningState.CURRENT_TASK_STATE == TaskState.HAVE_TASK) {
+                mBinding.mapView.setWorkingPath(it.dparams)
+            }
+        }
         mViewModel.getVirtualWall(mapId)
 
         //加载虚拟墙

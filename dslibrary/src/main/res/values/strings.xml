@@ -9,7 +9,7 @@
     <string name="charge_station">充电站</string>
     <string name="area">区域</string>
     <string name="world_path">路线</string>
-    <string name="stations">站点</string>
+    <string name="stations">避让点</string>
     <string name="world_coordinate">世界坐标</string>
     <string name="screen_coordinate">屏幕->世界坐标</string>
 </resources>
