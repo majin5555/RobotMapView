@@ -2,10 +2,14 @@ package com.siasun.dianshi.mapviewdemo.viewmodel
 
 import VirtualWallNew
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
 import com.siasun.dianshi.network.request.RequestCommonMapId
 import com.pnc.core.network.callback.IApiErrorCallback
+import com.siasun.dianshi.bean.MergedPoseBean
 import com.siasun.dianshi.network.manager.ApiManager
 import com.siasun.dianshi.network.request.RequestSaveVirtualWall
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 
 
 /**
@@ -53,5 +57,21 @@ class ShowMapViewModel : BaseViewModel() {
                 getVirtualWall.postValue(it)
             }
         })
+    }
+
+
+    /**
+     * 获取定位页面数据
+     * 虚拟墙,上线点,顶视路线
+     */
+    fun getLocationDate(layerId: Int, onComplete: (mergedPoses: MergedPoseBean?) -> Unit) {
+        viewModelScope.launch {
+
+            val mergedDeferred = async {
+                ApiManager.api.getMergedPose(RequestCommonMapId(layerId))
+            }
+            val mergedPoses = mergedDeferred.await()
+            onComplete.invoke(mergedPoses.data)
+        }
     }
 }

@@ -78,6 +78,13 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mViewModel.getVirtualWall.observe(this) {
             mBinding.mapView.setVirtualWall(it)
         }
+
+        //获取顶视路线
+        mViewModel.getLocationDate(mapId, onComplete = { mergedPoses ->
+            mergedPoses?.data?.let {
+                mBinding.mapView.setTopViewPathDada(it)
+            }
+        })
     }
 
     private fun loadData() {

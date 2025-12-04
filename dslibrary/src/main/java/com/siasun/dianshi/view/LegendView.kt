@@ -5,7 +5,6 @@ import android.content.Context
 import android.graphics.PointF
 import android.util.AttributeSet
 import android.view.LayoutInflater
-import android.view.View
 import android.widget.CheckBox
 import android.widget.LinearLayout
 import com.siasun.dianshi.R
@@ -51,7 +50,7 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
                 parent.get()?.mDownLaserScanView?.setDrawingEnabled(false) // 禁用绘制
             }
         }
-        //虚拟墙 
+        //虚拟墙
         mBinding.cbVirtualWall.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
                 parent.get()?.mWallView?.setDrawingEnabled(true) // 启用绘制
@@ -59,15 +58,15 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
                 parent.get()?.mWallView?.setDrawingEnabled(false) // 禁用绘制
             }
         }
-//        //顶视觉路线
-//        cbTopViewPath.setOnCheckedChangeListener { _, isChecked ->
-//
-//            if (isChecked) {
-//                parent.get()?.mTopViewPathView?.visibility = View.VISIBLE
-//            } else {
-//                parent.get()?.mTopViewPathView?.visibility = View.GONE
-//            }
-//        }
+
+        //顶视觉路线
+        mBinding.cbTopViewPath.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                parent.get()?.mTopViewPathView?.setDrawingEnabled(true) // 启用绘制
+            } else {
+                parent.get()?.mTopViewPathView?.setDrawingEnabled(false) // 禁用绘制
+            }
+        }
 //        //清扫区域
 //        cbArea.setOnCheckedChangeListener { _, isChecked ->
 //
@@ -182,7 +181,10 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
      */
     fun getCbVirtualWall(): CheckBox = mBinding.cbVirtualWall
 
-//    fun getcbTopViewPath(): CheckBox = cbTopViewPath
+    /**
+     * 获取顶视路线CheckBox
+     */
+    fun getCbTopViewPath(): CheckBox = mBinding.cbTopViewPath
 //
 //    fun getCbArea(): CheckBox = cbArea
 //

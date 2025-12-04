@@ -1,109 +1,131 @@
-//package com.siasun.view
-//
-//import android.annotation.SuppressLint
-//import android.content.Context
-//import android.graphics.Canvas
-//import android.graphics.Color
-//import android.graphics.Paint
-//import android.graphics.Path
-//import android.graphics.PointF
-//import com.pnc.core.framework.log.LogUtil
-//import com.siasun.dianshi.view.MapView
-//import org.json.JSONArray
-//import org.json.JSONException
-//import org.json.JSONObject
-//import java.io.IOException
-//import java.lang.ref.WeakReference
-//
-///**
-// * 顶视路线
-// */
-//@SuppressLint("ViewConstructor")
-//class TopViewPathView(context: Context?, var parent: WeakReference<MapView>) :
-//    SlamWareBaseView(context, parent) {
-//    private val LINE_WIDTH = 1f
-//    private val mPaint: Paint = Paint()
-//    private val routePath: Path = Path()
-//    var dataArray: JSONArray? = null
-//
-//    // 用于减少绘制点数的参数，每隔10个点绘制一个
-//    val sampleRate = 20
-//
-//    init {
-//        mPaint.isAntiAlias = true
-//        mPaint.style = Paint.Style.STROKE
-//        mPaint.color = Color.parseColor("#CC33FF")
-//        mPaint.strokeWidth = 1f
-//
-//        loadRouteData()
-//    }
-//
-//    override fun onDraw(canvas: Canvas) {
-//        super.onDraw(canvas)
-//        mPaint.strokeWidth = LINE_WIDTH * scale
-//        routePath.reset()
-//        var isFirstPoint = true
-//
-//        for (i in 0 until dataArray!!.length() step sampleRate) {
-//            val pointObject = dataArray!!.getJSONObject(i)
-//            val x = pointObject.getDouble("x").toFloat()
-//            val y = pointObject.getDouble("y").toFloat()
-//
-//            val pnt: PointF = parent.get()!!.worldToScreen(x, y)
-//
-//            if (isFirstPoint) {
-//                routePath.moveTo(pnt.x, pnt.y)
-//                isFirstPoint = false
-//            } else {
-//                routePath.lineTo(pnt.x, pnt.y)
-//            }
-//        }
-//        canvas.drawPath(routePath, mPaint)
-//    }
-//
-//    fun setTopViewPath() {
-//        postInvalidate()
-//    }
-//
-//
-//    private fun loadRouteData() {
-//        try {
-//            // 读取JSON文件
-//            val `is` = context.assets.open("mergedPose.json")
-//            val size = `is`.available()
-//            val buffer = ByteArray(size)
-//            `is`.read(buffer)
-//            `is`.close()
-//            val json = String(buffer, charset("UTF-8"))
-//
-//            // 解析JSON数据
-//            val jsonObject = JSONObject(json)
-//            dataArray = jsonObject.getJSONArray("data")
-//
-//
-//            routePath.reset()
-//            var isFirstPoint = true
-//
-//            for (i in 0 until dataArray!!.length() step sampleRate) {
-//                val pointObject = dataArray!!.getJSONObject(i)
-//                val x = pointObject.getDouble("x").toFloat()
-//                val y = pointObject.getDouble("y").toFloat()
-//
-//                val pnt: PointF = parent.get()!!.worldToScreen(x, y)
-//
-//                if (isFirstPoint) {
-//                    routePath.moveTo(pnt.x, pnt.y)
-//                    isFirstPoint = false
-//                } else {
-//                    routePath.lineTo(pnt.x, pnt.y)
-//                }
-//            }
-//
-//            LogUtil.d("loadRouteData routePoints " + dataArray!!.length())
-//        } catch (e: IOException) {
-//            e.printStackTrace()
-//        } catch (e: JSONException) {
-//            e.printStackTrace()
-//        }
-//    }
-//}
+package com.siasun.dianshi.view
+
+import android.annotation.SuppressLint
+import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Path
+import com.siasun.dianshi.bean.MergedPoseItem
+import java.lang.ref.WeakReference
+
+/**
+ * 顶视路线视图
+ * 用于在地图上绘制机器人的顶视路线
+ */
+@SuppressLint("ViewConstructor")
+class TopViewPathView(context: Context?, parent: WeakReference<MapView>) :
+    SlamWareBaseView(context, parent) {
+
+    // 基础线宽（像素）
+    private val BASE_LINE_WIDTH = 1f
+
+    // 最小线宽，避免缩放过小时线宽过细
+    private val MIN_LINE_WIDTH = 0.5f
+
+    // 用于减少绘制点数的采样率，每隔2个点绘制一个
+    private val SAMPLE_RATE = 2
+
+    // 在绘制时动态计算屏幕坐标，确保路线与地图缩放同步
+    private val routePath = Path()
+
+    // 保存parent引用以便安全访问
+    private var mapViewRef: WeakReference<MapView>? = parent
+
+    // 绘制画笔
+    private val mPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        color = Color.parseColor("#CC33FF")
+        strokeWidth = BASE_LINE_WIDTH
+    }
+
+    // 控制是否绘制
+    private var isDrawingEnabled: Boolean = true
+
+    // 顶视路线数据列表
+    private val topViewRouteList = mutableListOf<MergedPoseItem>()
+
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        if (!isDrawingEnabled || topViewRouteList.isEmpty()) {
+            return
+        }
+
+        // 根据当前缩放比例调整线宽，确保在不同缩放级别下都有良好的视觉效果
+        mPaint.strokeWidth = maxOf(MIN_LINE_WIDTH, BASE_LINE_WIDTH * scale)
+        routePath.reset()
+
+        var isFirstPoint = true
+        // 采样绘制，减少绘制点数以提高性能
+        for (i in 0 until topViewRouteList.size step SAMPLE_RATE) {
+            val pose = topViewRouteList[i]
+
+            // 绘制时动态转换为屏幕坐标
+            val screenPoint = mapViewRef?.get()?.worldToScreen(pose.x.toFloat(), pose.y.toFloat())
+            screenPoint?.let {
+                if (isFirstPoint) {
+                    routePath.moveTo(screenPoint.x, screenPoint!!.y)
+                    isFirstPoint = false
+                } else {
+                    routePath.lineTo(screenPoint.x, screenPoint.y)
+                }
+            }
+        }
+        // 绘制路线
+        canvas.drawPath(routePath, mPaint)
+    }
+
+    /**
+     * 设置顶视路线数据源
+     * @param data 路线数据列表
+     */
+    fun setTopViewPath(data: List<MergedPoseItem>) {
+        topViewRouteList.clear()
+        topViewRouteList.addAll(data)
+        postInvalidate()
+    }
+
+    /**
+     * 追加顶视路线数据
+     * @param data 要追加的路线数据列表
+     */
+    fun addTopViewPath(data: List<MergedPoseItem>) {
+        topViewRouteList.addAll(data)
+        postInvalidate()
+    }
+
+    /**
+     * 清除顶视路线
+     */
+    fun clearTopViewPath() {
+        topViewRouteList.clear()
+        postInvalidate()
+    }
+
+    /**
+     * 设置路线颜色
+     * @param color 颜色值
+     */
+    fun setRouteColor(color: Int) {
+        mPaint.color = color
+        postInvalidate()
+    }
+
+    /**
+     * 设置是否启用绘制
+     * @param enabled 是否启用绘制
+     */
+    fun setDrawingEnabled(enabled: Boolean) {
+        this.isDrawingEnabled = enabled
+        postInvalidate()
+    }
+
+    /**
+     * 获取当前是否启用绘制
+     * @return 是否启用绘制
+     */
+    fun isDrawingEnabled(): Boolean {
+        return isDrawingEnabled
+    }
+}

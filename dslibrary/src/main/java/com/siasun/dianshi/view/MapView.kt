@@ -16,15 +16,13 @@ import android.widget.ImageView
 import com.ngu.lcmtypes.laser_t
 import com.ngu.lcmtypes.robot_control_t
 import com.siasun.dianshi.bean.MapData
+import com.siasun.dianshi.bean.MergedPoseItem
 import com.siasun.dianshi.utils.CoordinateConversion
 import com.siasun.dianshi.utils.MathUtils
 import com.siasun.dianshi.utils.RadianUtil
 import com.siasun.dianshi.utils.SlamGestureDetector
 import java.lang.ref.WeakReference
-import java.util.Collections
 import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.math.cos
-import kotlin.math.sin
 
 /**
  * 地图画布
@@ -67,9 +65,9 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     private var mLegendView: LegendView? = null//图例
     var mUpLaserScanView: UpLaserScanView? = null//上激光点云
     var mDownLaserScanView: DownLaserScanView? = null//下激光点云
+    var mTopViewPathView: TopViewPathView? = null//顶视路线
 
-    //    var mTopViewPathView: TopViewPathView? = null//顶视路线
-//    var mAreasView: AreasView? = null//区域
+    //    var mAreasView: AreasView? = null//区域
 //    var mMixAreasView: MixedAreasView? = null//混行区域
 //    var mPathView: PathView? = null//路线PP
     var mRobotView: RobotView? = null //机器人图标
@@ -103,7 +101,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
 //        mOnlinePoseView = OnlinePoseView(context, mMapView)
         mUpLaserScanView = UpLaserScanView(context, mMapView)
         mDownLaserScanView = DownLaserScanView(context, mMapView)
-//        mTopViewPathView = TopViewPathView(context, mMapView)
+        mTopViewPathView = TopViewPathView(context, mMapView)
 //        mAreasView = AreasView(context, mMapView)
 //        mMixAreasView = MixedAreasView(context, mMapView)
         mLegendView = LegendView(context, attrs, mMapView)
@@ -126,7 +124,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         //显示虚拟墙
         addMapLayers(mWallView)
         //顶视路线
-//        addMapLayers(mTopViewPathView)
+        addMapLayers(mTopViewPathView)
         //清扫区域 区域
 //        addMapLayers(mAreasView)
 
@@ -135,7 +133,6 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
 
 //        addView(mPolygonEditView)
 
-//        addMapLayers(mTopViewPathView)
 //        addMapLayers(mMixAreasView)
 //        addMapLayers(mPathView)
 //        addMapLayers(mHomeDockView)
@@ -444,8 +441,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     /**
      * 设置顶视路线
      */
-    fun setTopViewPath() {
-//        mTopViewPathView!!.setTopViewPath()
+    fun setTopViewPathDada(data: MutableList<MergedPoseItem>) {
+        mTopViewPathView?.setTopViewPath(data)
     }
 
     /**

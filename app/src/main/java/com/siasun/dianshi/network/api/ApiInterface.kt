@@ -3,6 +3,7 @@ package com.siasun.dianshi.network.api
 import VirtualWallNew
 import com.siasun.dianshi.network.request.RequestCommonMapId
 import com.pnc.core.network.response.BaseResponse
+import com.siasun.dianshi.bean.MergedPoseBean
 import com.siasun.dianshi.network.request.RequestSaveVirtualWall
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -200,8 +201,8 @@ interface ApiInterface {
 //    @POST("/get_init_pose")
 //    suspend fun getInitPose(@Body data: RequestCommonMapId): BaseResponse<InitPoseRoot>
 //
-//    @POST("/get_merged_pose")
-//    suspend fun getMergedPose(@Body date: RequestCommonMapId): BaseResponse<MergedPoseBean>
+    @POST("/get_merged_pose")
+    suspend fun getMergedPose(@Body date: RequestCommonMapId): BaseResponse<MergedPoseBean>
 //
 //    @POST("/save_cms_elevator")
 //    suspend fun saveCmsElevator(@Body data: RequestCmsElevator): BaseResponse<Any>
