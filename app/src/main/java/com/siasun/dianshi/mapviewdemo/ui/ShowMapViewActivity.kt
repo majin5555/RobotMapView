@@ -77,17 +77,21 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             mBinding.mapView.setVirtualWall(it)
         }
 
-        //获取顶视路线
+        //加载顶视路线
         mViewModel.getMergedPose(mapId, onComplete = { mergedPoses ->
             mergedPoses?.data?.let {
                 mBinding.mapView.setTopViewPathDada(it)
             }
         })
-        //获取上线点
+        //加载上线点
         mViewModel.getInitPose(mapId, onComplete = { initPoses ->
             initPoses?.let {
                 mBinding.mapView.setInitPoseList(it.Initposes)
             }
+        })
+        //加载站点
+        mViewModel.getStationData(mapId, onComplete = { cmsStation ->
+            mBinding.mapView.setCmsStations(cmsStation)
         })
     }
 }

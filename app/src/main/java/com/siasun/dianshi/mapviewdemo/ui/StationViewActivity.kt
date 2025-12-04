@@ -82,11 +82,42 @@ class StationViewActivity : BaseMvvmActivity<ActivityStationBinding, ShowMapView
             }
         }
 
+        // 设置避让点点击监听器
+        mBinding.mapView.setOnStationClickListener(object :
+            com.siasun.dianshi.view.StationsView.OnStationClickListener {
+            @RequiresApi(Build.VERSION_CODES.R)
+            override fun onStationClick(station: com.siasun.dianshi.bean.CmsStation) {
+                // 处理避让点点击事件
+                LogUtil.d("点击了避让点: ${station.evName}")
+                // 这里可以根据需要显示编辑对话框或其他操作
+                showEditStationDialog(station)
+            }
+        })
 
         mViewModel.getStationData(mapId, onComplete = { cmsStation ->
             LogUtil.d(cmsStation.toString())
             mBinding.mapView.setCmsStations(cmsStation)
         })
+    }
+
+    /**
+     * 显示编辑避让点对话框
+     */
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun showEditStationDialog(station: com.siasun.dianshi.bean.CmsStation) {
+        // 这里可以调用XpopUtils显示编辑对话框，类似于btnCreate的实现
+        XpopUtils(this).showCmsStationDialog(onConfirmCall = { result ->
+            result?.let {
+                // 更新避让点数据
+                LogUtil.d("更新避让点: $result")
+                // 这里可以调用ViewModel保存更新后的避让点
+//                mViewModel.updateCmsStation(mapId, it)
+            }
+        }, onDeleteCall = {
+            // 删除避让点
+            LogUtil.d("删除避让点: ${station.evName}")
+//                mViewModel.deleteCmsStation(mapId, station)
+        }, mapId, cmsStation = station)
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
@@ -106,6 +137,14 @@ class StationViewActivity : BaseMvvmActivity<ActivityStationBinding, ShowMapView
         }
 
         mBinding.btnConfirm.onClick {
+
+        }
+        mBinding.btnEdit.onClick {
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CMS_STATION_EDIT)
+
+        }
+        mBinding.btnNormal.onClick {
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SHOW_MAP)
 
         }
 

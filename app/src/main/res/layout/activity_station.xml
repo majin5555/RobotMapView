@@ -17,6 +17,30 @@
 
         <!--确定-->
         <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@mipmap/btn_confirm"
+            android:text="编辑"
+            android:textSize="17sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/btn_normal"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!--确定-->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_normal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@mipmap/btn_confirm"
+            android:text="普通"
+            android:textSize="17sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/btn_create"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!--确定-->
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_create"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

@@ -38,7 +38,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         MODE_SHOW_MAP,         // 移动地图模式
         MODE_VIRTUAL_WALL_ADD, // 创建虚拟墙模式
         MODE_VIRTUAL_WALL_EDIT,// 编辑虚拟墙模式
-        MODE_VIRTUAL_WALL_DELETE // 删除虚拟墙模式
+        MODE_VIRTUAL_WALL_DELETE, // 删除虚拟墙模式
+        MODE_CMS_STATION_EDIT  // 修改避让点模式
     }
 
     // 当前工作模式
@@ -96,7 +97,6 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         val lp =
             LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         mPngMapView = PngMapView(context)
-        mWallView = VirtualLineView(context, mMapView)
         mWallView = VirtualLineView(context, mMapView)
 //        mHomeDockView = HomeDockView(context, mMapView)
         mStationView = StationsView(context, mMapView)
@@ -458,6 +458,11 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      * 设置避让点
      */
     fun setCmsStations(list: MutableList<CmsStation>?) = mStationView?.setCmsStations(list)
+    
+    /**
+     * 设置避让点点击监听器
+     */
+    fun setOnStationClickListener(listener: StationsView.OnStationClickListener) = mStationView?.setOnStationClickListener(listener)
 
     /**
      * 设置工作模式
@@ -466,6 +471,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         currentWorkMode = mode
         // 将工作模式传递给虚拟墙视图
         mWallView?.setWorkMode(mode)
+        // 将工作模式传递给避让点视图
+        mStationView?.setWorkMode(mode)
     }
 
     /**
