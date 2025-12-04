@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.siasun.dianshi.network.request.RequestCommonMapId
 import com.pnc.core.network.callback.IApiErrorCallback
+import com.siasun.dianshi.bean.InitPoseRoot
 import com.siasun.dianshi.bean.MergedPoseBean
 import com.siasun.dianshi.network.manager.ApiManager
 import com.siasun.dianshi.network.request.RequestSaveVirtualWall
@@ -64,7 +65,7 @@ class ShowMapViewModel : BaseViewModel() {
      * 获取定位页面数据
      * 虚拟墙,上线点,顶视路线
      */
-    fun getLocationDate(layerId: Int, onComplete: (mergedPoses: MergedPoseBean?) -> Unit) {
+    fun getMergedPose(layerId: Int, onComplete: (mergedPoses: MergedPoseBean?) -> Unit) {
         viewModelScope.launch {
 
             val mergedDeferred = async {
@@ -72,6 +73,23 @@ class ShowMapViewModel : BaseViewModel() {
             }
             val mergedPoses = mergedDeferred.await()
             onComplete.invoke(mergedPoses.data)
+        }
+    }
+
+    /**
+     * 获取定位页面数据
+     *  上线点
+     */
+    fun getInitPose(
+        layerId: Int, onComplete: (initPoses: InitPoseRoot?) -> Unit
+    ) {
+
+        viewModelScope.launch {
+            val poseDeferred = async {
+                ApiManager.api.getInitPose(RequestCommonMapId(layerId))
+            }
+            val initPoses = poseDeferred.await()
+            onComplete.invoke(initPoses.data)
         }
     }
 }

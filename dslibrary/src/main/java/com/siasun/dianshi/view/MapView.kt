@@ -15,6 +15,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import com.ngu.lcmtypes.laser_t
 import com.ngu.lcmtypes.robot_control_t
+import com.siasun.dianshi.bean.InitPose
 import com.siasun.dianshi.bean.MapData
 import com.siasun.dianshi.bean.MergedPoseItem
 import com.siasun.dianshi.utils.CoordinateConversion
@@ -61,7 +62,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
 
     //    var mHomeDockView: HomeDockView? = null//充电站
 //    var mStationView: StationsView? = null//站点
-//    var mOnlinePoseView: OnlinePoseView? = null//上线点
+    var mOnlinePoseView: OnlinePoseView? = null//上线点
     private var mLegendView: LegendView? = null//图例
     var mUpLaserScanView: UpLaserScanView? = null//上激光点云
     var mDownLaserScanView: DownLaserScanView? = null//下激光点云
@@ -98,7 +99,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mWallView = VirtualLineView(context, mMapView)
 //        mHomeDockView = HomeDockView(context, mMapView)
 //        mStationView = StationsView(context, mMapView)
-//        mOnlinePoseView = OnlinePoseView(context, mMapView)
+        mOnlinePoseView = OnlinePoseView(context, mMapView)
         mUpLaserScanView = UpLaserScanView(context, mMapView)
         mDownLaserScanView = DownLaserScanView(context, mMapView)
         mTopViewPathView = TopViewPathView(context, mMapView)
@@ -115,7 +116,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         //显示站点
 //        addMapLayers(mStationView)
         //上线点
-//        addMapLayers(mOnlinePoseView)
+        addMapLayers(mOnlinePoseView)
         //上激光点云
         addMapLayers(mUpLaserScanView)
         //下激光点云
@@ -371,7 +372,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      * 设置当前地图名称
      */
     fun setMapName(name: String) {
-//        mLegendView?.setMapName(name)
+        mLegendView?.setMapName(name)
     }
 
     /**
@@ -387,13 +388,6 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      */
     fun getVirtualWall() = mWallView?.getVirtualWall()
 
-
-    /**
-     * 设置上线点
-     */
-//    fun setInitPosts(initPoseList: MutableList<InitPose>) {
-//        mOnlinePoseView?.setInitPosts(initPoseList)
-//    }
 
     /**
      * 设置上激光点云数据源
@@ -443,6 +437,13 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      */
     fun setTopViewPathDada(data: MutableList<MergedPoseItem>) {
         mTopViewPathView?.setTopViewPath(data)
+    }
+
+    /**
+     * 设置上线点
+     */
+    fun setInitPoseList(data: MutableList<InitPose>) {
+        mOnlinePoseView?.setInitPoses(data)
     }
 
     /**

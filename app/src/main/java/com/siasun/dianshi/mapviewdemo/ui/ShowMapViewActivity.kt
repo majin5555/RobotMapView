@@ -47,8 +47,6 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             })
 
 
-        loadData()
-
         //上激光点云
         LiveEventBus.get<laser_t>(KEY_CURRENT_POINT_CLOUD).observe(this) {
             mBinding.mapView.setUpLaserScan(it)
@@ -80,23 +78,16 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         }
 
         //获取顶视路线
-        mViewModel.getLocationDate(mapId, onComplete = { mergedPoses ->
+        mViewModel.getMergedPose(mapId, onComplete = { mergedPoses ->
             mergedPoses?.data?.let {
                 mBinding.mapView.setTopViewPathDada(it)
             }
         })
-    }
-
-    private fun loadData() {
-
-//        lifecycleScope.launch(Dispatchers.IO) {
-//            loadVirtualWall(mapId)?.let {
-//                mBinding.mapView.setVirtualWallLines(it.LAYER[0].LINE)
-//            }
-//            //读取上线点文件
-//            loadInitPose(mapId)?.let {
-//                mBinding.mapView.setInitPosts(it.Initposes)
-//            }
-//        }
+        //获取上线点
+        mViewModel.getInitPose(mapId, onComplete = { initPoses ->
+            initPoses?.let {
+                mBinding.mapView.setInitPoseList(it.Initposes)
+            }
+        })
     }
 }

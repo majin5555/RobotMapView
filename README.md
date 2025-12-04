@@ -49,3 +49,10 @@
 # mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_DELETE)
 
 -----------------------------------------
+# 加载顶视路线
+# mBinding.mapView.setTopViewPathDada(it)
+
+-----------------------------------------
+# 加载上线点
+# mBinding.mapView.setInitPoseList(it.Initposes)
+
