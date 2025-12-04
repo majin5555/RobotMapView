@@ -133,8 +133,8 @@ class VirtualLineView(
                         // 绘制绿色实心端点圆
                         val originalSelectedStyle = mSelectedPaint.style
                         mSelectedPaint.style = Paint.Style.FILL
-                        canvas.drawCircle(start.x, start.y, scaledRadius, mSelectedPaint)
-                        canvas.drawCircle(end.x, end.y, scaledRadius, mSelectedPaint)
+                        drawCircle(canvas, start.x, start.y, scaledRadius, mSelectedPaint)
+                        drawCircle(canvas, end.x, end.y, scaledRadius, mSelectedPaint)
                         mSelectedPaint.style = originalSelectedStyle
                     } else {
                         canvas.drawLine(start.x, start.y, end.x, end.y, mPaint)
@@ -142,8 +142,8 @@ class VirtualLineView(
                         // 绘制实心端点圆
                         val originalStyle = mPaint.style
                         mPaint.style = Paint.Style.FILL
-                        canvas.drawCircle(start.x, start.y, scaledRadius, mPaint)
-                        canvas.drawCircle(end.x, end.y, scaledRadius, mPaint)
+                        drawCircle(canvas, start.x, start.y, scaledRadius, mPaint)
+                        drawCircle(canvas, end.x, end.y, scaledRadius, mPaint)
                         mPaint.style = originalStyle
                     }
                 }
@@ -179,8 +179,8 @@ class VirtualLineView(
                 // 绘制实心端点圆
                 val originalStyle = mPaint.style
                 mPaint.style = Paint.Style.FILL
-                canvas.drawCircle(startPoint!!.x, startPoint!!.y, scaledRadius, mPaint)
-                canvas.drawCircle(currentPoint!!.x, currentPoint!!.y, scaledRadius, mPaint)
+                drawCircle(canvas, startPoint!!.x, startPoint!!.y, scaledRadius, mPaint)
+                drawCircle(canvas, currentPoint!!.x, currentPoint!!.y, scaledRadius, mPaint)
                 mPaint.style = originalStyle
             }
         }

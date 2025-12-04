@@ -5,7 +5,9 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.siasun.dianshi.network.request.RequestCommonMapId
 import com.pnc.core.network.callback.IApiErrorCallback
+import com.siasun.dianshi.bean.CmsStation
 import com.siasun.dianshi.bean.InitPoseRoot
+import com.siasun.dianshi.bean.MachineStation
 import com.siasun.dianshi.bean.MergedPoseBean
 import com.siasun.dianshi.network.manager.ApiManager
 import com.siasun.dianshi.network.request.RequestSaveVirtualWall
@@ -21,6 +23,9 @@ import kotlinx.coroutines.launch
 class ShowMapViewModel : BaseViewModel() {
     val saveVirtualWall = MutableLiveData<Boolean>()
     val getVirtualWall = MutableLiveData<VirtualWallNew>()
+
+    val saveMachineStationLiveData = MutableLiveData<Boolean>()
+    val saveCmsStationLiveData = MutableLiveData<Boolean>()
 
     /**
      * 保存虚拟墙
@@ -92,4 +97,50 @@ class ShowMapViewModel : BaseViewModel() {
             onComplete.invoke(initPoses.data)
         }
     }
+
+
+    fun getStationData(
+        layerId: Int,
+        onComplete: (cmsStations: MutableList<CmsStation>?) -> Unit
+    ) {
+        viewModelScope.launch {
+
+            val cmsStationDeferred = async {
+                ApiManager.api.getCmsStation(RequestCommonMapId(layerId))
+            }
+
+            val cmsStations = cmsStationDeferred.await()
+
+            onComplete.invoke(cmsStations.data)
+
+        }
+    }
+
+//    fun saveMachineStation(machineStation: MutableList<MachineStation>) {
+//        launchUIWithResult(responseBlock = {
+//            val requestGetArea = RequestMachineStation(machineStation)
+//            ApiManager.api.saveMachineStation(requestGetArea)
+//        }, errorCall = object : IApiErrorCallback {
+//            override fun onError(code: Int?, error: String?) {
+//                saveMachineStationLiveData.postValue(false)
+//            }
+//        }, successBlock = {
+//            saveMachineStationLiveData.postValue(true)
+//        })
+//    }
+
+
+//    fun saveCmsStation(mapId: Int, cmsStation: MutableList<CmsStation>) {
+//        launchUIWithResult(responseBlock = {
+//            val saveCmsStation = RequestCmsStation(mapId, cmsStation)
+//            ApiManager.api.saveCmsStation(saveCmsStation)
+//        }, errorCall = object : IApiErrorCallback {
+//            override fun onError(code: Int?, error: String?) {
+//                saveCmsStationLiveData.postValue(false)
+//            }
+//        }, successBlock = {
+//            saveCmsStationLiveData.postValue(true)
+//        })
+//    }
+
 }

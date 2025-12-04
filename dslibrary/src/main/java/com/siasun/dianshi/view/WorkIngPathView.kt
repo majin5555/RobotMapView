@@ -40,7 +40,8 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
         //绘制实时路径
         pathList?.forEach {
             val point = parent.get()!!.worldToScreen(it.x, it.y)
-            canvas.drawCircle(
+            drawCircle(
+                canvas,
                 point.x, point.y, radius * scale, mPaint
             )
         }

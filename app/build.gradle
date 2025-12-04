@@ -145,6 +145,8 @@ dependencies {
     api(libs.dialogX)
     api(libs.iqiyi.xcrash)
     api(libs.baseRecyclerView)
+    api(libs.brvah)
+    api(libs.xpopup)
 
     // 以 Room 为例
     api(libs.roomtime) {

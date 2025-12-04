@@ -15,6 +15,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import com.ngu.lcmtypes.laser_t
 import com.ngu.lcmtypes.robot_control_t
+import com.siasun.dianshi.bean.CmsStation
 import com.siasun.dianshi.bean.InitPose
 import com.siasun.dianshi.bean.MapData
 import com.siasun.dianshi.bean.MergedPoseItem
@@ -61,7 +62,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     var mWallView: VirtualLineView? = null//虚拟墙
 
     //    var mHomeDockView: HomeDockView? = null//充电站
-//    var mStationView: StationsView? = null//站点
+    var mStationView: StationsView? = null//站点
     var mOnlinePoseView: OnlinePoseView? = null//上线点
     private var mLegendView: LegendView? = null//图例
     var mUpLaserScanView: UpLaserScanView? = null//上激光点云
@@ -98,7 +99,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mWallView = VirtualLineView(context, mMapView)
         mWallView = VirtualLineView(context, mMapView)
 //        mHomeDockView = HomeDockView(context, mMapView)
-//        mStationView = StationsView(context, mMapView)
+        mStationView = StationsView(context, mMapView)
         mOnlinePoseView = OnlinePoseView(context, mMapView)
         mUpLaserScanView = UpLaserScanView(context, mMapView)
         mDownLaserScanView = DownLaserScanView(context, mMapView)
@@ -113,8 +114,9 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         addView(mPngMapView, lp)
 
 
-        //显示站点
-//        addMapLayers(mStationView)
+//        addMapLayers(mHomeDockView)
+        //显示避让点
+        addMapLayers(mStationView)
         //上线点
         addMapLayers(mOnlinePoseView)
         //上激光点云
@@ -136,7 +138,6 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
 
 //        addMapLayers(mMixAreasView)
 //        addMapLayers(mPathView)
-//        addMapLayers(mHomeDockView)
 
         //  修改LegendView的布局参数，使其显示在右上角
         addView(mLegendView, LayoutParams(
@@ -452,6 +453,11 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     fun setChargeStation() {
 //        mHomeDockView?.setHomePose()
     }
+
+    /**
+     * 设置避让点
+     */
+    fun setCmsStations(list: MutableList<CmsStation>?) = mStationView?.setCmsStations(list)
 
     /**
      * 设置工作模式

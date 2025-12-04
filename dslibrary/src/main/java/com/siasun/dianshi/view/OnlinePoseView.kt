@@ -29,7 +29,7 @@ class OnlinePoseView(context: Context?, parent: WeakReference<MapView>) :
         private const val BASE_TEXT_SIZE = 10f
 
         // 标签偏移量（像素）
-        private const val LABEL_OFFSET = 15f
+        const val LABEL_OFFSET = 15f
     }
 
     // 绘制画笔
@@ -66,8 +66,8 @@ class OnlinePoseView(context: Context?, parent: WeakReference<MapView>) :
             // 绘制原点
             if (isOriginDrawingEnabled) {
                 // 设置绘制参数（根据缩放比例调整）
-                paint.strokeWidth = BASE_LINE_WIDTH * scale
-                paint.textSize = BASE_TEXT_SIZE * scale
+                paint.strokeWidth = BASE_LINE_WIDTH
+                paint.textSize = BASE_TEXT_SIZE
 
                 drawOriginPoint(canvas, it)
 
@@ -92,8 +92,13 @@ class OnlinePoseView(context: Context?, parent: WeakReference<MapView>) :
 
             // 绘制原点标签
             drawLabel(
-                canvas, context!!.getString(R.string.origin_point), originPoint.x, originPoint.y
+                canvas,
+                context!!.getString(R.string.origin_point),
+                originPoint.x + LABEL_OFFSET,
+                originPoint.y + LABEL_OFFSET,
+                paint
             )
+
         }
     }
 
@@ -122,7 +127,7 @@ class OnlinePoseView(context: Context?, parent: WeakReference<MapView>) :
                 )
 
                 // 绘制上线点标签
-                drawLabel(canvas, initPose.name, point.x, point.y)
+                drawLabel(canvas, initPose.name, point.x, point.y, paint)
             }
         }
     }
@@ -154,18 +159,6 @@ class OnlinePoseView(context: Context?, parent: WeakReference<MapView>) :
         canvas.drawBitmap(bitmap, transformMatrix, paint)
     }
 
-    /**
-     * 绘制标签
-     * @param canvas 画布
-     * @param text 标签文本
-     * @param x 图标中心 x 坐标
-     * @param y 图标中心 y 坐标
-     */
-    private fun drawLabel(canvas: Canvas, text: String, x: Float, y: Float) {
-        canvas.drawText(
-            text, x + LABEL_OFFSET * scale, y + LABEL_OFFSET * scale, paint
-        )
-    }
 
     /**
      * 设置上线点列表

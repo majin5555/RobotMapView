@@ -1,8 +1,10 @@
 package com.siasun.dianshi.view
 
 import android.content.Context
+import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Matrix
+import android.graphics.Paint
 import android.view.ViewGroup
 import com.siasun.dianshi.utils.RadianUtil
 import java.lang.ref.WeakReference
@@ -40,5 +42,20 @@ abstract class SlamWareBaseView(context: Context?, parent: WeakReference<MapView
         mMatrix = matrix
         mRotation += RadianUtil.toAngel(rotation)
         postInvalidate()
+    }
+
+    /**
+     * 绘制标签
+     * @param canvas 画布
+     * @param text 标签文本
+     * @param x 图标中心 x 坐标
+     * @param y 图标中心 y 坐标
+     */
+    fun drawLabel(canvas: Canvas, text: String, x: Float, y: Float, paint: Paint) {
+        canvas.drawText(text, x, y, paint)
+    }
+
+    fun drawCircle(canvas: Canvas, x: Float, y: Float, radius: Float, paint: Paint) {
+        canvas.drawCircle(x, y, radius, paint)
     }
 }

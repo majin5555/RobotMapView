@@ -58,6 +58,8 @@ xcrash = "3.0.0"
 baseRecyclerViewVersion = "4.1.4"
 shapeViewVersion = "9.6"
 shapeDrawableVersion = "3.3"
+brvahVersion = "4.1.4"
+xpopupVersion = "2.10.0"
 
 
 [libraries]
@@ -127,7 +129,8 @@ dialogX = { group = "com.github.kongzue.DialogX", name = "DialogX", version.ref 
 baseRecyclerView = { group = "io.github.cymchad", name = "BaseRecyclerViewAdapterHelper4", version.ref = "baseRecyclerViewVersion" }
 shapeView = { group = "com.github.getActivity", name = "ShapeView", version.ref = "shapeViewVersion" }
 shapeDrawable = { group = "com.github.getActivity", name = "ShapeDrawable", version.ref = "shapeDrawableVersion" }
-
+brvah = { group = "io.github.cymchad", name = "BaseRecyclerViewAdapterHelper4", version.ref = "brvahVersion" }
+xpopup = { group = "com.github.li-xiaojun", name = "XPopup", version.ref = "xpopupVersion" }
 
 
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

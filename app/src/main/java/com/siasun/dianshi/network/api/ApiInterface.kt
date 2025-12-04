@@ -3,6 +3,7 @@ package com.siasun.dianshi.network.api
 import VirtualWallNew
 import com.siasun.dianshi.network.request.RequestCommonMapId
 import com.pnc.core.network.response.BaseResponse
+import com.siasun.dianshi.bean.CmsStation
 import com.siasun.dianshi.bean.InitPoseRoot
 import com.siasun.dianshi.bean.MergedPoseBean
 import com.siasun.dianshi.network.request.RequestSaveVirtualWall
@@ -193,8 +194,8 @@ interface ApiInterface {
 //    @POST("/save_cms_stations_data")
 //    suspend fun saveCmsStation(@Body data: RequestCmsStation): BaseResponse<Any>
 //
-//    @POST("/get_cms_stations_data")
-//    suspend fun getCmsStation(@Body data: RequestCommonMapId): BaseResponse<MutableList<CmsStation>>
+    @POST("/get_cms_stations_data")
+    suspend fun getCmsStation(@Body data: RequestCommonMapId): BaseResponse<MutableList<CmsStation>>
 //
 //    @POST("/save_init_pose")
 //    suspend fun saveInitPose(@Body init: RequestInitPose): BaseResponse<Any>

@@ -2,4 +2,14 @@
     <string name="app_name">mapViewDemo</string>
     <string name="default_loading">加载中…</string>
     <string name="base_app_exit_one_more_press">再按一次退出程序</string>
+
+    <string name="cms_station_title">避让点管理</string>
+    <string name="add_cms_station">添加避让点</string>
+    <string name="cms_station_coordinate">避让点坐标</string>
+    <string name="cms_station_name">避让点名称</string>
+    <string name="cms_locate_input_e">请输入避让点坐标</string>
+    <string name="cms_station_name_input_e">请输入避让点名称</string>
+    <string name="cms_station_point">避让点</string>
+    <string name="delete_cms_station">确认删除该避障点吗?</string>
+    <string name="cms_station_point_rotate">避让点是否旋转对应角度</string>
 </resources>

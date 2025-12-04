@@ -13,4 +13,14 @@
     <string name="world_coordinate">世界坐标</string>
     <string name="screen_coordinate">屏幕->世界坐标</string>
     <string name="origin_point">原点</string>
+    <string name="cms_station">避障点</string>
+    <string name="station1">停车点</string>
+    <string name="station2">准备点</string>
+    <string name="station3">等待点</string>
+    <string name="gate_point">梯外点</string>
+    <string name="pst_park_point">梯内点</string>
+    <string name="machine_locate_point">一体机对接点</string>
+    <string name="machine_gate_point">一体机准备点</string>
+    <string name="machine_wait_point">等待点</string>
+    <string name="machine_finish_point">临时停车点</string>
 </resources>
