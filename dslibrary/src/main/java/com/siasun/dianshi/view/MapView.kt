@@ -16,6 +16,7 @@ import android.widget.ImageView
 import com.ngu.lcmtypes.laser_t
 import com.ngu.lcmtypes.robot_control_t
 import com.siasun.dianshi.bean.CmsStation
+import com.siasun.dianshi.bean.ElevatorPoint
 import com.siasun.dianshi.bean.InitPose
 import com.siasun.dianshi.bean.MachineStation
 import com.siasun.dianshi.bean.MapData
@@ -62,9 +63,10 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     private var mPngMapView: PngMapView? = null //png地图
 
     var mWallView: VirtualLineView? = null//虚拟墙
-    private var mHomeDockView: HomeDockView? = null//充电站
-    private var mStationView: StationsView? = null//站点
-    private var mOnlinePoseView: OnlinePoseView? = null//上线点
+    var mHomeDockView: HomeDockView? = null//充电站
+    var mElevatorView: ElevatorView? = null//乘梯点
+    var mStationView: StationsView? = null//站点
+    var mOnlinePoseView: OnlinePoseView? = null//上线点
     private var mLegendView: LegendView? = null//图例
     var mUpLaserScanView: UpLaserScanView? = null//上激光点云
     var mDownLaserScanView: DownLaserScanView? = null//下激光点云
@@ -99,6 +101,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mPngMapView = PngMapView(context)
         mWallView = VirtualLineView(context, mMapView)
         mHomeDockView = HomeDockView(context, mMapView)
+        mElevatorView = ElevatorView(context, mMapView)
         mStationView = StationsView(context, mMapView)
         mOnlinePoseView = OnlinePoseView(context, mMapView)
         mUpLaserScanView = UpLaserScanView(context, mMapView)
@@ -115,6 +118,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
 
         //充电站
         addMapLayers(mHomeDockView)
+        //乘梯点
+        addMapLayers(mElevatorView)
         //显示避让点
         addMapLayers(mStationView)
         //上线点
@@ -332,31 +337,29 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         }
     }
 
-    fun setSingleTapListener(singleTapListener: ISingleTapListener?) {
-        mSingleTapListener = singleTapListener
-    }
-
-    interface ISingleTapListener {
-        fun onSingleTapListener(event: MotionEvent?)
-    }
 
     override fun onDetachedFromWindow() {
         mapLayers.clear()
         super.onDetachedFromWindow()
     }
 
-    /***
-     * 设置地图显示
-     */
-    fun setSlamMapViewShow(visibility: Int) {
-        mPngMapView!!.visibility = visibility
-    }
 
     /**
      * ******************************************************
      * *******************      外部接口        **************
      * ******************************************************
      */
+
+    /**
+     * 设置工作模式
+     */
+    fun setWorkMode(mode: WorkMode) {
+        currentWorkMode = mode
+        // 将工作模式传递给虚拟墙视图
+        mWallView?.setWorkMode(mode)
+        // 将工作模式传递给避让点视图
+        mStationView?.setWorkMode(mode)
+    }
 
     /**
      * 设置地图数据信息
@@ -371,6 +374,12 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         setCentred()
     }
 
+    /***
+     * 设置地图显示
+     */
+    fun setSlamMapViewShow(visibility: Int) {
+        mPngMapView!!.visibility = visibility
+    }
 
     /**
      * 设置当前地图名称
@@ -463,21 +472,10 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     fun setCmsStations(list: MutableList<CmsStation>?) = mStationView?.setCmsStations(list)
 
     /**
-     * 设置避让点点击监听器
+     * 设置乘梯点
      */
-    fun setOnStationClickListener(listener: StationsView.OnStationClickListener) =
-        mStationView?.setOnStationClickListener(listener)
+    fun setElevators(list: MutableList<ElevatorPoint>?) = mElevatorView?.setElevators(list)
 
-    /**
-     * 设置工作模式
-     */
-    fun setWorkMode(mode: WorkMode) {
-        currentWorkMode = mode
-        // 将工作模式传递给虚拟墙视图
-        mWallView?.setWorkMode(mode)
-        // 将工作模式传递给避让点视图
-        mStationView?.setWorkMode(mode)
-    }
 
     /**
      * 获取当前工作模式
@@ -500,4 +498,30 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     fun confirmEditVirtualWall() {
         mWallView?.confirmEditVirtualWall()
     }
+
+    /**
+     * ******************************************************
+     * *******************      监听接口        **************
+     * ******************************************************
+     */
+
+
+    /**
+     * 设置避让点点击监听器
+     */
+    fun setOnStationClickListener(listener: StationsView.OnStationClickListener) =
+        mStationView?.setOnStationClickListener(listener)
+
+    /**
+     * 手指抬起监听
+     */
+    fun setSingleTapListener(singleTapListener: ISingleTapListener?) {
+        mSingleTapListener = singleTapListener
+    }
+
+    interface ISingleTapListener {
+        fun onSingleTapListener(event: MotionEvent?)
+    }
+
+
 }

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.siasun.dianshi.network.request.RequestCommonMapId
 import com.pnc.core.network.callback.IApiErrorCallback
 import com.siasun.dianshi.bean.CmsStation
+import com.siasun.dianshi.bean.ElevatorPoint
 import com.siasun.dianshi.bean.InitPoseRoot
 import com.siasun.dianshi.bean.MachineStation
 import com.siasun.dianshi.bean.MergedPoseBean
@@ -126,6 +127,26 @@ class ShowMapViewModel : BaseViewModel() {
             onComplete.invoke(cmsStations.data)
 
         }
+    }
+
+    /**
+     * 获取称梯点
+     */
+    fun getCmsElevator(
+        layerId: Int,
+        onComplete: (cmsStations: MutableList<ElevatorPoint>?) -> Unit
+    ) {
+        launchUIWithResult(responseBlock = {
+            ApiManager.api.getCmsElevator(RequestCommonMapId(layerId))
+        }, errorCall = object : IApiErrorCallback {
+            override fun onError(code: Int?, error: String?) {
+                super.onError(code, error)
+            }
+        }, successBlock = {
+            it?.let {
+                onComplete.invoke(it.elevators)
+            }
+        })
     }
 
 //    fun saveMachineStation(machineStation: MutableList<MachineStation>) {

@@ -77,7 +77,6 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mViewModel.getVirtualWall.observe(this) {
             mBinding.mapView.setVirtualWall(it)
         }
-
         //加载顶视路线
         mViewModel.getMergedPose(mapId, onComplete = { mergedPoses ->
             mergedPoses?.data?.let {
@@ -101,5 +100,10 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             mBinding.mapView.setMachineStation(result)
         })
 
+        //加载乘梯点
+        mViewModel.getCmsElevator(mapId, onComplete = { elevatorPoint ->
+            LogUtil.d("获取乘梯点 $elevatorPoint")
+            mBinding.mapView.setElevators(elevatorPoint)
+        })
     }
 }

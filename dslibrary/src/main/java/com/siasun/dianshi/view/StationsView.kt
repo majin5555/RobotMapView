@@ -45,6 +45,9 @@ class StationsView(context: Context?, var parent: WeakReference<MapView>) :
         this.onStationClickListener = listener
     }
 
+    // 控制是否绘制
+    private var isDrawingEnabled: Boolean = true
+
     init {
         mPaint.setColor(Color.RED)
         mPaint.isAntiAlias = true
@@ -55,43 +58,42 @@ class StationsView(context: Context?, var parent: WeakReference<MapView>) :
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        // 清空之前的屏幕坐标映射
-        stationScreenPositions.clear()
+        if (isDrawingEnabled) {
 
-        cmsStations.forEach { station ->
-            station.coordinate?.let {
-                val locate = parent.get()!!.worldToScreen(it.x, it.y)
-                // 保存避让点的屏幕坐标，用于点击检测
-                stationScreenPositions[station] = Pair(locate.x, locate.y)
+            // 清空之前的屏幕坐标映射
+            stationScreenPositions.clear()
 
-                // 根据工作模式调整绘制样式
-                if (currentWorkMode == MapView.WorkMode.MODE_CMS_STATION_EDIT) {
-                    // 修改避让点模式下，绘制更大的圆圈和更粗的边框，增加视觉提示
-                    mPaint.color = Color.GREEN
-                    mPaint.style = Paint.Style.STROKE
-                    mPaint.strokeWidth = 3f
-                    drawCircle(canvas, locate, radius + 5, mPaint)
+            cmsStations.forEach { station ->
+                station.coordinate?.let {
+                    val locate = parent.get()!!.worldToScreen(it.x, it.y)
+                    // 保存避让点的屏幕坐标，用于点击检测
+                    stationScreenPositions[station] = Pair(locate.x, locate.y)
 
-                    // 恢复填充样式和颜色
-                    mPaint.style = Paint.Style.FILL
-                    mPaint.color = Color.RED
-                    drawCircle(canvas, locate, radius, mPaint)
-                } else {
-                    // 普通模式下，保持原有的绘制样式
-                    mPaint.color = Color.RED
-                    mPaint.style = Paint.Style.FILL
-                    drawCircle(canvas, locate, radius, mPaint)
+                    // 根据工作模式调整绘制样式
+                    if (currentWorkMode == MapView.WorkMode.MODE_CMS_STATION_EDIT) {
+                        // 修改避让点模式下，绘制更大的圆圈和更粗的边框，增加视觉提示
+                        mPaint.color = Color.GREEN
+                        mPaint.style = Paint.Style.STROKE
+                        mPaint.strokeWidth = 3f
+                        drawCircle(canvas, locate, radius + 5, mPaint)
+
+                        // 恢复填充样式和颜色
+                        mPaint.style = Paint.Style.FILL
+                        mPaint.color = Color.RED
+                        drawCircle(canvas, locate, radius, mPaint)
+                    } else {
+                        // 普通模式下，保持原有的绘制样式
+                        mPaint.color = Color.RED
+                        mPaint.style = Paint.Style.FILL
+                        drawCircle(canvas, locate, radius, mPaint)
+                    }
+
+                    drawLabel(
+                        canvas, station.evName ?: context.getString(R.string.cms_station), PointF(
+                            locate.x, locate.y
+                        ), mPaint
+                    )
                 }
-
-                drawLabel(
-                    canvas,
-                    station.evName ?: context.getString(R.string.cms_station),
-                    PointF(
-                        locate.x,
-                        locate.y
-                    ),
-                    mPaint
-                )
             }
         }
     }
@@ -137,5 +139,13 @@ class StationsView(context: Context?, var parent: WeakReference<MapView>) :
             cmsStations.addAll(it)
             postInvalidate()
         }
+    }
+
+    /**
+     * 设置是否启用绘制
+     */
+    fun setDrawingEnabled(enabled: Boolean) {
+        this.isDrawingEnabled = enabled
+        postInvalidate()
     }
 }

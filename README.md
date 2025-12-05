@@ -125,3 +125,9 @@
 
 # mBinding.mapView.setMachineStation(result)
 
+
+-----------------------------------------
+# 加载乘梯点
+# mBinding.mapView.setElevators(elevatorPoint)
+
+-----------------------------------------

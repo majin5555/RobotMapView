@@ -23,4 +23,5 @@
     <string name="machine_gate_point">一体机准备点</string>
     <string name="machine_wait_point">等待点</string>
     <string name="machine_finish_point">临时停车点</string>
+    <string name="elevator">乘梯点</string>
 </resources>

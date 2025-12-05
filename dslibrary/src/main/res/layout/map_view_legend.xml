@@ -126,6 +126,15 @@
         app:layout_constraintStart_toStartOf="@+id/cb_lower_laser_point_cloud"
         app:layout_constraintTop_toBottomOf="@+id/cb_area" />
 
+    <CheckBox
+        android:id="@+id/cb_elevator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:checked="true"
+        android:text="@string/elevator"
+        android:textColor="#ffffff"
+        app:layout_constraintTop_toBottomOf="@+id/cb_world_path" />
+
 
     <TextView
         android:id="@+id/textView"
@@ -137,7 +146,7 @@
         android:textColor="#ffffff"
         android:textSize="16sp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/cb_world_path" />
+        app:layout_constraintTop_toBottomOf="@+id/cb_elevator" />
 
     <TextView
         android:id="@+id/tv_point_x"

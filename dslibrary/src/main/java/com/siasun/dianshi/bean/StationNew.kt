@@ -1,5 +1,7 @@
 package com.siasun.dianshi.bean
 
+import com.jeremyliao.liveeventbus.core.LiveEvent
+
 /******************************************
  * 类描述：
  *
@@ -54,5 +56,16 @@ data class StationCoordinate(
     var theta: Float = 0F,
 )
 
+/**
+ * 准备点
+ */
+
+data class Gate(var x: Float = 0f, var y: Float = 0f, var theta: Float = 0f) : LiveEvent
+
+/**
+ * 一体机对接点
+ */
+
+data class Locate(var x: Float = 0f, var y: Float = 0f, var theta: Float = 0f) : LiveEvent
 
 

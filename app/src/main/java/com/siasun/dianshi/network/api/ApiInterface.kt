@@ -4,6 +4,7 @@ import VirtualWallNew
 import com.siasun.dianshi.network.request.RequestCommonMapId
 import com.pnc.core.network.response.BaseResponse
 import com.siasun.dianshi.bean.CmsStation
+import com.siasun.dianshi.bean.ElevatorRoot
 import com.siasun.dianshi.bean.InitPoseRoot
 import com.siasun.dianshi.bean.MachineStation
 import com.siasun.dianshi.bean.MergedPoseBean
@@ -210,8 +211,8 @@ interface ApiInterface {
 //    @POST("/save_cms_elevator")
 //    suspend fun saveCmsElevator(@Body data: RequestCmsElevator): BaseResponse<Any>
 //
-//    @POST("/get_cms_elevator")
-//    suspend fun getCmsElevator(@Body date: RequestCommonMapId): BaseResponse<ElevatorRoot>
+    @POST("/get_cms_elevator")
+    suspend fun getCmsElevator(@Body date: RequestCommonMapId): BaseResponse<ElevatorRoot>
 //
 //    @POST("/trigger_hot_reload")
 //    suspend fun hotReload(@Body date:RequestHotReload):BaseResponse<BaseResponse<Any>>

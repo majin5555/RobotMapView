@@ -58,7 +58,6 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
                 parent.get()?.mWallView?.setDrawingEnabled(false) // 禁用绘制
             }
         }
-
         //顶视觉路线
         mBinding.cbTopViewPath.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
@@ -67,7 +66,43 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
                 parent.get()?.mTopViewPathView?.setDrawingEnabled(false) // 禁用绘制
             }
         }
-//        //清扫区域
+        //避让点
+        mBinding.cbStations.setOnCheckedChangeListener { _, isChecked ->
+
+            if (isChecked) {
+                parent.get()?.mStationView?.setDrawingEnabled(true) // 启用绘制
+            } else {
+                parent.get()?.mStationView?.setDrawingEnabled(false) // 禁用绘制
+            }
+        }
+        //上线点
+        mBinding.cbOnlinePose.setOnCheckedChangeListener { _, isChecked ->
+
+            if (isChecked) {
+                parent.get()?.mOnlinePoseView?.setDrawingEnabled(true) // 启用绘制
+            } else {
+                parent.get()?.mOnlinePoseView?.setDrawingEnabled(false) // 禁用绘制
+            }
+        }
+        //充电站
+        mBinding.cbChargeStation.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                parent.get()?.mHomeDockView?.setDrawingEnabled(true) // 启用绘制
+            } else {
+                parent.get()?.mHomeDockView?.setDrawingEnabled(false) // 禁用绘制
+            }
+        }
+        //乘梯点
+        mBinding.cbElevator.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                parent.get()?.mElevatorView?.setDrawingEnabled(true) // 启用绘制
+            } else {
+                parent.get()?.mElevatorView?.setDrawingEnabled(false) // 禁用绘制
+            }
+        }
+
+
+        //        //清扫区域
 //        cbArea.setOnCheckedChangeListener { _, isChecked ->
 //
 //            if (isChecked) {
@@ -92,34 +127,6 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
 //                parent.get()?.mMixAreasView?.visibility = View.VISIBLE
 //            } else {
 //                parent.get()?.mMixAreasView?.visibility = View.GONE
-//            }
-//        }
-//        //站点
-//        cbStations.setOnCheckedChangeListener { _, isChecked ->
-//
-//            if (isChecked) {
-//                parent.get()?.mStationView?.visibility = View.VISIBLE
-//            } else {
-//                parent.get()?.mStationView?.visibility = View.GONE
-//            }
-//        }
-//        //在线点
-//        cbOnlinePose.setOnCheckedChangeListener { _, isChecked ->
-//
-//            if (isChecked) {
-//                parent.get()?.mOnlinePoseView?.visibility = View.VISIBLE
-//            } else {
-//                parent.get()?.mOnlinePoseView?.visibility = View.GONE
-//            }
-//
-//        }
-//        //充电站
-//        cbChargeStation.setOnCheckedChangeListener { _, isChecked ->
-//
-//            if (isChecked) {
-//                parent.get()?.mHomeDockView?.visibility = View.VISIBLE
-//            } else {
-//                parent.get()?.mHomeDockView?.visibility = View.GONE
 //            }
 //        }
     }

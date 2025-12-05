@@ -56,7 +56,7 @@ class OnlinePoseView(context: Context?, parent: WeakReference<MapView>) :
     private val initPoseList = mutableListOf<InitPose>()
 
     // 控制是否绘制原点与上线点
-    private var isOriginDrawingEnabled = true
+    private var isDrawingEnabled = true
 
 
     // 保存parent引用以便安全访问
@@ -65,7 +65,7 @@ class OnlinePoseView(context: Context?, parent: WeakReference<MapView>) :
         super.onDraw(canvas)
         mapViewRef?.get()?.let {
             // 绘制原点
-            if (isOriginDrawingEnabled) {
+            if (isDrawingEnabled) {
                 // 设置绘制参数（根据缩放比例调整）
                 paint.strokeWidth = BASE_LINE_WIDTH
                 paint.textSize = BASE_TEXT_SIZE
@@ -187,23 +187,13 @@ class OnlinePoseView(context: Context?, parent: WeakReference<MapView>) :
         postInvalidate()
     }
 
+
     /**
-     * 设置是否绘制原点
-     * @param enabled 是否启用绘制
+     * 设置是否启用绘制
      */
-    fun setOriginDrawingEnabled(enabled: Boolean) {
-        isOriginDrawingEnabled = enabled
+    fun setDrawingEnabled(enabled: Boolean) {
+        this.isDrawingEnabled = enabled
         postInvalidate()
     }
-
-
-    /**
-     * 获取是否绘制原点
-     * @return 是否启用绘制
-     */
-    fun isOriginDrawingEnabled(): Boolean {
-        return isOriginDrawingEnabled
-    }
-
 }
 
