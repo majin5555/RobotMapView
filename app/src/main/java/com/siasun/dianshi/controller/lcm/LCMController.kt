@@ -43,9 +43,11 @@ import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.UPDATE_POS
 import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.UPDATE_SUBMAPS
 import com.siasun.dianshi.bean.CmsPadInteraction_
 import com.siasun.dianshi.bean.PlanPathResult
+import com.siasun.dianshi.bean.PositingArea
 import com.siasun.dianshi.bean.perception_t
 import com.siasun.dianshi.bean.robot_control_t_new
 import com.siasun.dianshi.controller.AbsController
+import com.siasun.dianshi.controller.MainController.sendPositingArea
 import com.siasun.dianshi.framework.log.LogUtil
 import com.siasun.dianshi.mapviewdemo.CarBody
 import com.siasun.dianshi.mapviewdemo.CmsBody
@@ -56,12 +58,14 @@ import com.siasun.dianshi.mapviewdemo.KEY_CROSS_FLOOR_STAGE
 import com.siasun.dianshi.mapviewdemo.KEY_CURRENT_POINT_CLOUD
 import com.siasun.dianshi.mapviewdemo.KEY_FINISH_CLEAN_AREA_ID
 import com.siasun.dianshi.mapviewdemo.KEY_NEXT_CLEANING_AREA_ID
+import com.siasun.dianshi.mapviewdemo.KEY_POSITING_AREA_VALUE
 import com.siasun.dianshi.mapviewdemo.KEY_SCHEDULED_TASK_REMINDER
 import com.siasun.dianshi.mapviewdemo.KEY_TASK_STATE
 import com.siasun.dianshi.mapviewdemo.NaviBody
 import com.siasun.dianshi.mapviewdemo.RunningState.CURRENT_TASK_STATE
 import com.siasun.dianshi.mapviewdemo.SERVER_HEART
 import com.siasun.dianshi.mapviewdemo.ServiceBody
+import com.siasun.dianshi.mapviewdemo.TAG_NAV
 import com.siasun.dianshi.mapviewdemo.TaskState
 import lcm.lcm.LCM
 import lcm.lcm.LCMDataInputStream
@@ -433,13 +437,14 @@ class LCMController : AbsController(), LCMSubscriber {
     /**
      * pad->导航 发送定位区域和定位方式信息
      */
-//    override fun mSendPositingArea(mapID: Int, mList: MutableList<PositingArea>) =
-//        sendPositingArea(mapID, mList)
+    override fun mSendPositingArea(mapID: Int, mList: MutableList<PositingArea>) =
+        sendPositingArea(mapID, mList)
 
 
     /**
      * pad->导航 请求定位列表数据
      */
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun mSendGetPositingArea(mapID: Int) = sendGetPositingArea(mapID)
 
     /**
@@ -603,43 +608,44 @@ class LCMController : AbsController(), LCMSubscriber {
      *
      */
     @SuppressLint("NewApi")
-//    private fun sendPositingArea(mapID: Int, mList: MutableList<PositingArea>) {
-//        val rt = robot_control_t_new()
-//        rt.commandid = 36
-//
-//        if (mList.size > 0) {
-//            rt.niparams = (1 + (mList.size * 5)).toByte()
-//            val mIparams: ByteArray = ByteArray((1 + (mList.size * 5)))
-//            mIparams[0] = (mList.size).toByte()
-//
-//            mList.forEachIndexed { index, list ->
-//                mIparams[index * 5 + 1] = list.slamMode.toByte()
-//                mIparams[index * 5 + 2] = list.longCorridorMode.toByte()
-//                mIparams[index * 5 + 3] = list.topViewFusion.toByte()
-//                mIparams[index * 5 + 4] = list.id.toByte()
-//            }
-//
-//            val mDparams: DoubleArray = DoubleArray((4 * mList.size))
-//            mList.forEachIndexed { index, list ->
-//                mDparams[index * 4] = list.start.x.toDouble()
-//                mDparams[index * 4 + 1] = list.start.y.toDouble()
-//                mDparams[index * 4 + 2] = list.end.x.toDouble()
-//                mDparams[index * 4 + 3] = list.end.y.toDouble()
-//            }
-//
-//            rt.iparams = mIparams
-//            rt.ndparams = (4 * mList.size)
-//            rt.dparams = mDparams
-//        }
-//        rt.nsparams = 1
-//        rt.sparams = arrayOf("$mapID")
-//        LogUtil.i("定位区域保存数据 mapID $mapID data${mList}")
-//        mULCMHelper.sendLcmMsg(NAVI_SERVICE_COMMAND, rt)
-//    }
+    private fun sendPositingArea(mapID: Int, mList: MutableList<PositingArea>) {
+        val rt = robot_control_t_new()
+        rt.commandid = 36
+
+        if (mList.size > 0) {
+            rt.niparams = (1 + (mList.size * 5)).toByte()
+            val mIparams: ByteArray = ByteArray((1 + (mList.size * 5)))
+            mIparams[0] = (mList.size).toByte()
+
+            mList.forEachIndexed { index, list ->
+                mIparams[index * 5 + 1] = list.slamMode.toByte()
+                mIparams[index * 5 + 2] = list.longCorridorMode.toByte()
+                mIparams[index * 5 + 3] = list.topViewFusion.toByte()
+                mIparams[index * 5 + 4] = list.id.toByte()
+            }
+
+            val mDparams: DoubleArray = DoubleArray((4 * mList.size))
+            mList.forEachIndexed { index, list ->
+                mDparams[index * 4] = list.start.x.toDouble()
+                mDparams[index * 4 + 1] = list.start.y.toDouble()
+                mDparams[index * 4 + 2] = list.end.x.toDouble()
+                mDparams[index * 4 + 3] = list.end.y.toDouble()
+            }
+
+            rt.iparams = mIparams
+            rt.ndparams = (4 * mList.size)
+            rt.dparams = mDparams
+        }
+        rt.nsparams = 1
+        rt.sparams = arrayOf("$mapID")
+        LogUtil.i("定位区域保存数据 mapID $mapID data${mList}")
+        mULCMHelper.sendLcmMsg(NAVI_SERVICE_COMMAND, rt)
+    }
 
     /**
      * pad->导航 获取定位区域列表数据
      */
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun sendGetPositingArea(mapID: Int) {
         sendRobotControlNew(37, null, null, arrayOf("$mapID"), null, NAVI_SERVICE_COMMAND)
 //        LogUtil.i("pad->导航 获取定位区域列表数据", null, TAG_NAV)
@@ -2830,14 +2836,14 @@ private fun receiveAgvBatteryError() {
  * @since 2024/11/27
  */
 private fun receivePositingArea(rtNew: robot_control_t_new) {
-//    val sParams = rtNew.sparams
-//    if (sParams == null || sParams.isEmpty()) {
-//        LogUtil.i("接收导航定位区域数据 sParams null")
-//        return
-//    }
-//    val value = sParams[0]
-//    LiveEventBus.get(KEY_POSITING_AREA_VALUE, String::class.java).post(value)
-//    LogUtil.i("变化 接收导航定位区域${value}", null, TAG_NAV)
+    val sParams = rtNew.sparams
+    if (sParams == null || sParams.isEmpty()) {
+        LogUtil.i("接收导航定位区域数据 sParams null")
+        return
+    }
+    val value = sParams[0]
+    LiveEventBus.get(KEY_POSITING_AREA_VALUE, String::class.java).post(value)
+    LogUtil.i("变化 接收导航定位区域${value}", null, TAG_NAV)
 }
 
 

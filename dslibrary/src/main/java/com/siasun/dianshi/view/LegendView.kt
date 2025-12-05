@@ -100,6 +100,14 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
                 parent.get()?.mElevatorView?.setDrawingEnabled(false) // 禁用绘制
             }
         }
+     //乘梯点
+        mBinding.cbPositingArea.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                parent.get()?.mPostingAreasView?.setDrawingEnabled(true) // 启用绘制
+            } else {
+                parent.get()?.mPostingAreasView?.setDrawingEnabled(false) // 禁用绘制
+            }
+        }
 
 
         //        //清扫区域

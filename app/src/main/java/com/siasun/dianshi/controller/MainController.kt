@@ -1,6 +1,7 @@
 package com.siasun.dianshi.controller
 
 import android.graphics.PointF
+import com.siasun.dianshi.bean.PositingArea
 import com.siasun.dianshi.controller.lcm.LCMController
 
 object MainController {
@@ -382,8 +383,8 @@ object MainController {
      * Pad—>导航
      * 发送定位区域和定位方式信息
      */
-//    fun sendPositingArea(mapID: Int, mList: MutableList<PositingArea>) =
-//        myController.mSendPositingArea(mapID, mList)
+    fun sendPositingArea(mapID: Int, mList: MutableList<PositingArea>) =
+        myController.mSendPositingArea(mapID, mList)
 
     /**
      * Pad—>导航

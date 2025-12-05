@@ -1,6 +1,7 @@
 package com.siasun.dianshi.controller
 
 import android.graphics.PointF
+import com.siasun.dianshi.bean.PositingArea
 
 /**
  * @author xiaomingliang
@@ -21,7 +22,8 @@ abstract class AbsController {
     abstract fun mRecordDX(sta: Boolean)
     abstract fun mSaveEnvironment(cmdId: Byte, rotate: Float = 0f)
     abstract fun mSendNaviHeartBeat()
-//    abstract fun mSendTemplateLoc(templateRoot: TemplateRoot)
+
+    //    abstract fun mSendTemplateLoc(templateRoot: TemplateRoot)
     abstract fun mAnswerCalibration()
     abstract fun mWriteCalibration()
     abstract fun mSetMenuSwitch()
@@ -59,7 +61,8 @@ abstract class AbsController {
     abstract fun mSendStartAGVSpinTest(radian: Double)
     abstract fun mSendStopAGVSpinTest()
     abstract fun mSendAutoCalibration(switchAuto: Byte, number: Byte)
-//    abstract fun mSendRoutePathCommand(mIPathPlanType: Int, mCleanArea: CleanAreaNew)
+
+    //    abstract fun mSendRoutePathCommand(mIPathPlanType: Int, mCleanArea: CleanAreaNew)
     abstract fun mSendControlTask()
     abstract fun mSendContinue()
     abstract fun mSendReloadSpecialFile()
@@ -72,9 +75,10 @@ abstract class AbsController {
     abstract fun mSendLoadSubMapForExtendMap()
     abstract fun mSendReLoadSubMapForExtendMap(ids: ByteArray)
     abstract fun mSendRecordTop(type: Byte)
-//    abstract fun mSendPositingArea(mapID: Int, mList: MutableList<PositingArea>)
+    abstract fun mSendPositingArea(mapID: Int, mList: MutableList<PositingArea>)
     abstract fun mSendGetPositingArea(mapID: Int)
-//    abstract fun mSendStartPartialUpdate(mList: MutableList<PartialUpdateArea>, mapID: Int)
+
+    //    abstract fun mSendStartPartialUpdate(mList: MutableList<PartialUpdateArea>, mapID: Int)
     abstract fun forceOnline(mapID: Int)
     abstract fun mSendStopWritePdf(cmd: Int)
     abstract fun mSendRecordLPDX(isRecord: Boolean)

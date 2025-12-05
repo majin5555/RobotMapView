@@ -24,4 +24,5 @@
     <string name="machine_wait_point">等待点</string>
     <string name="machine_finish_point">临时停车点</string>
     <string name="elevator">乘梯点</string>
+    <string name="positing_area">定位区域</string>
 </resources>

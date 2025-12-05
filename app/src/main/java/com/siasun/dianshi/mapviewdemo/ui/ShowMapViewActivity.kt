@@ -3,7 +3,9 @@ package com.siasun.dianshi.mapviewdemo.ui
 import android.graphics.Bitmap
 import android.graphics.PointF
 import android.os.Bundle
+import com.alibaba.fastjson.JSON
 import com.bumptech.glide.Glide
+import kotlin.random.Random
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
@@ -12,17 +14,22 @@ import com.ngu.lcmtypes.laser_t
 import com.ngu.lcmtypes.robot_control_t
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.ConstantBase
+import com.siasun.dianshi.bean.PositingArea
 import com.siasun.dianshi.controller.MainController
+import com.siasun.dianshi.framework.ext.onClick
 import com.siasun.dianshi.framework.log.LogUtil
 import com.siasun.dianshi.mapviewdemo.KEY_AGV_COORDINATE
 import com.siasun.dianshi.mapviewdemo.KEY_BOTTOM_CURRENT_POINT_CLOUD
 import com.siasun.dianshi.mapviewdemo.KEY_CURRENT_POINT_CLOUD
+import com.siasun.dianshi.mapviewdemo.KEY_POSITING_AREA_VALUE
 import com.siasun.dianshi.mapviewdemo.RunningState
 import com.siasun.dianshi.mapviewdemo.TaskState
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityShowMapViewBinding
+import com.siasun.dianshi.mapviewdemo.utils.GsonUtil
 import com.siasun.dianshi.mapviewdemo.viewmodel.ShowMapViewModel
 import com.siasun.dianshi.utils.YamlNew
 import com.siasun.dianshi.view.MapView
+import com.siasun.dianshi.view.PostingAreasView
 import java.io.File
 
 /**
@@ -108,15 +115,88 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.btnMove.setOnClickListener {
             mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SHOW_MAP)
         }
+        //选中定位区域
+        mBinding.btnPostingAreaEdit.setOnClickListener {
+
+            // 随机选择一个定位区域高亮显示
+            if (positingAreas.isNotEmpty()) {
+                mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_POSITING_AREA_EDIT)
+
+                // 生成0到positingAreas.size-1之间的随机索引
+                val randomIndex = Random.nextInt(positingAreas.size)
+
+                // 通过随机索引获取定位区域对象
+                val randomArea = positingAreas[randomIndex]
+
+                // 方式1：通过对象设置选中区域
+                mBinding.mapView.setSelectedPositingArea(randomArea)
+
+                // 方式2：通过ID设置选中区域（可选，根据需求选择其中一种）
+                // mBinding.mapView.setSelectedPositingAreaId(randomArea.id)
+            }
+        }
+        //删除定位区域
+        mBinding.btnPostingAreaDel.onClick {
+            // 随机选择一个定位区域进行删除
+            if (positingAreas.isNotEmpty()) {
+                // 生成0到positingAreas.size-1之间的随机索引
+                val randomIndex = Random.nextInt(positingAreas.size)
+
+                // 通过随机索引获取要删除的定位区域
+                val randomArea = positingAreas[randomIndex]
+
+                // 删除该定位区域
+                mBinding.mapView.deletePositingArea(randomArea)
+
+                // 更新本地列表
+                positingAreas.remove(randomArea)
+
+                LogUtil.d("随机删除了定位区域: ${randomArea.id}")
+            }
+        }
+        //创建定位区域
+        mBinding.btnPostingAreaAdd.onClick {
+            // 设置创建定位区域模式
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_POSITING_AREA_ADD)
+
+            // 设置定位区域创建监听器
+            mBinding.mapView.setOnPositingAreaCreatedListener(object :
+                PostingAreasView.OnPositingAreaCreatedListener {
+                override fun onPositingAreaCreated(area: PositingArea) {
+                    // 添加新创建的定位区域到列表
+                    positingAreas.add(area)
+                    // 切换回移动模式
+                    mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SHOW_MAP)
+                }
+            })
+        }
+
+        //保存定位区域
+        mBinding.btnPostingAreaCommit.setOnClickListener {
+            MainController.sendPositingArea(
+                mapId,
+                mBinding.mapView.mPostingAreasView!!.getPositingAreas()
+            )
+        }
     }
 
+    var positingAreas = mutableListOf<PositingArea>()
     override fun initData() {
         super.initData()
         mViewModel.getVirtualWall(mapId)
+        MainController.sendGetPositingAreas(mapId)
+
+        //接收导航定位区域
+        LiveEventBus.get<String>(KEY_POSITING_AREA_VALUE).observe(this) {
+            LogUtil.d("json ${it}")
+            positingAreas = GsonUtil.jsonToList(it, PositingArea::class.java)
+            mBinding.mapView.setPositingAreas(positingAreas)
+
+        }
 
         //加载虚拟墙
         mViewModel.getVirtualWall.observe(this) {
-            mBinding.mapView.setVirtualWall(it)
+//            mBinding.mapView.setVirtualWall(it)
         }
         //加载顶视路线
         mViewModel.getMergedPose(mapId, onComplete = { mergedPoses ->

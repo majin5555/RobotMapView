@@ -21,6 +21,7 @@ import com.siasun.dianshi.bean.InitPose
 import com.siasun.dianshi.bean.MachineStation
 import com.siasun.dianshi.bean.MapData
 import com.siasun.dianshi.bean.MergedPoseItem
+import com.siasun.dianshi.bean.PositingArea
 import com.siasun.dianshi.utils.CoordinateConversion
 import com.siasun.dianshi.utils.MathUtils
 import com.siasun.dianshi.utils.RadianUtil
@@ -42,7 +43,10 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         MODE_VIRTUAL_WALL_EDIT,// 编辑虚拟墙模式
         MODE_VIRTUAL_WALL_DELETE, // 删除虚拟墙模式
         MODE_CMS_STATION_EDIT,  // 修改避让点模式
-        MODE_REMOVE_NOISE      // 擦除噪点模式
+        MODE_REMOVE_NOISE,      // 擦除噪点模式
+        MODE_POSITING_AREA_ADD, // 创建定位区域模式
+        MODE_POSITING_AREA_EDIT, // 编辑定位区域模式
+        MODE_POSITING_AREA_DELETE // 删除定位区域模式
     }
 
     // 当前工作模式
@@ -73,6 +77,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     var mDownLaserScanView: DownLaserScanView? = null//下激光点云
     var mTopViewPathView: TopViewPathView? = null//顶视路线
     var mRemoveNoiseView: RemoveNoiseView? = null//噪点擦出
+    var mPostingAreasView: PostingAreasView? = null//定位区域
 
     //    var mAreasView: AreasView? = null//区域
 //    var mMixAreasView: MixedAreasView? = null//混行区域
@@ -116,6 +121,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mRobotView = RobotView(context, mMapView)
         mWorkIngPathView = WorkIngPathView(context, mMapView)
         mRemoveNoiseView = RemoveNoiseView(context, mMapView)
+        mPostingAreasView = PostingAreasView(context, mMapView)
 //        val mPolygonEditView = PolygonEditView(context, mMapView)
         //底图的View
         addView(mPngMapView, lp)
@@ -133,23 +139,16 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         addMapLayers(mUpLaserScanView)
         //下激光点云
         addMapLayers(mDownLaserScanView)
-
-        //显示虚拟墙
-        addMapLayers(mWallView)
         //顶视路线
         addMapLayers(mTopViewPathView)
-        //清扫区域 区域
-//        addMapLayers(mAreasView)
-
         //机器人图标
         addMapLayers(mRobotView)
-
-//        addView(mPolygonEditView)
-
-//        addMapLayers(mMixAreasView)
-//        addMapLayers(mPathView)
+        //显示虚拟墙
+        addMapLayers(mWallView)
         //噪点擦除去
         addMapLayers(mRemoveNoiseView)
+        //定位区域
+        addMapLayers(mPostingAreasView)
 
         //  修改LegendView的布局参数，使其显示在右上角
         addView(mLegendView, LayoutParams(
@@ -167,16 +166,16 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         val point = screenToWorld(event.x, event.y)
         mLegendView?.setScreen(point)
 
-        // 如果是擦除噪点模式
-        if (currentWorkMode == WorkMode.MODE_REMOVE_NOISE) {
-            // 让事件传递给子视图（如RemoveNoiseView）处理
+        // 如果是擦除噪点模式、创建定位区域模式、编辑定位区域模式或删除定位区域模式
+        if (currentWorkMode == WorkMode.MODE_REMOVE_NOISE || currentWorkMode == WorkMode.MODE_POSITING_AREA_ADD || currentWorkMode == WorkMode.MODE_POSITING_AREA_EDIT || currentWorkMode == WorkMode.MODE_POSITING_AREA_DELETE) {
+            // 让事件传递给子视图（如RemoveNoiseView或PostingAreasView）处理
             // 先调用父类的onTouchEvent让事件传递给子视图
             super.onTouchEvent(event)
             // 返回true表示事件已处理，禁止手势检测器处理，从而禁止底图拖动
             return true
         }
 
-        // 非擦除噪点模式，由手势检测器处理事件
+        // 非擦除噪点模式和非编辑定位区域模式，由手势检测器处理事件
         return mGestureDetector!!.onTouchEvent(event)
     }
 
@@ -378,6 +377,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mStationView?.setWorkMode(mode)
         // 将工作模式传递给噪点擦除视图
         mRemoveNoiseView?.setWorkMode(mode)
+        // 将工作模式传递给定位区域视图
+        mPostingAreasView?.setEditMode(mode)
     }
 
     /**
@@ -495,6 +496,76 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      */
     fun setElevators(list: MutableList<ElevatorPoint>?) = mElevatorView?.setElevators(list)
 
+    /**
+     * 设置定位区域
+     */
+    fun setPositingAreas(list: MutableList<PositingArea>?) =
+        mPostingAreasView?.setPositingAreas(list)
+
+    /**
+     * 设置选中的定位区域
+     */
+    fun setSelectedPositingArea(area: PositingArea?) = mPostingAreasView?.setSelectedArea(area)
+
+    /**
+     * 设置选中的定位区域ID
+     */
+    fun setSelectedPositingAreaId(areaId: Long?) = mPostingAreasView?.setSelectedAreaId(areaId)
+
+    /**
+     * 清除选中的定位区域
+     */
+    fun clearSelectedPositingArea() = mPostingAreasView?.clearSelectedArea()
+
+    /**
+     * 设置选中定位区域的边框宽度
+     */
+    fun setSelectedPositingAreaStrokeWidth(width: Float) =
+        mPostingAreasView?.setSelectedRectStrokeWidth(width)
+
+    /**
+     * 设置选中定位区域的边框颜色
+     */
+    fun setSelectedPositingAreaColor(color: Int) = mPostingAreasView?.setSelectedRectColor(color)
+
+    /**
+     * 设置定位区域编辑监听器
+     */
+    fun setOnPositingAreaEditedListener(listener: PostingAreasView.OnPositingAreaEditedListener?) =
+        mPostingAreasView?.setOnPositingAreaEditedListener(listener)
+
+    /**
+     * 设置定位区域删除监听器
+     */
+    fun setOnPositingAreaDeletedListener(listener: PostingAreasView.OnPositingAreaDeletedListener?) = 
+        mPostingAreasView?.setOnPositingAreaDeletedListener(listener)
+
+    /**
+     * 设置定位区域创建监听器
+     */
+    fun setOnPositingAreaCreatedListener(listener: PostingAreasView.OnPositingAreaCreatedListener?) = 
+        mPostingAreasView?.setOnPositingAreaCreatedListener(listener)
+
+    /**
+     * 删除指定的定位区域
+     */
+    fun deletePositingArea(area: PositingArea?) {
+        area?.let {
+            mPostingAreasView?.deletePositingArea(it)
+        }
+    }
+
+    /**
+     * 根据ID删除定位区域
+     */
+    fun deletePositingAreaById(areaId: Long?) {
+        areaId?.let {
+            mPostingAreasView?.deletePositingAreaById(it)
+
+        }
+
+    }
+
 
     /**
      * 获取当前工作模式
@@ -568,7 +639,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
          */
         fun onRemoveNoise(leftTop: PointF, rightBottom: PointF)
     }
-    
+
     /**
      * 清除噪点擦除视图中绘制的矩形线框
      */
