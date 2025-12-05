@@ -18,6 +18,8 @@
 
 # MODE_CMS_STATION_EDIT // 修改避让点模式
 
+# MODE_REMOVE_NOISE //删除噪点模式
+
 # }
 
 # 设置地图的当前的模式
@@ -125,9 +127,26 @@
 
 # mBinding.mapView.setMachineStation(result)
 
+-----------------------------------------
+
+# 加载乘梯点
+
+# mBinding.mapView.setElevators(elevatorPoint)
 
 -----------------------------------------
-# 加载乘梯点
-# mBinding.mapView.setElevators(elevatorPoint)
+
+# 删除噪点模式
+
+# mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_REMOVE_NOISE)
+
+# 删除噪点监听
+
+# mBinding.mapView.setOnRemoveNoiseListener(object : MapView.IRemoveNoiseListener {
+
+# override fun onRemoveNoise(leftTop: PointF, rightBottom: PointF) {
+
+# }
+
+# })
 
 -----------------------------------------

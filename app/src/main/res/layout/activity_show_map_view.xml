@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -7,6 +9,40 @@
         android:id="@+id/map_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
+
+    <Button
+        android:id="@+id/btn_remove_noise"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="去除噪点" />
+
+    <Button
+        android:id="@+id/btn_move"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="平移地图"
+        app:layout_constraintTop_toBottomOf="@+id/btn_remove_noise" />
+
+    <Button
+        android:id="@+id/btn_vir_add"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="创建虚拟墙"
+        app:layout_constraintTop_toBottomOf="@+id/btn_move" />
+
+    <Button
+        android:id="@+id/btn_vir_edit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="编辑虚拟墙"
+        app:layout_constraintTop_toBottomOf="@+id/btn_vir_add" />
+
+    <Button
+        android:id="@+id/btn_vir_del"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="删除虚拟墙"
+        app:layout_constraintTop_toBottomOf="@+id/btn_vir_edit" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

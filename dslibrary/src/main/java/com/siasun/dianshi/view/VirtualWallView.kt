@@ -20,7 +20,7 @@ import kotlin.math.sqrt
  * 虚拟墙的View
  */
 @SuppressLint("ViewConstructor")
-class VirtualLineView(
+class VirtualWallView(
     context: Context?, parent: WeakReference<MapView>
 ) : SlamWareBaseView(context, parent) {
     private val LINE_WIDTH = 2f
@@ -402,7 +402,7 @@ class VirtualLineView(
      */
     override fun onTouchEvent(event: MotionEvent): Boolean {
         val mapView = mapViewRef?.get() ?: return false
-        var consumed = false
+        val consumed: Boolean
 
         when (currentWorkMode) {
             MapView.WorkMode.MODE_VIRTUAL_WALL_ADD -> {

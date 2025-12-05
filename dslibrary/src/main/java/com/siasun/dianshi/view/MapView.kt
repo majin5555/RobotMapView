@@ -41,7 +41,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         MODE_VIRTUAL_WALL_ADD, // 创建虚拟墙模式
         MODE_VIRTUAL_WALL_EDIT,// 编辑虚拟墙模式
         MODE_VIRTUAL_WALL_DELETE, // 删除虚拟墙模式
-        MODE_CMS_STATION_EDIT  // 修改避让点模式
+        MODE_CMS_STATION_EDIT,  // 修改避让点模式
+        MODE_REMOVE_NOISE      // 擦除噪点模式
     }
 
     // 当前工作模式
@@ -62,7 +63,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     private var mapLayers: MutableList<SlamWareBaseView> = CopyOnWriteArrayList()
     private var mPngMapView: PngMapView? = null //png地图
 
-    var mWallView: VirtualLineView? = null//虚拟墙
+    var mWallView: VirtualWallView? = null//虚拟墙
     var mHomeDockView: HomeDockView? = null//充电站
     var mElevatorView: ElevatorView? = null//乘梯点
     var mStationView: StationsView? = null//站点
@@ -71,6 +72,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     var mUpLaserScanView: UpLaserScanView? = null//上激光点云
     var mDownLaserScanView: DownLaserScanView? = null//下激光点云
     var mTopViewPathView: TopViewPathView? = null//顶视路线
+    var mRemoveNoiseView: RemoveNoiseView? = null//噪点擦出
 
     //    var mAreasView: AreasView? = null//区域
 //    var mMixAreasView: MixedAreasView? = null//混行区域
@@ -79,6 +81,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     var mWorkIngPathView: WorkIngPathView? = null //机器人工作路径
 
     private var mSingleTapListener: ISingleTapListener? = null
+    private var mRemoveNoiseListener: IRemoveNoiseListener? = null
 
     //手势监听
     private var mGestureDetector: SlamGestureDetector? = null
@@ -99,7 +102,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         val lp =
             LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         mPngMapView = PngMapView(context)
-        mWallView = VirtualLineView(context, mMapView)
+        mWallView = VirtualWallView(context, mMapView)
         mHomeDockView = HomeDockView(context, mMapView)
         mElevatorView = ElevatorView(context, mMapView)
         mStationView = StationsView(context, mMapView)
@@ -112,9 +115,11 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mLegendView = LegendView(context, attrs, mMapView)
         mRobotView = RobotView(context, mMapView)
         mWorkIngPathView = WorkIngPathView(context, mMapView)
+        mRemoveNoiseView = RemoveNoiseView(context, mMapView)
 //        val mPolygonEditView = PolygonEditView(context, mMapView)
         //底图的View
         addView(mPngMapView, lp)
+
 
         //充电站
         addMapLayers(mHomeDockView)
@@ -143,6 +148,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
 
 //        addMapLayers(mMixAreasView)
 //        addMapLayers(mPathView)
+        //噪点擦除去
+        addMapLayers(mRemoveNoiseView)
 
         //  修改LegendView的布局参数，使其显示在右上角
         addView(mLegendView, LayoutParams(
@@ -157,9 +164,19 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
 
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        super.onTouchEvent(event)
         val point = screenToWorld(event.x, event.y)
         mLegendView?.setScreen(point)
+
+        // 如果是擦除噪点模式
+        if (currentWorkMode == WorkMode.MODE_REMOVE_NOISE) {
+            // 让事件传递给子视图（如RemoveNoiseView）处理
+            // 先调用父类的onTouchEvent让事件传递给子视图
+            super.onTouchEvent(event)
+            // 返回true表示事件已处理，禁止手势检测器处理，从而禁止底图拖动
+            return true
+        }
+
+        // 非擦除噪点模式，由手势检测器处理事件
         return mGestureDetector!!.onTouchEvent(event)
     }
 
@@ -359,6 +376,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mWallView?.setWorkMode(mode)
         // 将工作模式传递给避让点视图
         mStationView?.setWorkMode(mode)
+        // 将工作模式传递给噪点擦除视图
+        mRemoveNoiseView?.setWorkMode(mode)
     }
 
     /**
@@ -513,6 +532,21 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mStationView?.setOnStationClickListener(listener)
 
     /**
+     * 设置擦除噪点监听器
+     */
+    fun setOnRemoveNoiseListener(listener: IRemoveNoiseListener?) {
+        mRemoveNoiseListener = listener
+        mRemoveNoiseView?.setOnRemoveNoiseListener(object : RemoveNoiseView.OnRemoveNoiseListener {
+            override fun onRemoveNoise(leftTop: PointF, rightBottom: PointF) {
+                // 将屏幕坐标转换为世界坐标
+                val worldLeftTop = screenToWorld(leftTop.x, leftTop.y)
+                val worldRightBottom = screenToWorld(rightBottom.x, rightBottom.y)
+                mRemoveNoiseListener?.onRemoveNoise(worldLeftTop, worldRightBottom)
+            }
+        })
+    }
+
+    /**
      * 手指抬起监听
      */
     fun setSingleTapListener(singleTapListener: ISingleTapListener?) {
@@ -521,6 +555,25 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
 
     interface ISingleTapListener {
         fun onSingleTapListener(event: MotionEvent?)
+    }
+
+    /**
+     * 擦除噪点监听器接口
+     */
+    interface IRemoveNoiseListener {
+        /**
+         * 当用户完成噪点擦除操作时调用
+         * @param leftTop 矩形左上角的世界坐标
+         * @param rightBottom 矩形右下角的世界坐标
+         */
+        fun onRemoveNoise(leftTop: PointF, rightBottom: PointF)
+    }
+    
+    /**
+     * 清除噪点擦除视图中绘制的矩形线框
+     */
+    fun clearRemoveNoiseDrawing() {
+        mRemoveNoiseView?.clearDrawing()
     }
 
 

@@ -1,6 +1,7 @@
 package com.siasun.dianshi.mapviewdemo.ui
 
 import android.graphics.Bitmap
+import android.graphics.PointF
 import android.os.Bundle
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -21,6 +22,7 @@ import com.siasun.dianshi.mapviewdemo.TaskState
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityShowMapViewBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.ShowMapViewModel
 import com.siasun.dianshi.utils.YamlNew
+import com.siasun.dianshi.view.MapView
 import java.io.File
 
 /**
@@ -31,7 +33,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     val mapId = 1
     override fun initView(savedInstanceState: Bundle?) {
         MainController.init()
-
+        initListener()
         val file = File(ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_PNG))
         Glide.with(this).asBitmap().load(file).skipMemoryCache(true)
             .diskCacheStrategy(DiskCacheStrategy.NONE).into(object : SimpleTarget<Bitmap?>() {
@@ -67,6 +69,45 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 mBinding.mapView.setWorkingPath(it.dparams)
             }
         }
+
+    }
+
+    private fun initListener() {
+        //添加虚拟墙
+        mBinding.btnVirAdd.setOnClickListener {
+            // 创建虚拟墙模式
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_ADD)
+            // 默认创建普通虚拟墙
+            mBinding.mapView.addVirtualWall(3)
+        }
+        //编辑虚拟墙
+        mBinding.btnVirEdit.setOnClickListener {
+            // 编辑虚拟墙模式
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_EDIT)
+
+        }
+        //删除虚拟墙
+        mBinding.btnVirDel.setOnClickListener {
+            // 删除虚拟墙模式
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_DELETE)
+        }
+
+        //删除噪点
+        mBinding.btnRemoveNoise.setOnClickListener {
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_REMOVE_NOISE)
+            // 设置去除噪点监听器
+            mBinding.mapView.setOnRemoveNoiseListener(object : MapView.IRemoveNoiseListener {
+                override fun onRemoveNoise(leftTop: PointF, rightBottom: PointF) {
+                    // 处理噪点区域信息，这里可以添加日志或者发送到控制器
+                    LogUtil.d("去除噪点区域: 左上角(${leftTop.x}, ${leftTop.y}), 右下角(${rightBottom.x}, ${rightBottom.y})")
+                }
+            })
+        }
+
+        //移动模式
+        mBinding.btnMove.setOnClickListener {
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SHOW_MAP)
+        }
     }
 
     override fun initData() {
@@ -99,7 +140,6 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             val result = machineStation?.find { it.mapId == mapId }
             mBinding.mapView.setMachineStation(result)
         })
-
         //加载乘梯点
         mViewModel.getCmsElevator(mapId, onComplete = { elevatorPoint ->
             LogUtil.d("获取乘梯点 $elevatorPoint")
