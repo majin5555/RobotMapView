@@ -85,10 +85,10 @@ class LCMController : AbsController(), LCMSubscriber {
     private val mULCMHelper: ULCMHelper = ULCMHelper()
     override fun init() {
         mULCMHelper.initLCM(SUBSCRIBE_CHANNEL, this)
-        Timer().schedule(0, 60000) {
-            destroy()
-            mULCMHelper.initLCM(SUBSCRIBE_CHANNEL, this@LCMController)
-        }
+//        Timer().schedule(0, 60000) {
+//            destroy()
+//            mULCMHelper.initLCM(SUBSCRIBE_CHANNEL, this@LCMController)
+//        }
     }
 
     override fun destroy() {

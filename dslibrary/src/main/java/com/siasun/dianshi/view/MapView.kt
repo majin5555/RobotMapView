@@ -15,6 +15,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import com.ngu.lcmtypes.laser_t
 import com.ngu.lcmtypes.robot_control_t
+import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.CmsStation
 import com.siasun.dianshi.bean.ElevatorPoint
 import com.siasun.dianshi.bean.InitPose
@@ -78,6 +79,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     var mTopViewPathView: TopViewPathView? = null//顶视路线
     var mRemoveNoiseView: RemoveNoiseView? = null//噪点擦出
     var mPostingAreasView: PostingAreasView? = null//定位区域
+    var mPolygonEditView1: PolygonEditView1? = null//定位区域
 
     //    var mAreasView: AreasView? = null//区域
 //    var mMixAreasView: MixedAreasView? = null//混行区域
@@ -85,12 +87,19 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     var mRobotView: RobotView? = null //机器人图标
     var mWorkIngPathView: WorkIngPathView? = null //机器人工作路径
 
-    private var mSingleTapListener: ISingleTapListener? = null
-    private var mRemoveNoiseListener: IRemoveNoiseListener? = null
+    /**
+     * *************** 监听器   start ***********************
+     */
 
-    //手势监听
+    private var mSingleTapListener: ISingleTapListener? = null
     private var mGestureDetector: SlamGestureDetector? = null
 
+    //删除噪点
+    private var mRemoveNoiseListener: IRemoveNoiseListener? = null
+
+    /**
+     * *************** 监听器   end ***********************
+     */
 
     init {
         setDefaultBackground(defaultBackGroundColor)
@@ -122,7 +131,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mWorkIngPathView = WorkIngPathView(context, mMapView)
         mRemoveNoiseView = RemoveNoiseView(context, mMapView)
         mPostingAreasView = PostingAreasView(context, mMapView)
-//        val mPolygonEditView = PolygonEditView(context, mMapView)
+        mPolygonEditView1 = PolygonEditView1(context, mMapView)
         //底图的View
         addView(mPngMapView, lp)
 
@@ -149,6 +158,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         addMapLayers(mRemoveNoiseView)
         //定位区域
         addMapLayers(mPostingAreasView)
+        //
+        addMapLayers(mPolygonEditView1)
 
         //  修改LegendView的布局参数，使其显示在右上角
         addView(mLegendView, LayoutParams(
@@ -468,16 +479,16 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     /**
      * 设置顶视路线
      */
-    fun setTopViewPathDada(data: MutableList<MergedPoseItem>) {
+    fun setTopViewPathDada(data: MutableList<MergedPoseItem>) =
         mTopViewPathView?.setTopViewPath(data)
-    }
+
 
     /**
      * 设置上线点
      */
-    fun setInitPoseList(data: MutableList<InitPose>) {
+    fun setInitPoseList(data: MutableList<InitPose>) =
         mOnlinePoseView?.setInitPoses(data)
-    }
+
 
     /**
      * 设置充电站
@@ -495,6 +506,11 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      * 设置乘梯点
      */
     fun setElevators(list: MutableList<ElevatorPoint>?) = mElevatorView?.setElevators(list)
+
+    /**
+     * 设置清扫区域
+     */
+    fun setCleanAreaData(data: MutableList<CleanAreaNew>) = mPolygonEditView1?.setCleanAreaData(data)
 
     /**
      * 设置定位区域
@@ -537,13 +553,13 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     /**
      * 设置定位区域删除监听器
      */
-    fun setOnPositingAreaDeletedListener(listener: PostingAreasView.OnPositingAreaDeletedListener?) = 
+    fun setOnPositingAreaDeletedListener(listener: PostingAreasView.OnPositingAreaDeletedListener?) =
         mPostingAreasView?.setOnPositingAreaDeletedListener(listener)
 
     /**
      * 设置定位区域创建监听器
      */
-    fun setOnPositingAreaCreatedListener(listener: PostingAreasView.OnPositingAreaCreatedListener?) = 
+    fun setOnPositingAreaCreatedListener(listener: PostingAreasView.OnPositingAreaCreatedListener?) =
         mPostingAreasView?.setOnPositingAreaCreatedListener(listener)
 
     /**
@@ -561,9 +577,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     fun deletePositingAreaById(areaId: Long?) {
         areaId?.let {
             mPostingAreasView?.deletePositingAreaById(it)
-
         }
-
     }
 
 
@@ -587,6 +601,13 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      */
     fun confirmEditVirtualWall() {
         mWallView?.confirmEditVirtualWall()
+    }
+
+    /**
+     * 清除噪点擦除视图中绘制的矩形线框
+     */
+    fun clearRemoveNoiseDrawing() {
+        mRemoveNoiseView?.clearDrawing()
     }
 
     /**
@@ -638,13 +659,6 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
          * @param rightBottom 矩形右下角的世界坐标
          */
         fun onRemoveNoise(leftTop: PointF, rightBottom: PointF)
-    }
-
-    /**
-     * 清除噪点擦除视图中绘制的矩形线框
-     */
-    fun clearRemoveNoiseDrawing() {
-        mRemoveNoiseView?.clearDrawing()
     }
 
 

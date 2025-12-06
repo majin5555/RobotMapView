@@ -1,224 +1,111 @@
-//package com.siasun.view
-//
-//import android.content.Context
-//import android.graphics.Canvas
-//import android.graphics.Color
-//import android.graphics.Paint
-//import android.graphics.Path
-//import android.graphics.PointF
-//import android.util.AttributeSet
-//import android.view.GestureDetector
-//import android.view.GestureDetector.SimpleOnGestureListener
-//import android.view.MotionEvent
-//import android.view.ScaleGestureDetector
-//import android.view.ScaleGestureDetector.SimpleOnScaleGestureListener
-//import android.view.View
-//import kotlin.math.hypot
-//import kotlin.math.max
-//import kotlin.math.min
-//
-//class PolygonEditView1 : View {
-//    private var polygonPaint: Paint? = null
-//    private var pointPaint: Paint? = null
-//    private var edgePaint: Paint? = null
-//    private var points: MutableList<PointF>? = null
-//    private var selectedPointIndex = -1
-//    private val touchRadius = 60f // 点击半径
-//
-//    // 平移缩放
-//    private var scaleFactor = 1.0f
-//    private var offsetX = 0f
-//    private var offsetY = 0f
-//    private var lastTouchX = 0f
-//    private var lastTouchY = 0f
-//    private var isDraggingMap = false
-//    private var gestureDetector: GestureDetector? = null
-//    private var scaleDetector: ScaleGestureDetector? = null
-//
-//    constructor(context: Context) : super(context) {
-//        init(context)
-//    }
-//
-//    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-//        init(context)
-//    }
-//
-//    private fun init(context: Context) {
-//        polygonPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-//        polygonPaint!!.setColor(Color.RED)
-//        polygonPaint!!.style = Paint.Style.STROKE
-//        polygonPaint!!.strokeWidth = 5f
-//        pointPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-//        pointPaint!!.setColor(Color.RED)
-//        pointPaint!!.style = Paint.Style.FILL
-//        edgePaint = Paint(Paint.ANTI_ALIAS_FLAG)
-//        edgePaint!!.setColor(Color.GRAY)
-//        edgePaint!!.style = Paint.Style.FILL
-//
-//        // 初始矩形
-//        points = ArrayList()
-//        (points as ArrayList<PointF>).add(PointF(300f, 300f))
-//        (points as ArrayList<PointF>).add(PointF(600f, 300f))
-//        (points as ArrayList<PointF>).add(PointF(600f, 600f))
-//        (points as ArrayList<PointF>).add(PointF(300f, 600f))
-//
-//        // 单击/双击检测
-//        gestureDetector = GestureDetector(context, object : SimpleOnGestureListener() {
-//            override fun onDoubleTap(e: MotionEvent): Boolean {
-//                // 双击删除顶点
-//                val touch = screenToWorld(e.x, e.y)
-//                for (i in (points as ArrayList<PointF>).indices) {
-//                    val p = (points as ArrayList<PointF>).get(i)
-//                    if (hypot(
-//                            (p.x - touch.x).toDouble(),
-//                            (p.y - touch.y).toDouble()
-//                        ) < touchRadius / scaleFactor
-//                    ) {
-//                        if ((points as ArrayList<PointF>).size > 3) {
-//                            (points as ArrayList<PointF>).removeAt(i)
-//                            invalidate()
-//                        }
-//                        break
-//                    }
-//                }
-//                return true
-//            }
-//
-//            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-//                // 单击边缘 → 插入新点
-//                val touch = screenToWorld(e.x, e.y)
-//                val insertIndex = findEdgeNear(touch.x, touch.y)
-//                if (insertIndex != -1) {
-//                    (points as ArrayList<PointF>).add(insertIndex + 1, touch)
-//                    invalidate()
-//                }
-//                return true
-//            }
-//        })
-//
-//        // 缩放手势检测
-//        scaleDetector = ScaleGestureDetector(context, object : SimpleOnScaleGestureListener() {
-//            override fun onScale(detector: ScaleGestureDetector): Boolean {
-//                scaleFactor *= detector.getScaleFactor()
-//                scaleFactor = max(0.5, min(scaleFactor.toDouble(), 3.0)).toFloat() // 限制缩放范围
-//                invalidate()
-//                return true
-//            }
-//        })
-//    }
-//
-//    override fun onDraw(canvas: Canvas) {
-//        super.onDraw(canvas)
-//        canvas.save()
-//        // 平移 + 缩放
-//        canvas.translate(offsetX, offsetY)
-//        canvas.scale(scaleFactor, scaleFactor)
-//
-//        // 多边形
-//        if (points!!.size > 1) {
-//            val path = Path()
-//            path.moveTo(points!![0].x, points!![0].y)
-//            for (i in 1 until points!!.size) {
-//                path.lineTo(points!![i].x, points!![i].y)
-//            }
-//            path.close()
-//            canvas.drawPath(path, polygonPaint!!)
-//        }
-//
-//        // 顶点
-//        for (p in points!!) {
-//            canvas.drawCircle(p.x, p.y, 20f / scaleFactor, pointPaint!!)
-//        }
-//
-//        // 边缘中点 + 符号
-//        for (i in points!!.indices) {
-//            val a = points!![i]
-//            val b = points!![(i + 1) % points!!.size]
-//            val midX = (a.x + b.x) / 2
-//            val midY = (a.y + b.y) / 2
-//            canvas.drawCircle(midX, midY, 15f / scaleFactor, edgePaint!!)
-//            val textPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-//            textPaint.setColor(Color.WHITE)
-//            textPaint.textSize = 30f / scaleFactor
-//            textPaint.textAlign = Paint.Align.CENTER
-//            canvas.drawText("+", midX, midY + 10f / scaleFactor, textPaint)
-//        }
-//        canvas.restore()
-//    }
-//
-//    override fun onTouchEvent(event: MotionEvent): Boolean {
-//        scaleDetector!!.onTouchEvent(event)
-//        gestureDetector!!.onTouchEvent(event)
-//        val x = event.x
-//        val y = event.y
-//        val world = screenToWorld(x, y)
-//        when (event.actionMasked) {
-//            MotionEvent.ACTION_DOWN -> {
-//                // 检查是否点中顶点
-//                selectedPointIndex = -1
-//                var i = 0
-//                while (i < points!!.size) {
-//                    val p = points!![i]
-//                    if (hypot(
-//                            (p.x - world.x).toDouble(),
-//                            (p.y - world.y).toDouble()
-//                        ) < touchRadius / scaleFactor
-//                    ) {
-//                        selectedPointIndex = i
-//                        break
-//                    }
-//                    i++
-//                }
-//                if (selectedPointIndex == -1) {
-//                    isDraggingMap = true
-//                    lastTouchX = x
-//                    lastTouchY = y
-//                }
-//            }
-//
-//            MotionEvent.ACTION_MOVE -> if (selectedPointIndex != -1) {
-//                points!![selectedPointIndex][world.x] = world.y
-//                invalidate()
-//            } else if (isDraggingMap && !scaleDetector!!.isInProgress) {
-//                val dx = x - lastTouchX
-//                val dy = y - lastTouchY
-//                offsetX += dx
-//                offsetY += dy
-//                lastTouchX = x
-//                lastTouchY = y
-//                invalidate()
-//            }
-//
-//            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-//                selectedPointIndex = -1
-//                isDraggingMap = false
-//            }
-//        }
-//        return true
-//    }
-//
-//    // 判断是否点中了边缘附近
-//    private fun findEdgeNear(x: Float, y: Float): Int {
-//        for (i in points!!.indices) {
-//            val a = points!![i]
-//            val b = points!![(i + 1) % points!!.size]
-//            val midX = (a.x + b.x) / 2
-//            val midY = (a.y + b.y) / 2
-//            if (hypot((midX - x).toDouble(), (midY - y).toDouble()) < touchRadius / scaleFactor) {
-//                return i
-//            }
-//        }
-//        return -1
-//    }
-//
-//    // 屏幕坐标 -> 世界坐标
-//    private fun screenToWorld(x: Float, y: Float): PointF {
-//        val worldX = (x - offsetX) / scaleFactor
-//        val worldY = (y - offsetY) / scaleFactor
-//        return PointF(worldX, worldY)
-//    }
-//
-//    val polygonPoints: List<PointF>
-//        // 获取多边形点坐标
-//        get() = ArrayList(points)
-//}
+package com.siasun.dianshi.view
+
+import android.content.Context
+import android.graphics.*
+import com.siasun.dianshi.bean.CleanAreaNew
+import com.siasun.dianshi.bean.PointNew
+import java.lang.ref.WeakReference
+
+class PolygonEditView1(context: Context?, parent: WeakReference<MapView>) :
+    SlamWareBaseView(context, parent) {
+
+    // 保存parent引用以便安全访问
+    private var mapViewRef: WeakReference<MapView>? = parent
+    var list: MutableList<CleanAreaNew> = mutableListOf()
+
+    // 绘制相关的画笔
+    private val areaPaint = Paint().apply {
+        style = Paint.Style.STROKE
+        color = Color.BLUE
+        strokeWidth = 2f
+        isAntiAlias = true
+    }
+
+    private val textPaint = Paint().apply {
+        color = Color.BLACK
+        textSize = 30f
+        isAntiAlias = true
+    }
+
+    init {
+    }
+
+    /**
+     * 设置要绘制的区域数据
+     */
+    fun setCleanAreaData(data: MutableList<CleanAreaNew>) {
+        this.list.clear()
+        this.list.addAll(data)
+        invalidate() // 触发重绘
+    }
+
+    /**
+     * 获取区域的最右边点
+     */
+    private fun getRightmostPoint(points: List<PointNew>): PointNew? {
+        if (points.isEmpty()) return null
+
+        var rightmost = points[0]
+        for (point in points) {
+            if (point.X > rightmost.X) {
+                rightmost = point
+            }
+        }
+        return rightmost
+    }
+
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        canvas.save()
+
+        // 绘制所有区域
+        list.forEach { area ->
+            drawPolygon(canvas, area)
+        }
+
+        canvas.restore()
+    }
+
+    /**
+     * 绘制单个不规则图形区域
+     */
+    private fun drawPolygon(canvas: Canvas, area: CleanAreaNew) {
+        val points = area.m_VertexPnt
+        if (points.isEmpty()) return
+
+        // 创建路径
+        val path = Path()
+
+        // 将第一个点转换为屏幕坐标并移动到该点
+        val firstPoint =mapViewRef?.get()?. worldToScreen(points[0].X,points[0].Y)
+        path.moveTo(firstPoint!!.x, firstPoint!!.y)
+
+        // 添加所有其他点到路径
+        for (i in 1 until points.size) {
+            val screenPoint =mapViewRef?.get()?. worldToScreen(points[i].X, points[i].Y)
+            path.lineTo(screenPoint!!.x, screenPoint!!.y)
+        }
+
+        // 闭合路径
+        path.close()
+
+        // 绘制多边形轮廓
+        canvas.drawPath(path, areaPaint)
+
+        // 绘制区域名称在最右边点的下边
+        getRightmostPoint(points)?.let { rightmost ->
+            val rightmostScreen = mapViewRef?.get()?. worldToScreen(rightmost.X, rightmost.Y)
+
+            // 计算文本位置：在最右边点的下方，居中对齐
+            val textRect = Rect()
+            textPaint.getTextBounds(area.sub_name, 0, area.sub_name.length, textRect)
+
+            val textX = rightmostScreen!!.x - textRect.width() / 2
+            val textY = rightmostScreen!!.y + textRect.height() + 10 // 10像素的间距
+
+            // 绘制文本
+            canvas.drawText(area.sub_name, textX, textY, textPaint)
+        }
+    }
+}
