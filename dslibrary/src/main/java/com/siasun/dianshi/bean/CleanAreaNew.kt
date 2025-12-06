@@ -40,26 +40,9 @@ class CleanAreaNew : LiveEvent {
     var routeType = 0
     var areaType = 1
 
-    //点顺次连接的线
-    @JSONField(serialize = false)
-    var polygonLine: Vector<LineNew> = Vector<LineNew>()
-    /**
-     * ****************************************
-     * ****************************************
-     */
-    /**
-     * 是否是任务下的区域
-     */
-    @JSONField(serialize = false)
-    var isCurrentTaskArea = false
 
 
-    /**
-     * 是否是选中区域 （区域编辑中使用）
-     */
-    @JSONField(serialize = false)
-    var isSelect = false
     override fun toString(): String {
-        return "CleanArea{sub_name='$sub_name', regId=$regId, layer_id=$layer_id, endPoint=$endPoint, m_VertexPnt=$m_VertexPnt, areaStartPoint=$areaStartPoint, areaPathType=$areaPathType, pathPlanInfo=$pathPlanInfo, cleanShape=$cleanShape, routeType=$routeType, areaType=$areaType, m_PolygonLine=$polygonLine}"
+        return "CleanArea{sub_name='$sub_name', regId=$regId, layer_id=$layer_id, endPoint=$endPoint, m_VertexPnt=$m_VertexPnt, areaStartPoint=$areaStartPoint, areaPathType=$areaPathType, pathPlanInfo=$pathPlanInfo, cleanShape=$cleanShape, routeType=$routeType, areaType=$areaType}"
     }
 }

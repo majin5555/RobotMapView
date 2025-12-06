@@ -1,6 +1,5 @@
 package com.siasun.dianshi.network.manager
 
-import com.pnc.core.network.manager.HttpManager
 import com.siasun.dianshi.network.api.ApiInterface
 
 /**

@@ -47,7 +47,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         MODE_REMOVE_NOISE,      // 擦除噪点模式
         MODE_POSITING_AREA_ADD, // 创建定位区域模式
         MODE_POSITING_AREA_EDIT, // 编辑定位区域模式
-        MODE_POSITING_AREA_DELETE // 删除定位区域模式
+        MODE_POSITING_AREA_DELETE, // 删除定位区域模式
+        MODE_CLEAN_AREA_EDIT // 编辑清扫区域模式
     }
 
     // 当前工作模式
@@ -177,8 +178,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         val point = screenToWorld(event.x, event.y)
         mLegendView?.setScreen(point)
 
-        // 如果是擦除噪点模式、创建定位区域模式、编辑定位区域模式或删除定位区域模式
-        if (currentWorkMode == WorkMode.MODE_REMOVE_NOISE || currentWorkMode == WorkMode.MODE_POSITING_AREA_ADD || currentWorkMode == WorkMode.MODE_POSITING_AREA_EDIT || currentWorkMode == WorkMode.MODE_POSITING_AREA_DELETE) {
+        // 如果是擦除噪点模式、创建定位区域模式、编辑定位区域模式、删除定位区域模式或编辑清扫区域模式
+        if (currentWorkMode == WorkMode.MODE_REMOVE_NOISE || currentWorkMode == WorkMode.MODE_POSITING_AREA_ADD || currentWorkMode == WorkMode.MODE_POSITING_AREA_EDIT || currentWorkMode == WorkMode.MODE_POSITING_AREA_DELETE || currentWorkMode == WorkMode.MODE_CLEAN_AREA_EDIT) {
             // 让事件传递给子视图（如RemoveNoiseView或PostingAreasView）处理
             // 先调用父类的onTouchEvent让事件传递给子视图
             super.onTouchEvent(event)
@@ -390,6 +391,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mRemoveNoiseView?.setWorkMode(mode)
         // 将工作模式传递给定位区域视图
         mPostingAreasView?.setEditMode(mode)
+        // 将工作模式传递给清扫区域视图
+        mPolygonEditView1?.setWorkMode(mode)
     }
 
     /**

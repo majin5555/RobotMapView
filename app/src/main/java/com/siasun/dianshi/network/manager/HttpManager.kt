@@ -1,4 +1,4 @@
-package com.pnc.core.network.manager
+package com.siasun.dianshi.network.manager
 
 import android.util.Log
 import com.siasun.dianshi.framework.helper.AppHelper
@@ -45,9 +45,9 @@ object HttpManager {
      */
     fun initOkHttpClient(): OkHttpClient {
         val build = OkHttpClient.Builder()
-                .connectTimeout(60, TimeUnit.SECONDS)
-                .writeTimeout(60, TimeUnit.SECONDS)
-                .readTimeout(60, TimeUnit.SECONDS)
+                .connectTimeout(6000, TimeUnit.SECONDS)
+                .writeTimeout(6000, TimeUnit.SECONDS)
+                .readTimeout(6000, TimeUnit.SECONDS)
         // 添加参数拦截器
         val interceptors = mutableListOf<Interceptor>()
         build.addInterceptor(ModifyBaseUrlInterceptor())
