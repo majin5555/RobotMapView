@@ -555,9 +555,11 @@ class PostingAreasView(context: Context?, parent: WeakReference<MapView>) :
             }
 
             // 绘制所有定位区域
-            positingAreas.forEachIndexed { index, area ->
-                val isSelected = selectedAreaId == area.id
-                drawPositingArea(canvas, area, index, isSelected, mapView)
+            if (positingAreas.size > 0) {
+                positingAreas.forEachIndexed { index, area ->
+                    val isSelected = selectedAreaId == area.id
+                    drawPositingArea(canvas, area, index, isSelected, mapView)
+                }
             }
         }
     }

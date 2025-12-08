@@ -80,7 +80,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     var mTopViewPathView: TopViewPathView? = null//顶视路线
     var mRemoveNoiseView: RemoveNoiseView? = null//噪点擦出
     var mPostingAreasView: PostingAreasView? = null//定位区域
-    var mPolygonEditView1: PolygonEditView1? = null//定位区域
+    var mPolygonEditView1: PolygonEditView? = null//定位区域
 
     //    var mAreasView: AreasView? = null//区域
 //    var mMixAreasView: MixedAreasView? = null//混行区域
@@ -132,7 +132,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mWorkIngPathView = WorkIngPathView(context, mMapView)
         mRemoveNoiseView = RemoveNoiseView(context, mMapView)
         mPostingAreasView = PostingAreasView(context, mMapView)
-        mPolygonEditView1 = PolygonEditView1(context, mMapView)
+        mPolygonEditView1 = PolygonEditView(context, mMapView)
         //底图的View
         addView(mPngMapView, lp)
 
@@ -572,6 +572,39 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         area?.let {
             mPostingAreasView?.deletePositingArea(it)
         }
+    }
+
+
+    /**
+     * 设置清扫区域编辑监听器
+     */
+    fun setOnCleanAreaEditListener(listener: PolygonEditView.OnCleanAreaEditListener?) {
+        mPolygonEditView1?.setOnCleanAreaEditListener(object :
+            PolygonEditView.OnCleanAreaEditListener {
+            override fun onSelectedAreaChanged(area: CleanAreaNew?) {
+                listener?.onSelectedAreaChanged(area)
+            }
+
+            override fun onVertexDragStart(area: CleanAreaNew, vertexIndex: Int) {
+                listener?.onVertexDragStart(area, vertexIndex)
+            }
+
+            override fun onVertexDragging(area: CleanAreaNew, vertexIndex: Int, newX: Float, newY: Float) {
+                listener?.onVertexDragging(area, vertexIndex, newX, newY)
+            }
+
+            override fun onVertexDragEnd(area: CleanAreaNew, vertexIndex: Int) {
+                listener?.onVertexDragEnd(area, vertexIndex)
+            }
+
+            override fun onVertexAdded(area: CleanAreaNew, vertexIndex: Int, x: Float, y: Float) {
+                listener?.onVertexAdded(area, vertexIndex, x, y)
+            }
+
+            override fun onEdgeRemoved(area: CleanAreaNew, edgeIndex: Int) {
+                listener?.onEdgeRemoved(area, edgeIndex)
+            }
+        })
     }
 
     /**

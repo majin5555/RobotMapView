@@ -3,7 +3,6 @@ package com.siasun.dianshi.mapviewdemo.ui
 import android.graphics.Bitmap
 import android.graphics.PointF
 import android.os.Bundle
-import com.alibaba.fastjson.JSON
 import com.alibaba.fastjson.JSONObject
 import com.alibaba.fastjson.serializer.SerializeConfig
 import com.alibaba.fastjson.serializer.SerializerFeature
@@ -38,6 +37,7 @@ import com.siasun.dianshi.view.MapView
 import com.siasun.dianshi.bean.CleanAreaRootNew
 import com.siasun.dianshi.framework.ext.toBean
 import com.siasun.dianshi.mapviewdemo.utils.FileIOUtil
+import com.siasun.dianshi.view.PolygonEditView
 import com.siasun.dianshi.view.PostingAreasView
 import java.io.File
 
@@ -275,11 +275,28 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 
         val jsonStr = FileIOUtil.readFile2String(getFilePath(mapId, PAD_AREAS_NAME), "utf-8")
 
+        LogUtil.d("jsonStr ${jsonStr}")
         val cleanAreaRoot = jsonStr.toBean<CleanAreaRootNew>()
         // 如果解析成功，可以在这里处理数据
         cleanAreaRoot.cleanAreas.let {
             cleanAreas.addAll(it)
             mBinding.mapView.setCleanAreaData(cleanAreas)
+
+            // 设置清扫区域编辑监听器
+            mBinding.mapView.setOnCleanAreaEditListener(object :
+                PolygonEditView.OnCleanAreaEditListener {
+
+                override fun onVertexDragEnd(area: CleanAreaNew, vertexIndex: Int) {
+                }
+
+                override fun onVertexAdded(
+                    area: CleanAreaNew, vertexIndex: Int, x: Float, y: Float
+                ) {
+                }
+
+                override fun onEdgeRemoved(area: CleanAreaNew, edgeIndex: Int) {
+                }
+            })
         }
     }
 }

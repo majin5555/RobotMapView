@@ -7,11 +7,7 @@ import com.jeremyliao.liveeventbus.core.LiveEvent
  * Created by mj
  *
  */
-data class CleanAreaRootNew(var cleanAreas: MutableList<CleanAreaNew> = mutableListOf()) : LiveEvent {
-    // 为了FastJSON反序列化添加无参构造函数
-    constructor() : this(mutableListOf())
-}
-
+data class CleanAreaRootNew(var cleanAreas: MutableList<CleanAreaNew> = mutableListOf()) : LiveEvent
 
 
 /**
