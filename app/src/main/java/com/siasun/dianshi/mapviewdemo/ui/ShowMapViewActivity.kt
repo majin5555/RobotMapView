@@ -36,7 +36,9 @@ import com.siasun.dianshi.utils.YamlNew
 import com.siasun.dianshi.view.MapView
 import com.siasun.dianshi.bean.CleanAreaRootNew
 import com.siasun.dianshi.bean.SpArea
+import com.siasun.dianshi.bean.WorkAreasNew
 import com.siasun.dianshi.mapviewdemo.utils.FileIOUtil
+import com.siasun.dianshi.view.MixAreaView
 import com.siasun.dianshi.view.PolygonEditView
 import com.siasun.dianshi.view.PostingAreasView
 import java.io.File
@@ -50,6 +52,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     var positingAreas = mutableListOf<PositingArea>()
     var cleanAreas: MutableList<CleanAreaNew> = mutableListOf()
     var mSpArea: MutableList<SpArea> = mutableListOf()
+    var mMixArea: MutableList<WorkAreasNew> = mutableListOf()
     override fun initView(savedInstanceState: Bundle?) {
         MainController.init()
         initListener()
@@ -290,6 +293,53 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.btnSaveSpArea.onClick {
             mViewModel.saveSpecialArea(mapId, mBinding.mapView.getSpAreaData())
         }
+
+
+        //添加混行区域
+        mBinding.btnAddMixArea.onClick {
+            // 设置地图的工作模式为添加清扫区域模式
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_MIX_AREA_ADD)
+            // 创建一个新的清扫区域
+            val newArea = WorkAreasNew().apply {
+                name = "混行区域${cleanAreas.size + 1}"
+                id = "${cleanAreas.size + 1}"
+            }
+            mMixArea.add(newArea)
+            mBinding.mapView.createMixArea(newArea)
+        }
+        //编辑混行区域
+        mBinding.btnEditMixArea.onClick {
+
+            if (mMixArea.isNotEmpty()) {
+                // 生成0到positingAreas.size-1之间的随机索引
+                val randomIndex = Random.nextInt(mMixArea.size)
+                // 通过随机索引获取要删除的定位区域
+                val randomArea = mMixArea[randomIndex]
+                mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_MIX_AREA_EDIT)
+                mBinding.mapView.setSelectedMixArea(randomArea)
+            }
+        }
+        //删除混行区域
+        mBinding.btnDeleteMixArea.onClick {
+            // 随机选择一个定位区域进行删除
+            if (mMixArea.isNotEmpty()) {
+                // 生成0到positingAreas.size-1之间的随机索引
+                val randomIndex = Random.nextInt(mMixArea.size)
+
+                // 通过随机索引获取要删除的定位区域
+                val randomArea = mMixArea[randomIndex]
+
+                // 更新本地列表
+                mMixArea.remove(randomArea)
+                mBinding.mapView.setMixAreaData(mMixArea)
+            }
+        }
+        //保存混行区域
+        mBinding.btnSaveMixArea.onClick {
+            mViewModel.saveWorkAreaList(
+                mapId, mBinding.mapView.getMixAreaData()
+            )
+        }
     }
 
     /**
@@ -388,6 +438,14 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             LogUtil.d("获取特殊区域 $it")
             mSpArea.addAll(it)
             mBinding.mapView.setSpAreaData(mSpArea)
+        }
+
+        //获取混行区域
+        mViewModel.getMixAreaData(mapId) { workAreasNew ->
+            workAreasNew?.let {
+                mMixArea.addAll(workAreasNew.workAreasList)
+                mBinding.mapView.setMixAreaData(mMixArea)
+            }
         }
     }
 }

@@ -6,11 +6,13 @@ import com.pnc.core.network.response.BaseResponse
 import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.CleanAreaRootNew
 import com.siasun.dianshi.bean.CmsStation
+import com.siasun.dianshi.bean.CmsWorkAreasListRoot
 import com.siasun.dianshi.bean.ElevatorRoot
 import com.siasun.dianshi.bean.InitPoseRoot
 import com.siasun.dianshi.bean.MachineStation
 import com.siasun.dianshi.bean.MergedPoseBean
 import com.siasun.dianshi.bean.RequestSaveArea
+import com.siasun.dianshi.bean.RequestSaveCmsWorkArea
 import com.siasun.dianshi.bean.SpArea
 import com.siasun.dianshi.network.request.RequestGetSpecialArea
 import com.siasun.dianshi.network.request.RequestSaveSpecialArea
@@ -186,11 +188,11 @@ interface ApiInterface {
 //    /**
 //     * 获取混行区
 //     */
-//    @POST("/get_cms_work_areas_list")
-//    suspend fun getCmsWorkAreas(@Body data: RequestCommonMapId): BaseResponse<CmsWorkAreasListRoot>
-//
-//    @POST("/save_cms_work_areas_list")
-//    suspend fun saveCmsWorkAreas(@Body data: RequestSaveCmsWorkArea): BaseResponse<Any>
+    @POST("/get_cms_work_areas_list")
+    suspend fun getCmsWorkAreas(@Body data: RequestCommonMapId): BaseResponse<CmsWorkAreasListRoot>
+
+    @POST("/save_cms_work_areas_list")
+    suspend fun saveCmsWorkAreas(@Body data: RequestSaveCmsWorkArea): BaseResponse<Any>
 //
 //
 //    @POST("/save_integrated_machine")

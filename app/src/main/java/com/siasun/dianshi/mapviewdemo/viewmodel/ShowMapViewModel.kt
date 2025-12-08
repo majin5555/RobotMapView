@@ -8,12 +8,15 @@ import com.pnc.core.network.callback.IApiErrorCallback
 import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.CleanAreaRootNew
 import com.siasun.dianshi.bean.CmsStation
+import com.siasun.dianshi.bean.CmsWorkAreasListRoot
 import com.siasun.dianshi.bean.ElevatorPoint
 import com.siasun.dianshi.bean.InitPoseRoot
 import com.siasun.dianshi.bean.MachineStation
 import com.siasun.dianshi.bean.MergedPoseBean
 import com.siasun.dianshi.bean.RequestSaveArea
+import com.siasun.dianshi.bean.RequestSaveCmsWorkArea
 import com.siasun.dianshi.bean.SpArea
+import com.siasun.dianshi.bean.WorkAreasNew
 import com.siasun.dianshi.bean.toUpload
 import com.siasun.dianshi.network.manager.ApiManager
 import com.siasun.dianshi.network.request.RequestGetSpecialArea
@@ -41,6 +44,10 @@ class ShowMapViewModel : BaseViewModel() {
 
     val saveSpecialArea = MutableLiveData<Boolean>()
     val getSpecialArea = MutableLiveData<MutableList<SpArea>>()
+
+
+    val saveWorksArea = MutableLiveData<Boolean>()
+
 
     /**
      * 保存虚拟墙
@@ -146,8 +153,7 @@ class ShowMapViewModel : BaseViewModel() {
      * 获取称梯点
      */
     fun getCmsElevator(
-        layerId: Int,
-        onComplete: (cmsStations: MutableList<ElevatorPoint>?) -> Unit
+        layerId: Int, onComplete: (cmsStations: MutableList<ElevatorPoint>?) -> Unit
     ) {
         launchUIWithResult(responseBlock = {
             ApiManager.api.getCmsElevator(RequestCommonMapId(layerId))
@@ -233,6 +239,43 @@ class ShowMapViewModel : BaseViewModel() {
 
         })
 
+    }
+
+
+    /**
+     * 获取混行区页面需要的数据
+     */
+    fun getMixAreaData(
+        layerId: Int, onComplete: (workList: CmsWorkAreasListRoot?) -> Unit
+    ) {
+        viewModelScope.launch {
+
+            val workAreasNewDeferred = async {
+                ApiManager.api.getCmsWorkAreas(RequestCommonMapId(layerId))
+            }
+
+            val workAreasNew = workAreasNewDeferred.await()
+
+            onComplete.invoke(
+                workAreasNew.data
+            )
+        }
+    }
+    /**
+     * 保存混行区
+     */
+    fun saveWorkAreaList(layerId: Int, workAreasNew: MutableList<WorkAreasNew>) {
+        launchUIWithResult(responseBlock = {
+            val requestSaveArea =
+                RequestSaveCmsWorkArea(layerId, CmsWorkAreasListRoot(workAreasNew).toUpload())
+            ApiManager.api.saveCmsWorkAreas(requestSaveArea)
+        }, errorCall = object : IApiErrorCallback {
+            override fun onError(code: Int?, error: String?) {
+                saveWorksArea.postValue(false)
+            }
+        }, successBlock = {
+            saveWorksArea.postValue(true)
+        })
     }
 
 }

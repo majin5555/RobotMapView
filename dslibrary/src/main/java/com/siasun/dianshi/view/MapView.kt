@@ -24,6 +24,7 @@ import com.siasun.dianshi.bean.MapData
 import com.siasun.dianshi.bean.MergedPoseItem
 import com.siasun.dianshi.bean.PositingArea
 import com.siasun.dianshi.bean.SpArea
+import com.siasun.dianshi.bean.WorkAreasNew
 import com.siasun.dianshi.utils.CoordinateConversion
 import com.siasun.dianshi.utils.MathUtils
 import com.siasun.dianshi.utils.RadianUtil
@@ -53,6 +54,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         MODE_CLEAN_AREA_ADD, // 创建清扫区域模式
         MODE_SP_AREA_EDIT, // 编辑特殊区域模式
         MODE_SP_AREA_ADD, // 创建特殊区域模式
+        MODE_MIX_AREA_ADD, // 创建混行区域模式
+        MODE_MIX_AREA_EDIT, // 编辑区域模式
     }
 
     // 当前工作模式
@@ -86,9 +89,10 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     var mPostingAreasView: PostingAreasView? = null//定位区域
     var mPolygonEditView: PolygonEditView? = null//区域
     var mSpPolygonEditView: SpPolygonEditView? = null//特殊区域
+    var mMixAreaView: MixAreaView? = null//混行区域
 
-    //    var mMixAreasView: MixedAreasView? = null//混行区域
-//    var mPathView: PathView? = null//路线PP
+
+    //    var mPathView: PathView? = null//路线PP
     var mRobotView: RobotView? = null //机器人图标
     var mWorkIngPathView: WorkIngPathView? = null //机器人工作路径
 
@@ -138,6 +142,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mPostingAreasView = PostingAreasView(context, mMapView)
         mPolygonEditView = PolygonEditView(context, mMapView)
         mSpPolygonEditView = SpPolygonEditView(context, mMapView)
+        mMixAreaView = MixAreaView(context, mMapView)
         //底图的View
         addView(mPngMapView, lp)
 
@@ -168,6 +173,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         addMapLayers(mPolygonEditView)
         //特殊区域
         addMapLayers(mSpPolygonEditView)
+        //混行区域
+        addMapLayers(mMixAreaView)
 
         //  修改LegendView的布局参数，使其显示在右上角
         addView(mLegendView, LayoutParams(
@@ -186,7 +193,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mLegendView?.setScreen(point)
 
         // 如果是擦除噪点模式、创建定位区域模式、编辑定位区域模式、删除定位区域模式、编辑清扫区域模式或创建清扫区域模式
-        if (currentWorkMode == WorkMode.MODE_REMOVE_NOISE || currentWorkMode == WorkMode.MODE_POSITING_AREA_ADD || currentWorkMode == WorkMode.MODE_POSITING_AREA_EDIT || currentWorkMode == WorkMode.MODE_POSITING_AREA_DELETE || currentWorkMode == WorkMode.MODE_CLEAN_AREA_EDIT || currentWorkMode == WorkMode.MODE_CLEAN_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_SP_AREA_ADD) {
+        if (currentWorkMode == WorkMode.MODE_REMOVE_NOISE || currentWorkMode == WorkMode.MODE_POSITING_AREA_ADD || currentWorkMode == WorkMode.MODE_POSITING_AREA_EDIT || currentWorkMode == WorkMode.MODE_POSITING_AREA_DELETE || currentWorkMode == WorkMode.MODE_CLEAN_AREA_EDIT || currentWorkMode == WorkMode.MODE_CLEAN_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_EDIT) {
             // 让事件传递给子视图（如RemoveNoiseView或PostingAreasView）处理
             // 先调用父类的onTouchEvent让事件传递给子视图
             super.onTouchEvent(event)
@@ -414,6 +421,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mPolygonEditView?.setWorkMode(mode)
         // 将工作模式传递给清扫区域视图
         mSpPolygonEditView?.setWorkMode(mode)
+        //混行区
+        mMixAreaView?.setWorkMode(mode)
     }
 
     /**
@@ -627,6 +636,32 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         }
     }
 
+    /**
+     * 设置混行区域
+     */
+    fun setMixAreaData(data: MutableList<WorkAreasNew>) {
+        mMixAreaView?.setMixAreaData(data)
+    }
+
+
+    /**
+     * 获取混行区域
+     */
+    fun getMixAreaData(): MutableList<WorkAreasNew> = mMixAreaView?.getData() ?: mutableListOf()
+
+    /**
+     * 创建混行区域
+     */
+    fun createMixArea(newArea: WorkAreasNew) {
+        mMixAreaView?.createRectangularAreaAtCenter(newArea)
+    }
+
+    /**
+     * 设置选中的混行区域
+     */
+    fun setSelectedMixArea(area: WorkAreasNew?) {
+        mMixAreaView?.setSelectedArea(area)
+    }
 
     /**
      * 设置定位区域编辑监听器
