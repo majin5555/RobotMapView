@@ -417,6 +417,13 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     }
 
     /**
+     * 获取当前工作模式
+     */
+    fun getCurrentWorkMode(): WorkMode {
+        return currentWorkMode
+    }
+
+    /**
      * 设置地图数据信息
      * 设置地图
      *
@@ -503,45 +510,94 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     /**
      * 设置顶视路线
      */
-    fun setTopViewPathDada(data: MutableList<MergedPoseItem>) =
+    fun setTopViewPathDada(data: MutableList<MergedPoseItem>) {
         mTopViewPathView?.setTopViewPath(data)
+    }
 
 
     /**
      * 设置上线点
      */
-    fun setInitPoseList(data: MutableList<InitPose>) =
+    fun setInitPoseList(data: MutableList<InitPose>) {
         mOnlinePoseView?.setInitPoses(data)
+    }
 
 
     /**
      * 设置充电站
      */
-    fun setMachineStation(machineStation: MachineStation?) =
+    fun setMachineStation(machineStation: MachineStation?) {
         mHomeDockView?.setHomePose(machineStation)
+    }
 
 
     /**
      * 设置避让点
      */
-    fun setCmsStations(list: MutableList<CmsStation>?) = mStationView?.setCmsStations(list)
+    fun setCmsStations(list: MutableList<CmsStation>?) {
+        mStationView?.setCmsStations(list)
+    }
 
     /**
      * 设置乘梯点
      */
-    fun setElevators(list: MutableList<ElevatorPoint>?) = mElevatorView?.setElevators(list)
+    fun setElevators(list: MutableList<ElevatorPoint>?) {
+        mElevatorView?.setElevators(list)
+    }
 
     /**
-     * 设置清扫区域
+     * 设置清扫区域数据源
      */
-    fun setCleanAreaData(data: MutableList<CleanAreaNew>) =
+    fun setCleanAreaData(data: MutableList<CleanAreaNew>) {
         mPolygonEditView?.setCleanAreaData(data)
+    }
+
+    /**
+     * 设置选中的清扫区域
+     */
+    fun setSelectedArea(area: CleanAreaNew?) {
+        mPolygonEditView?.setSelectedArea(area)
+    }
+
+    /**
+     * 创建清扫区域
+     */
+    fun createCleanArea(newArea: CleanAreaNew) {
+        mPolygonEditView?.createRectangularAreaAtCenter(newArea)
+    }
+
+    /**
+     * 获取清扫区域
+     */
+    fun getCleanAreaData(): MutableList<CleanAreaNew> =
+        mPolygonEditView?.getData() ?: mutableListOf()
 
     /**
      * 设置特殊区域
      */
-    fun setSpAreaData(data: MutableList<SpArea>) =
+    fun setSpAreaData(data: MutableList<SpArea>) {
         mSpPolygonEditView?.setSpAreaData(data)
+    }
+
+    /**
+     * 设置选中的特殊区域
+     */
+    fun setSelectedSpArea(area: SpArea?) {
+        mSpPolygonEditView?.setSelectedArea(area)
+    }
+
+    /**
+     * 创建特殊区域
+     */
+    fun createSpArea(newArea: SpArea) {
+        mSpPolygonEditView?.createRectangularAreaAtCenter(newArea)
+    }
+
+    /**
+     * 获取特殊区域
+     */
+    fun getSpAreaData(): MutableList<SpArea> = mSpPolygonEditView?.getData() ?: mutableListOf()
+
 
     /**
      * 设置定位区域
@@ -550,54 +606,17 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mPostingAreasView?.setPositingAreas(list)
 
     /**
+     * 获取定位区域
+     */
+    fun getPositingAreas(): MutableList<PositingArea> =
+        mPostingAreasView?.getData() ?: mutableListOf()
+
+    /**
      * 设置选中的定位区域
      */
-    fun setSelectedPositingArea(area: PositingArea?) = mPostingAreasView?.setSelectedArea(area)
-
-    /**
-     * 设置选中的定位区域ID
-     */
-    fun setSelectedPositingAreaId(areaId: Long?) = mPostingAreasView?.setSelectedAreaId(areaId)
-
-    /**
-     * 清除选中的定位区域
-     */
-    fun clearSelectedPositingArea() = mPostingAreasView?.clearSelectedArea()
-
-    /**
-     * 设置选中定位区域的边框宽度
-     */
-    fun setSelectedPositingAreaStrokeWidth(width: Float) =
-        mPostingAreasView?.setSelectedRectStrokeWidth(width)
-
-    /**
-     * 设置选中定位区域的边框颜色
-     */
-    fun setSelectedPositingAreaColor(color: Int) = mPostingAreasView?.setSelectedRectColor(color)
-
-    /**
-     * 创建清扫区域
-     */
-    fun createRectangularAreaAtCenter(newArea: CleanAreaNew) =
-        mPolygonEditView?.createRectangularAreaAtCenter(newArea)
-
-    /**
-     * 设置定位区域编辑监听器
-     */
-    fun setOnPositingAreaEditedListener(listener: PostingAreasView.OnPositingAreaEditedListener?) =
-        mPostingAreasView?.setOnPositingAreaEditedListener(listener)
-
-    /**
-     * 设置定位区域删除监听器
-     */
-    fun setOnPositingAreaDeletedListener(listener: PostingAreasView.OnPositingAreaDeletedListener?) =
-        mPostingAreasView?.setOnPositingAreaDeletedListener(listener)
-
-    /**
-     * 设置定位区域创建监听器
-     */
-    fun setOnPositingAreaCreatedListener(listener: PostingAreasView.OnPositingAreaCreatedListener?) =
-        mPostingAreasView?.setOnPositingAreaCreatedListener(listener)
+    fun setSelectedPositingArea(area: PositingArea?) {
+        mPostingAreasView?.setSelectedArea(area)
+    }
 
     /**
      * 删除指定的定位区域
@@ -606,6 +625,29 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         area?.let {
             mPostingAreasView?.deletePositingArea(it)
         }
+    }
+
+
+    /**
+     * 设置定位区域编辑监听器
+     */
+    fun setOnPositingAreaEditedListener(listener: PostingAreasView.OnPositingAreaEditedListener?) {
+        mPostingAreasView?.setOnPositingAreaEditedListener(listener)
+
+    }
+
+    /**
+     * 设置定位区域删除监听器
+     */
+    fun setOnPositingAreaDeletedListener(listener: PostingAreasView.OnPositingAreaDeletedListener?) {
+        mPostingAreasView?.setOnPositingAreaDeletedListener(listener)
+    }
+
+    /**
+     * 设置定位区域创建监听器
+     */
+    fun setOnPositingAreaCreatedListener(listener: PostingAreasView.OnPositingAreaCreatedListener?) {
+        mPostingAreasView?.setOnPositingAreaCreatedListener(listener)
     }
 
 
@@ -624,10 +666,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
             }
 
             override fun onVertexDragging(
-                area: CleanAreaNew,
-                vertexIndex: Int,
-                newX: Float,
-                newY: Float
+                area: CleanAreaNew, vertexIndex: Int, newX: Float, newY: Float
             ) {
                 listener?.onVertexDragging(area, vertexIndex, newX, newY)
             }
@@ -636,7 +675,9 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
                 listener?.onVertexDragEnd(area, vertexIndex)
             }
 
-            override fun onVertexAdded(area: CleanAreaNew, vertexIndex: Int, x: Float, y: Float) {
+            override fun onVertexAdded(
+                area: CleanAreaNew, vertexIndex: Int, x: Float, y: Float
+            ) {
                 listener?.onVertexAdded(area, vertexIndex, x, y)
             }
 
@@ -655,13 +696,6 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         }
     }
 
-
-    /**
-     * 获取当前工作模式
-     */
-    fun getCurrentWorkMode(): WorkMode {
-        return currentWorkMode
-    }
 
     /**
      * 添加虚拟墙

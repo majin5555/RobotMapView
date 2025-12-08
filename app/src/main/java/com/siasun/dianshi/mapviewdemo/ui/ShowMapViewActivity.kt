@@ -186,7 +186,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         //保存定位区域
         mBinding.btnPostingAreaCommit.setOnClickListener {
             MainController.sendPositingArea(
-                mapId, mBinding.mapView.mPostingAreasView!!.getPositingAreas()
+                mapId, mBinding.mapView.getPositingAreas()
             )
         }
 
@@ -203,7 +203,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CLEAN_AREA_EDIT)
 
                 // 将选中的区域设置到PolygonEditView中进行编辑
-                mBinding.mapView.mPolygonEditView?.setSelectedArea(randomArea)
+                mBinding.mapView.setSelectedArea(randomArea)
             }
         }
 
@@ -222,7 +222,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 areaPathType = 0 // 普通清扫区域
             }
             cleanAreas.add(newArea)
-            mBinding.mapView.mPolygonEditView?.createRectangularAreaAtCenter(newArea)
+            mBinding.mapView.createCleanArea(newArea)
         }
 
         //删除清扫区域
@@ -241,7 +241,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         }
         //保存清扫区域
         mBinding.btnSaveArea.onClick {
-            savePadAreasJson(mapId, cleanAreas)
+            savePadAreasJson(mapId, mBinding.mapView.getCleanAreaData())
         }
 
 
@@ -258,7 +258,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 areaType = 1
             }
             mSpArea.add(newArea)
-            mBinding.mapView.mSpPolygonEditView?.createRectangularAreaAtCenter(newArea)
+            mBinding.mapView.createSpArea(newArea)
         }
         //编辑特殊区域
         mBinding.btnEditSpArea.onClick {
@@ -268,8 +268,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 // 通过随机索引获取要删除的定位区域
                 val randomArea = mSpArea[randomIndex]
                 mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SP_AREA_EDIT)
-
-                mBinding.mapView.mSpPolygonEditView?.setSelectedArea(randomArea)
+                mBinding.mapView.setSelectedSpArea(randomArea)
             }
         }
         //删除特殊区域
@@ -289,7 +288,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         }
         //保存特殊区域
         mBinding.btnSaveSpArea.onClick {
-            mViewModel.saveSpecialArea(mapId, mBinding.mapView.mSpPolygonEditView!!.getData())
+            mViewModel.saveSpecialArea(mapId, mBinding.mapView.getSpAreaData())
         }
     }
 

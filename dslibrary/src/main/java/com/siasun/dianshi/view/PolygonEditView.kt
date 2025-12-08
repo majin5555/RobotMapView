@@ -536,7 +536,7 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
         canvas.drawPath(path, if (isSelected) selectedAreaPaint else areaPaint)
 
         // 如果是编辑、添加或删除模式且区域被选中，绘制所有顶点和边中点
-        if ((currentWorkMode == MapView.WorkMode.MODE_CLEAN_AREA_EDIT || currentWorkMode == MapView.WorkMode.MODE_CLEAN_AREA_ADD ) && isSelected) {
+        if ((currentWorkMode == MapView.WorkMode.MODE_CLEAN_AREA_EDIT || currentWorkMode == MapView.WorkMode.MODE_CLEAN_AREA_ADD) && isSelected) {
             // 绘制所有顶点
             for (i in points.indices) {
                 val screenPoint =
@@ -586,6 +586,8 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
             canvas.drawText(area.sub_name, textX, textY, textPaint)
         }
     }
+
+    fun getData(): MutableList<CleanAreaNew> = list
 
     // 清扫区域编辑回调接口
     interface OnCleanAreaEditListener {

@@ -92,7 +92,7 @@ class PostingAreasView(context: Context?, parent: WeakReference<MapView>) :
     /**
      * 获取定位区域列表
      */
-    fun getPositingAreas(): MutableList<PositingArea> = positingAreas
+    fun getData(): MutableList<PositingArea> = positingAreas
 
     /**
      * 设置选中的定位区域
@@ -641,54 +641,6 @@ class PostingAreasView(context: Context?, parent: WeakReference<MapView>) :
             bottom + handleSize / 2,
             handlePaint
         )
-    }
-
-    /**
-     * 设置矩形边框宽度
-     */
-    fun setRectStrokeWidth(width: Float) {
-        rectPaint.strokeWidth = width
-        postInvalidate()
-    }
-
-    /**
-     * 设置矩形边框颜色
-     */
-    fun setRectColor(color: Int) {
-        rectPaint.color = color
-        postInvalidate()
-    }
-
-    /**
-     * 设置文本颜色
-     */
-    fun setTextColor(color: Int) {
-        textPaint.color = color
-        postInvalidate()
-    }
-
-    /**
-     * 设置文本大小
-     */
-    fun setTextSize(size: Float) {
-        textPaint.textSize = size
-        postInvalidate()
-    }
-
-    /**
-     * 设置选中矩形边框宽度
-     */
-    fun setSelectedRectStrokeWidth(width: Float) {
-        selectedRectPaint.strokeWidth = width
-        postInvalidate()
-    }
-
-    /**
-     * 设置选中矩形边框颜色
-     */
-    fun setSelectedRectColor(color: Int) {
-        selectedRectPaint.color = color
-        postInvalidate()
     }
 
     /**
