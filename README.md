@@ -150,3 +150,43 @@
 # })
 
 -----------------------------------------
+
+# 显示清扫区域
+
+# mBinding.mapView.setCleanAreaData(cleanAreas)
+-----------------------------------------
+
+# 编辑 设置地图的工作模式为编辑清扫区域模式
+
+# mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CLEAN_AREA_EDIT)
+
+-----------------------------------------
+
+# 添加清扫区域 设置地图的工作模式为添加清扫区域模式
+
+# mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CLEAN_AREA_ADD)
+-----------------------------------------
+
+# 设置清扫区域编辑监听器
+
+# mBinding.mapView.setOnCleanAreaEditListener(object :
+
+# PolygonEditView.OnCleanAreaEditListener {
+
+# override fun onVertexDragEnd(area: CleanAreaNew, vertexIndex: Int) {}
+
+# override fun onVertexAdded(
+
+# area: CleanAreaNew, vertexIndex: Int, x: Float, y: Float) {}
+
+# override fun onEdgeRemoved(area: CleanAreaNew, edgeIndex: Int) {}
+
+# override fun onAreaCreated(area: CleanAreaNew) {
+
+# // 将新创建的清扫区域添加到本地列表
+
+# cleanAreas.add(area)
+
+# }
+
+# })

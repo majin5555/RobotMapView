@@ -68,7 +68,6 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
 
     private val textPaint = Paint().apply {
         color = Color.BLACK
-        textSize = 30f
         isAntiAlias = true
     }
 
@@ -94,11 +93,55 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
     fun setWorkMode(mode: MapView.WorkMode) {
         this.currentWorkMode = mode
         // 如果退出编辑模式，清空选中状态
-        if (mode != MapView.WorkMode.MODE_CLEAN_AREA_EDIT) {
+        if (mode != MapView.WorkMode.MODE_CLEAN_AREA_EDIT && mode != MapView.WorkMode.MODE_CLEAN_AREA_ADD) {
             selectedArea = null
             selectedPointIndex = -1
             isDragging = false
         }
+        invalidate()
+    }
+
+    /**
+     * 在地图中心创建一个矩形清扫区域
+     */
+    fun createRectangularAreaAtCenter(newArea: CleanAreaNew) {
+        // 获取MapView实例
+        val mapView = mapViewRef?.get() ?: return
+
+        // 计算地图中心位置
+        val centerX = mapView.viewWidth / 2f
+        val centerY = mapView.viewHeight / 2f
+
+        // 将屏幕中心坐标转换为世界坐标
+        val worldCenter = mapView.screenToWorld(centerX, centerY)
+
+        // 创建矩形的四个顶点（100x100的矩形，中心在地图中心）
+        val rectSize = 20f
+        val halfSize = rectSize / 2f
+
+        val topLeft = PointNew(worldCenter.x - halfSize, worldCenter.y - halfSize)
+        val topRight = PointNew(worldCenter.x + halfSize, worldCenter.y - halfSize)
+        val bottomRight = PointNew(worldCenter.x + halfSize, worldCenter.y + halfSize)
+        val bottomLeft = PointNew(worldCenter.x - halfSize, worldCenter.y + halfSize)
+
+        // 添加顶点到区域
+        newArea.m_VertexPnt.add(topLeft)
+        newArea.m_VertexPnt.add(topRight)
+        newArea.m_VertexPnt.add(bottomRight)
+        newArea.m_VertexPnt.add(bottomLeft)
+
+        // 将新区域添加到列表
+        list.add(newArea)
+
+        // 选中新创建的区域
+        selectedArea = newArea
+
+        // 通知监听器选中区域变化
+        onCleanAreaEditListener?.onSelectedAreaChanged(newArea)
+
+        // 通知监听器创建了新区域
+        onCleanAreaEditListener?.onAreaCreated(newArea)
+
         invalidate()
     }
 
@@ -325,7 +368,7 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
             return true
         }
 
-        if (currentWorkMode != MapView.WorkMode.MODE_CLEAN_AREA_EDIT || selectedArea == null) {
+        if ((currentWorkMode != MapView.WorkMode.MODE_CLEAN_AREA_EDIT && currentWorkMode != MapView.WorkMode.MODE_CLEAN_AREA_ADD) || selectedArea == null) {
             return false
         }
 
@@ -419,13 +462,21 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
     }
 
     override fun onDoubleTap(e: MotionEvent): Boolean {
-        if (currentWorkMode != MapView.WorkMode.MODE_CLEAN_AREA_EDIT || selectedArea == null) {
+        if ((currentWorkMode != MapView.WorkMode.MODE_CLEAN_AREA_EDIT && currentWorkMode != MapView.WorkMode.MODE_CLEAN_AREA_ADD) || selectedArea == null) {
             return false
         }
 
         val x = e.x
         val y = e.y
         val points = selectedArea!!.m_VertexPnt
+
+        // 先检查是否双击在顶点上
+        val clickedVertexIndex = findNearbyVertexIndex(selectedArea!!, x, y)
+        if (clickedVertexIndex != -1) {
+            // 删除与该顶点相关的边（删除下一条边，即顶点clickedVertexIndex和(clickedVertexIndex+1)%points.size之间的边）
+            removeEdge(selectedArea!!, clickedVertexIndex)
+            return true
+        }
 
         // 查找双击位置所在的线段
         for (i in points.indices) {
@@ -484,8 +535,8 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
         // 绘制多边形轮廓，选中的区域使用不同的画笔
         canvas.drawPath(path, if (isSelected) selectedAreaPaint else areaPaint)
 
-        // 如果是编辑模式且区域被选中，绘制所有顶点和边中点
-        if (currentWorkMode == MapView.WorkMode.MODE_CLEAN_AREA_EDIT && isSelected) {
+        // 如果是编辑、添加或删除模式且区域被选中，绘制所有顶点和边中点
+        if ((currentWorkMode == MapView.WorkMode.MODE_CLEAN_AREA_EDIT || currentWorkMode == MapView.WorkMode.MODE_CLEAN_AREA_ADD ) && isSelected) {
             // 绘制所有顶点
             for (i in points.indices) {
                 val screenPoint =
@@ -555,5 +606,8 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
 
         // 删除了边
         fun onEdgeRemoved(area: CleanAreaNew, edgeIndex: Int)
+
+        // 创建了新区域
+        fun onAreaCreated(area: CleanAreaNew) {}
     }
 }

@@ -203,13 +203,47 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CLEAN_AREA_EDIT)
 
                 // 将选中的区域设置到PolygonEditView1中进行编辑
-                mBinding.mapView.mPolygonEditView1?.setSelectedArea(randomArea)
+                mBinding.mapView.mPolygonEditView?.setSelectedArea(randomArea)
+            }
+        }
+
+        //添加清扫区域
+        mBinding.btnAddArea.onClick {
+            // 设置地图的工作模式为添加清扫区域模式
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CLEAN_AREA_ADD)
+            // 创建一个新的清扫区域
+            val newArea = CleanAreaNew().apply {
+                sub_name = "清扫区域${cleanAreas.size + 1}"
+                regId = cleanAreas.size + 1
+                layer_id = mapId
+                routeType = 1 // 手动生成
+                areaType = 1
+                cleanShape = 4 // 回字型
+                areaPathType = 0 // 普通清扫区域
+            }
+            cleanAreas.add(newArea)
+            mBinding.mapView.mPolygonEditView?.createRectangularAreaAtCenter(newArea)
+        }
+
+        //删除清扫区域
+        mBinding.btnDeleteArea.onClick {
+            if (cleanAreas.isNotEmpty()) {
+                // 随机生成一个索引
+                val randomIndex = java.util.Random().nextInt(cleanAreas.size)
+                // 删除随机选中的清扫区域
+                cleanAreas.removeAt(randomIndex)
+                // 更新清扫区域数据
+                mBinding.mapView.mPolygonEditView?.setCleanAreaData(cleanAreas)
+                LogUtil.d("随机删除了一个清扫区域，当前剩余 ${cleanAreas.size} 个清扫区域")
+            } else {
+                LogUtil.d("没有清扫区域可以删除")
             }
         }
         //保存清扫区域
         mBinding.btnSaveArea.onClick {
             savePadAreasJson(mapId, cleanAreas)
         }
+
     }
 
     /**
@@ -295,6 +329,12 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 }
 
                 override fun onEdgeRemoved(area: CleanAreaNew, edgeIndex: Int) {
+                }
+
+                override fun onAreaCreated(area: CleanAreaNew) {
+                    // 将新创建的清扫区域添加到本地列表
+                    cleanAreas.add(area)
+                    LogUtil.d("创建了新的清扫区域: ${area.sub_name}, ID: ${area.regId}")
                 }
             })
         }

@@ -82,11 +82,25 @@
         app:layout_constraintTop_toBottomOf="@+id/btn_posting_area_commit" />
 
     <Button
+        android:id="@+id/btn_add_area"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="添加清扫区域"
+        app:layout_constraintTop_toBottomOf="@+id/btn_edit_area" />
+
+    <Button
         android:id="@+id/btn_save_area"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="保存清扫区域"
-        app:layout_constraintTop_toBottomOf="@+id/btn_edit_area" />
+        app:layout_constraintTop_toBottomOf="@+id/btn_add_area" />
+
+    <Button
+        android:id="@+id/btn_delete_area"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="删除清扫区域"
+        app:layout_constraintTop_toBottomOf="@+id/btn_save_area" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
