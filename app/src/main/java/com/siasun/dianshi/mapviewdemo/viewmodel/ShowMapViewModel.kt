@@ -5,12 +5,19 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.siasun.dianshi.network.request.RequestCommonMapId
 import com.pnc.core.network.callback.IApiErrorCallback
+import com.siasun.dianshi.bean.CleanAreaNew
+import com.siasun.dianshi.bean.CleanAreaRootNew
 import com.siasun.dianshi.bean.CmsStation
 import com.siasun.dianshi.bean.ElevatorPoint
 import com.siasun.dianshi.bean.InitPoseRoot
 import com.siasun.dianshi.bean.MachineStation
 import com.siasun.dianshi.bean.MergedPoseBean
+import com.siasun.dianshi.bean.RequestSaveArea
+import com.siasun.dianshi.bean.SpArea
+import com.siasun.dianshi.bean.toUpload
 import com.siasun.dianshi.network.manager.ApiManager
+import com.siasun.dianshi.network.request.RequestGetSpecialArea
+import com.siasun.dianshi.network.request.RequestSaveSpecialArea
 import com.siasun.dianshi.network.request.RequestSaveVirtualWall
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
@@ -22,11 +29,18 @@ import kotlinx.coroutines.launch
  * @Description:
  */
 class ShowMapViewModel : BaseViewModel() {
+
+    val saveAreaLiveDate = MutableLiveData<Boolean>()
+    val getAreaListDate = MutableLiveData<CleanAreaRootNew>()
+
     val saveVirtualWall = MutableLiveData<Boolean>()
     val getVirtualWall = MutableLiveData<VirtualWallNew>()
 
     val saveMachineStationLiveData = MutableLiveData<Boolean>()
     val saveCmsStationLiveData = MutableLiveData<Boolean>()
+
+    val saveSpecialArea = MutableLiveData<Boolean>()
+    val getSpecialArea = MutableLiveData<MutableList<SpArea>>()
 
     /**
      * 保存虚拟墙
@@ -57,7 +71,6 @@ class ShowMapViewModel : BaseViewModel() {
         }, errorCall = object : IApiErrorCallback {
             override fun onError(code: Int?, error: String?) {
                 // 移除对父类方法的调用，添加适当的错误处理
-                getVirtualWall.postValue(null)
             }
         }, successBlock = {
             it?.let {
@@ -149,31 +162,77 @@ class ShowMapViewModel : BaseViewModel() {
         })
     }
 
-//    fun saveMachineStation(machineStation: MutableList<MachineStation>) {
-//        launchUIWithResult(responseBlock = {
-//            val requestGetArea = RequestMachineStation(machineStation)
-//            ApiManager.api.saveMachineStation(requestGetArea)
-//        }, errorCall = object : IApiErrorCallback {
-//            override fun onError(code: Int?, error: String?) {
-//                saveMachineStationLiveData.postValue(false)
-//            }
-//        }, successBlock = {
-//            saveMachineStationLiveData.postValue(true)
-//        })
-//    }
 
+    /**
+     * 保存特殊区域
+     */
+    fun saveSpecialArea(layerId: Int, specialArea: MutableList<SpArea>) {
+        launchUIWithResult(responseBlock = {
+            val requestSpecialArea = RequestSaveSpecialArea(layerId, specialArea)
+            ApiManager.api.setSpecialArea(requestSpecialArea)
+        }, errorCall = object : IApiErrorCallback {
+            override fun onError(code: Int?, error: String?) {
+                saveSpecialArea.postValue(false)
+            }
+        }, successBlock = {
+            saveSpecialArea.postValue(true)
+        })
+    }
 
-//    fun saveCmsStation(mapId: Int, cmsStation: MutableList<CmsStation>) {
-//        launchUIWithResult(responseBlock = {
-//            val saveCmsStation = RequestCmsStation(mapId, cmsStation)
-//            ApiManager.api.saveCmsStation(saveCmsStation)
-//        }, errorCall = object : IApiErrorCallback {
-//            override fun onError(code: Int?, error: String?) {
-//                saveCmsStationLiveData.postValue(false)
-//            }
-//        }, successBlock = {
-//            saveCmsStationLiveData.postValue(true)
-//        })
-//    }
+    /**
+     * 获取特殊区域
+     */
+    fun getSpecialArea(layerId: Int, areaType: Int) {
+        launchUIWithResult(responseBlock = {
+            val requestGetSpecialArea = RequestGetSpecialArea(layerId, areaType)
+            ApiManager.api.getSpecialArea(requestGetSpecialArea)
+        }, errorCall = object : IApiErrorCallback {
+            override fun onError(code: Int?, error: String?) {
+                super.onError(code, error)
+            }
+        }, successBlock = {
+            it?.let {
+                getSpecialArea.postValue(it)
+            }
+        })
+    }
+
+    /**
+     * 获取区域列表
+     */
+    fun getAreaList(layerId: Int) {
+        launchUIWithResult(responseBlock = {
+            val requestGetArea = RequestCommonMapId(layerId)
+            ApiManager.api.getAreas(requestGetArea)
+        }, errorCall = object : IApiErrorCallback {
+            override fun onError(code: Int?, error: String?) {
+                super.onError(code, error)
+            }
+        }, successBlock = {
+            it?.let {
+                getAreaListDate.postValue(it)
+            }
+        })
+    }
+
+    /**
+     * 保存区域
+     */
+    fun saveArea(layerId: Int, cleanAreas: MutableList<CleanAreaNew>) {
+        launchUIWithResult(responseBlock = {
+            val requestSaveArea = RequestSaveArea(layerId, CleanAreaRootNew(cleanAreas).toUpload())
+            ApiManager.api.saveAreas(requestSaveArea)
+        }, errorCall = object : IApiErrorCallback {
+            override fun onError(code: Int?, error: String?) {
+                saveAreaLiveDate.postValue(false)
+            }
+        }, successBlock = {
+            it?.let {
+                saveAreaLiveDate.postValue(true)
+            }
+
+        })
+
+    }
 
 }

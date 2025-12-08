@@ -23,6 +23,7 @@ import com.siasun.dianshi.bean.MachineStation
 import com.siasun.dianshi.bean.MapData
 import com.siasun.dianshi.bean.MergedPoseItem
 import com.siasun.dianshi.bean.PositingArea
+import com.siasun.dianshi.bean.SpArea
 import com.siasun.dianshi.utils.CoordinateConversion
 import com.siasun.dianshi.utils.MathUtils
 import com.siasun.dianshi.utils.RadianUtil
@@ -50,6 +51,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         MODE_POSITING_AREA_DELETE, // 删除定位区域模式
         MODE_CLEAN_AREA_EDIT, // 编辑清扫区域模式
         MODE_CLEAN_AREA_ADD, // 创建清扫区域模式
+        MODE_SP_AREA_EDIT, // 编辑特殊区域模式
+        MODE_SP_AREA_ADD, // 创建特殊区域模式
     }
 
     // 当前工作模式
@@ -81,10 +84,10 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     var mTopViewPathView: TopViewPathView? = null//顶视路线
     var mRemoveNoiseView: RemoveNoiseView? = null//噪点擦出
     var mPostingAreasView: PostingAreasView? = null//定位区域
-    var mPolygonEditView: PolygonEditView? = null//定位区域
+    var mPolygonEditView: PolygonEditView? = null//区域
+    var mSpPolygonEditView: SpPolygonEditView? = null//特殊区域
 
-    //    var mAreasView: AreasView? = null//区域
-//    var mMixAreasView: MixedAreasView? = null//混行区域
+    //    var mMixAreasView: MixedAreasView? = null//混行区域
 //    var mPathView: PathView? = null//路线PP
     var mRobotView: RobotView? = null //机器人图标
     var mWorkIngPathView: WorkIngPathView? = null //机器人工作路径
@@ -134,6 +137,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mRemoveNoiseView = RemoveNoiseView(context, mMapView)
         mPostingAreasView = PostingAreasView(context, mMapView)
         mPolygonEditView = PolygonEditView(context, mMapView)
+        mSpPolygonEditView = SpPolygonEditView(context, mMapView)
         //底图的View
         addView(mPngMapView, lp)
 
@@ -160,8 +164,10 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         addMapLayers(mRemoveNoiseView)
         //定位区域
         addMapLayers(mPostingAreasView)
-        //
+        //清扫区域
         addMapLayers(mPolygonEditView)
+        //特殊区域
+        addMapLayers(mSpPolygonEditView)
 
         //  修改LegendView的布局参数，使其显示在右上角
         addView(mLegendView, LayoutParams(
@@ -180,7 +186,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mLegendView?.setScreen(point)
 
         // 如果是擦除噪点模式、创建定位区域模式、编辑定位区域模式、删除定位区域模式、编辑清扫区域模式或创建清扫区域模式
-        if (currentWorkMode == WorkMode.MODE_REMOVE_NOISE || currentWorkMode == WorkMode.MODE_POSITING_AREA_ADD || currentWorkMode == WorkMode.MODE_POSITING_AREA_EDIT || currentWorkMode == WorkMode.MODE_POSITING_AREA_DELETE || currentWorkMode == WorkMode.MODE_CLEAN_AREA_EDIT || currentWorkMode == WorkMode.MODE_CLEAN_AREA_ADD) {
+        if (currentWorkMode == WorkMode.MODE_REMOVE_NOISE || currentWorkMode == WorkMode.MODE_POSITING_AREA_ADD || currentWorkMode == WorkMode.MODE_POSITING_AREA_EDIT || currentWorkMode == WorkMode.MODE_POSITING_AREA_DELETE || currentWorkMode == WorkMode.MODE_CLEAN_AREA_EDIT || currentWorkMode == WorkMode.MODE_CLEAN_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_SP_AREA_ADD) {
             // 让事件传递给子视图（如RemoveNoiseView或PostingAreasView）处理
             // 先调用父类的onTouchEvent让事件传递给子视图
             super.onTouchEvent(event)
@@ -406,6 +412,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mPostingAreasView?.setEditMode(mode)
         // 将工作模式传递给清扫区域视图
         mPolygonEditView?.setWorkMode(mode)
+        // 将工作模式传递给清扫区域视图
+        mSpPolygonEditView?.setWorkMode(mode)
     }
 
     /**
@@ -530,6 +538,12 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mPolygonEditView?.setCleanAreaData(data)
 
     /**
+     * 设置特殊区域
+     */
+    fun setSpAreaData(data: MutableList<SpArea>) =
+        mSpPolygonEditView?.setSpAreaData(data)
+
+    /**
      * 设置定位区域
      */
     fun setPositingAreas(list: MutableList<PositingArea>?) =
@@ -564,7 +578,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     /**
      * 创建清扫区域
      */
-    fun createRectangularAreaAtCenter(newArea: CleanAreaNew) = mPolygonEditView?.createRectangularAreaAtCenter(newArea)
+    fun createRectangularAreaAtCenter(newArea: CleanAreaNew) =
+        mPolygonEditView?.createRectangularAreaAtCenter(newArea)
 
     /**
      * 设置定位区域编辑监听器

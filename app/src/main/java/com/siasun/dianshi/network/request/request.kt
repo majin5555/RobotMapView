@@ -1,6 +1,7 @@
 package com.siasun.dianshi.network.request
 
 import VirtualWallNew
+import com.siasun.dianshi.bean.SpArea
 
 /******************************************
  * 类描述：
@@ -50,14 +51,8 @@ data class SaveZoneRequest(
 )
 
 data class AvoidingObstaclePointBean(var X: Float, var Y: Float)
-data class ItemSpecialArea(
-    var sub_name: String,
-    var regId: Int,
-    var routeType: Int,
-    var m_VertexPnt: MutableList<AvoidingObstaclePointBean>
-)
 
-data class RequestSaveSpecialArea(val map_id: Int, val regions: MutableList<ItemSpecialArea>)
+data class RequestSaveSpecialArea(val map_id: Int, val regions: MutableList<SpArea>)
 data class RequestGetSpecialArea(val map_id: Int, val areaType: Int)
 
 /**

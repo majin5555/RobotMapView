@@ -35,7 +35,7 @@ import com.siasun.dianshi.mapviewdemo.viewmodel.ShowMapViewModel
 import com.siasun.dianshi.utils.YamlNew
 import com.siasun.dianshi.view.MapView
 import com.siasun.dianshi.bean.CleanAreaRootNew
-import com.siasun.dianshi.framework.ext.toBean
+import com.siasun.dianshi.bean.SpArea
 import com.siasun.dianshi.mapviewdemo.utils.FileIOUtil
 import com.siasun.dianshi.view.PolygonEditView
 import com.siasun.dianshi.view.PostingAreasView
@@ -49,7 +49,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     val mapId = 1
     var positingAreas = mutableListOf<PositingArea>()
     var cleanAreas: MutableList<CleanAreaNew> = mutableListOf()
-
+    var mSpArea: MutableList<SpArea> = mutableListOf()
     override fun initView(savedInstanceState: Bundle?) {
         MainController.init()
         initListener()
@@ -202,7 +202,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 // 设置地图的工作模式为编辑清扫区域模式
                 mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CLEAN_AREA_EDIT)
 
-                // 将选中的区域设置到PolygonEditView1中进行编辑
+                // 将选中的区域设置到PolygonEditView中进行编辑
                 mBinding.mapView.mPolygonEditView?.setSelectedArea(randomArea)
             }
         }
@@ -233,7 +233,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 // 删除随机选中的清扫区域
                 cleanAreas.removeAt(randomIndex)
                 // 更新清扫区域数据
-                mBinding.mapView.mPolygonEditView?.setCleanAreaData(cleanAreas)
+                mBinding.mapView.setCleanAreaData(cleanAreas)
                 LogUtil.d("随机删除了一个清扫区域，当前剩余 ${cleanAreas.size} 个清扫区域")
             } else {
                 LogUtil.d("没有清扫区域可以删除")
@@ -244,6 +244,53 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             savePadAreasJson(mapId, cleanAreas)
         }
 
+
+        //添加特殊区域
+        mBinding.btnAddSpArea.onClick {
+            // 设置地图的工作模式为添加清扫区域模式
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SP_AREA_ADD)
+            // 创建一个新的清扫区域
+            val newArea = SpArea().apply {
+                sub_name = "特殊区域${cleanAreas.size + 1}"
+                regId = cleanAreas.size + 1
+                layer_id = mapId
+                routeType = 1 // 手动生成
+                areaType = 1
+            }
+            mSpArea.add(newArea)
+            mBinding.mapView.mSpPolygonEditView?.createRectangularAreaAtCenter(newArea)
+        }
+        //编辑特殊区域
+        mBinding.btnEditSpArea.onClick {
+            if (mSpArea.isNotEmpty()) {
+                // 生成0到positingAreas.size-1之间的随机索引
+                val randomIndex = Random.nextInt(mSpArea.size)
+                // 通过随机索引获取要删除的定位区域
+                val randomArea = mSpArea[randomIndex]
+                mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SP_AREA_EDIT)
+
+                mBinding.mapView.mSpPolygonEditView?.setSelectedArea(randomArea)
+            }
+        }
+        //删除特殊区域
+        mBinding.btnDeleteSpArea.onClick {
+            // 随机选择一个定位区域进行删除
+            if (mSpArea.isNotEmpty()) {
+                // 生成0到positingAreas.size-1之间的随机索引
+                val randomIndex = Random.nextInt(mSpArea.size)
+
+                // 通过随机索引获取要删除的定位区域
+                val randomArea = mSpArea[randomIndex]
+
+                // 更新本地列表
+                mSpArea.remove(randomArea)
+                mBinding.mapView.setSpAreaData(mSpArea)
+            }
+        }
+        //保存特殊区域
+        mBinding.btnSaveSpArea.onClick {
+            mViewModel.saveSpecialArea(mapId, mBinding.mapView.mSpPolygonEditView!!.getData())
+        }
     }
 
     /**
@@ -307,36 +354,41 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             mBinding.mapView.setElevators(elevatorPoint)
         })
 
-        val jsonStr = FileIOUtil.readFile2String(getFilePath(mapId, PAD_AREAS_NAME), "utf-8")
-
-        LogUtil.d("jsonStr ${jsonStr}")
-        val cleanAreaRoot = jsonStr.toBean<CleanAreaRootNew>()
-        // 如果解析成功，可以在这里处理数据
-        cleanAreaRoot.cleanAreas.let {
-            cleanAreas.addAll(it)
+        //获取区域
+//        mViewModel.getAreaList(mapId)
+        //获取区域列表
+        mViewModel.getAreaListDate.observe(this) {
+            cleanAreas.addAll(it.cleanAreas)
             mBinding.mapView.setCleanAreaData(cleanAreas)
+        }
 
-            // 设置清扫区域编辑监听器
-            mBinding.mapView.setOnCleanAreaEditListener(object :
-                PolygonEditView.OnCleanAreaEditListener {
+        // 设置清扫区域编辑监听器
+        mBinding.mapView.setOnCleanAreaEditListener(object :
+            PolygonEditView.OnCleanAreaEditListener {
 
-                override fun onVertexDragEnd(area: CleanAreaNew, vertexIndex: Int) {
-                }
+            override fun onVertexDragEnd(area: CleanAreaNew, vertexIndex: Int) {
+            }
 
-                override fun onVertexAdded(
-                    area: CleanAreaNew, vertexIndex: Int, x: Float, y: Float
-                ) {
-                }
+            override fun onVertexAdded(
+                area: CleanAreaNew, vertexIndex: Int, x: Float, y: Float
+            ) {
+            }
 
-                override fun onEdgeRemoved(area: CleanAreaNew, edgeIndex: Int) {
-                }
+            override fun onEdgeRemoved(area: CleanAreaNew, edgeIndex: Int) {
+            }
 
-                override fun onAreaCreated(area: CleanAreaNew) {
-                    // 将新创建的清扫区域添加到本地列表
-                    cleanAreas.add(area)
-                    LogUtil.d("创建了新的清扫区域: ${area.sub_name}, ID: ${area.regId}")
-                }
-            })
+            override fun onAreaCreated(area: CleanAreaNew) {
+                // 将新创建的清扫区域添加到本地列表
+                LogUtil.d("创建了新的清扫区域: ${area.sub_name}, ID: ${area.regId}")
+            }
+        })
+
+        //获取特殊区域
+        mViewModel.getSpecialArea(mapId, 5)
+        mViewModel.getSpecialArea.observe(this) {
+            LogUtil.d("获取特殊区域 $it")
+            mSpArea.addAll(it)
+            mBinding.mapView.setSpAreaData(mSpArea)
         }
     }
 }

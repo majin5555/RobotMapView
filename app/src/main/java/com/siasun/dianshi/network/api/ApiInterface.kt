@@ -3,11 +3,17 @@ package com.siasun.dianshi.network.api
 import VirtualWallNew
 import com.siasun.dianshi.network.request.RequestCommonMapId
 import com.pnc.core.network.response.BaseResponse
+import com.siasun.dianshi.bean.CleanAreaNew
+import com.siasun.dianshi.bean.CleanAreaRootNew
 import com.siasun.dianshi.bean.CmsStation
 import com.siasun.dianshi.bean.ElevatorRoot
 import com.siasun.dianshi.bean.InitPoseRoot
 import com.siasun.dianshi.bean.MachineStation
 import com.siasun.dianshi.bean.MergedPoseBean
+import com.siasun.dianshi.bean.RequestSaveArea
+import com.siasun.dianshi.bean.SpArea
+import com.siasun.dianshi.network.request.RequestGetSpecialArea
+import com.siasun.dianshi.network.request.RequestSaveSpecialArea
 import com.siasun.dianshi.network.request.RequestSaveVirtualWall
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -108,11 +114,11 @@ interface ApiInterface {
 //    suspend fun checkRegionUsage(@Body task: RequestDeletePadArea): BaseResponse<TaskVerification>
 //
 //
-//    @POST("/get_pad_areas")
-//    suspend fun getAreas(@Body area: RequestCommonMapId): BaseResponse<CleanAreaRootNew>
-//
-//    @POST("/save_pad_areas")
-//    suspend fun saveAreas(@Body area: RequestSaveArea): BaseResponse<CleanAreaRootNew>
+    @POST("/get_pad_areas")
+    suspend fun getAreas(@Body area: RequestCommonMapId): BaseResponse<CleanAreaRootNew>
+
+    @POST("/save_pad_areas")
+    suspend fun saveAreas(@Body area: RequestSaveArea): BaseResponse<CleanAreaRootNew>
 //
     @POST("/save_virtual_wall")
     suspend fun saveVirtualWall(@Body vw: RequestSaveVirtualWall): BaseResponse<Any>
@@ -145,18 +151,18 @@ interface ApiInterface {
 //    @POST("/delete_elevator")
 //    suspend fun deleteElevator(@Body elevator: RequestDeleteElevator): BaseResponse<ElevatorBean?>
 //
-//    /**
-//     * 设置特殊区域
-//     */
-//    @POST("/set_regions")
-//    suspend fun setSpecialArea(@Body data: RequestSaveSpecialArea): BaseResponse<MutableList<CleanAreaNew>>?
-//
-//    /**
-//     * 获取特殊区域
-//     */
-//    @POST("/get_regions")
-//    suspend fun getSpecialArea(@Body data: RequestGetSpecialArea): BaseResponse<MutableList<CleanAreaNew>>?
-//
+    /**
+     * 设置特殊区域
+     */
+    @POST("/set_regions")
+    suspend fun setSpecialArea(@Body data: RequestSaveSpecialArea): BaseResponse<MutableList<CleanAreaNew>>?
+
+    /**
+     * 获取特殊区域
+     */
+    @POST("/get_regions")
+    suspend fun getSpecialArea(@Body data: RequestGetSpecialArea): BaseResponse<MutableList<SpArea>>?
+
 //
 //    /**
 //     * 保存过门区
