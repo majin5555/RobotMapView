@@ -24,6 +24,7 @@ import com.siasun.dianshi.bean.MapData
 import com.siasun.dianshi.bean.MergedPoseItem
 import com.siasun.dianshi.bean.PositingArea
 import com.siasun.dianshi.bean.SpArea
+import com.siasun.dianshi.bean.TeachPoint
 import com.siasun.dianshi.bean.WorkAreasNew
 import com.siasun.dianshi.utils.CoordinateConversion
 import com.siasun.dianshi.utils.MathUtils
@@ -92,7 +93,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     var mMixAreaView: MixAreaView? = null//混行区域
 
 
-    //    var mPathView: PathView? = null//路线PP
+    var mPathView: PathView? = null//路线PP
     var mRobotView: RobotView? = null //机器人图标
     var mWorkIngPathView: WorkIngPathView? = null //机器人工作路径
 
@@ -133,8 +134,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mUpLaserScanView = UpLaserScanView(context, mMapView)
         mDownLaserScanView = DownLaserScanView(context, mMapView)
         mTopViewPathView = TopViewPathView(context, mMapView)
-//        mAreasView = AreasView(context, mMapView)
-//        mMixAreasView = MixedAreasView(context, mMapView)
+
         mLegendView = LegendView(context, attrs, mMapView)
         mRobotView = RobotView(context, mMapView)
         mWorkIngPathView = WorkIngPathView(context, mMapView)
@@ -143,9 +143,9 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mPolygonEditView = PolygonEditView(context, mMapView)
         mSpPolygonEditView = SpPolygonEditView(context, mMapView)
         mMixAreaView = MixAreaView(context, mMapView)
+        mPathView = PathView(context, mMapView)
         //底图的View
         addView(mPngMapView, lp)
-
 
         //充电站
         addMapLayers(mHomeDockView)
@@ -662,6 +662,13 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     fun setSelectedMixArea(area: WorkAreasNew?) {
         mMixAreaView?.setSelectedArea(area)
     }
+
+
+    /**
+     * 设置试教点
+     */
+    fun setTeachPoint(point: TeachPoint) = mPathView?.setTeachPoint(point)
+
 
     /**
      * 设置定位区域编辑监听器
