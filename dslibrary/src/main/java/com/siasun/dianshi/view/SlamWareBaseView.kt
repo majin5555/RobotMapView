@@ -47,6 +47,22 @@ abstract class SlamWareBaseView(context: Context?, parent: WeakReference<MapView
     }
 
     /**
+     * 绘制线
+     */
+    fun drawLine(canvas: Canvas, mStart: PointF, mEnd: PointF, paint: Paint) {
+        canvas.drawLine(
+            mStart.x, mStart.y, mEnd.x, mEnd.y, paint
+        )
+    }
+
+    /**
+     * 绘制路径
+     */
+    fun drawPath(canvas: Canvas, path: Path, paint: Paint) {
+        canvas.drawPath(path, paint)
+    }
+
+    /**
      * 绘制标签
      * @param canvas 画布
      * @param text 标签文本

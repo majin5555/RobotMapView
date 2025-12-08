@@ -30,6 +30,7 @@ import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.PERCEPTION_CAMFIRMW
 import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.PERCEPTION_CAMHUB_COMMAND
 import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.PERCEPTION_PUBLISH_COMMAND
 import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.PERCEPTION_SERVICE_COMMAND
+import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.PLAN_PATH_CONTROL_COMMAND
 import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.PLAN_PATH_RESULT
 import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.PP_CTRL_RESPONSE_COMMAND
 import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.RECORD_IMAGE
@@ -41,6 +42,7 @@ import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.TEACH_PATH
 import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.UI_COMMAND
 import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.UPDATE_POS
 import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.UPDATE_SUBMAPS
+import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.CmsPadInteraction_
 import com.siasun.dianshi.bean.PlanPathResult
 import com.siasun.dianshi.bean.PositingArea
@@ -48,9 +50,12 @@ import com.siasun.dianshi.bean.perception_t
 import com.siasun.dianshi.bean.robot_control_t_new
 import com.siasun.dianshi.controller.AbsController
 import com.siasun.dianshi.controller.MainController.sendPositingArea
+import com.siasun.dianshi.framework.ext.toJson
 import com.siasun.dianshi.framework.log.LogUtil
+import com.siasun.dianshi.mapviewdemo.CLEAN_PATH_PLAN
 import com.siasun.dianshi.mapviewdemo.CarBody
 import com.siasun.dianshi.mapviewdemo.CmsBody
+import com.siasun.dianshi.mapviewdemo.GLOBAL_PATH_PLAN
 import com.siasun.dianshi.mapviewdemo.KEY_BOTTOM_CURRENT_POINT_CLOUD
 import com.siasun.dianshi.mapviewdemo.KEY_CLEANING_ID
 import com.siasun.dianshi.mapviewdemo.KEY_CLEANING_LAYER
@@ -61,11 +66,15 @@ import com.siasun.dianshi.mapviewdemo.KEY_NEXT_CLEANING_AREA_ID
 import com.siasun.dianshi.mapviewdemo.KEY_POSITING_AREA_VALUE
 import com.siasun.dianshi.mapviewdemo.KEY_SCHEDULED_TASK_REMINDER
 import com.siasun.dianshi.mapviewdemo.KEY_TASK_STATE
+import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_PLAN_PATH_RESULT
 import com.siasun.dianshi.mapviewdemo.NaviBody
+import com.siasun.dianshi.mapviewdemo.PP_VERSION
 import com.siasun.dianshi.mapviewdemo.RunningState.CURRENT_TASK_STATE
 import com.siasun.dianshi.mapviewdemo.SERVER_HEART
 import com.siasun.dianshi.mapviewdemo.ServiceBody
 import com.siasun.dianshi.mapviewdemo.TAG_NAV
+import com.siasun.dianshi.mapviewdemo.TAG_PP
+import com.siasun.dianshi.mapviewdemo.TEACH_PATH_PLAN
 import com.siasun.dianshi.mapviewdemo.TaskState
 import lcm.lcm.LCM
 import lcm.lcm.LCMDataInputStream
@@ -304,30 +313,30 @@ class LCMController : AbsController(), LCMSubscriber {
      * 申请路径规划
      *
      */
-//    override fun mSendRoutePathCommand(
-//        mIPathPlanType: Int, mCleanArea: CleanAreaNew
-//    ) = sendRoutePathCommand(mIPathPlanType, mCleanArea)
+    override fun mSendRoutePathCommand(
+        mIPathPlanType: Int, mCleanArea: CleanAreaNew
+    ) = sendRoutePathCommand(mIPathPlanType, mCleanArea)
 
 
     /*** 申请路径规划 CleanArea */
-//    private fun sendRoutePathCommand(mIPathPlanType: Int, mCleanArea: CleanAreaNew) {
-//
-//        val mPstStart = if (mCleanArea.areaStartPoint == null) {
-//            floatArrayOf(0f, 0f)
-//        } else {
-//            floatArrayOf(mCleanArea.areaStartPoint.x, mCleanArea.areaStartPoint.y)
-//        }
-//
-//        mULCMHelper.sendRoutePathCommand(
-//            mIPathPlanType,
-//            mPstStart,
-//            mCleanArea.m_VertexPnt,
-//            mCleanArea.layer_id,
-//            mCleanArea.regId,
-//            mCleanArea.cleanShape
-//        )
-//        mULCMHelper.sendLcmMsg(PLAN_PATH_CONTROL_COMMAND)
-//    }
+    private fun sendRoutePathCommand(mIPathPlanType: Int, mCleanArea: CleanAreaNew) {
+
+        val mPstStart = if (mCleanArea.areaStartPoint == null) {
+            floatArrayOf(0f, 0f)
+        } else {
+            floatArrayOf(mCleanArea.areaStartPoint.x, mCleanArea.areaStartPoint.y)
+        }
+
+        mULCMHelper.sendRoutePathCommand(
+            mIPathPlanType,
+            mPstStart,
+            mCleanArea.m_VertexPnt,
+            mCleanArea.layer_id,
+            mCleanArea.regId,
+            mCleanArea.cleanShape
+        )
+        mULCMHelper.sendLcmMsg(PLAN_PATH_CONTROL_COMMAND)
+    }
 
 
     /**********************************************************************************************/
@@ -2272,41 +2281,41 @@ class LCMController : AbsController(), LCMSubscriber {
      */
     private var mPathPlanPublicId = -1
     private fun receivePlanPathResult(result: PlanPathResult) {
-//        if (result.m_strTo == "pad" || result.m_strTo == "CMS") {
-//            if (result.m_iPathPlanType != PP_VERSION) {
-//                LogUtil.i(
-//                    "接收路径规划:${result.m_strTo}, 路径类型:${result.m_iPathPlanType}",
-//                    null,
-//                    TAG_PP
-//                )
-//                LogUtil.i("路径规划结果:${result.toJson()}", null, TAG_PP)
-//                if (result.m_iPathPlanType == TEACH_PATH_PLAN) {
-//                    LogUtil.i(
-//                        "示教路径_m_iPathPlanPublicId:${result.m_iPathPlanPublicId}", null, TAG_PP
-//                    )
-//                    if (mPathPlanPublicId != result.m_iPathPlanPublicId) {
-//                        mPathPlanPublicId = result.m_iPathPlanPublicId
-//                        LiveEventBus.get(KEY_UPDATE_PLAN_PATH_RESULT, PlanPathResult::class.java)
-//                            .post(result)
-//                        LogUtil.i(
-//                            "更新PP数据 接收示教路径规划:${mPathPlanPublicId}  ${result.toJson()}",
-//                            null,
-//                            TAG_PP
-//                        )
-//                    }
-//                } else if (result.m_iPathPlanType == GLOBAL_PATH_PLAN) {
-//                    LogUtil.i("更新PP数据接 收全局路径规划 ", null, TAG_PP)
-//                    LiveEventBus.get(KEY_UPDATE_PLAN_PATH_RESULT, PlanPathResult::class.java)
-//                        .post(result)
-//                } else if (result.m_iPathPlanType == CLEAN_PATH_PLAN) {
-//                    LogUtil.i("更新PP数据 接收清扫路径规划", null, TAG_PP)
-//                    LiveEventBus.get(KEY_UPDATE_PLAN_PATH_RESULT, PlanPathResult::class.java)
-//                        .post(result)
-//                }
-//            } else {
-//                // result.m_iPathPlanType ==       PP_VERSION 为PP返回版本号, 现Pad不做处理
-//            }
-//        }
+        if (result.m_strTo == "pad" || result.m_strTo == "CMS") {
+            if (result.m_iPathPlanType != PP_VERSION) {
+                LogUtil.i(
+                    "接收路径规划:${result.m_strTo}, 路径类型:${result.m_iPathPlanType}",
+                    null,
+                    TAG_PP
+                )
+                LogUtil.i("路径规划结果:${result.toJson()}", null, TAG_PP)
+                if (result.m_iPathPlanType == TEACH_PATH_PLAN) {
+                    LogUtil.i(
+                        "示教路径_m_iPathPlanPublicId:${result.m_iPathPlanPublicId}", null, TAG_PP
+                    )
+                    if (mPathPlanPublicId != result.m_iPathPlanPublicId) {
+                        mPathPlanPublicId = result.m_iPathPlanPublicId
+                        LiveEventBus.get(KEY_UPDATE_PLAN_PATH_RESULT, PlanPathResult::class.java)
+                            .post(result)
+                        LogUtil.i(
+                            "更新PP数据 接收示教路径规划:${mPathPlanPublicId}  ${result.toJson()}",
+                            null,
+                            TAG_PP
+                        )
+                    }
+                } else if (result.m_iPathPlanType == GLOBAL_PATH_PLAN) {
+                    LogUtil.i("更新PP数据接 收全局路径规划 ", null, TAG_PP)
+                    LiveEventBus.get(KEY_UPDATE_PLAN_PATH_RESULT, PlanPathResult::class.java)
+                        .post(result)
+                } else if (result.m_iPathPlanType == CLEAN_PATH_PLAN) {
+                    LogUtil.i("更新PP数据 接收清扫路径规划", null, TAG_PP)
+                    LiveEventBus.get(KEY_UPDATE_PLAN_PATH_RESULT, PlanPathResult::class.java)
+                        .post(result)
+                }
+            } else {
+                // result.m_iPathPlanType ==       PP_VERSION 为PP返回版本号, 现Pad不做处理
+            }
+        }
     }
 
     private fun receivePPReloadFileResult(rt: robot_control_t) {

@@ -2,7 +2,9 @@ package com.siasun.dianshi.mapviewdemo.ui
 
 import android.graphics.Bitmap
 import android.graphics.PointF
+import android.os.Build
 import android.os.Bundle
+import androidx.annotation.RequiresApi
 import com.alibaba.fastjson.JSONObject
 import com.alibaba.fastjson.serializer.SerializeConfig
 import com.alibaba.fastjson.serializer.SerializerFeature
@@ -14,6 +16,7 @@ import com.bumptech.glide.request.transition.Transition
 import com.jeremyliao.liveeventbus.LiveEventBus
 import com.ngu.lcmtypes.laser_t
 import com.ngu.lcmtypes.robot_control_t
+import com.siasun.dianshi.AreaType
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.ConstantBase
 import com.siasun.dianshi.ConstantBase.PAD_AREAS_NAME
@@ -35,9 +38,17 @@ import com.siasun.dianshi.mapviewdemo.viewmodel.ShowMapViewModel
 import com.siasun.dianshi.utils.YamlNew
 import com.siasun.dianshi.view.MapView
 import com.siasun.dianshi.bean.CleanAreaRootNew
+import com.siasun.dianshi.bean.PlanPathResult
 import com.siasun.dianshi.bean.SpArea
 import com.siasun.dianshi.bean.WorkAreasNew
+import com.siasun.dianshi.framework.ext.toJson
+import com.siasun.dianshi.mapviewdemo.CLEAN_PATH_PLAN
+import com.siasun.dianshi.mapviewdemo.GLOBAL_PATH_PLAN
+import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_PLAN_PATH_RESULT
+import com.siasun.dianshi.mapviewdemo.PATH_MODE
+import com.siasun.dianshi.mapviewdemo.TAG_PP
 import com.siasun.dianshi.mapviewdemo.utils.FileIOUtil
+import com.siasun.dianshi.mapviewdemo.utils.PathPlanningUtil
 import com.siasun.dianshi.view.MixAreaView
 import com.siasun.dianshi.view.PolygonEditView
 import com.siasun.dianshi.view.PostingAreasView
@@ -219,9 +230,9 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 sub_name = "清扫区域${cleanAreas.size + 1}"
                 regId = cleanAreas.size + 1
                 layer_id = mapId
-                routeType = 1 // 手动生成
+                routeType = 0 // 自动生成
                 areaType = 1
-                cleanShape = 4 // 回字型
+                cleanShape = 3 // 回字型
                 areaPathType = 0 // 普通清扫区域
             }
             cleanAreas.add(newArea)
@@ -244,7 +255,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         }
         //保存清扫区域
         mBinding.btnSaveArea.onClick {
-            savePadAreasJson(mapId, mBinding.mapView.getCleanAreaData())
+//            savePadAreasJson(mapId, mBinding.mapView.getCleanAreaData())
+            mViewModel.saveArea(mapId, mBinding.mapView.getCleanAreaData())
         }
 
 
@@ -257,7 +269,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 sub_name = "特殊区域${cleanAreas.size + 1}"
                 regId = cleanAreas.size + 1
                 layer_id = mapId
-                routeType = 1 // 手动生成
+                routeType = 1
                 areaType = 1
             }
             mSpArea.add(newArea)
@@ -358,6 +370,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         )
     }
 
+    @RequiresApi(Build.VERSION_CODES.R)
     override fun initData() {
         super.initData()
         mViewModel.getVirtualWall(mapId)
@@ -370,7 +383,55 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             mBinding.mapView.setPositingAreas(positingAreas)
 
         }
+        //接收路径规划结果
+        LiveEventBus.get<PlanPathResult>(KEY_UPDATE_PLAN_PATH_RESULT).observe(this) {
+            try {
 
+                if (it.m_iPathSum == 0) {
+                    LogUtil.i(
+                        "展示路径规划失败弹窗, 路径类型:${it.m_iPathPlanType}, 路段个数:${it.m_iPathSum}",
+                        null,
+                        TAG_PP
+                    )
+
+                    return@observe
+                }
+
+                if (it.m_iPathPlanType == CLEAN_PATH_PLAN) {
+                    // 接收Pad申请的清扫路径规划结果
+                    if (it.m_strTo == "pad") {
+                        // 路段模式
+                        if (it.m_iPlanResultMode == PATH_MODE) {
+                            LogUtil.i(
+                                "AutoGeneratePathActivity接收清扫路径规划", null, TAG_PP
+                            )
+                            mBinding.mapView.setCleanPathPlanResultBean(
+                                PathPlanningUtil.getPathPlanResultBean(
+                                    it, mBinding.mapView
+                                )
+                            )
+                        }
+                    }
+                }
+                // 接收CMS申请的全局路径规划结果
+                if (it.m_iPathPlanType == GLOBAL_PATH_PLAN) {
+                    if (it.m_strTo == "CMS") {
+                        // 路段模式
+                        if (it.m_iPlanResultMode == PATH_MODE) {
+                            LogUtil.i(
+                                "CleanAutoActivity接收全局路径规划", null, TAG_PP
+                            )
+                            val globalPathPlanResultBean = PathPlanningUtil.getPathPlanResultBean(it)
+                            mBinding.mapView.setGlobalPathPlanResultBean(globalPathPlanResultBean)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                LogUtil.e(
+                    " 接收路径规划一场 e${e.message}", null, TAG_PP
+                )
+            }
+        }
         //加载虚拟墙
         mViewModel.getVirtualWall.observe(this) {
 //            mBinding.mapView.setVirtualWall(it)
@@ -404,9 +465,10 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         })
 
         //获取区域
-//        mViewModel.getAreaList(mapId)
+        mViewModel.getAreaList(mapId)
         //获取区域列表
         mViewModel.getAreaListDate.observe(this) {
+            LogUtil.d("获取区域列表 ${it}")
             cleanAreas.addAll(it.cleanAreas)
             mBinding.mapView.setCleanAreaData(cleanAreas)
         }
@@ -416,19 +478,43 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             PolygonEditView.OnCleanAreaEditListener {
 
             override fun onVertexDragEnd(area: CleanAreaNew, vertexIndex: Int) {
+                LogUtil.d("onVertexDragEnd area ${area}")
+                if (area.routeType == AreaType.AREA_AUTO) {
+                    MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
+                    LogUtil.i(
+                        "编辑区域onVertexDragEnd  申请路径规划 ${area.toJson()}",
+                        null,
+                        TAG_PP
+                    )
+                }
             }
 
             override fun onVertexAdded(
                 area: CleanAreaNew, vertexIndex: Int, x: Float, y: Float
             ) {
+                if (area.routeType == AreaType.AREA_AUTO) {
+
+                    MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
+                    LogUtil.i("编辑区域onVertexAdded  申请路径规划 ${area.toJson()}", null, TAG_PP)
+                }
             }
 
             override fun onEdgeRemoved(area: CleanAreaNew, edgeIndex: Int) {
+                if (area.routeType == AreaType.AREA_AUTO) {
+
+                    MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
+                    LogUtil.i("编辑区域onEdgeRemoved  申请路径规划 ${area.toJson()}", null, TAG_PP)
+                }
             }
 
             override fun onAreaCreated(area: CleanAreaNew) {
                 // 将新创建的清扫区域添加到本地列表
                 LogUtil.d("创建了新的清扫区域: ${area.sub_name}, ID: ${area.regId}")
+                if (area.routeType == AreaType.AREA_AUTO) {
+
+                    MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
+                    LogUtil.i("创建了新的清扫区域  申请路径规划 ${area.toJson()}", null, TAG_PP)
+                }
             }
         })
 

@@ -25,4 +25,6 @@
     <string name="machine_finish_point">临时停车点</string>
     <string name="elevator">乘梯点</string>
     <string name="positing_area">定位区域</string>
+    <string name="start_point">起点</string>
+    <string name="end_point">终点</string>
 </resources>

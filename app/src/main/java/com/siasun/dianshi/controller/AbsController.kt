@@ -1,6 +1,7 @@
 package com.siasun.dianshi.controller
 
 import android.graphics.PointF
+import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.PositingArea
 
 /**
@@ -62,7 +63,7 @@ abstract class AbsController {
     abstract fun mSendStopAGVSpinTest()
     abstract fun mSendAutoCalibration(switchAuto: Byte, number: Byte)
 
-    //    abstract fun mSendRoutePathCommand(mIPathPlanType: Int, mCleanArea: CleanAreaNew)
+    abstract fun mSendRoutePathCommand(mIPathPlanType: Int, mCleanArea: CleanAreaNew)
     abstract fun mSendControlTask()
     abstract fun mSendContinue()
     abstract fun mSendReloadSpecialFile()

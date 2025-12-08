@@ -22,10 +22,14 @@ import com.siasun.dianshi.bean.InitPose
 import com.siasun.dianshi.bean.MachineStation
 import com.siasun.dianshi.bean.MapData
 import com.siasun.dianshi.bean.MergedPoseItem
+import com.siasun.dianshi.bean.Point2d
+import com.siasun.dianshi.bean.pp.PathPlanResultBean
 import com.siasun.dianshi.bean.PositingArea
 import com.siasun.dianshi.bean.SpArea
 import com.siasun.dianshi.bean.TeachPoint
 import com.siasun.dianshi.bean.WorkAreasNew
+import com.siasun.dianshi.bean.pp.DefPosture
+import com.siasun.dianshi.bean.pp.Posture
 import com.siasun.dianshi.utils.CoordinateConversion
 import com.siasun.dianshi.utils.MathUtils
 import com.siasun.dianshi.utils.RadianUtil
@@ -175,6 +179,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         addMapLayers(mSpPolygonEditView)
         //混行区域
         addMapLayers(mMixAreaView)
+        //显示路线
+        addMapLayers(mPathView)
 
         //  修改LegendView的布局参数，使其显示在右上角
         addView(mLegendView, LayoutParams(
@@ -669,6 +675,35 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      */
     fun setTeachPoint(point: TeachPoint) = mPathView?.setTeachPoint(point)
 
+    /**
+     * 外部接口: 创建示教路径
+     */
+    fun createPathTeach(pptKey: Array<Point2d>?, pathParam: Short) {
+        if (!pptKey.isNullOrEmpty()) {
+            val m_KeyPst = DefPosture()
+            for (point2d in pptKey) {
+                val pst = Posture()
+                pst.x = point2d.x
+                pst.y = point2d.y
+                pst.fThita = 0f
+                m_KeyPst.AddPst(pst)
+            }
+//             CreateTeachPath(mWorld, pptKey, m_KeyPst, pathParam)
+        }
+    }
+
+    /**
+     * 设置清扫路径
+     */
+    fun setCleanPathPlanResultBean(pathPlanResultBean: PathPlanResultBean?) =
+        mPathView?.setCleanPathPlanResultBean(pathPlanResultBean)
+
+
+    /**
+     * 设置全局路径
+     */
+    fun setGlobalPathPlanResultBean(pathPlanResultBean: PathPlanResultBean?) =
+        mPathView?.setGlobalPathPlanResultBean(pathPlanResultBean)
 
     /**
      * 设置定位区域编辑监听器

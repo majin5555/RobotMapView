@@ -1,6 +1,7 @@
 package com.siasun.dianshi.controller
 
 import android.graphics.PointF
+import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.PositingArea
 import com.siasun.dianshi.controller.lcm.LCMController
 
@@ -208,9 +209,9 @@ object MainController {
     /**
      * 申请路径规划器
      */
-//    fun sendRoutePathCommand(
-//        pathPlanType: Int, mCleanArea: CleanAreaNew
-//    ) = myController.mSendRoutePathCommand(pathPlanType, mCleanArea)
+    fun sendRoutePathCommand(
+        pathPlanType: Int, mCleanArea: CleanAreaNew
+    ) = myController.mSendRoutePathCommand(pathPlanType, mCleanArea)
 
     /**
      * 开始士教
