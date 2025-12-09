@@ -30,6 +30,7 @@ import com.siasun.dianshi.bean.TeachPoint
 import com.siasun.dianshi.bean.WorkAreasNew
 import com.siasun.dianshi.bean.pp.DefPosture
 import com.siasun.dianshi.bean.pp.Posture
+import com.siasun.dianshi.bean.world.World
 import com.siasun.dianshi.utils.CoordinateConversion
 import com.siasun.dianshi.utils.MathUtils
 import com.siasun.dianshi.utils.RadianUtil
@@ -248,6 +249,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
             return
         }
         mMapScale = scale
+        mSrf.scale = mMapScale
         mOuterMatrix.postScale(factor, factor, cx, cy)
         setMatrixWithScale(mOuterMatrix, mMapScale)
     }
@@ -476,6 +478,14 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      */
     fun getCurrentWorkMode(): WorkMode {
         return currentWorkMode
+    }
+
+    /**
+     * 外部接口: 设置路径对象
+     */
+
+    fun setWorld(world: World) {
+        mPathView?.setWorld(world)
     }
 
     /**

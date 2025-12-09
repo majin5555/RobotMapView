@@ -9,6 +9,7 @@ import com.siasun.dianshi.bean.MapData;
  * 坐标转化工具类
  */
 public class CoordinateConversion {
+    public float scale = 1;
     //View视图的宽
     public short m_uWidth;
     //View视图的高

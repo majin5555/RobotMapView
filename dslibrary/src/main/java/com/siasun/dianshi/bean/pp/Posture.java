@@ -50,7 +50,7 @@ public class Posture extends Point2d {
         fThita = ang.m_fRad;
     }
 
-    void SetPnt(final Point2d pt) {
+    public void SetPnt(final Point2d pt) {
         x = pt.x;
         y = pt.y;
     }
@@ -60,19 +60,19 @@ public class Posture extends Point2d {
         y = fY;
     }
 
-    void SetAngle(final Angle ang) {
+    public void SetAngle(final Angle ang) {
         fThita = ang.m_fRad;
     }
 
 
 
-    void SetPosture(final Point2d pt, final Angle ang) {
+    protected void SetPosture(final Point2d pt, final Angle ang) {
         SetPnt(pt);
         SetAngle(ang);
     }
 
 
-    void SetPosture(float fX, float fY, float fAngle) {
+    protected void SetPosture(float fX, float fY, float fAngle) {
         x = fX;
         y = fY;
         fThita = Angle.NormAngle(fAngle);

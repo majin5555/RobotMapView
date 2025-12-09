@@ -7,6 +7,7 @@ import android.graphics.PointF
 import android.os.Build
 import android.os.Bundle
 import androidx.annotation.RequiresApi
+import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import kotlin.random.Random
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -17,6 +18,9 @@ import com.ngu.lcmtypes.laser_t
 import com.ngu.lcmtypes.robot_control_t
 import com.siasun.dianshi.AreaType
 import com.siasun.dianshi.ConstantBase
+import com.siasun.dianshi.ConstantBase.PAD_WORLD_NAME
+import com.siasun.dianshi.ConstantBase.getFilePath
+import com.siasun.dianshi.ConstantBase.getFolderPath
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.CmsStation
@@ -36,6 +40,7 @@ import com.siasun.dianshi.utils.YamlNew
 import com.siasun.dianshi.view.MapView
 import com.siasun.dianshi.bean.SpArea
 import com.siasun.dianshi.bean.WorkAreasNew
+import com.siasun.dianshi.bean.world.World
 import com.siasun.dianshi.framework.ext.toJson
 import com.siasun.dianshi.mapviewdemo.CLEAN_PATH_PLAN
 import com.siasun.dianshi.mapviewdemo.GLOBAL_PATH_PLAN
@@ -43,15 +48,17 @@ import com.siasun.dianshi.mapviewdemo.KEY_POSITING_AREA_VALUE
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_PLAN_PATH_RESULT
 import com.siasun.dianshi.mapviewdemo.PATH_MODE
 import com.siasun.dianshi.mapviewdemo.TAG_PP
+import com.siasun.dianshi.mapviewdemo.utils.FileIOUtil
 import com.siasun.dianshi.mapviewdemo.utils.GsonUtil
 import com.siasun.dianshi.mapviewdemo.utils.PathPlanningUtil
 import com.siasun.dianshi.view.HomeDockView
 import com.siasun.dianshi.view.MixAreaView
 import com.siasun.dianshi.view.PolygonEditView
 import com.siasun.dianshi.view.PostingAreasView
-import com.siasun.dianshi.view.RemoveNoiseView
 import com.siasun.dianshi.view.SpPolygonEditView
 import com.siasun.dianshi.xpop.XpopUtils
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 
 /**
@@ -68,7 +75,6 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
         MainController.init()
-        initListener()
         val file = File(ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_PNG))
         Glide.with(this).asBitmap().load(file).skipMemoryCache(true)
             .diskCacheStrategy(DiskCacheStrategy.NONE).into(object : SimpleTarget<Bitmap?>() {
@@ -89,18 +95,43 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SHOW_MAP)
         }
 
-//        initMergedPose()
-//        initStation()
-//        iniVirtualWall()
-//        initRemoveNoise()
-//        initPostingArea()
-//        initCleanArea()
-//        initElevator()
-//        initPose()
-//        initMachineStation()
-//        initMixArea()
+        initMergedPose()
+        initStation()
+        iniVirtualWall()
+        initRemoveNoise()
+        initPostingArea()
+        initCleanArea()
+        initElevator()
+        initPose()
+        initMachineStation()
+        initMixArea()
         initSpAreas()
+        initPath()
     }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun initPath() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            reloadWorld()
+        }
+    }
+
+    private var mWorld = World()
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun reloadWorld() {
+        //判断没有world_pad.dat 创建一个
+        val worldFile = File(getFilePath(mapId, PAD_WORLD_NAME))
+        if (!worldFile.exists()) {
+            FileIOUtil.createOrExistsFile(worldFile)
+            mWorld.saveWorld(getFolderPath(mapId), PAD_WORLD_NAME)
+        }
+        //读取world_pad.dat
+        mWorld.readWorld(getFolderPath(mapId), PAD_WORLD_NAME)
+        //向mapView 设置路径
+        mBinding.mapView.setWorld(mWorld)
+    }
+
 
     /**
      * 特殊区域
@@ -255,6 +286,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         //保存混行区
         mBinding.btnSaveMixArea.onClick {
             LogUtil.d("保存混行区 ${mBinding.mapView.getMixAreaData().toJson()}")
+
+            mViewModel.saveAreaLiveDate
         }
     }
 
@@ -336,57 +369,6 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 mBinding.mapView.setTopViewPathDada(it)
             }
         })
-    }
-
-    @RequiresApi(Build.VERSION_CODES.R)
-    private fun initListener() {
-
-
-        //添加混行区域
-        mBinding.btnAddMixArea.onClick {
-            // 设置地图的工作模式为添加清扫区域模式
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_MIX_AREA_ADD)
-            // 创建一个新的清扫区域
-            val newArea = WorkAreasNew().apply {
-                name = "混行区域${mBinding.mapView.getCleanAreaData().toMutableList().size + 1}"
-                id = "${mBinding.mapView.getCleanAreaData().toMutableList().size + 1}"
-            }
-            mMixArea.add(newArea)
-            mBinding.mapView.createMixArea(newArea)
-        }
-        //编辑混行区域
-        mBinding.btnEditMixArea.onClick {
-
-            if (mMixArea.isNotEmpty()) {
-                // 生成0到positingAreas.size-1之间的随机索引
-                val randomIndex = Random.nextInt(mMixArea.size)
-                // 通过随机索引获取要删除的定位区域
-                val randomArea = mMixArea[randomIndex]
-                mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_MIX_AREA_EDIT)
-                mBinding.mapView.setSelectedMixArea(randomArea)
-            }
-        }
-        //删除混行区域
-        mBinding.btnDeleteMixArea.onClick {
-            // 随机选择一个定位区域进行删除
-            if (mMixArea.isNotEmpty()) {
-                // 生成0到positingAreas.size-1之间的随机索引
-                val randomIndex = Random.nextInt(mMixArea.size)
-
-                // 通过随机索引获取要删除的定位区域
-                val randomArea = mMixArea[randomIndex]
-
-                // 更新本地列表
-                mMixArea.remove(randomArea)
-                mBinding.mapView.setMixAreaData(mMixArea)
-            }
-        }
-        //保存混行区域
-        mBinding.btnSaveMixArea.onClick {
-            mViewModel.saveWorkAreaList(
-                mapId, mBinding.mapView.getMixAreaData().toMutableList()
-            )
-        }
     }
 
     /**
@@ -610,7 +592,6 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 mapId, mBinding.mapView.getPositingAreas().toMutableList()
             )
         }
-
     }
 
     /**
@@ -831,17 +812,10 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                     "接收路径规划异常: ${e.message}", null, TAG_PP
                 )
                 e.printStackTrace()
-
                 // 异常处理：清理可能已创建的资源
                 mBinding.mapView.clearPathPlan() // 清理所有路径
                 PathPlanningUtil.clearObjectPools() // 清理对象池
             }
         }
-
-        /**
-         **************************************** http 请求 ***************************************************
-         */
-
-
     }
 }

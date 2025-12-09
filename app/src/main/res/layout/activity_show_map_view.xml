@@ -97,23 +97,6 @@
                 app:layout_constraintEnd_toStartOf="@+id/btn_edit_elevator"
                 app:layout_constraintTop_toTopOf="parent" />
 
-            <!-- 充电站按钮 -->
-            <Button
-                android:id="@+id/btn_edit_machine_station"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="编辑充电站"
-                app:layout_constraintBottom_toBottomOf="@+id/btn_delete_elevator"
-                app:layout_constraintEnd_toStartOf="@+id/btn_delete_elevator" />
-
-            <Button
-                android:id="@+id/btn_delete_machine_station"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="删除充电站"
-                app:layout_constraintBottom_toBottomOf="@+id/btn_edit_machine_station"
-                app:layout_constraintEnd_toStartOf="@+id/btn_edit_machine_station" />
-
             <Button
                 android:id="@+id/btn_save_elevator"
                 android:layout_width="wrap_content"

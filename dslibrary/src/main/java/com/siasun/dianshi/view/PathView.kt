@@ -6,12 +6,19 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
 import com.siasun.dianshi.R
 import com.siasun.dianshi.bean.LineNew
 import com.siasun.dianshi.bean.pp.PathPlanResultBean
 import com.siasun.dianshi.bean.PointNew
 import com.siasun.dianshi.bean.TeachPoint
+import com.siasun.dianshi.bean.pp.Angle
 import com.siasun.dianshi.bean.pp.Bezier
+import com.siasun.dianshi.bean.pp.Posture
+import com.siasun.dianshi.bean.world.GenericPath
+import com.siasun.dianshi.bean.world.World
+import com.siasun.dianshi.utils.RouteEdit
 import java.lang.ref.WeakReference
 
 /**
@@ -23,6 +30,8 @@ class PathView @SuppressLint("ViewConstructor") constructor(
 ) :
     SlamWareBaseView(context, parent) {
     private var isDrawingEnabled: Boolean = true
+    var mRouteEdit = RouteEdit() //路径操作对象(路径创建、编辑)
+
 
     // 优化：使用伴生对象创建静态Paint实例，避免重复创建
     companion object {
@@ -67,6 +76,16 @@ class PathView @SuppressLint("ViewConstructor") constructor(
             }
         }
 
+        private val mPaint = Paint().apply {
+            isAntiAlias = true
+            style = Paint.Style.FILL
+            strokeWidth = 2f
+            color = Color.BLACK
+            isFilterBitmap = true
+            isDither = true
+            xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)
+        }
+
         // 采样率，减少绘制点数以提高性能
         private const val SAMPLE_RATE = 1
     }
@@ -83,9 +102,8 @@ class PathView @SuppressLint("ViewConstructor") constructor(
     // 优化：创建可复用的Path对象，避免在onDraw中频繁创建
     private val bezierPath = Path()
 
-    init {
-        // 初始化操作
-    }
+    // 保存parent引用以便安全访问
+    private val mapViewRef: WeakReference<MapView> = parent
 
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
@@ -137,6 +155,80 @@ class PathView @SuppressLint("ViewConstructor") constructor(
                         startPointText,
                         endPointText
                     )
+                }
+            }
+            val mapView = mapViewRef.get() ?: return
+
+            mWorld?.let {
+                mWorld?.m_layers?.let {
+                    // 应用矩阵变换，确保拖动地图时路径跟随移动
+                    canvas.save()
+                    canvas.concat(mMatrix)
+                    
+                    //绘制地图
+                    it.Draw(mapView.mSrf, canvas)
+
+                    mRouteEdit.m_KeyPst.Draw(mapView.mSrf, canvas, mPaint)
+
+                    //重点显示要编辑的路径
+                    for (i in mRouteEdit.m_nCurPathIndex.indices) {
+                        val pPath = it.m_PathBase.m_pPathIdx[mRouteEdit.m_nCurPathIndex[i]].m_ptr
+                        if (pPath != null) {
+                            //避免删除节点，会引起删除线，需要进行是否为空的判断
+                            pPath.Draw(mapView.mSrf, canvas, Color.GREEN, 3)
+                            // 修改操作下显示控制点
+                            if (pPath.m_uType.toInt() == 10 && mRouteEdit.mEditWorldStage == mRouteEdit.WRD_MOD_NODE) {
+                                (pPath as GenericPath).DrawCtrlPoints(
+                                    mapView.mSrf,
+                                    canvas,
+                                    null,
+                                    Color.GREEN,
+                                    5
+                                )
+                                if (mRouteEdit.mCurKeyId > 0) {
+                                    (pPath).m_Curve.m_ptKey[mRouteEdit.mCurKeyId - 1].Draw(
+                                        mapView.mSrf, canvas, Color.RED, 8
+                                    )
+                                }
+                            }
+                            //在"GetStartNode"这里会空
+                            val tempStart = pPath.GetStartNode()
+                            val tempEnd = pPath.GetEndNode()
+                            if (tempStart == null || tempEnd == null) {
+                                continue
+                            }
+                            pPath.GetStartNode().Draw(mapView.mSrf, canvas, Color.GREEN)
+                            tempEnd.Draw(mapView.mSrf, canvas, Color.GREEN)
+                        }
+                    }
+
+                    //显示选择的节点
+                    if (mRouteEdit.mCurNodeId != -1) {
+                        val node = it.GetNode(mRouteEdit.mCurNodeId)
+                        // 修改操作下显示带位子的点
+                        if (node != null && mRouteEdit.mEditWorldStage == mRouteEdit.WRD_MOD_NODE) {
+                            //将节点的姿态绘制出来。便于修改角度
+                            mRouteEdit.m_ModNodePos.Clear()
+                            val pst = Posture()
+                            pst.x = node.x
+                            pst.y = node.y
+                            val mAngles = arrayOfNulls<Angle>(4)
+                            val nCount = it.GetNodeHeadingAngle(mRouteEdit.mCurNodeId, mAngles, 4)
+                            if (nCount > 0) {
+                                pst.fThita = mAngles[0]!!.m_fRad
+                            }
+                            mRouteEdit.m_ModNodePos.AddPst(pst)
+                            mRouteEdit.m_ModNodePos.m_SelectPstID = 0 //默认被选中
+                            mRouteEdit.m_ModNodePos.Draw(mapView.mSrf, canvas, mPaint)
+                        }
+                        node?.Draw(mapView.mSrf, canvas, Color.RED)
+                    }
+                    if (mRouteEdit.m_RegConDownCount == 1 && mRouteEdit.mEditWorldStage == mRouteEdit.WRD_ADD_REG_CON) {
+                        mRouteEdit.m_RegConStart.Draw(mapView.mSrf, canvas, Color.BLUE, 5) //color
+                    }
+                    
+                    // 恢复画布状态
+                    canvas.restore()
                 }
             }
         }
@@ -262,5 +354,10 @@ class PathView @SuppressLint("ViewConstructor") constructor(
         clearPathPlan()
         mCleanPathPlanResultBean = null
         mGlobalPathPlanResultBean = null
+    }
+
+    private var mWorld: World? = null
+    fun setWorld(world: World) {
+        mWorld = world
     }
 }
