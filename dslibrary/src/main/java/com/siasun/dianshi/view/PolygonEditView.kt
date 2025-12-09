@@ -13,7 +13,7 @@ import kotlin.math.sqrt
 /**
  * 清扫区域
  */
-class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
+class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
     SlamWareBaseView(context, parent), GestureDetector.OnGestureListener,
     GestureDetector.OnDoubleTapListener {
 
@@ -29,6 +29,9 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
     private var selectedPointIndex: Int = -1
     private var isDragging = false
     private val vertexRadius = 10f // 顶点半径
+
+    // 控制是否绘制
+    private var isDrawingEnabled: Boolean = true
 
     // 绘制相关的画笔 - 使用伴生对象创建静态实例，避免重复创建
     companion object {
@@ -529,17 +532,18 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        canvas.save()
+        if (isDrawingEnabled) {
+            canvas.save()
+            // 绘制所有区域 - 使用副本避免并发修改
+            val areasCopy = synchronized(list) {
+                list.toList()
+            }
+            areasCopy.forEach { area ->
+                drawPolygon(canvas, area, area == selectedArea)
+            }
 
-        // 绘制所有区域 - 使用副本避免并发修改
-        val areasCopy = synchronized(list) {
-            list.toList()
+            canvas.restore()
         }
-        areasCopy.forEach { area ->
-            drawPolygon(canvas, area, area == selectedArea)
-        }
-
-        canvas.restore()
     }
 
     /**
@@ -623,6 +627,14 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
         return synchronized(list) {
             list.toList()
         }
+    }
+
+    /**
+     * 设置是否启用绘制
+     */
+    fun setDrawingEnabled(enabled: Boolean) {
+        this.isDrawingEnabled = enabled
+        postInvalidate()
     }
 
     override fun onDetachedFromWindow() {

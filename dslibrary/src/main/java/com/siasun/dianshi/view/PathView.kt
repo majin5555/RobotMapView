@@ -22,6 +22,8 @@ class PathView @SuppressLint("ViewConstructor") constructor(
     parent: WeakReference<MapView>
 ) :
     SlamWareBaseView(context, parent) {
+    private var isDrawingEnabled: Boolean = true
+
     // 优化：使用伴生对象创建静态Paint实例，避免重复创建
     companion object {
         private val mRedPaint: Paint by lazy {
@@ -73,11 +75,11 @@ class PathView @SuppressLint("ViewConstructor") constructor(
     private val teachPointList = mutableListOf<TeachPoint>()
     private var mCleanPathPlanResultBean: PathPlanResultBean? = null // 清扫路径规划结果
     private var mGlobalPathPlanResultBean: PathPlanResultBean? = null //全局路径规划结果
-    
+
     // 预加载字符串资源，避免重复创建
     private val startPointText by lazy { context?.getString(R.string.start_point) ?: "" }
     private val endPointText by lazy { context?.getString(R.string.end_point) ?: "" }
-    
+
     // 优化：创建可复用的Path对象，避免在onDraw中频繁创建
     private val bezierPath = Path()
 
@@ -88,52 +90,54 @@ class PathView @SuppressLint("ViewConstructor") constructor(
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        
-        // 绘制试教中的点 - 使用副本避免并发修改
-        val pointListCopy = synchronized(teachPointList) {
-            teachPointList.toList()
-        }
-        for (point in pointListCopy) {
-            drawTeachPointIng(canvas, point)
-        }
+        if (isDrawingEnabled) {
 
-        // 绘制清扫路线
-        mCleanPathPlanResultBean?.let { cleanPath ->
-            // 采样绘制直线
-            for (i in cleanPath.m_vecLineOfPathPlan.indices step SAMPLE_RATE) {
-                drawPPLinePath(canvas, cleanPath.m_vecLineOfPathPlan[i])
+            // 绘制试教中的点 - 使用副本避免并发修改
+            val pointListCopy = synchronized(teachPointList) {
+                teachPointList.toList()
             }
-            // 采样绘制贝塞尔曲线
-            for (i in cleanPath.m_vecBezierOfPathPlan.indices step SAMPLE_RATE) {
-                drawPPBezierPath(canvas, cleanPath.m_vecBezierOfPathPlan[i])
-            }
-        }
-
-        // 绘制全局路径
-        mGlobalPathPlanResultBean?.let { globalPath ->
-            // 采样绘制直线
-            for (i in globalPath.m_vecLineOfPathPlan.indices step SAMPLE_RATE) {
-                drawPPLinePath(canvas, globalPath.m_vecLineOfPathPlan[i])
-            }
-            // 采样绘制贝塞尔曲线
-            for (i in globalPath.m_vecBezierOfPathPlan.indices step SAMPLE_RATE) {
-                drawPPBezierPath(canvas, globalPath.m_vecBezierOfPathPlan[i])
+            for (point in pointListCopy) {
+                drawTeachPointIng(canvas, point)
             }
 
-            // 创建世界系坐标点
-            if (globalPath.startPoint != null && globalPath.startPoint.size >= 3 &&
-                globalPath.endPoint != null && globalPath.endPoint.size >= 3
-            ) {
-                val startPoint2d = PointNew(globalPath.startPoint[0], globalPath.startPoint[1])
-                val endPoint2d = PointNew(globalPath.endPoint[0], globalPath.endPoint[1])
+            // 绘制清扫路线
+            mCleanPathPlanResultBean?.let { cleanPath ->
+                // 采样绘制直线
+                for (i in cleanPath.m_vecLineOfPathPlan.indices step SAMPLE_RATE) {
+                    drawPPLinePath(canvas, cleanPath.m_vecLineOfPathPlan[i])
+                }
+                // 采样绘制贝塞尔曲线
+                for (i in cleanPath.m_vecBezierOfPathPlan.indices step SAMPLE_RATE) {
+                    drawPPBezierPath(canvas, cleanPath.m_vecBezierOfPathPlan[i])
+                }
+            }
 
-                drawStartAndEndPoint(
-                    canvas,
-                    startPoint2d,
-                    endPoint2d,
-                    startPointText,
-                    endPointText
-                )
+            // 绘制全局路径
+            mGlobalPathPlanResultBean?.let { globalPath ->
+                // 采样绘制直线
+                for (i in globalPath.m_vecLineOfPathPlan.indices step SAMPLE_RATE) {
+                    drawPPLinePath(canvas, globalPath.m_vecLineOfPathPlan[i])
+                }
+                // 采样绘制贝塞尔曲线
+                for (i in globalPath.m_vecBezierOfPathPlan.indices step SAMPLE_RATE) {
+                    drawPPBezierPath(canvas, globalPath.m_vecBezierOfPathPlan[i])
+                }
+
+                // 创建世界系坐标点
+                if (globalPath.startPoint != null && globalPath.startPoint.size >= 3 &&
+                    globalPath.endPoint != null && globalPath.endPoint.size >= 3
+                ) {
+                    val startPoint2d = PointNew(globalPath.startPoint[0], globalPath.startPoint[1])
+                    val endPoint2d = PointNew(globalPath.endPoint[0], globalPath.endPoint[1])
+
+                    drawStartAndEndPoint(
+                        canvas,
+                        startPoint2d,
+                        endPoint2d,
+                        startPointText,
+                        endPointText
+                    )
+                }
             }
         }
     }
@@ -164,7 +168,7 @@ class PathView @SuppressLint("ViewConstructor") constructor(
      */
     private fun drawPPBezierPath(canvas: Canvas, bezier: Bezier) {
         val mapView = mParent.get() ?: return
-        
+
         // 确保贝塞尔曲线有足够的控制点
         if (bezier.m_ptKey.size < 4) return
 
@@ -242,9 +246,17 @@ class PathView @SuppressLint("ViewConstructor") constructor(
         invalidate()
     }
 
+    /**
+     * 设置是否启用绘制
+     */
+    fun setDrawingEnabled(enabled: Boolean) {
+        this.isDrawingEnabled = enabled
+        postInvalidate()
+    }
+
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-        
+
         // 清理资源，防止内存泄漏
         clearTeachPoint()
         clearPathPlan()

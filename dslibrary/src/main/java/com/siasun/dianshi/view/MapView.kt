@@ -81,13 +81,13 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     private var mMapView: WeakReference<MapView> = WeakReference(this)
     private var mapLayers: MutableList<SlamWareBaseView> = CopyOnWriteArrayList()
     private var mPngMapView: PngMapView? = null //png地图
+    private var mLegendView: LegendView? = null//图例
 
     var mWallView: VirtualWallView? = null//虚拟墙
     var mHomeDockView: HomeDockView? = null//充电站
     var mElevatorView: ElevatorView? = null//乘梯点
     var mStationView: StationsView? = null//站点
     var mOnlinePoseView: OnlinePoseView? = null//上线点
-    private var mLegendView: LegendView? = null//图例
     var mUpLaserScanView: UpLaserScanView? = null//上激光点云
     var mDownLaserScanView: DownLaserScanView? = null//下激光点云
     var mTopViewPathView: TopViewPathView? = null//顶视路线
@@ -96,8 +96,6 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     var mPolygonEditView: PolygonEditView? = null//区域
     var mSpPolygonEditView: SpPolygonEditView? = null//特殊区域
     var mMixAreaView: MixAreaView? = null//混行区域
-
-
     var mPathView: PathView? = null//路线PP
     var mRobotView: RobotView? = null //机器人图标
     var mWorkIngPathView: WorkIngPathView? = null //机器人工作路径

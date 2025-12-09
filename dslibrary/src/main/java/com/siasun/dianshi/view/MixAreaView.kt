@@ -15,10 +15,12 @@ import java.lang.ref.WeakReference
 class MixAreaView(context: Context?, parent: WeakReference<MapView>) :
     SlamWareBaseView(context, parent), GestureDetector.OnGestureListener,
     GestureDetector.OnDoubleTapListener {
+    // 控制是否绘制
+    private var isDrawingEnabled: Boolean = true
 
     // 保存parent引用以便安全访问
-    private var mapViewRef: WeakReference<MapView>? = parent
-    var list: MutableList<WorkAreasNew> = mutableListOf()
+    private val mapViewRef: WeakReference<MapView> = parent
+    private val list: MutableList<WorkAreasNew> = mutableListOf()
 
     // 编辑模式相关变量
     private var currentWorkMode = MapView.WorkMode.MODE_SHOW_MAP
@@ -27,50 +29,64 @@ class MixAreaView(context: Context?, parent: WeakReference<MapView>) :
     private var isDragging = false
     private val vertexRadius = 10f // 顶点半径
 
-    // 绘制相关的画笔
-    private val areaPaint = Paint().apply {
-        style = Paint.Style.STROKE
-        color = Color.MAGENTA
-        strokeWidth = 2f
-        isAntiAlias = true
+    // 绘制相关的画笔 - 使用伴生对象存储，避免重复创建
+    companion object {
+        private val areaPaint = Paint().apply {
+            style = Paint.Style.STROKE
+            color = Color.MAGENTA
+            strokeWidth = 2f
+            isAntiAlias = true
+        }
+
+        private val selectedAreaPaint = Paint().apply {
+            style = Paint.Style.STROKE
+            color = Color.GREEN
+            strokeWidth = 4f
+            isAntiAlias = true
+        }
+
+        private val vertexPaint = Paint().apply {
+            style = Paint.Style.FILL
+            color = Color.GREEN
+            isAntiAlias = true
+        }
+
+        private val selectedVertexPaint = Paint().apply {
+            style = Paint.Style.FILL
+            color = Color.YELLOW
+            isAntiAlias = true
+        }
+
+        private val edgePointPaint = Paint().apply {
+            style = Paint.Style.FILL
+            color = Color.CYAN
+            isAntiAlias = true
+        }
+
+        private val edgePointTextPaint = Paint().apply {
+            color = Color.BLACK
+            textSize = 20f
+            isAntiAlias = true
+            textAlign = Paint.Align.CENTER
+        }
+
+        private val textPaint = Paint().apply {
+            color = Color.BLACK
+            isAntiAlias = true
+        }
     }
 
-    private val selectedAreaPaint = Paint().apply {
-        style = Paint.Style.STROKE
-        color = Color.GREEN
-        strokeWidth = 4f
-        isAntiAlias = true
-    }
+    // 重用的PointF对象，减少内存分配
+    private var tempPoint = PointF()
+    private var screenP1 = PointF()
+    private var screenP2 = PointF()
+    private var worldCenter = PointF()
 
-    private val vertexPaint = Paint().apply {
-        style = Paint.Style.FILL
-        color = Color.GREEN
-        isAntiAlias = true
-    }
+    // 重用的Path对象
+    private val path = Path()
 
-    private val selectedVertexPaint = Paint().apply {
-        style = Paint.Style.FILL
-        color = Color.YELLOW
-        isAntiAlias = true
-    }
-
-    private val edgePointPaint = Paint().apply {
-        style = Paint.Style.FILL
-        color = Color.CYAN
-        isAntiAlias = true
-    }
-
-    private val edgePointTextPaint = Paint().apply {
-        color = Color.BLACK
-        textSize = 20f
-        isAntiAlias = true
-        textAlign = Paint.Align.CENTER
-    }
-
-    private val textPaint = Paint().apply {
-        color = Color.BLACK
-        isAntiAlias = true
-    }
+    // 重用的Rect对象
+    private val textRect = Rect()
 
     // 边中点的半径
     private val edgePointRadius = 15f
@@ -81,8 +97,8 @@ class MixAreaView(context: Context?, parent: WeakReference<MapView>) :
     // 手势检测器，用于处理双击事件
     private val gestureDetector = GestureDetector(context, this)
 
-    // 编辑监听器
-    private var onCleanAreaEditListener: OnCleanAreaEditListener? = null
+    // 编辑监听器 - 使用弱引用防止内存泄漏
+    private var onCleanAreaEditListener: WeakReference<OnCleanAreaEditListener>? = null
 
     init {
         gestureDetector.setOnDoubleTapListener(this)
@@ -107,14 +123,15 @@ class MixAreaView(context: Context?, parent: WeakReference<MapView>) :
      */
     fun createRectangularAreaAtCenter(newArea: WorkAreasNew) {
         // 获取MapView实例
-        val mapView = mapViewRef?.get() ?: return
+        val mapView = mapViewRef.get() ?: return
 
         // 计算地图中心位置
         val centerX = mapView.viewWidth / 2f
         val centerY = mapView.viewHeight / 2f
-
+        worldCenter.x = centerX
+        worldCenter.y = centerY
         // 将屏幕中心坐标转换为世界坐标
-        val worldCenter = mapView.screenToWorld(centerX, centerY)
+        mapView.screenToWorld(worldCenter.x, worldCenter.y)
 
         // 创建矩形的四个顶点（100x100的矩形，中心在地图中心）
         val rectSize = 20f
@@ -131,17 +148,19 @@ class MixAreaView(context: Context?, parent: WeakReference<MapView>) :
         newArea.areaVertexPnt.add(bottomRight)
         newArea.areaVertexPnt.add(bottomLeft)
 
-        // 将新区域添加到列表
-        list.add(newArea)
+        // 将新区域添加到列表 - 线程安全处理
+        synchronized(list) {
+            list.add(newArea)
+        }
 
         // 选中新创建的区域
         selectedArea = newArea
 
         // 通知监听器选中区域变化
-        onCleanAreaEditListener?.onSelectedAreaChanged(newArea)
+        onCleanAreaEditListener?.get()?.onSelectedAreaChanged(newArea)
 
         // 通知监听器创建了新区域
-        onCleanAreaEditListener?.onAreaCreated(newArea)
+        onCleanAreaEditListener?.get()?.onAreaCreated(newArea)
 
         invalidate()
     }
@@ -150,7 +169,7 @@ class MixAreaView(context: Context?, parent: WeakReference<MapView>) :
      * 设置编辑监听器
      */
     fun setOnCleanAreaEditListener(listener: OnCleanAreaEditListener?) {
-        this.onCleanAreaEditListener = listener
+        this.onCleanAreaEditListener = listener?.let { WeakReference(it) }
     }
 
     /**
@@ -161,16 +180,18 @@ class MixAreaView(context: Context?, parent: WeakReference<MapView>) :
         selectedPointIndex = -1
         isDragging = false
         // 通知监听器选中区域变化
-        onCleanAreaEditListener?.onSelectedAreaChanged(area)
+        onCleanAreaEditListener?.get()?.onSelectedAreaChanged(area)
         invalidate()
     }
 
     /**
-     * 设置要绘制的区域数据
+     * 设置要绘制的区域数据 - 线程安全处理
      */
     fun setMixAreaData(data: MutableList<WorkAreasNew>) {
-        this.list.clear()
-        this.list.addAll(data)
+        synchronized(list) {
+            this.list.clear()
+            this.list.addAll(data)
+        }
         invalidate() // 触发重绘
     }
 
@@ -193,11 +214,12 @@ class MixAreaView(context: Context?, parent: WeakReference<MapView>) :
      * 检查点是否在顶点的可点击范围内
      */
     private fun isPointInVertex(screenX: Float, screenY: Float, vertex: PointNew): Boolean {
-        val vertexScreen = mapViewRef?.get()?.worldToScreen(vertex.X, vertex.Y) ?: PointF(0f, 0f)
+        val mapView = mapViewRef.get() ?: return false
+        tempPoint = mapView.worldToScreen(vertex.X, vertex.Y)
         val distance = Math.sqrt(
             Math.pow(
-                (screenX - vertexScreen.x).toDouble(), 2.0
-            ) + Math.pow((screenY - vertexScreen.y).toDouble(), 2.0)
+                (screenX - tempPoint.x).toDouble(), 2.0
+            ) + Math.pow((screenY - tempPoint.y).toDouble(), 2.0)
         )
         return distance <= vertexRadius * 2
     }
@@ -225,11 +247,12 @@ class MixAreaView(context: Context?, parent: WeakReference<MapView>) :
      * 检查点是否在边中点的可点击范围内
      */
     private fun isPointInEdgePoint(screenX: Float, screenY: Float, midPoint: PointNew): Boolean {
-        val edgeScreen = mapViewRef?.get()?.worldToScreen(midPoint.X, midPoint.Y) ?: PointF(0f, 0f)
+        val mapView = mapViewRef.get() ?: return false
+        tempPoint = mapView.worldToScreen(midPoint.X, midPoint.Y)
         val distance = Math.sqrt(
             Math.pow(
-                (screenX - edgeScreen.x).toDouble(), 2.0
-            ) + Math.pow((screenY - edgeScreen.y).toDouble(), 2.0)
+                (screenX - tempPoint.x).toDouble(), 2.0
+            ) + Math.pow((screenY - tempPoint.y).toDouble(), 2.0)
         )
         return distance <= edgePointRadius * 2
     }
@@ -267,7 +290,7 @@ class MixAreaView(context: Context?, parent: WeakReference<MapView>) :
         val newIndex = edgeIndex + 1
         points.add(newIndex, midPoint)
         // 通知监听器添加了新顶点
-        onCleanAreaEditListener?.onVertexAdded(area, newIndex, midPoint.X, midPoint.Y)
+        onCleanAreaEditListener?.get()?.onVertexAdded(area, newIndex, midPoint.X, midPoint.Y)
         invalidate()
     }
 
@@ -275,8 +298,9 @@ class MixAreaView(context: Context?, parent: WeakReference<MapView>) :
      * 检查点是否在线段上
      */
     private fun isPointOnLine(screenX: Float, screenY: Float, p1: PointNew, p2: PointNew): Boolean {
-        val screenP1 = mapViewRef?.get()?.worldToScreen(p1.X, p1.Y) ?: return false
-        val screenP2 = mapViewRef?.get()?.worldToScreen(p2.X, p2.Y) ?: return false
+        val mapView = mapViewRef.get() ?: return false
+        screenP1 = mapView.worldToScreen(p1.X, p1.Y)
+        screenP2 = mapView.worldToScreen(p2.X, p2.Y)
 
         // 计算点到线段的距离
         val distance = calculateDistanceFromPointToLine(
@@ -352,7 +376,7 @@ class MixAreaView(context: Context?, parent: WeakReference<MapView>) :
         // 删除边上的第二个点（即edgeIndex+1位置的点），这样就删除了edgeIndex对应的边
         points.removeAt((edgeIndex + 1) % points.size)
         // 通知监听器删除了边
-        onCleanAreaEditListener?.onEdgeRemoved(area, edgeIndex)
+        onCleanAreaEditListener?.get()?.onEdgeRemoved(area, edgeIndex)
         invalidate()
     }
 
@@ -379,7 +403,8 @@ class MixAreaView(context: Context?, parent: WeakReference<MapView>) :
                     isDragging = true
                     handled = true
                     // 通知监听器顶点开始拖动
-                    onCleanAreaEditListener?.onVertexDragStart(selectedArea!!, selectedPointIndex)
+                    onCleanAreaEditListener?.get()
+                        ?.onVertexDragStart(selectedArea!!, selectedPointIndex)
                 } else {
                     // 如果没有点击到顶点，检查是否点击到边中点
                     val edgeIndex = findNearbyEdgeIndex(selectedArea!!, x, y)
@@ -393,15 +418,16 @@ class MixAreaView(context: Context?, parent: WeakReference<MapView>) :
 
             MotionEvent.ACTION_MOVE -> {
                 if (isDragging && selectedPointIndex != -1) {
-                    // 将屏幕坐标转换为世界坐标
-                    val worldPoint = mapViewRef?.get()?.screenToWorld(x, y) ?: return false
+                    val mapView = mapViewRef.get() ?: return false
+                    // 将屏幕坐标转换为世界坐标 - 重用worldCenter对象
+                    worldCenter = mapView.screenToWorld(x, y)
                     // 更新选中顶点的坐标
                     selectedArea?.areaVertexPnt?.get(selectedPointIndex)?.apply {
-                        X = worldPoint.x
-                        Y = worldPoint.y
+                        X = worldCenter.x
+                        Y = worldCenter.y
                         // 通知监听器顶点拖动中
-                        onCleanAreaEditListener?.onVertexDragging(
-                            selectedArea!!, selectedPointIndex, worldPoint.x, worldPoint.y
+                        onCleanAreaEditListener?.get()?.onVertexDragging(
+                            selectedArea!!, selectedPointIndex, worldCenter.x, worldCenter.y
                         )
                     }
                     invalidate() // 触发重绘
@@ -412,7 +438,8 @@ class MixAreaView(context: Context?, parent: WeakReference<MapView>) :
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 if (isDragging && selectedPointIndex != -1) {
                     // 通知监听器顶点拖动结束
-                    onCleanAreaEditListener?.onVertexDragEnd(selectedArea!!, selectedPointIndex)
+                    onCleanAreaEditListener?.get()
+                        ?.onVertexDragEnd(selectedArea!!, selectedPointIndex)
                     handled = true
                 }
                 isDragging = false
@@ -493,14 +520,22 @@ class MixAreaView(context: Context?, parent: WeakReference<MapView>) :
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        canvas.save()
+        if (isDrawingEnabled) {
 
-        // 绘制所有区域
-        list.forEach { area ->
-            drawPolygon(canvas, area, area == selectedArea)
+            canvas.save()
+
+            // 创建列表副本避免并发修改问题
+            val areasCopy = synchronized(list) {
+                list.toList()
+            }
+
+            // 绘制所有区域
+            areasCopy.forEach { area ->
+                drawPolygon(canvas, area, area == selectedArea)
+            }
+
+            canvas.restore()
         }
-
-        canvas.restore()
     }
 
     /**
@@ -510,22 +545,23 @@ class MixAreaView(context: Context?, parent: WeakReference<MapView>) :
         val points = area.areaVertexPnt
         if (points.isEmpty()) return
 
-        // 创建路径
-        val path = Path()
+        val mapView = mapViewRef.get() ?: return
+
+        // 重置路径而不是重新创建
+        path.reset()
 
         // 将第一个点转换为屏幕坐标并移动到该点
-        val firstPoint = mapViewRef?.get()?.worldToScreen(points[0].X, points[0].Y) ?: return
-        path.moveTo(firstPoint.x, firstPoint.y)
+        tempPoint = mapView.worldToScreen(points[0].X, points[0].Y)
+        path.moveTo(tempPoint.x, tempPoint.y)
 
         // 添加所有其他点到路径
         for (i in 1 until points.size) {
-            val screenPoint = mapViewRef?.get()?.worldToScreen(points[i].X, points[i].Y) ?: return
-            path.lineTo(screenPoint.x, screenPoint.y)
+            mapView.worldToScreen(tempPoint.x, tempPoint.y)
+            path.lineTo(tempPoint.x, tempPoint.y)
         }
 
         // 闭合路径
         path.close()
-
 
         // 绘制多边形轮廓，选中的区域使用不同的画笔
         canvas.drawPath(path, if (isSelected) selectedAreaPaint else areaPaint)
@@ -534,12 +570,11 @@ class MixAreaView(context: Context?, parent: WeakReference<MapView>) :
         if ((currentWorkMode == MapView.WorkMode.MODE_MIX_AREA_ADD || currentWorkMode == MapView.WorkMode.MODE_MIX_AREA_EDIT) && isSelected) {
             // 绘制所有顶点
             for (i in points.indices) {
-                val screenPoint =
-                    mapViewRef?.get()?.worldToScreen(points[i].X, points[i].Y) ?: return
+                tempPoint = mapView.worldToScreen(points[i].X, points[i].Y)
                 // 绘制顶点，选中的顶点使用不同的颜色
                 canvas.drawCircle(
-                    screenPoint.x,
-                    screenPoint.y,
+                    tempPoint.x,
+                    tempPoint.y,
                     vertexRadius,
                     if (i == selectedPointIndex) selectedVertexPaint else vertexPaint
                 )
@@ -551,38 +586,72 @@ class MixAreaView(context: Context?, parent: WeakReference<MapView>) :
                     val p1 = points[i]
                     val p2 = points[(i + 1) % points.size]
                     val midPoint = calculateMidPoint(p1, p2)
-                    val screenMidPoint =
-                        mapViewRef?.get()?.worldToScreen(midPoint.X, midPoint.Y) ?: return
+                    mapView.worldToScreen(midPoint.X, midPoint.Y)
 
                     // 绘制边中点的背景圆
                     canvas.drawCircle(
-                        screenMidPoint.x, screenMidPoint.y, edgePointRadius, edgePointPaint
+                        tempPoint.x, tempPoint.y, edgePointRadius, edgePointPaint
                     )
 
                     // 绘制加号
-                    canvas.drawText("+", screenMidPoint.x, screenMidPoint.y + 8, edgePointTextPaint)
+                    canvas.drawText("+", tempPoint.x, tempPoint.y + 8, edgePointTextPaint)
                 }
             }
         }
 
         // 绘制区域名称在最右边点的下边
         getRightmostPoint(points)?.let { rightmost ->
-            val rightmostScreen =
-                mapViewRef?.get()?.worldToScreen(rightmost.X, rightmost.Y) ?: return
+            val bottomPoint = mapView.worldToScreen(rightmost.X, rightmost.Y)
 
             // 计算文本位置：在最右边点的下方，居中对齐
-            val textRect = Rect()
-            textPaint.getTextBounds(area.name, 0, area.name!!.length, textRect)
+            area.name.let { name ->
+                textPaint.getTextBounds(name, 0, name.length, textRect)
 
-            val textX = rightmostScreen.x - textRect.width() / 2
-            val textY = rightmostScreen.y + textRect.height() + 10 // 10像素的间距
+                val textX = bottomPoint.x - textRect.width() / 2
+                val textY = bottomPoint.y + textRect.height() + 10 // 10像素的间距
 
-            // 绘制文本
-            canvas.drawText(area.name!!, textX, textY, textPaint)
+                // 绘制文本
+                canvas.drawText(name, textX, textY, textPaint)
+            }
         }
     }
 
-    fun getData() = list
+    /**
+     * 获取区域数据 - 返回不可修改的列表，防止外部修改
+     */
+    fun getData(): List<WorkAreasNew> {
+        synchronized(list) {
+            return list.toList()
+        }
+    }
+
+    /**
+     * 清理资源，防止内存泄漏
+     */
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+
+        // 清理监听器
+        onCleanAreaEditListener = null
+
+        // 清理数据
+        synchronized(list) {
+            list.clear()
+        }
+
+        // 清理选中状态
+        selectedArea = null
+        selectedPointIndex = -1
+        isDragging = false
+    }
+
+    /**
+     * 设置是否启用绘制
+     */
+    fun setDrawingEnabled(enabled: Boolean) {
+        this.isDrawingEnabled = enabled
+        postInvalidate()
+    }
 
     // 清扫区域编辑回调接口
     interface OnCleanAreaEditListener {
