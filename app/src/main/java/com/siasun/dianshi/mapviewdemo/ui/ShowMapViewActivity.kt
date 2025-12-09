@@ -49,6 +49,7 @@ import com.siasun.dianshi.view.HomeDockView
 import com.siasun.dianshi.view.MixAreaView
 import com.siasun.dianshi.view.PolygonEditView
 import com.siasun.dianshi.view.PostingAreasView
+import com.siasun.dianshi.view.RemoveNoiseView
 import com.siasun.dianshi.xpop.XpopUtils
 import java.io.File
 

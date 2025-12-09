@@ -27,12 +27,19 @@
                 android:text="平移地图" />
 
             <Button
+                android:id="@+id/btn_remove_noise"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="去除噪点"
+                app:layout_constraintTop_toBottomOf="@+id/btn_move" />
+
+            <Button
                 android:id="@+id/btn_add_charge_station"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="添加充电站"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@+id/btn_move"
+                app:layout_constraintEnd_toStartOf="@+id/btn_remove_noise"
                 app:layout_constraintTop_toTopOf="parent" />
 
             <Button
@@ -89,7 +96,7 @@
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@+id/btn_edit_elevator"
                 app:layout_constraintTop_toTopOf="parent" />
-                
+
             <!-- 充电站按钮 -->
             <Button
                 android:id="@+id/btn_edit_machine_station"
@@ -98,7 +105,7 @@
                 android:text="编辑充电站"
                 app:layout_constraintBottom_toBottomOf="@+id/btn_delete_elevator"
                 app:layout_constraintEnd_toStartOf="@+id/btn_delete_elevator" />
-                
+
             <Button
                 android:id="@+id/btn_delete_machine_station"
                 android:layout_width="wrap_content"
@@ -184,20 +191,13 @@
                 android:text="保存混行区域"
                 app:layout_constraintTop_toBottomOf="@+id/btn_add_sp_area" />
 
-            <Button
-                android:id="@+id/btn_remove_noise"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="去除噪点"
-                app:layout_constraintTop_toBottomOf="@+id/btn_save_mix_area" />
-
 
             <Button
                 android:id="@+id/btn_vir_add"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="创建虚拟墙"
-                app:layout_constraintTop_toBottomOf="@+id/btn_remove_noise" />
+                app:layout_constraintTop_toBottomOf="@+id/btn_save_mix_area" />
 
             <Button
                 android:id="@+id/btn_vir_edit"

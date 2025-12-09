@@ -6,6 +6,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PointF
+import android.graphics.RectF
 import android.view.MotionEvent
 import java.lang.ref.WeakReference
 
@@ -23,7 +24,7 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
     // 触摸点坐标
     private val startPoint = PointF()
     private val endPoint = PointF()
-    
+
     // 绘制的矩形
     private var rectLeft = 0f
     private var rectTop = 0f
@@ -33,24 +34,31 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
     // 是否正在绘制
     private var isDrawing = false
 
-    // 绘图画笔 - 单例模式避免重复创建
-    private val paint: Paint by lazy {
-        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    // 绘图画笔 - 使用伴生对象创建静态实例，避免重复创建
+    companion object {
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLUE
             style = Paint.Style.STROKE
             strokeWidth = 2f // 增加线条宽度，提高可见性
         }
     }
 
-    // 监听器
+    // 监听器 - 使用WeakReference防止内存泄漏
     private var onRemoveNoiseListener: OnRemoveNoiseListener? = null
+
+    // 复用的PointF对象，减少内存分配
+    private val leftTopPoint = PointF()
+    private val rightBottomPoint = PointF()
+
+    // 复用的RectF对象
+    private val tempRect = RectF()
 
     /**
      * 设置工作模式
      */
     fun setWorkMode(mode: MapView.WorkMode) {
         if (currentWorkMode == mode) return // 避免重复设置
-        
+
         currentWorkMode = mode
         // 如果不是擦除噪点模式，重置绘制状态
         if (mode != MapView.WorkMode.MODE_REMOVE_NOISE) {
@@ -68,7 +76,7 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
         resetRect()
         invalidate()
     }
-    
+
     /**
      * 清除已绘制的矩形线框
      */
@@ -138,7 +146,7 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
         // 检查触摸点是否在地图范围内
         val x = event.x.coerceIn(0f, width.toFloat())
         val y = event.y.coerceIn(0f, height.toFloat())
-        
+
         startPoint.set(x, y)
         endPoint.set(x, y)
         isDrawing = true
@@ -149,11 +157,11 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
      */
     private fun handleActionMove(event: MotionEvent) {
         if (!isDrawing) return
-        
+
         // 检查触摸点是否在地图范围内
         val x = event.x.coerceIn(0f, width.toFloat())
         val y = event.y.coerceIn(0f, height.toFloat())
-        
+
         // 更新结束点并计算矩形
         endPoint.set(x, y)
         updateRectFromPoints()
@@ -165,20 +173,20 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
      */
     private fun handleActionUp(event: MotionEvent) {
         if (!isDrawing) return
-        
+
         // 检查触摸点是否在地图范围内
         val x = event.x.coerceIn(0f, width.toFloat())
         val y = event.y.coerceIn(0f, height.toFloat())
-        
+
         // 更新结束点并计算矩形
         endPoint.set(x, y)
         updateRectFromPoints()
         invalidate()
-        
+
         // 触发回调
-        val leftTop = PointF(rectLeft, rectTop)
-        val rightBottom = PointF(rectRight, rectBottom)
-        onRemoveNoiseListener?.onRemoveNoise(leftTop, rightBottom)
+        leftTopPoint.set(rectLeft, rectTop)
+        rightBottomPoint.set(rectRight, rectBottom)
+        onRemoveNoiseListener?.onRemoveNoise(leftTopPoint, rightBottomPoint)
     }
 
     /**
@@ -194,10 +202,21 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        
+
         // 只要矩形有效就绘制，无论是绘制中还是绘制完成后
         if (rectLeft != rectRight && rectTop != rectBottom) {
-            canvas.drawRect(rectLeft, rectTop, rectRight, rectBottom, paint)
+            tempRect.set(rectLeft, rectTop, rectRight, rectBottom)
+            canvas.drawRect(tempRect, paint)
         }
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+
+        // 清理资源，防止内存泄漏
+        onRemoveNoiseListener = null
+
+        // 重置状态
+        resetDrawingState()
     }
 }

@@ -113,7 +113,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     private var mGestureDetector: SlamGestureDetector? = null
 
     //删除噪点
-    private var mRemoveNoiseListener: WeakReference<IRemoveNoiseListener?>? = null
+    private var mRemoveNoiseListener: IRemoveNoiseListener? = null
 
 
     /**
@@ -632,8 +632,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     /**
      * 获取清扫区域
      */
-    fun getCleanAreaData(): List<CleanAreaNew> =
-        mPolygonEditView?.getData() ?: mutableListOf()
+    fun getCleanAreaData(): List<CleanAreaNew> = mPolygonEditView?.getData() ?: mutableListOf()
 
     /**
      * 设置特殊区域
@@ -671,8 +670,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     /**
      * 获取定位区域
      */
-    fun getPositingAreas(): List<PositingArea> =
-        mPostingAreasView?.getData() ?: mutableListOf()
+    fun getPositingAreas(): List<PositingArea> = mPostingAreasView?.getData() ?: mutableListOf()
 
     /**
      * 设置选中的定位区域
@@ -756,20 +754,17 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     /**
      * 清除清扫路径
      */
-    fun clearCleanPathPlan() =
-        mPathView?.setCleanPathPlanResultBean(null)
+    fun clearCleanPathPlan() = mPathView?.setCleanPathPlanResultBean(null)
 
     /**
      * 清除全局路径
      */
-    fun clearGlobalPathPlan() =
-        mPathView?.setGlobalPathPlanResultBean(null)
+    fun clearGlobalPathPlan() = mPathView?.setGlobalPathPlanResultBean(null)
 
     /**
      * 清除所有路径
      */
-    fun clearPathPlan() =
-        mPathView?.clearPathPlan()
+    fun clearPathPlan() = mPathView?.clearPathPlan()
 
 
     /**
@@ -890,19 +885,14 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      * 设置擦除噪点监听器
      */
     fun setOnRemoveNoiseListener(listener: IRemoveNoiseListener?) {
-        mRemoveNoiseListener = if (listener != null) {
-            WeakReference(listener)
-        } else {
-            null
-        }
-
+        mRemoveNoiseListener = listener
         mRemoveNoiseView?.setOnRemoveNoiseListener(object : RemoveNoiseView.OnRemoveNoiseListener {
             override fun onRemoveNoise(leftTop: PointF, rightBottom: PointF) {
                 // 将屏幕坐标转换为世界坐标
                 val worldLeftTop = screenToWorld(leftTop.x, leftTop.y)
                 val worldRightBottom = screenToWorld(rightBottom.x, rightBottom.y)
                 // 使用弱引用的监听器
-                mRemoveNoiseListener?.get()?.onRemoveNoise(worldLeftTop, worldRightBottom)
+                mRemoveNoiseListener?.onRemoveNoise(worldLeftTop, worldRightBottom)
             }
         })
     }
