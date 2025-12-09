@@ -105,11 +105,12 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      * *************** 监听器   start ***********************
      */
 
-    private var mSingleTapListener: ISingleTapListener? = null
+    // 使用弱引用存储监听器，避免内存泄漏
+    private var mSingleTapListener: WeakReference<ISingleTapListener?>? = null
     private var mGestureDetector: SlamGestureDetector? = null
 
     //删除噪点
-    private var mRemoveNoiseListener: IRemoveNoiseListener? = null
+    private var mRemoveNoiseListener: WeakReference<IRemoveNoiseListener?>? = null
 
     /**
      * *************** 监听器   end ***********************
@@ -248,9 +249,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     }
 
     private fun singleTap(event: MotionEvent) {
-        if (mSingleTapListener != null) {
-            mSingleTapListener!!.onSingleTapListener(event)
-        }
+        mSingleTapListener?.get()?.onSingleTapListener(event)
     }
 
     private fun setMatrix(matrix: Matrix) {
@@ -291,14 +290,25 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     fun setCentred() {
         val scaledRect = RectF()
         if (VIEW_WIDTH == 0 || VIEW_HEIGHT == 0) {
-            getViewTreeObserver().addOnGlobalLayoutListener(object : OnGlobalLayoutListener {
+            // 使用弱引用避免内存泄漏
+            val weakRef = WeakReference(this)
+            val listener = object : OnGlobalLayoutListener {
                 override fun onGlobalLayout() {
-                    VIEW_HEIGHT = height
-                    VIEW_WIDTH = width
-                    getViewTreeObserver().removeGlobalOnLayoutListener(this)
-                    setCentred()
+                    val mapView = weakRef.get()
+                    if (mapView != null && mapView.isAttachedToWindow) {
+                        mapView.VIEW_HEIGHT = mapView.height
+                        mapView.VIEW_WIDTH = mapView.width
+                        // 使用兼容版本的移除方法
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN) {
+                            mapView.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                        } else {
+                            mapView.viewTreeObserver.removeGlobalOnLayoutListener(this)
+                        }
+                        mapView.setCentred()
+                    }
                 }
-            })
+            }
+            getViewTreeObserver().addOnGlobalLayoutListener(listener)
             return
         }
         if (mSrf.mapData.width > 0 && mSrf.mapData.height > 0) {
@@ -399,8 +409,38 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
 
 
     override fun onDetachedFromWindow() {
-        mapLayers.clear()
         super.onDetachedFromWindow()
+
+        // 清理所有资源，避免内存泄漏
+        mapLayers.clear()
+
+        // 清理视图引用
+        mPngMapView = null
+        mWallView = null
+        mHomeDockView = null
+        mElevatorView = null
+        mStationView = null
+        mOnlinePoseView = null
+        mLegendView = null
+        mUpLaserScanView = null
+        mDownLaserScanView = null
+        mTopViewPathView = null
+        mRemoveNoiseView = null
+        mPostingAreasView = null
+        mPolygonEditView = null
+        mSpPolygonEditView = null
+        mMixAreaView = null
+        mPathView = null
+        mRobotView = null
+        mWorkIngPathView = null
+
+        // 清理监听器
+        mSingleTapListener = null
+        mGestureDetector = null
+        mRemoveNoiseListener = null
+
+        // 清理矩阵和其他对象
+        mOuterMatrix = Matrix()
     }
 
 
@@ -415,19 +455,13 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      */
     fun setWorkMode(mode: WorkMode) {
         currentWorkMode = mode
-        // 将工作模式传递给虚拟墙视图
+        // 安全地传递工作模式给各个视图，避免空指针异常
         mWallView?.setWorkMode(mode)
-        // 将工作模式传递给避让点视图
         mStationView?.setWorkMode(mode)
-        // 将工作模式传递给噪点擦除视图
         mRemoveNoiseView?.setWorkMode(mode)
-        // 将工作模式传递给定位区域视图
         mPostingAreasView?.setEditMode(mode)
-        // 将工作模式传递给清扫区域视图
         mPolygonEditView?.setWorkMode(mode)
-        // 将工作模式传递给清扫区域视图
         mSpPolygonEditView?.setWorkMode(mode)
-        //混行区
         mMixAreaView?.setWorkMode(mode)
     }
 
@@ -446,7 +480,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      */
     fun setBitmap(mapData: MapData, bitmap: Bitmap) {
         mSrf.mapData = mapData
-        mPngMapView!!.setBitmap(bitmap)
+        mPngMapView?.setBitmap(bitmap)
         // 设置地图后自动居中显示
         setCentred()
     }
@@ -508,13 +542,16 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
 
     private var num = 0
 
+    // 重用PointF对象，减少内存抖动
+    private val mCarPoint = PointF()
+
     /**
      * 机器人有任务状态下行走的路径
      */
     fun setWorkingPath(array: DoubleArray) {
         num++
         if (num % 3 == 0) {
-            val mCarPoint = PointF()
+            // 重用对象，避免频繁创建新对象
             mCarPoint.x = String.format("%.1f", array[0]).toFloat()
             mCarPoint.y = String.format("%.1f", array[1]).toFloat()
             mWorkIngPathView?.setData(mCarPoint)
@@ -584,7 +621,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     /**
      * 获取清扫区域
      */
-    fun getCleanAreaData(): MutableList<CleanAreaNew> =
+    fun getCleanAreaData(): List<CleanAreaNew> =
         mPolygonEditView?.getData() ?: mutableListOf()
 
     /**
@@ -623,7 +660,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     /**
      * 获取定位区域
      */
-    fun getPositingAreas(): MutableList<PositingArea> =
+    fun getPositingAreas(): List<PositingArea> =
         mPostingAreasView?.getData() ?: mutableListOf()
 
     /**
@@ -653,7 +690,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     /**
      * 获取混行区域
      */
-    fun getMixAreaData(): MutableList<WorkAreasNew> = mMixAreaView?.getData() ?: mutableListOf()
+    fun getMixAreaData(): List<WorkAreasNew> = mMixAreaView?.getData() ?: mutableListOf()
 
     /**
      * 创建混行区域
@@ -706,6 +743,24 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mPathView?.setGlobalPathPlanResultBean(pathPlanResultBean)
 
     /**
+     * 清除清扫路径
+     */
+    fun clearCleanPathPlan() =
+        mPathView?.setCleanPathPlanResultBean(null)
+
+    /**
+     * 清除全局路径
+     */
+    fun clearGlobalPathPlan() =
+        mPathView?.setGlobalPathPlanResultBean(null)
+
+    /**
+     * 清除所有路径
+     */
+    fun clearPathPlan() =
+        mPathView?.clearPathPlan()
+
+    /**
      * 设置定位区域编辑监听器
      */
     fun setOnPositingAreaEditedListener(listener: PostingAreasView.OnPositingAreaEditedListener?) {
@@ -732,36 +787,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      * 设置清扫区域编辑监听器
      */
     fun setOnCleanAreaEditListener(listener: PolygonEditView.OnCleanAreaEditListener?) {
-        mPolygonEditView?.setOnCleanAreaEditListener(object :
-            PolygonEditView.OnCleanAreaEditListener {
-            override fun onSelectedAreaChanged(area: CleanAreaNew?) {
-                listener?.onSelectedAreaChanged(area)
-            }
-
-            override fun onVertexDragStart(area: CleanAreaNew, vertexIndex: Int) {
-                listener?.onVertexDragStart(area, vertexIndex)
-            }
-
-            override fun onVertexDragging(
-                area: CleanAreaNew, vertexIndex: Int, newX: Float, newY: Float
-            ) {
-                listener?.onVertexDragging(area, vertexIndex, newX, newY)
-            }
-
-            override fun onVertexDragEnd(area: CleanAreaNew, vertexIndex: Int) {
-                listener?.onVertexDragEnd(area, vertexIndex)
-            }
-
-            override fun onVertexAdded(
-                area: CleanAreaNew, vertexIndex: Int, x: Float, y: Float
-            ) {
-                listener?.onVertexAdded(area, vertexIndex, x, y)
-            }
-
-            override fun onEdgeRemoved(area: CleanAreaNew, edgeIndex: Int) {
-                listener?.onEdgeRemoved(area, edgeIndex)
-            }
-        })
+        mPolygonEditView?.setOnCleanAreaEditListener(listener)
     }
 
     /**
@@ -813,13 +839,19 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      * 设置擦除噪点监听器
      */
     fun setOnRemoveNoiseListener(listener: IRemoveNoiseListener?) {
-        mRemoveNoiseListener = listener
+        mRemoveNoiseListener = if (listener != null) {
+            WeakReference(listener)
+        } else {
+            null
+        }
+
         mRemoveNoiseView?.setOnRemoveNoiseListener(object : RemoveNoiseView.OnRemoveNoiseListener {
             override fun onRemoveNoise(leftTop: PointF, rightBottom: PointF) {
                 // 将屏幕坐标转换为世界坐标
                 val worldLeftTop = screenToWorld(leftTop.x, leftTop.y)
                 val worldRightBottom = screenToWorld(rightBottom.x, rightBottom.y)
-                mRemoveNoiseListener?.onRemoveNoise(worldLeftTop, worldRightBottom)
+                // 使用弱引用的监听器
+                mRemoveNoiseListener?.get()?.onRemoveNoise(worldLeftTop, worldRightBottom)
             }
         })
     }
@@ -828,7 +860,11 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      * 手指抬起监听
      */
     fun setSingleTapListener(singleTapListener: ISingleTapListener?) {
-        mSingleTapListener = singleTapListener
+        mSingleTapListener = if (singleTapListener != null) {
+            WeakReference(singleTapListener)
+        } else {
+            null
+        }
     }
 
     interface ISingleTapListener {

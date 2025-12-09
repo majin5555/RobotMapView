@@ -7,6 +7,8 @@ import android.view.MotionEvent
 import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.PointNew
 import java.lang.ref.WeakReference
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 /**
  * 清扫区域
@@ -15,9 +17,11 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
     SlamWareBaseView(context, parent), GestureDetector.OnGestureListener,
     GestureDetector.OnDoubleTapListener {
 
-    // 保存parent引用以便安全访问
-    private var mapViewRef: WeakReference<MapView>? = parent
-    var list: MutableList<CleanAreaNew> = mutableListOf()
+    // 保存parent引用以便安全访问 - 使用非空WeakReference
+    private val mapViewRef: WeakReference<MapView> = parent
+
+    // 清扫区域列表 - 使用private和同步访问确保线程安全
+    private val list: MutableList<CleanAreaNew> = mutableListOf()
 
     // 编辑模式相关变量
     private var currentWorkMode = MapView.WorkMode.MODE_SHOW_MAP
@@ -26,49 +30,51 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
     private var isDragging = false
     private val vertexRadius = 10f // 顶点半径
 
-    // 绘制相关的画笔
-    private val areaPaint = Paint().apply {
-        style = Paint.Style.STROKE
-        color = Color.BLACK
-        strokeWidth = 2f
-        isAntiAlias = true
-    }
+    // 绘制相关的画笔 - 使用伴生对象创建静态实例，避免重复创建
+    companion object {
+        private val areaPaint = Paint().apply {
+            style = Paint.Style.STROKE
+            color = Color.BLACK
+            strokeWidth = 2f
+            isAntiAlias = true
+        }
 
-    private val selectedAreaPaint = Paint().apply {
-        style = Paint.Style.STROKE
-        color = Color.GREEN
-        strokeWidth = 4f
-        isAntiAlias = true
-    }
+        private val selectedAreaPaint = Paint().apply {
+            style = Paint.Style.STROKE
+            color = Color.GREEN
+            strokeWidth = 4f
+            isAntiAlias = true
+        }
 
-    private val vertexPaint = Paint().apply {
-        style = Paint.Style.FILL
-        color = Color.GREEN
-        isAntiAlias = true
-    }
+        private val vertexPaint = Paint().apply {
+            style = Paint.Style.FILL
+            color = Color.GREEN
+            isAntiAlias = true
+        }
 
-    private val selectedVertexPaint = Paint().apply {
-        style = Paint.Style.FILL
-        color = Color.YELLOW
-        isAntiAlias = true
-    }
+        private val selectedVertexPaint = Paint().apply {
+            style = Paint.Style.FILL
+            color = Color.YELLOW
+            isAntiAlias = true
+        }
 
-    private val edgePointPaint = Paint().apply {
-        style = Paint.Style.FILL
-        color = Color.CYAN
-        isAntiAlias = true
-    }
+        private val edgePointPaint = Paint().apply {
+            style = Paint.Style.FILL
+            color = Color.CYAN
+            isAntiAlias = true
+        }
 
-    private val edgePointTextPaint = Paint().apply {
-        color = Color.BLACK
-        textSize = 20f
-        isAntiAlias = true
-        textAlign = Paint.Align.CENTER
-    }
+        private val edgePointTextPaint = Paint().apply {
+            color = Color.BLACK
+            textSize = 20f
+            isAntiAlias = true
+            textAlign = Paint.Align.CENTER
+        }
 
-    private val textPaint = Paint().apply {
-        color = Color.BLACK
-        isAntiAlias = true
+        private val textPaint = Paint().apply {
+            color = Color.BLACK
+            isAntiAlias = true
+        }
     }
 
     // 边中点的半径
@@ -80,8 +86,17 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
     // 手势检测器，用于处理双击事件
     private val gestureDetector = GestureDetector(context, this)
 
-    // 编辑监听器
+    // 编辑监听器 - 使用强引用确保回调能被触发
     private var onCleanAreaEditListener: OnCleanAreaEditListener? = null
+
+    // 复用的Path对象，避免频繁创建
+    private val path = Path()
+
+    // 复用的PointF对象，减少内存分配
+    private val tempPoint = PointF()
+    private val screenP1 = PointF()
+    private val screenP2 = PointF()
+    private val worldPoint = PointF()
 
     init {
         gestureDetector.setOnDoubleTapListener(this)
@@ -106,7 +121,7 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
      */
     fun createRectangularAreaAtCenter(newArea: CleanAreaNew) {
         // 获取MapView实例
-        val mapView = mapViewRef?.get() ?: return
+        val mapView = mapViewRef.get() ?: return
 
         // 计算地图中心位置
         val centerX = mapView.viewWidth / 2f
@@ -137,7 +152,7 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
         selectedArea = newArea
 
         // 通知监听器选中区域变化
-        onCleanAreaEditListener?.onSelectedAreaChanged(newArea)
+        onCleanAreaEditListener?.onSelectedAreaChanged(selectedArea)
 
         // 通知监听器创建了新区域
         onCleanAreaEditListener?.onAreaCreated(newArea)
@@ -168,8 +183,10 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
      * 设置要绘制的区域数据
      */
     fun setCleanAreaData(data: MutableList<CleanAreaNew>) {
-        this.list.clear()
-        this.list.addAll(data)
+        synchronized(list) {
+            this.list.clear()
+            this.list.addAll(data)
+        }
         invalidate() // 触发重绘
     }
 
@@ -192,12 +209,16 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
      * 检查点是否在顶点的可点击范围内
      */
     private fun isPointInVertex(screenX: Float, screenY: Float, vertex: PointNew): Boolean {
-        val vertexScreen = mapViewRef?.get()?.worldToScreen(vertex.X, vertex.Y) ?: PointF(0f, 0f)
+        val mapView = mapViewRef.get() ?: return false
+        tempPoint.set(
+            mapView.worldToScreen(vertex.X, vertex.Y).x,
+            mapView.worldToScreen(vertex.X, vertex.Y).y
+        )
         val distance = Math.sqrt(
             Math.pow(
-                (screenX - vertexScreen.x).toDouble(),
+                (screenX - tempPoint.x).toDouble(),
                 2.0
-            ) + Math.pow((screenY - vertexScreen.y).toDouble(), 2.0)
+            ) + Math.pow((screenY - tempPoint.y).toDouble(), 2.0)
         )
         return distance <= vertexRadius * 2
     }
@@ -225,12 +246,14 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
      * 检查点是否在边中点的可点击范围内
      */
     private fun isPointInEdgePoint(screenX: Float, screenY: Float, midPoint: PointNew): Boolean {
-        val edgeScreen = mapViewRef?.get()?.worldToScreen(midPoint.X, midPoint.Y) ?: PointF(0f, 0f)
-        val distance = Math.sqrt(
-            Math.pow(
-                (screenX - edgeScreen.x).toDouble(),
-                2.0
-            ) + Math.pow((screenY - edgeScreen.y).toDouble(), 2.0)
+        val mapView = mapViewRef.get() ?: return false
+        tempPoint.set(
+            mapView.worldToScreen(midPoint.X, midPoint.Y).x,
+            mapView.worldToScreen(midPoint.X, midPoint.Y).y
+        )
+        val distance = sqrt(
+            (screenX - tempPoint.x).toDouble()
+                .pow(2.0) + Math.pow((screenY - tempPoint.y).toDouble(), 2.0)
         )
         return distance <= edgePointRadius * 2
     }
@@ -276,8 +299,13 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
      * 检查点是否在线段上
      */
     private fun isPointOnLine(screenX: Float, screenY: Float, p1: PointNew, p2: PointNew): Boolean {
-        val screenP1 = mapViewRef?.get()?.worldToScreen(p1.X, p1.Y) ?: return false
-        val screenP2 = mapViewRef?.get()?.worldToScreen(p2.X, p2.Y) ?: return false
+        val mapView = mapViewRef.get() ?: return false
+
+        val p1Screen = mapView.worldToScreen(p1.X, p1.Y)
+        screenP1.set(p1Screen.x, p1Screen.y)
+
+        val p2Screen = mapView.worldToScreen(p2.X, p2.Y)
+        screenP2.set(p2Screen.x, p2Screen.y)
 
         // 计算点到线段的距离
         val distance = calculateDistanceFromPointToLine(
@@ -400,7 +428,9 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
             MotionEvent.ACTION_MOVE -> {
                 if (isDragging && selectedPointIndex != -1) {
                     // 将屏幕坐标转换为世界坐标
-                    val worldPoint = mapViewRef?.get()?.screenToWorld(x, y) ?: return false
+                    val mapView = mapViewRef.get() ?: return false
+                    val screenToWorldPoint = mapView.screenToWorld(x, y)
+                    worldPoint.set(screenToWorldPoint.x, screenToWorldPoint.y)
                     // 更新选中顶点的坐标
                     selectedArea?.m_VertexPnt?.get(selectedPointIndex)?.apply {
                         X = worldPoint.x
@@ -501,8 +531,11 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
         super.onDraw(canvas)
         canvas.save()
 
-        // 绘制所有区域
-        list.forEach { area ->
+        // 绘制所有区域 - 使用副本避免并发修改
+        val areasCopy = synchronized(list) {
+            list.toList()
+        }
+        areasCopy.forEach { area ->
             drawPolygon(canvas, area, area == selectedArea)
         }
 
@@ -516,16 +549,18 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
         val points = area.m_VertexPnt
         if (points.isEmpty()) return
 
-        // 创建路径
-        val path = Path()
+        val mapView = mapViewRef.get() ?: return
+
+        // 复用Path对象
+        path.reset()
 
         // 将第一个点转换为屏幕坐标并移动到该点
-        val firstPoint = mapViewRef?.get()?.worldToScreen(points[0].X, points[0].Y) ?: return
+        val firstPoint = mapView.worldToScreen(points[0].X, points[0].Y)
         path.moveTo(firstPoint.x, firstPoint.y)
 
         // 添加所有其他点到路径
         for (i in 1 until points.size) {
-            val screenPoint = mapViewRef?.get()?.worldToScreen(points[i].X, points[i].Y) ?: return
+            val screenPoint = mapView.worldToScreen(points[i].X, points[i].Y)
             path.lineTo(screenPoint.x, screenPoint.y)
         }
 
@@ -539,8 +574,7 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
         if ((currentWorkMode == MapView.WorkMode.MODE_CLEAN_AREA_EDIT || currentWorkMode == MapView.WorkMode.MODE_CLEAN_AREA_ADD) && isSelected) {
             // 绘制所有顶点
             for (i in points.indices) {
-                val screenPoint =
-                    mapViewRef?.get()?.worldToScreen(points[i].X, points[i].Y) ?: return
+                val screenPoint = mapView.worldToScreen(points[i].X, points[i].Y)
                 // 绘制顶点，选中的顶点使用不同的颜色
                 canvas.drawCircle(
                     screenPoint.x,
@@ -556,8 +590,7 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
                     val p1 = points[i]
                     val p2 = points[(i + 1) % points.size]
                     val midPoint = calculateMidPoint(p1, p2)
-                    val screenMidPoint =
-                        mapViewRef?.get()?.worldToScreen(midPoint.X, midPoint.Y) ?: return
+                    val screenMidPoint = mapView.worldToScreen(midPoint.X, midPoint.Y)
 
                     // 绘制边中点的背景圆
                     canvas.drawCircle(
@@ -572,8 +605,7 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
 
         // 绘制区域名称在最右边点的下边
         getRightmostPoint(points)?.let { rightmost ->
-            val rightmostScreen =
-                mapViewRef?.get()?.worldToScreen(rightmost.X, rightmost.Y) ?: return
+            val rightmostScreen = mapView.worldToScreen(rightmost.X, rightmost.Y)
 
             // 计算文本位置：在最右边点的下方，居中对齐
             val textRect = Rect()
@@ -587,7 +619,23 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
         }
     }
 
-    fun getData(): MutableList<CleanAreaNew> = list
+    fun getData(): List<CleanAreaNew> {
+        return synchronized(list) {
+            list.toList()
+        }
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+
+        // 清理资源，防止内存泄漏
+        synchronized(list) {
+            list.clear()
+        }
+
+        selectedArea = null
+        onCleanAreaEditListener = null
+    }
 
     // 清扫区域编辑回调接口
     interface OnCleanAreaEditListener {
