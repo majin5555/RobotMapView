@@ -56,6 +56,7 @@ import com.siasun.dianshi.mapviewdemo.CLEAN_PATH_PLAN
 import com.siasun.dianshi.mapviewdemo.CarBody
 import com.siasun.dianshi.mapviewdemo.CmsBody
 import com.siasun.dianshi.mapviewdemo.GLOBAL_PATH_PLAN
+import com.siasun.dianshi.mapviewdemo.KEY_AGV_COORDINATE
 import com.siasun.dianshi.mapviewdemo.KEY_BOTTOM_CURRENT_POINT_CLOUD
 import com.siasun.dianshi.mapviewdemo.KEY_CLEANING_ID
 import com.siasun.dianshi.mapviewdemo.KEY_CLEANING_LAYER
@@ -72,6 +73,7 @@ import com.siasun.dianshi.mapviewdemo.PP_VERSION
 import com.siasun.dianshi.mapviewdemo.RunningState.CURRENT_TASK_STATE
 import com.siasun.dianshi.mapviewdemo.SERVER_HEART
 import com.siasun.dianshi.mapviewdemo.ServiceBody
+import com.siasun.dianshi.mapviewdemo.TAG_CAR_BODY
 import com.siasun.dianshi.mapviewdemo.TAG_NAV
 import com.siasun.dianshi.mapviewdemo.TAG_PP
 import com.siasun.dianshi.mapviewdemo.TEACH_PATH_PLAN
@@ -2633,14 +2635,14 @@ private fun receiveChargeState(value: Int) {
  * @since 2024/11/23
  */
 private fun receiveAGVXYT(rt: robot_control_t) {
-//    if (rt.dparams.isNotEmpty() && rt.dparams.size >= 3) {
-//        LiveEventBus.get<robot_control_t>(KEY_AGV_COORDINATE).post(rt)
+    if (rt.dparams.isNotEmpty() && rt.dparams.size >= 3) {
+        LiveEventBus.get<robot_control_t>(KEY_AGV_COORDINATE).post(rt)
 //        LogUtil.i(
 //            "LCM接收转发至页面AGV坐标: x:${rt.dparams[0]} y:${rt.dparams[1]} theta:${rt.dparams[2]}",
 //            null,
 //            TAG_CAR_BODY
 //        )
-//    }
+    }
 }
 
 /**
