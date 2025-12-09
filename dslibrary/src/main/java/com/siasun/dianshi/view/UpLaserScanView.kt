@@ -17,33 +17,40 @@ import kotlin.math.sin
 @SuppressLint("ViewConstructor")
 class UpLaserScanView(context: Context?, val parent: WeakReference<MapView>) :
     SlamWareBaseView(context, parent) {
-    private val paint: Paint = Paint()
     // 控制是否绘制
     private var isDrawingEnabled: Boolean = true
 
-    //上激光点云
-    private val upPointsCloudList = mutableListOf<PointF>()
+    //激光点云
+    private val cloudList = ArrayList<PointF>()
 
-    init {
-        paint.setColor(Color.RED)
-        paint.strokeWidth = 4f
-        paint.style = Paint.Style.FILL
+    companion object {
+        private val paint: Paint = Paint().apply {
+            color = Color.RED
+            strokeWidth = 2f
+            style = Paint.Style.FILL
+        }
     }
 
 
+    @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         // 只有在绘制启用状态下才绘制点云
-        if (isDrawingEnabled) {
-            val flatMap = upPointsCloudList?.flatMap { point ->
-                val pointCloud = parent.get()!!.worldToScreen(point.x, point.y)
-                listOf(pointCloud.x, pointCloud.y)
+        if (isDrawingEnabled && cloudList.isNotEmpty()) {
+            val mapView = parent.get() ?: return
+
+            // 预分配数组大小
+            val pointsArray = FloatArray(cloudList.size * 2)
+            var index = 0
+
+
+            for (point in cloudList) {
+                val screenPoint = mapView.worldToScreen(point.x, point.y)
+                pointsArray[index++] = screenPoint.x
+                pointsArray[index++] = screenPoint.y
             }
-            flatMap?.let {
-                canvas.drawPoints(
-                    it.toFloatArray(), paint
-                )
-            }
+
+            canvas.drawPoints(pointsArray, paint)
         }
     }
 
@@ -51,15 +58,19 @@ class UpLaserScanView(context: Context?, val parent: WeakReference<MapView>) :
      * 上激光点云
      */
     fun updateUpLaserScan(laser: laser_t) {
-        upPointsCloudList.clear()
+        cloudList.clear()
         val robotX = laser.ranges[0]
         val robotY = laser.ranges[1]
         val robotT = laser.ranges[2]
         if (laser.ranges.size > 3) {
+            // 预分配容量
+            val expectedSize = (laser.ranges.size / 3) - 1
+            cloudList.ensureCapacity(expectedSize)
+
             for (i in 1 until laser.ranges.size / 3) {
                 val laserX = laser.ranges[3 * i]
                 val laserY = laser.ranges[3 * i + 1]
-                upPointsCloudList.add(
+                cloudList.add(
                     PointF(
                         laserX * cos(robotT) - laserY * sin(robotT) + robotX,
                         laserX * sin(robotT) + laserY * cos(robotT) + robotY
@@ -76,5 +87,16 @@ class UpLaserScanView(context: Context?, val parent: WeakReference<MapView>) :
     fun setDrawingEnabled(enabled: Boolean) {
         this.isDrawingEnabled = enabled
         postInvalidate()
+    }
+
+    /**
+     * 清理资源，防止内存泄漏
+     */
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        // 清理点云数据
+        cloudList.clear()
+        // 清理父引用
+        parent.clear()
     }
 }

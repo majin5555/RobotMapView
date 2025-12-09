@@ -8,7 +8,6 @@ import android.graphics.Paint
 import android.graphics.PointF
 import com.ngu.lcmtypes.laser_t
 import java.lang.ref.WeakReference
-import java.util.Collections
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -18,16 +17,18 @@ import kotlin.math.sin
 @SuppressLint("ViewConstructor")
 class DownLaserScanView(context: Context?, val parent: WeakReference<MapView>) :
     SlamWareBaseView(context, parent) {
-    private val paint: Paint = Paint()
     // 控制是否绘制
     private var isDrawingEnabled: Boolean = true
-    //下激光点云
-    private val downPointsCloudList = mutableListOf<PointF>()
 
-    init {
-        paint.setColor(Color.YELLOW)
-        paint.strokeWidth = 4f
-        paint.style = Paint.Style.FILL
+    //激光点云
+    private val cloudList = ArrayList<PointF>()
+
+    companion object {
+        private val paint: Paint = Paint().apply {
+            color = Color.YELLOW
+            strokeWidth = 2f
+            style = Paint.Style.FILL
+        }
     }
 
 
@@ -35,16 +36,21 @@ class DownLaserScanView(context: Context?, val parent: WeakReference<MapView>) :
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         // 只有在绘制启用状态下才绘制点云
-        if (isDrawingEnabled) {
-            val flatMap = downPointsCloudList?.flatMap { point ->
-                val pointCloud = parent.get()!!.worldToScreen(point.x, point.y)
-                listOf(pointCloud.x, pointCloud.y)
+        if (isDrawingEnabled && cloudList.isNotEmpty()) {
+            val mapView = parent.get() ?: return
+
+            // 预分配数组大小
+            val pointsArray = FloatArray(cloudList.size * 2)
+            var index = 0
+
+
+            for (point in cloudList) {
+                val screenPoint = mapView.worldToScreen(point.x, point.y)
+                pointsArray[index++] = screenPoint.x
+                pointsArray[index++] = screenPoint.y
             }
-            flatMap?.let {
-                canvas.drawPoints(
-                    it.toFloatArray(), paint
-                )
-            }
+
+            canvas.drawPoints(pointsArray, paint)
         }
     }
 
@@ -52,18 +58,22 @@ class DownLaserScanView(context: Context?, val parent: WeakReference<MapView>) :
      * 下激光点云
      */
     fun updateDownLaserScan(laser: laser_t) {
-        downPointsCloudList.clear()
-        val robotX: Float = laser.ranges[0]
-        val robotY: Float = laser.ranges[1]
-        val theta: Float = laser.ranges[2]
-        if (laser.ranges.isNotEmpty()) {
+        cloudList.clear()
+        val robotX = laser.ranges[0]
+        val robotY = laser.ranges[1]
+        val robotT = laser.ranges[2]
+        if (laser.ranges.size > 3) {
+            // 预分配容量
+            val expectedSize = (laser.ranges.size / 3) - 1
+            cloudList.ensureCapacity(expectedSize)
+
             for (i in 1 until laser.ranges.size / 3) {
-                val laserX: Float = laser.ranges[3 * i]
-                val laserY: Float = laser.ranges[3 * i + 1]
-                downPointsCloudList.add(
+                val laserX = laser.ranges[3 * i]
+                val laserY = laser.ranges[3 * i + 1]
+                cloudList.add(
                     PointF(
-                        (laserX * cos(theta) - laserY * sin(theta) + robotX),
-                        (laserX * sin(theta) + laserY * cos(theta) + robotY)
+                        laserX * cos(robotT) - laserY * sin(robotT) + robotX,
+                        laserX * sin(robotT) + laserY * cos(robotT) + robotY
                     )
                 )
             }
@@ -77,5 +87,16 @@ class DownLaserScanView(context: Context?, val parent: WeakReference<MapView>) :
     fun setDrawingEnabled(enabled: Boolean) {
         this.isDrawingEnabled = enabled
         postInvalidate()
+    }
+
+    /**
+     * 清理资源，防止内存泄漏
+     */
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        // 清理点云数据
+        cloudList.clear()
+        // 清理父引用
+        parent.clear()
     }
 }
