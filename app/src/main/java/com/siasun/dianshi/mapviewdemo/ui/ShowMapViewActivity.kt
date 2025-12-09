@@ -45,6 +45,7 @@ import com.siasun.dianshi.mapviewdemo.PATH_MODE
 import com.siasun.dianshi.mapviewdemo.TAG_PP
 import com.siasun.dianshi.mapviewdemo.utils.GsonUtil
 import com.siasun.dianshi.mapviewdemo.utils.PathPlanningUtil
+import com.siasun.dianshi.view.HomeDockView
 import com.siasun.dianshi.view.PolygonEditView
 import com.siasun.dianshi.view.PostingAreasView
 import com.siasun.dianshi.xpop.XpopUtils
@@ -79,22 +80,107 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                     mBinding.mapView.setBitmap(mPngMapData, resource)
                 }
             })
-    }
 
-    @RequiresApi(Build.VERSION_CODES.R)
-    private fun initListener() {
         //移动模式
         mBinding.btnMove.setOnClickListener {
             mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SHOW_MAP)
         }
 
+        initMergedPose()
         initStation()
         iniVirtualWall()
         initRemoveNoise()
         initPostingArea()
         initCleanArea()
         initElevator()
+        initPose()
+        initMachineStation()
+    }
 
+    /**
+     * 充电站
+     */
+    private fun initMachineStation() {
+        //加载充电站
+        mViewModel.getMachineStation(onComplete = { machineStation ->
+            LogUtil.d("获取充电站信息 $machineStation")
+            val result = machineStation?.find { it.mapId == mapId }
+            mBinding.mapView.setMachineStation(result)
+        })
+        //编辑充电站
+        mBinding.btnEditChargeStation.onClick {
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_MACHINE_STATION_EDIT)
+        }
+
+        //设置充电站点击监听器
+        mBinding.mapView.setOnMachineStationClickListener(object :
+            HomeDockView.OnMachineStationClickListener {
+            override fun onMachineStationClick(
+                station: com.siasun.dianshi.bean.MachineStation,
+                type: Int
+            ) {
+                //处理充电站点击事件
+                when (type) {
+                    0 -> LogUtil.d("点击了对接点: $station")
+                    1 -> LogUtil.d("点击了准备点: $station")
+                    2 -> LogUtil.d("点击了等待点: $station")
+                    3 -> LogUtil.d("点击了结束停放点: $station")
+                }
+                LogUtil.d("编辑充电站: $station, 类型: $type")
+            }
+        })
+
+        //设置充电站删除监听器
+        mBinding.mapView.setOnMachineStationDeleteListener(object :
+            HomeDockView.OnMachineStationDeleteListener {
+            override fun onMachineStationDelete(
+                station: com.siasun.dianshi.bean.MachineStation,
+                type: Int
+            ) {
+                //处理充电站删除事件
+                when (type) {
+                    0 -> LogUtil.d("删除了对接点: $station")
+                    1 -> LogUtil.d("删除了准备点: $station")
+                    2 -> LogUtil.d("删除了等待点: $station")
+                    3 -> LogUtil.d("删除了结束停放点: $station")
+                }
+                LogUtil.d("删除充电站: $station, 类型: $type")
+
+                // 这里可以添加实际的删除逻辑，比如网络请求删除该充电站点
+            }
+        })
+        //删除充电站
+        mBinding.btnDeleteChargeStation.onClick {
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_MACHINE_STATION_DELETE)
+        }
+        //保存充电站
+        mBinding.btnSaveChargeStation.onClick {
+//            mBinding.mapView.getMachineStation()
+        }
+    }
+
+    private fun initPose() {
+        //加载上线点
+        mViewModel.getInitPose(mapId, onComplete = { initPoses ->
+            initPoses?.let {
+                mBinding.mapView.setInitPoseList(it.Initposes)
+            }
+        })
+    }
+
+    /**
+     * 加载顶视路线
+     */
+    private fun initMergedPose() {
+        mViewModel.getMergedPose(mapId, onComplete = { mergedPoses ->
+            mergedPoses?.data?.let {
+                mBinding.mapView.setTopViewPathDada(it)
+            }
+        })
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun initListener() {
         //添加特殊区域
         mBinding.btnAddSpArea.onClick {
             // 设置地图的工作模式为添加清扫区域模式
@@ -194,6 +280,16 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
      */
     @RequiresApi(Build.VERSION_CODES.R)
     private fun initElevator() {
+        //加载乘梯点
+        mViewModel.getCmsElevator(mapId, onComplete = { elevatorPoint ->
+            LogUtil.d("获取乘梯点 $elevatorPoint")
+            mBinding.mapView.setElevators(elevatorPoint)
+        })
+
+        //添加
+        mBinding.btnAddElevator.onClick {
+            //弹框增加乘梯点
+        }
         //编辑乘梯点
         mBinding.btnEditElevator.onClick {
             mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_ELEVATOR_EDIT)
@@ -221,12 +317,24 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 LogUtil.d("删除乘梯点: $elevator")
             }
         })
+
+        //保存乘梯点
+        mBinding.btnDeleteElevator.onClick {
+            //调接口保存乘梯点数据
+        }
     }
 
     /**
      * 清扫区域
      */
     private fun initCleanArea() {
+        //获取区域
+        mViewModel.getAreaList(mapId, onComplete = { cleanAreasRoot ->
+            cleanAreasRoot?.let {
+                cleanAreas.addAll(it.cleanAreas)
+                mBinding.mapView.setCleanAreaData(cleanAreas)
+            }
+        })
         //编辑清扫区域
         mBinding.btnEditArea.onClick {
             if (mBinding.mapView.getCleanAreaData().toMutableList().isNotEmpty()) {
@@ -413,6 +521,13 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
      */
     @RequiresApi(Build.VERSION_CODES.R)
     private fun initStation() {
+        //加载避让点
+        mViewModel.getStationData(mapId, onComplete = { cmsStations ->
+            if (cmsStations != null) {
+                cmsStation.addAll(cmsStations)
+                mBinding.mapView.setCmsStations(cmsStation)
+            }
+        })
         //添加避让点
         mBinding.btnCreateStation.onClick {
             XpopUtils(this).showCmsStationDialog(onConfirmCall = { result ->
@@ -459,6 +574,12 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
      * 虚拟墙
      */
     private fun iniVirtualWall() {
+        //加载虚拟墙
+        mViewModel.getVirtualWall(mapId, onComplete = { virtualWall ->
+            virtualWall?.let {
+                mBinding.mapView.setVirtualWall(it)
+            }
+        })
         //添加虚拟墙
         mBinding.btnVirAdd.setOnClickListener {
             // 创建虚拟墙模式
@@ -606,52 +727,6 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         /**
          **************************************** http 请求 ***************************************************
          */
-//        //加载虚拟墙
-//        mViewModel.getVirtualWall(mapId, onComplete = { virtualWall ->
-//            virtualWall?.let {
-//                mBinding.mapView.setVirtualWall(it)
-//            }
-//        })
-//        //加载上线点
-//        mViewModel.getInitPose(mapId, onComplete = { initPoses ->
-//            initPoses?.let {
-//                mBinding.mapView.setInitPoseList(it.Initposes)
-//            }
-//        })
-
-//        //加载顶视路线
-//        mViewModel.getMergedPose(mapId, onComplete = { mergedPoses ->
-//            mergedPoses?.data?.let {
-//                mBinding.mapView.setTopViewPathDada(it)
-//            }
-//        })
-//
-//        //加载避让点
-//        mViewModel.getStationData(mapId, onComplete = { cmsStations ->
-//            if (cmsStations != null) {
-//                cmsStation.addAll(cmsStations)
-//                mBinding.mapView.setCmsStations(cmsStation)
-//            }
-//        })
-//        //加载充电站
-//        mViewModel.getMachineStation(onComplete = { machineStation ->
-//            LogUtil.d("获取充电站信息 $machineStation")
-//            val result = machineStation?.find { it.mapId == mapId }
-//            mBinding.mapView.setMachineStation(result)
-//        })
-        //加载乘梯点
-        mViewModel.getCmsElevator(mapId, onComplete = { elevatorPoint ->
-            LogUtil.d("获取乘梯点 $elevatorPoint")
-            mBinding.mapView.setElevators(elevatorPoint)
-        })
-
-//        //获取区域
-//        mViewModel.getAreaList(mapId, onComplete = { cleanAreasRoot ->
-//            cleanAreasRoot?.let {
-//                cleanAreas.addAll(it.cleanAreas)
-//                mBinding.mapView.setCleanAreaData(cleanAreas)
-//            }
-//        })
 
 
 //        //获取特殊区域

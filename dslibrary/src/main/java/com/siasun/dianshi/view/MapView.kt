@@ -54,6 +54,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         MODE_CMS_STATION_DELETE, // 删除避让点模式
         MODE_ELEVATOR_EDIT,    // 编辑乘梯点模式
         MODE_ELEVATOR_DELETE,  // 删除乘梯点模式
+        MODE_MACHINE_STATION_EDIT,  // 编辑充电站模式
+        MODE_MACHINE_STATION_DELETE, // 删除充电站模式
         MODE_REMOVE_NOISE,      // 擦除噪点模式
         MODE_POSITING_AREA_ADD, // 创建定位区域模式
         MODE_POSITING_AREA_EDIT, // 编辑定位区域模式
@@ -112,6 +114,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
 
     //删除噪点
     private var mRemoveNoiseListener: WeakReference<IRemoveNoiseListener?>? = null
+
 
     /**
      * *************** 监听器   end ***********************
@@ -465,6 +468,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mSpPolygonEditView?.setWorkMode(mode)
         mMixAreaView?.setWorkMode(mode)
         mElevatorView?.setWorkMode(mode)
+        mHomeDockView?.setWorkMode(mode)
     }
 
     /**
@@ -583,6 +587,11 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     fun setMachineStation(machineStation: MachineStation?) {
         mHomeDockView?.setHomePose(machineStation)
     }
+
+    /**
+     * 设置充电站
+     */
+    fun getMachineStation(): MachineStation? = mHomeDockView?.getData()
 
 
     /**
@@ -854,6 +863,20 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      */
     fun setOnElevatorDeleteListener(listener: ElevatorView.OnElevatorDeleteListener?) =
         mElevatorView?.setOnElevatorDeleteListener(listener)
+
+    /**
+     * 设置充电站点击监听器
+     */
+    fun setOnMachineStationClickListener(listener: HomeDockView.OnMachineStationClickListener?) {
+        mHomeDockView?.setOnMachineStationClickListener(listener)
+    }
+
+    /**
+     * 设置充电站删除监听器
+     */
+    fun setOnMachineStationDeleteListener(listener: HomeDockView.OnMachineStationDeleteListener?) {
+        mHomeDockView?.setOnMachineStationDeleteListener(listener)
+    }
 
     /**
      * 设置擦除噪点监听器
