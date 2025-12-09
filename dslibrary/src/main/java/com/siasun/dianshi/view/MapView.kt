@@ -837,6 +837,13 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     }
 
     /**
+     * 设置特殊域编辑监听器
+     */
+    fun setOnSpAreaEditListener(listener: SpPolygonEditView.OnSpAreaEditListener?) {
+        mSpPolygonEditView?.setOnSpAreaEditListener(listener)
+    }
+
+    /**
      * 设置混行区域编辑监听器
      */
     fun setOnMixAreaEditListener(listener: MixAreaView.OnMixAreaEditListener?) {

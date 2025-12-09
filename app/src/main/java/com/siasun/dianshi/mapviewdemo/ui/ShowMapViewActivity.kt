@@ -50,6 +50,7 @@ import com.siasun.dianshi.view.MixAreaView
 import com.siasun.dianshi.view.PolygonEditView
 import com.siasun.dianshi.view.PostingAreasView
 import com.siasun.dianshi.view.RemoveNoiseView
+import com.siasun.dianshi.view.SpPolygonEditView
 import com.siasun.dianshi.xpop.XpopUtils
 import java.io.File
 
@@ -97,7 +98,85 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initElevator()
 //        initPose()
 //        initMachineStation()
-        initMixArea()
+//        initMixArea()
+        initSpAreas()
+    }
+
+    /**
+     * 特殊区域
+     */
+    private fun initSpAreas() {
+        mViewModel.getSpecialArea(mapId, 5) { list ->
+            mSpArea.addAll(list)
+            mBinding.mapView.setSpAreaData(mSpArea)
+        }
+        //添加特殊区域
+        mBinding.btnAddSpArea.onClick {
+            // 设置地图的工作模式为添加清扫区域模式
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SP_AREA_ADD)
+            // 创建一个新的清扫区域
+            val newArea = SpArea().apply {
+                sub_name = "特殊区域${mSpArea.size + 1}"
+                regId = mSpArea.size + 1
+                layer_id = mapId
+                routeType = 5
+            }
+            mSpArea.add(newArea)
+            mBinding.mapView.createSpArea(newArea)
+        }
+        //编辑特殊区域
+        mBinding.btnEditSpArea.onClick {
+            if (mSpArea.isNotEmpty()) {
+                // 生成0到positingAreas.size-1之间的随机索引
+                val randomIndex = Random.nextInt(mSpArea.size)
+                // 通过随机索引获取要删除的定位区域
+                val randomArea = mSpArea[randomIndex]
+                //切换特殊区域编辑模式
+                mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SP_AREA_EDIT)
+                mBinding.mapView.setSelectedSpArea(randomArea)
+            }
+        }
+
+        // 设置特殊区域编辑监听器
+        mBinding.mapView.setOnSpAreaEditListener(object : SpPolygonEditView.OnSpAreaEditListener {
+
+            override fun onVertexDragEnd(area: SpArea, vertexIndex: Int) {
+                LogUtil.i("编辑特殊区域onVertexDragEnd    ${area.toJson()}")
+            }
+
+            override fun onVertexAdded(area: SpArea, vertexIndex: Int, x: Float, y: Float) {
+                LogUtil.i("编辑特殊区域onVertexAdded    ${area.toJson()}")
+            }
+
+            override fun onEdgeRemoved(area: SpArea, edgeIndex: Int) {
+                LogUtil.i("编辑特殊区域onEdgeRemoved    ${area.toJson()}")
+            }
+
+            override fun onAreaCreated(area: SpArea) {
+                LogUtil.i("创建了特殊新的清扫区域    ${area.toJson()}")
+            }
+        })
+
+        //删除特殊区域
+        mBinding.btnDeleteSpArea.onClick {
+            // 随机选择一个定位区域进行删除
+            if (mSpArea.isNotEmpty()) {
+                // 生成0到positingAreas.size-1之间的随机索引
+                val randomIndex = Random.nextInt(mSpArea.size)
+
+                // 通过随机索引获取要删除的定位区域
+                val randomArea = mSpArea[randomIndex]
+
+                // 更新本地列表
+                mSpArea.remove(randomArea)
+                mBinding.mapView.setSpAreaData(mSpArea)
+            }
+        }
+        //保存特殊区域
+        mBinding.btnSaveSpArea.onClick {
+            mViewModel.saveSpecialArea(mapId, mBinding.mapView.getSpAreaData())
+        }
+
     }
 
     private fun initMixArea() {
@@ -261,51 +340,6 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 
     @RequiresApi(Build.VERSION_CODES.R)
     private fun initListener() {
-        //添加特殊区域
-        mBinding.btnAddSpArea.onClick {
-            // 设置地图的工作模式为添加清扫区域模式
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SP_AREA_ADD)
-            // 创建一个新的清扫区域
-            val newArea = SpArea().apply {
-                sub_name = "特殊区域${mBinding.mapView.getCleanAreaData().toMutableList().size + 1}"
-                regId = mBinding.mapView.getCleanAreaData().toMutableList().size + 1
-                layer_id = mapId
-                routeType = 1
-                areaType = 1
-            }
-            mSpArea.add(newArea)
-            mBinding.mapView.createSpArea(newArea)
-        }
-        //编辑特殊区域
-        mBinding.btnEditSpArea.onClick {
-            if (mSpArea.isNotEmpty()) {
-                // 生成0到positingAreas.size-1之间的随机索引
-                val randomIndex = Random.nextInt(mSpArea.size)
-                // 通过随机索引获取要删除的定位区域
-                val randomArea = mSpArea[randomIndex]
-                mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SP_AREA_EDIT)
-                mBinding.mapView.setSelectedSpArea(randomArea)
-            }
-        }
-        //删除特殊区域
-        mBinding.btnDeleteSpArea.onClick {
-            // 随机选择一个定位区域进行删除
-            if (mSpArea.isNotEmpty()) {
-                // 生成0到positingAreas.size-1之间的随机索引
-                val randomIndex = Random.nextInt(mSpArea.size)
-
-                // 通过随机索引获取要删除的定位区域
-                val randomArea = mSpArea[randomIndex]
-
-                // 更新本地列表
-                mSpArea.remove(randomArea)
-                mBinding.mapView.setSpAreaData(mSpArea)
-            }
-        }
-        //保存特殊区域
-        mBinding.btnSaveSpArea.onClick {
-            mViewModel.saveSpecialArea(mapId, mBinding.mapView.getSpAreaData())
-        }
 
 
         //添加混行区域
@@ -809,12 +843,5 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
          */
 
 
-//        //获取特殊区域
-//        mViewModel.getSpecialArea(mapId, 5)
-//        mViewModel.getSpecialArea.observe(this) {
-//            LogUtil.d("获取特殊区域 $it")
-//            mSpArea.addAll(it)
-//            mBinding.mapView.setSpAreaData(mSpArea)
-//        }
     }
 }

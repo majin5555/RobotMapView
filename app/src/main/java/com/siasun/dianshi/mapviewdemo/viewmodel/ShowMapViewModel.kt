@@ -34,16 +34,14 @@ import kotlinx.coroutines.launch
 class ShowMapViewModel : BaseViewModel() {
 
     val saveAreaLiveDate = MutableLiveData<Boolean>()
-    val getAreaListDate = MutableLiveData<CleanAreaRootNew>()
 
     val saveVirtualWall = MutableLiveData<Boolean>()
-    val getVirtualWall = MutableLiveData<VirtualWallNew>()
+//    val getVirtualWall = MutableLiveData<VirtualWallNew>()
 
     val saveMachineStationLiveData = MutableLiveData<Boolean>()
     val saveCmsStationLiveData = MutableLiveData<Boolean>()
 
     val saveSpecialArea = MutableLiveData<Boolean>()
-    val getSpecialArea = MutableLiveData<MutableList<SpArea>>()
 
 
     val saveWorksArea = MutableLiveData<Boolean>()
@@ -70,7 +68,7 @@ class ShowMapViewModel : BaseViewModel() {
     /**
      * 获取虚拟墙
      */
-    fun getVirtualWall(mapId: Int) {
+    fun getVirtualWall(mapId: Int, onComplete: (virtualWall: VirtualWallNew?) -> Unit) {
         launchUIWithResult(responseBlock = {
             val requestVirtualWall = RequestCommonMapId(mapId)
             // 确保返回 BaseResponse<VirtualWallNew> 类型
@@ -81,7 +79,7 @@ class ShowMapViewModel : BaseViewModel() {
             }
         }, successBlock = {
             it?.let {
-                getVirtualWall.postValue(it)
+                onComplete.invoke(it)
             }
         })
     }
@@ -188,7 +186,11 @@ class ShowMapViewModel : BaseViewModel() {
     /**
      * 获取特殊区域
      */
-    fun getSpecialArea(layerId: Int, areaType: Int) {
+    fun getSpecialArea(
+        layerId: Int,
+        areaType: Int,
+        onComplete: (specialAreaList: MutableList<SpArea>) -> Unit
+    ) {
         launchUIWithResult(responseBlock = {
             val requestGetSpecialArea = RequestGetSpecialArea(layerId, areaType)
             ApiManager.api.getSpecialArea(requestGetSpecialArea)
@@ -198,7 +200,7 @@ class ShowMapViewModel : BaseViewModel() {
             }
         }, successBlock = {
             it?.let {
-                getSpecialArea.postValue(it)
+                onComplete.invoke(it)
             }
         })
     }
@@ -206,7 +208,7 @@ class ShowMapViewModel : BaseViewModel() {
     /**
      * 获取区域列表
      */
-    fun getAreaList(layerId: Int) {
+    fun getAreaList(layerId: Int, onComplete: (cleanAreasRoot: CleanAreaRootNew?) -> Unit) {
         launchUIWithResult(responseBlock = {
             val requestGetArea = RequestCommonMapId(layerId)
             ApiManager.api.getAreas(requestGetArea)
@@ -216,7 +218,7 @@ class ShowMapViewModel : BaseViewModel() {
             }
         }, successBlock = {
             it?.let {
-                getAreaListDate.postValue(it)
+                onComplete.invoke(it)
             }
         })
     }
@@ -236,7 +238,6 @@ class ShowMapViewModel : BaseViewModel() {
             it?.let {
                 saveAreaLiveDate.postValue(true)
             }
-
         })
 
     }
@@ -261,6 +262,7 @@ class ShowMapViewModel : BaseViewModel() {
             )
         }
     }
+
     /**
      * 保存混行区
      */

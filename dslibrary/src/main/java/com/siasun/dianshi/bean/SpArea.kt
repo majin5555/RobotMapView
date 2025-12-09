@@ -25,9 +25,8 @@ class SpArea : LiveEvent {
      * 暂时拿routeType 当作区域类型
      */
     var routeType = 0
-    var areaType = 1
     override fun toString(): String {
-        return "SpArea(sub_name='$sub_name', regId=$regId, layer_id=$layer_id, m_VertexPnt=$m_VertexPnt, routeType=$routeType, areaType=$areaType)"
+        return "SpArea(sub_name='$sub_name', regId=$regId, layer_id=$layer_id, m_VertexPnt=$m_VertexPnt, routeType=$routeType)"
     }
 
 }

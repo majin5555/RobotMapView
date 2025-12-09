@@ -89,7 +89,7 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
     private val gestureDetector = GestureDetector(context, this)
 
     // 编辑监听器
-    private var onCleanAreaEditListener: OnCleanAreaEditListener? = null
+    private var onSpAreaEditListener: OnSpAreaEditListener? = null
 
     init {
         gestureDetector.setOnDoubleTapListener(this)
@@ -145,10 +145,10 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
         selectedArea = newArea
 
         // 通知监听器选中区域变化
-        onCleanAreaEditListener?.onSelectedAreaChanged(newArea)
+        onSpAreaEditListener?.onSelectedAreaChanged(newArea)
 
         // 通知监听器创建了新区域
-        onCleanAreaEditListener?.onAreaCreated(newArea)
+        onSpAreaEditListener?.onAreaCreated(newArea)
 
         invalidate()
     }
@@ -156,8 +156,8 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
     /**
      * 设置编辑监听器
      */
-    fun setOnCleanAreaEditListener(listener: OnCleanAreaEditListener?) {
-        this.onCleanAreaEditListener = listener
+    fun setOnSpAreaEditListener(listener: OnSpAreaEditListener?) {
+        this.onSpAreaEditListener = listener
     }
 
     /**
@@ -168,7 +168,7 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
         selectedPointIndex = -1
         isDragging = false
         // 通知监听器选中区域变化
-        onCleanAreaEditListener?.onSelectedAreaChanged(area)
+        onSpAreaEditListener?.onSelectedAreaChanged(area)
         invalidate()
     }
 
@@ -274,7 +274,7 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
         val newIndex = edgeIndex + 1
         points.add(newIndex, midPoint)
         // 通知监听器添加了新顶点
-        onCleanAreaEditListener?.onVertexAdded(area, newIndex, midPoint.X, midPoint.Y)
+        onSpAreaEditListener?.onVertexAdded(area, newIndex, midPoint.X, midPoint.Y)
         invalidate()
     }
 
@@ -359,7 +359,7 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
         // 删除边上的第二个点（即edgeIndex+1位置的点），这样就删除了edgeIndex对应的边
         points.removeAt((edgeIndex + 1) % points.size)
         // 通知监听器删除了边
-        onCleanAreaEditListener?.onEdgeRemoved(area, edgeIndex)
+        onSpAreaEditListener?.onEdgeRemoved(area, edgeIndex)
         invalidate()
     }
 
@@ -386,7 +386,7 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
                     isDragging = true
                     handled = true
                     // 通知监听器顶点开始拖动
-                    onCleanAreaEditListener?.onVertexDragStart(selectedArea!!, selectedPointIndex)
+                    onSpAreaEditListener?.onVertexDragStart(selectedArea!!, selectedPointIndex)
                 } else {
                     // 如果没有点击到顶点，检查是否点击到边中点
                     val edgeIndex = findNearbyEdgeIndex(selectedArea!!, x, y)
@@ -407,7 +407,7 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
                         X = worldPoint.x
                         Y = worldPoint.y
                         // 通知监听器顶点拖动中
-                        onCleanAreaEditListener?.onVertexDragging(
+                        onSpAreaEditListener?.onVertexDragging(
                             selectedArea!!, selectedPointIndex, worldPoint.x, worldPoint.y
                         )
                     }
@@ -419,7 +419,7 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 if (isDragging && selectedPointIndex != -1) {
                     // 通知监听器顶点拖动结束
-                    onCleanAreaEditListener?.onVertexDragEnd(selectedArea!!, selectedPointIndex)
+                    onSpAreaEditListener?.onVertexDragEnd(selectedArea!!, selectedPointIndex)
                     handled = true
                 }
                 isDragging = false
@@ -598,8 +598,23 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
 
     fun getData() = list
 
+    /**
+     * 清理资源，防止内存泄漏
+     */
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        // 清理监听器引用
+        onSpAreaEditListener = null
+        // 清理列表数据
+        list.clear()
+        // 清理引用
+        selectedArea = null
+        mapViewRef?.clear()
+        mapViewRef = null
+    }
+
     // 清扫区域编辑回调接口
-    interface OnCleanAreaEditListener {
+    interface OnSpAreaEditListener {
         // 选中区域变化
         fun onSelectedAreaChanged(area: SpArea?) {}
 
