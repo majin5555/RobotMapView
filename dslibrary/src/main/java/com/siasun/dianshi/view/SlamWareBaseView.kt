@@ -17,7 +17,9 @@ abstract class SlamWareBaseView(context: Context?, parent: WeakReference<MapView
     var scale: Float protected set
     var mRotation: Float//旋转角度
     var mMatrix: Matrix//矩阵
-
+    
+    // 复用的Path对象，避免频繁创建
+    private val reusablePath = Path()
 
     init {
         setBackgroundColor(Color.TRANSPARENT)
@@ -50,9 +52,7 @@ abstract class SlamWareBaseView(context: Context?, parent: WeakReference<MapView
      * 绘制线
      */
     fun drawLine(canvas: Canvas, mStart: PointF, mEnd: PointF, paint: Paint) {
-        canvas.drawLine(
-            mStart.x, mStart.y, mEnd.x, mEnd.y, paint
-        )
+        canvas.drawLine(mStart.x, mStart.y, mEnd.x, mEnd.y, paint)
     }
 
     /**
@@ -84,27 +84,25 @@ abstract class SlamWareBaseView(context: Context?, parent: WeakReference<MapView
      * 绘制等边三角形（朝上的）
      */
     fun drawTriangle(canvas: Canvas, mPoint: PointF, paint: Paint, size: Float = 10f) {
-        val path = Path().apply {
-            moveTo(mPoint.x, mPoint.y - size) // 顶点（上）
-            lineTo(mPoint.x - size, mPoint.y + size) // 左下
-            lineTo(mPoint.x + size, mPoint.y + size) // 右下
-            close()
-        }
-        canvas.drawPath(path, paint)
+        reusablePath.reset()
+        reusablePath.moveTo(mPoint.x, mPoint.y - size) // 顶点（上）
+        reusablePath.lineTo(mPoint.x - size, mPoint.y + size) // 左下
+        reusablePath.lineTo(mPoint.x + size, mPoint.y + size) // 右下
+        reusablePath.close()
+        canvas.drawPath(reusablePath, paint)
     }
 
     /**
      * 绘制菱形
      */
     fun drawDiamond(canvas: Canvas, mPoint: PointF, paint: Paint, size: Float = 10f) {
-        val path = Path().apply {
-            moveTo(mPoint.x, mPoint.y - size) // 上
-            lineTo(mPoint.x + size, mPoint.y) // 右
-            lineTo(mPoint.x, mPoint.y + size) // 下
-            lineTo(mPoint.x - size, mPoint.y) // 左
-            close()
-        }
-        canvas.drawPath(path, paint)
+        reusablePath.reset()
+        reusablePath.moveTo(mPoint.x, mPoint.y - size) // 上
+        reusablePath.lineTo(mPoint.x + size, mPoint.y) // 右
+        reusablePath.lineTo(mPoint.x, mPoint.y + size) // 下
+        reusablePath.lineTo(mPoint.x - size, mPoint.y) // 左
+        reusablePath.close()
+        canvas.drawPath(reusablePath, paint)
     }
 
     /**
@@ -120,4 +118,13 @@ abstract class SlamWareBaseView(context: Context?, parent: WeakReference<MapView
         canvas.drawRect(left, top, right, bottom, paint)
     }
 
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        // 清理资源，防止内存泄漏
+        mParent.clear()
+        // 重置矩阵
+        mMatrix.reset()
+        // 重置Path
+        reusablePath.reset()
+    }
 }
