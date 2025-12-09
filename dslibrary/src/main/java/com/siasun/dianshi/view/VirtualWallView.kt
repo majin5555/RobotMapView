@@ -21,7 +21,7 @@ import kotlin.math.sqrt
  */
 @SuppressLint("ViewConstructor")
 class VirtualWallView(
-    context: Context?, parent: WeakReference<MapView>
+    context: Context?, val parent: WeakReference<MapView>
 ) : SlamWareBaseView(context, parent) {
     private val LINE_WIDTH = 2f
     private var radius = 5f
@@ -29,18 +29,12 @@ class VirtualWallView(
     private val PROPORTION = 1000//虚拟墙文件上的是毫米 在本地显示要除1000
     private val MIN_WALL_LENGTH = 100f // 最小虚拟墙长度（毫米），防止添加过短的虚拟墙
 
-    private val mPaint: Paint = Paint()
-    private var mSelectedPaint: Paint = Paint()
-
     //虚拟墙
     private var virtualWall: VirtualWallNew = VirtualWallNew(1, mutableListOf<VirWallLayerNew>())
 
     fun getVirtualWall(): VirtualWallNew {
         return virtualWall
     }
-
-    // 保存parent引用以便安全访问
-    private var mapViewRef: WeakReference<MapView>? = parent
 
     // 当前工作模式
     private var currentWorkMode: MapView.WorkMode = MapView.WorkMode.MODE_SHOW_MAP
@@ -56,26 +50,27 @@ class VirtualWallView(
     private var isEditing = false
     private var touchedPointIndex = -1 // 0-起点，1-终点
 
-    // 用于绘制虚线的路径效果
-    private var dashPathEffect: DashPathEffect? = null
-
     // 控制是否绘制
     private var isDrawingEnabled: Boolean = true
 
-    init {
-        mPaint.isAntiAlias = true
-        mPaint.color = Color.BLUE
-        mPaint.strokeWidth = 1f
-        mPaint.style = Paint.Style.STROKE
+    // 用于绘制虚线的路径效果
+    private val dashPathEffect: DashPathEffect = DashPathEffect(floatArrayOf(10f, 5f), 0f)
 
-        // 初始化选中状态画笔
-        mSelectedPaint.isAntiAlias = true
-        mSelectedPaint.style = Paint.Style.STROKE
-        mSelectedPaint.color = Color.GREEN
-        mSelectedPaint.strokeWidth = 4f
+    // 伴生对象存储画笔，避免重复创建
+    companion object {
+        private val mPaint: Paint = Paint().apply {
+            isAntiAlias = true
+            color = Color.BLUE
+            strokeWidth = 1f
+            style = Paint.Style.STROKE
+        }
 
-        // 初始化虚线效果
-        dashPathEffect = DashPathEffect(floatArrayOf(10f, 5f), 0f)
+        private val mSelectedPaint: Paint = Paint().apply {
+            isAntiAlias = true
+            style = Paint.Style.STROKE
+            color = Color.GREEN
+            strokeWidth = 4f
+        }
     }
 
 
@@ -87,10 +82,8 @@ class VirtualWallView(
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        val mapView = parent.get() ?: return
         if (isDrawingEnabled) {
-            // 安全获取MapView引用
-            val mapView = mapViewRef?.get() ?: return
-
             if (virtualWall.LAYER.size > 0) virtualWall.LAYER[0].let {
                 mPaint.strokeWidth = LINE_WIDTH
                 mSelectedPaint.strokeWidth = 4f
@@ -169,11 +162,7 @@ class VirtualWallView(
                     }
                 }
                 canvas.drawLine(
-                    startPoint!!.x,
-                    startPoint!!.y,
-                    currentPoint!!.x,
-                    currentPoint!!.y,
-                    mPaint
+                    startPoint!!.x, startPoint!!.y, currentPoint!!.x, currentPoint!!.y, mPaint
                 )
                 val scaledRadius = radius
                 // 绘制实心端点圆
@@ -193,7 +182,7 @@ class VirtualWallView(
         this.virtualWall = virtualWall
         // 确保至少有一个图层
         if (this.virtualWall.LAYER.isEmpty()) {
-            this.virtualWall.LAYER.add(VirWallLayerNew(mutableListOf(), 0, 0))
+            this.virtualWall.LAYER.add(VirWallLayerNew(ArrayList(), 0, 0))
         }
         postInvalidate()
     }
@@ -247,7 +236,7 @@ class VirtualWallView(
      * 查找距离点最近的虚拟墙
      */
     private fun findNearestLine(point: PointF): Int {
-        val mapView = mapViewRef?.get() ?: return -1
+        val mapView = parent.get() ?: return -1
         val scaledRadius = radius * scale * 2
         val lineClickThreshold = LINE_WIDTH * 5 * scale // 线段点击阈值，设置为线宽的5倍乘以缩放比例
 
@@ -261,9 +250,7 @@ class VirtualWallView(
 
             // 检查是否点击了起点或终点
             if (isPointInCircle(point, start, scaledRadius) || isPointInCircle(
-                    point,
-                    end,
-                    scaledRadius
+                    point, end, scaledRadius
                 )
             ) {
                 return index
@@ -287,10 +274,7 @@ class VirtualWallView(
      * @return 是否点击在线段上
      */
     private fun isPointOnLineSegment(
-        point: PointF,
-        start: PointF,
-        end: PointF,
-        threshold: Float
+        point: PointF, start: PointF, end: PointF, threshold: Float
     ): Boolean {
         // 计算点到线段的距离
         val distance = pointToLineDistance(point, start, end)
@@ -320,7 +304,7 @@ class VirtualWallView(
      * 检查点是否在地图范围内
      */
     private fun isPointInMapRange(x: Float, y: Float): Boolean {
-        val mapView = mapViewRef?.get() ?: return true // 如果获取不到地图视图，默认允许创建
+        val mapView = parent.get() ?: return true // 如果获取不到地图视图，默认允许创建
         val mapData = mapView.mSrf.mapData
 
         // 计算地图边界
@@ -338,7 +322,7 @@ class VirtualWallView(
     private fun calculateWallLength(startWorld: PointF, endWorld: PointF): Float {
         val dx = endWorld.x - startWorld.x
         val dy = endWorld.y - startWorld.y
-        val lengthMeters = Math.sqrt((dx * dx + dy * dy).toDouble()).toFloat()
+        val lengthMeters = sqrt((dx * dx + dy * dy).toDouble()).toFloat()
         return lengthMeters * PROPORTION // 转换为毫米
     }
 
@@ -371,14 +355,14 @@ class VirtualWallView(
 
         val dx = point.x - xx
         val dy = point.y - yy
-        return Math.sqrt((dx * dx + dy * dy).toDouble()).toFloat()
+        return sqrt((dx * dx + dy * dy).toDouble()).toFloat()
     }
 
     /**
      * 查找点击的是线段的哪个端点
      */
     private fun findTouchedPoint(lineIndex: Int, point: PointF): Int {
-        val mapView = mapViewRef?.get() ?: return -1
+        val mapView = parent.get() ?: return -1
         if (lineIndex < 0 || lineIndex >= virtualWall.LAYER[0].LINE.size) {
             return -1
         }
@@ -401,7 +385,7 @@ class VirtualWallView(
      * 处理触摸事件
      */
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        val mapView = mapViewRef?.get() ?: return false
+        val mapView = parent.get() ?: return false
         val consumed: Boolean
 
         when (currentWorkMode) {
@@ -434,16 +418,19 @@ class VirtualWallView(
             MotionEvent.ACTION_DOWN -> {
                 // 开始创建虚拟墙
                 isCreating = true
-                startPoint = PointF(event.x, event.y)
-                currentPoint = PointF(event.x, event.y)
+                // 复用PointF对象
+                if (startPoint == null) startPoint = PointF()
+                if (currentPoint == null) currentPoint = PointF()
+                startPoint!!.set(event.x, event.y)
+                currentPoint!!.set(event.x, event.y)
                 postInvalidate()
                 return true // 消费事件
             }
 
             MotionEvent.ACTION_MOVE -> {
-                if (isCreating) {
+                if (isCreating && currentPoint != null) {
                     // 更新当前点
-                    currentPoint = PointF(event.x, event.y)
+                    currentPoint!!.set(event.x, event.y)
                     postInvalidate()
                     return true // 消费事件
                 }
@@ -462,13 +449,12 @@ class VirtualWallView(
 
                     // 检查长度是否大于最小值且起点和终点都在地图范围内
                     if (length >= MIN_WALL_LENGTH && isPointInMapRange(
-                            startWorld.x,
-                            startWorld.y
+                            startWorld.x, startWorld.y
                         ) && isPointInMapRange(endWorld.x, endWorld.y)
                     ) {
                         // 确保至少有一个图层
                         if (virtualWall.LAYER.isEmpty()) {
-                            virtualWall.LAYER.add(VirWallLayerNew(mutableListOf(), 0, 0))
+                            virtualWall.LAYER.add(VirWallLayerNew(ArrayList(), 0, 0))
                         }
 
                         // 创建新的虚拟墙线段
@@ -487,8 +473,7 @@ class VirtualWallView(
 
                     // 重置状态
                     isCreating = false
-                    startPoint = null
-                    currentPoint = null
+                    // 不重置对象，只重置标志位，便于复用
                     postInvalidate()
                 }
                 isCreating = false
@@ -591,18 +576,25 @@ class VirtualWallView(
     /**
      * 清理资源，防止内存泄漏
      */
-    private fun cleanup() {
-        mapViewRef?.clear()
-        mapViewRef = null
-        dashPathEffect = null
-    }
-
-    /**
-     * View被移除时调用，清理资源
-     */
     override fun onDetachedFromWindow() {
-        cleanup()
         super.onDetachedFromWindow()
+
+        // 清理虚拟墙数据
+        virtualWall.LAYER.forEach { it.LINE.clear() }
+        virtualWall.LAYER.clear()
+
+        // 清理创建虚拟墙相关变量
+        isCreating = false
+        startPoint = null
+        currentPoint = null
+
+        // 清理编辑虚拟墙相关变量
+        selectedLineIndex = -1
+        isEditing = false
+        touchedPointIndex = -1
+
+        // 清理父引用
+        parent.clear()
     }
 
     /**

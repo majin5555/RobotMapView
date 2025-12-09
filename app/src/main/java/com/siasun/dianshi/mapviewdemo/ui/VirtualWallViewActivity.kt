@@ -77,13 +77,12 @@ class VirtualWallViewActivity : BaseMvvmActivity<ActivityVirtualwallBinding, Sho
                 mBinding.mapView.setWorkingPath(it.dparams)
             }
         }
-        mViewModel.getVirtualWall(mapId)
-
         //加载虚拟墙
-        mViewModel.getVirtualWall.observe(this) {
-            mBinding.mapView.setVirtualWall(it)
-        }
-
+        mViewModel.getVirtualWall(mapId, onComplete = { virtualWall ->
+            virtualWall?.let {
+                mBinding.mapView.setVirtualWall(it)
+            }
+        })
     }
 
     private fun initListener() {

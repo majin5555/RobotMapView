@@ -21,11 +21,17 @@
             android:orientation="vertical">
 
             <Button
+                android:id="@+id/btn_move"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="平移地图" />
+
+            <Button
                 android:id="@+id/btn_add_mix_area"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="添加混行区域"
-                app:layout_constraintTop_toBottomOf="@+id/btn_edit_sp_area" />
+                app:layout_constraintTop_toBottomOf="@+id/btn_move" />
 
             <Button
                 android:id="@+id/btn_edit_mix_area"
@@ -56,19 +62,13 @@
                 android:text="去除噪点"
                 app:layout_constraintTop_toBottomOf="@+id/btn_save_mix_area" />
 
-            <Button
-                android:id="@+id/btn_move"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="平移地图"
-                app:layout_constraintTop_toBottomOf="@+id/btn_remove_noise" />
 
             <Button
                 android:id="@+id/btn_vir_add"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="创建虚拟墙"
-                app:layout_constraintTop_toBottomOf="@+id/btn_move" />
+                app:layout_constraintTop_toBottomOf="@+id/btn_remove_noise" />
 
             <Button
                 android:id="@+id/btn_vir_edit"
