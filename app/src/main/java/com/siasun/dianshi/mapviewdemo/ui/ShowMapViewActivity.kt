@@ -19,6 +19,7 @@ import com.siasun.dianshi.AreaType
 import com.siasun.dianshi.ConstantBase
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.bean.CleanAreaNew
+import com.siasun.dianshi.bean.CmsStation
 import com.siasun.dianshi.bean.PlanPathResult
 import com.siasun.dianshi.bean.PositingArea
 import com.siasun.dianshi.controller.MainController
@@ -46,6 +47,7 @@ import com.siasun.dianshi.mapviewdemo.utils.GsonUtil
 import com.siasun.dianshi.mapviewdemo.utils.PathPlanningUtil
 import com.siasun.dianshi.view.PolygonEditView
 import com.siasun.dianshi.view.PostingAreasView
+import com.siasun.dianshi.xpop.XpopUtils
 import java.io.File
 
 /**
@@ -57,6 +59,9 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     var cleanAreas: MutableList<CleanAreaNew> = mutableListOf()
     var mSpArea: MutableList<SpArea> = mutableListOf()
     var mMixArea: MutableList<WorkAreasNew> = mutableListOf()
+    var cmsStation: MutableList<CmsStation> = mutableListOf()
+
+    @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
         MainController.init()
         initListener()
@@ -76,11 +81,55 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             })
     }
 
+    @RequiresApi(Build.VERSION_CODES.R)
     private fun initListener() {
         //移动模式
         mBinding.btnMove.setOnClickListener {
             mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SHOW_MAP)
         }
+        //添加避让点
+        mBinding.btnCreateStation.onClick {
+            XpopUtils(this).showCmsStationDialog(onConfirmCall = { result ->
+                result?.let {
+                    cmsStation.add(result)
+                    mBinding.mapView.setCmsStations(cmsStation)
+                }
+
+            }, onDeleteCall = {
+
+            }, mapId
+            )
+        }
+        //编辑避让点
+        mBinding.btnEdit.onClick {
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CMS_STATION_EDIT)
+        }
+        // 设置避让点点击监听器
+        mBinding.mapView.setOnStationClickListener(object :
+            com.siasun.dianshi.view.StationsView.OnStationClickListener {
+            @RequiresApi(Build.VERSION_CODES.R)
+            override fun onStationClick(station: CmsStation) {
+                // 处理避让点点击事件
+                LogUtil.d("点击了避让点: $station")
+            }
+        })
+
+        //删除避让点
+        mBinding.btnDeleteStation.onClick {
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CMS_STATION_DELETE)
+        }
+
+
+        // 设置避让点删除监听器
+        mBinding.mapView.setOnStationDeleteListener(object :
+            com.siasun.dianshi.view.StationsView.OnStationDeleteListener {
+            override fun onStationDelete(station: CmsStation) {
+                // 处理避让点删除事件
+                LogUtil.d("删除了避让点: $station")
+                // 这里可以添加删除避让点的业务逻辑，比如调用API删除服务器上的避让点
+            }
+        })
+
         //添加虚拟墙
         mBinding.btnVirAdd.setOnClickListener {
             // 创建虚拟墙模式
@@ -505,17 +554,20 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //            }
 //        })
 
-//        //加载顶视路线
-//        mViewModel.getMergedPose(mapId, onComplete = { mergedPoses ->
-//            mergedPoses?.data?.let {
-//                mBinding.mapView.setTopViewPathDada(it)
-//            }
-//        })
+        //加载顶视路线
+        mViewModel.getMergedPose(mapId, onComplete = { mergedPoses ->
+            mergedPoses?.data?.let {
+                mBinding.mapView.setTopViewPathDada(it)
+            }
+        })
 
-//        //加载站点
-//        mViewModel.getStationData(mapId, onComplete = { cmsStation ->
-//            mBinding.mapView.setCmsStations(cmsStation)
-//        })
+        //加载避让点
+        mViewModel.getStationData(mapId, onComplete = { cmsStations ->
+            if (cmsStations != null) {
+                cmsStation.addAll(cmsStations)
+                mBinding.mapView.setCmsStations(cmsStation)
+            }
+        })
 //        //加载充电站
 //        mViewModel.getMachineStation(onComplete = { machineStation ->
 //            LogUtil.d("获取充电站信息 $machineStation")

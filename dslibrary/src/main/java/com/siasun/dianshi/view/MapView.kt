@@ -51,6 +51,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         MODE_VIRTUAL_WALL_EDIT,// 编辑虚拟墙模式
         MODE_VIRTUAL_WALL_DELETE, // 删除虚拟墙模式
         MODE_CMS_STATION_EDIT,  // 修改避让点模式
+        MODE_CMS_STATION_DELETE, // 删除避让点模式
         MODE_REMOVE_NOISE,      // 擦除噪点模式
         MODE_POSITING_AREA_ADD, // 创建定位区域模式
         MODE_POSITING_AREA_EDIT, // 编辑定位区域模式
@@ -834,6 +835,12 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      */
     fun setOnStationClickListener(listener: StationsView.OnStationClickListener) =
         mStationView?.setOnStationClickListener(listener)
+
+    /**
+     * 设置避让点删除监听器
+     */
+    fun setOnStationDeleteListener(listener: StationsView.OnStationDeleteListener) =
+        mStationView?.setOnStationDeleteListener(listener)
 
     /**
      * 设置擦除噪点监听器

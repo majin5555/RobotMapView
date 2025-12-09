@@ -27,11 +27,50 @@
                 android:text="平移地图" />
 
             <Button
+                android:id="@+id/btn_edit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="编辑避让点"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/btn_create_station"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <Button
+                android:id="@+id/btn_delete_station"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="删除避让点"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/btn_create_station"
+                app:layout_constraintTop_toTopOf="parent" />
+
+
+            <Button
+                android:id="@+id/btn_create_station"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="20dp"
+                android:text="新建避让点"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/btn_delete_ststion"
+                app:layout_constraintTop_toTopOf="parent" />
+
+
+            <Button
+                android:id="@+id/btn_save_station"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="保存避让点"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <Button
                 android:id="@+id/btn_add_mix_area"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="添加混行区域"
-                app:layout_constraintTop_toBottomOf="@+id/btn_move" />
+                app:layout_constraintTop_toBottomOf="@+id/btn_save_station" />
 
             <Button
                 android:id="@+id/btn_edit_mix_area"

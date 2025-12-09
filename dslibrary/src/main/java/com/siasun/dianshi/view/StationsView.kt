@@ -18,11 +18,10 @@ import kotlin.math.sqrt
 @SuppressLint("ViewConstructor")
 class StationsView(context: Context?, var parent: WeakReference<MapView>) :
     SlamWareBaseView(context, parent) {
-    private var mPaint: Paint = Paint()
     private var radius = 10f
 
-    // 避让点
-    private val cmsStations = mutableListOf<CmsStation>()
+    // 避让点 - 使用同步列表确保线程安全
+    private val cmsStations = ArrayList<CmsStation>()
 
     // 用于点击检测的避让点屏幕坐标映射
     private val stationScreenPositions = mutableMapOf<CmsStation, Pair<Float, Float>>()
@@ -35,8 +34,28 @@ class StationsView(context: Context?, var parent: WeakReference<MapView>) :
         fun onStationClick(station: CmsStation)
     }
 
+    // 删除事件回调接口
+    interface OnStationDeleteListener {
+        fun onStationDelete(station: CmsStation)
+    }
+
     // 点击事件监听器
     private var onStationClickListener: OnStationClickListener? = null
+    // 删除事件监听器
+    private var onStationDeleteListener: OnStationDeleteListener? = null
+
+    // 可复用的对象，避免重复创建
+    private val reusablePointF = PointF()
+
+    // Paint对象移至伴生对象，避免重复创建
+    companion object {
+        private val mPaint = Paint().apply {
+            color = Color.RED
+            isAntiAlias = true
+            style = Paint.Style.FILL
+            strokeWidth = 1f
+        }
+    }
 
     /**
      * 设置避让点点击监听器
@@ -45,17 +64,16 @@ class StationsView(context: Context?, var parent: WeakReference<MapView>) :
         this.onStationClickListener = listener
     }
 
+    /**
+     * 设置避让点删除监听器
+     */
+    fun setOnStationDeleteListener(listener: OnStationDeleteListener) {
+        this.onStationDeleteListener = listener
+    }
+
     // 控制是否绘制
     private var isDrawingEnabled: Boolean = true
 
-    init {
-        mPaint.setColor(Color.RED)
-        mPaint.isAntiAlias = true
-        mPaint.style = Paint.Style.FILL
-        mPaint.strokeWidth = 1f
-    }
-
-    @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if (isDrawingEnabled) {
@@ -63,35 +81,56 @@ class StationsView(context: Context?, var parent: WeakReference<MapView>) :
             // 清空之前的屏幕坐标映射
             stationScreenPositions.clear()
 
+            // 获取MapView实例，避免重复调用get()
+            val mapView = parent.get() ?: return
+
             cmsStations.forEach { station ->
                 station.coordinate?.let {
-                    val locate = parent.get()!!.worldToScreen(it.x, it.y)
+                    // 使用世界坐标转换为屏幕坐标
+                    val locate = mapView.worldToScreen(it.x, it.y)
                     // 保存避让点的屏幕坐标，用于点击检测
                     stationScreenPositions[station] = Pair(locate.x, locate.y)
 
                     // 根据工作模式调整绘制样式
-                    if (currentWorkMode == MapView.WorkMode.MODE_CMS_STATION_EDIT) {
-                        // 修改避让点模式下，绘制更大的圆圈和更粗的边框，增加视觉提示
-                        mPaint.color = Color.GREEN
-                        mPaint.style = Paint.Style.STROKE
-                        mPaint.strokeWidth = 3f
-                        drawCircle(canvas, locate, radius + 5, mPaint)
+                    when (currentWorkMode) {
+                        MapView.WorkMode.MODE_CMS_STATION_EDIT -> {
+                            // 修改避让点模式下，绘制更大的圆圈和更粗的边框，增加视觉提示
+                            mPaint.color = Color.GREEN
+                            mPaint.style = Paint.Style.STROKE
+                            mPaint.strokeWidth = 3f
+                            drawCircle(canvas, locate, radius + 5, mPaint)
 
-                        // 恢复填充样式和颜色
-                        mPaint.style = Paint.Style.FILL
-                        mPaint.color = Color.RED
-                        drawCircle(canvas, locate, radius, mPaint)
-                    } else {
-                        // 普通模式下，保持原有的绘制样式
-                        mPaint.color = Color.RED
-                        mPaint.style = Paint.Style.FILL
-                        drawCircle(canvas, locate, radius, mPaint)
+                            // 恢复填充样式和颜色
+                            mPaint.style = Paint.Style.FILL
+                            mPaint.color = Color.RED
+                            drawCircle(canvas, locate, radius, mPaint)
+                        }
+                        MapView.WorkMode.MODE_CMS_STATION_DELETE -> {
+                            // 删除避让点模式下，绘制红色边框和填充，增加删除视觉提示
+                            mPaint.color = Color.RED
+                            mPaint.style = Paint.Style.STROKE
+                            mPaint.strokeWidth = 4f
+                            drawCircle(canvas, locate, radius + 5, mPaint)
+
+                            // 填充红色
+                            mPaint.style = Paint.Style.FILL
+                            drawCircle(canvas, locate, radius, mPaint)
+                        }
+                        else -> {
+                            // 普通模式下，保持原有的绘制样式
+                            mPaint.color = Color.RED
+                            mPaint.style = Paint.Style.FILL
+                            drawCircle(canvas, locate, radius, mPaint)
+                        }
                     }
 
+                    // 复用PointF对象
+                    reusablePointF.set(locate.x, locate.y)
                     drawLabel(
-                        canvas, station.evName ?: context.getString(R.string.cms_station), PointF(
-                            locate.x, locate.y
-                        ), mPaint
+                        canvas,
+                        station.evName ?: context.getString(R.string.cms_station),
+                        reusablePointF,
+                        mPaint
                     )
                 }
             }
@@ -99,8 +138,8 @@ class StationsView(context: Context?, var parent: WeakReference<MapView>) :
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        // 只有在修改避让点模式下才响应点击事件
-        if (currentWorkMode == MapView.WorkMode.MODE_CMS_STATION_EDIT && event.action == MotionEvent.ACTION_DOWN) {
+        // 在所有模式下都响应避让点点击事件
+        if (event.action == MotionEvent.ACTION_DOWN) {
             val x = event.x
             val y = event.y
 
@@ -113,7 +152,17 @@ class StationsView(context: Context?, var parent: WeakReference<MapView>) :
 
                 // 如果点击在避让点的半径范围内
                 if (distance <= radius * 2) { // 扩大点击检测范围，提高用户体验
-                    onStationClickListener?.onStationClick(station)
+                    // 根据当前工作模式选择调用不同的监听器
+                    when (currentWorkMode) {
+                        MapView.WorkMode.MODE_CMS_STATION_DELETE -> {
+                            // 删除模式下，调用删除监听器
+                            onStationDeleteListener?.onStationDelete(station)
+                        }
+                        else -> {
+                            // 其他模式下，调用点击监听器
+                            onStationClickListener?.onStationClick(station)
+                        }
+                    }
                     return true
                 }
             }
@@ -136,6 +185,8 @@ class StationsView(context: Context?, var parent: WeakReference<MapView>) :
     fun setCmsStations(list: MutableList<CmsStation>?) {
         cmsStations.clear()
         list?.let {
+            // 预分配容量，避免频繁扩容
+            cmsStations.ensureCapacity(it.size)
             cmsStations.addAll(it)
             postInvalidate()
         }
@@ -147,5 +198,20 @@ class StationsView(context: Context?, var parent: WeakReference<MapView>) :
     fun setDrawingEnabled(enabled: Boolean) {
         this.isDrawingEnabled = enabled
         postInvalidate()
+    }
+
+    /**
+     * 清理资源，防止内存泄漏
+     */
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        // 清理监听器引用
+        onStationClickListener = null
+        // 清理数据列表
+        cmsStations.clear()
+        // 清理映射表
+        stationScreenPositions.clear()
+        // 清理parent引用
+        parent.clear()
     }
 }
