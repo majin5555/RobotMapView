@@ -48,7 +48,6 @@ public class World extends NodeBase {
             FileInputStream fis = new FileInputStream(path + File.separator + strFileName);
             DataInputStream dis = new DataInputStream(fis);
 
-            //固定格式 头 start
             this.worldEditorVersion = WorldFileIO.readInt(dis);
             this.time1 = dis.readInt();
             this.time2 = dis.readInt();
@@ -65,12 +64,9 @@ public class World extends NodeBase {
             }
 
             WorldFileIO.readInt(dis);
-            //固定格式 头 end
 
-            //m_layers 只有1层
             m_layers.create(dis);
 
-            //固定格式 尾 start
             WorldFileIO.readInt(dis);
             this.nDriveUnitCount = WorldFileIO.readInt(dis);
             for (int i = 0; i < this.nDriveUnitCount; ++i) {
@@ -86,7 +82,6 @@ public class World extends NodeBase {
                 for (int j = 0; j < 10; ++j) {
                     this.fUserData[j] = WorldFileIO.readFloat(dis);
                 }
-                //固定格式 尾 end
             }
             dis.close();
             return true;
@@ -109,7 +104,6 @@ public class World extends NodeBase {
             OutputStream outputStream = new FileOutputStream(strFilepath + File.separator + strFileName, false);
             dos = new DataOutputStream(outputStream);
             TranBytes tan = new TranBytes();
-            //固定格式 头 start
             dos.writeInt(tan.tranInteger(this.worldEditorVersion));
             dos.writeInt(tan.tranInteger(this.time1));
             dos.writeInt(tan.tranInteger(this.time2));
@@ -126,16 +120,10 @@ public class World extends NodeBase {
                 char c = var4[j];
                 dos.write(c);
             }
-//            Params.SUM_LAYER_NUM = this.m_layers.size();
             dos.writeInt(tan.tranInteger(1));
-            //固定格式 头 end
 
-//            for (i = 0; i < Params.SUM_LAYER_NUM; ++i) {
-//                (this.m_layers.get(i)).Save(dos);
-//            }
             m_layers.Save(dos);
 
-            //固定格式 尾 start
             int cnt = 0;
             dos.writeInt(tan.tranInteger(cnt));
             tan.writeInteger(dos, this.nDriveUnitCount);
@@ -151,7 +139,6 @@ public class World extends NodeBase {
                 for (int j = 0; j < 10; ++j) {
                     dos.writeFloat(tan.tranFloat(this.fUserData[j]));
                 }
-                //固定格式 尾 end
             }
 
             dos.flush();

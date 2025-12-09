@@ -17,74 +17,7 @@ import java.io.IOException;
 
 
 public abstract class Path {
-//  - PATH.CPP -
-//
-//Implementation of class "Path" - a class defining a generic path in
-//AGVS map. It is the base class of other path classes.
-//
-//Author: Zhang Lei
-//Date:   2000. 10. 28
-//
-
-//Defines null ID of nodes and paths
-
-    static final short NULLID = (short) (0xFFFF);
-
-    //Enumeration of standard path types
-    public static enum TPathType {
-        LINE_TYPE(0), SPP_TYPE(1), SPLINE_TYPE(2), SCP_TYPE(3), SIDE_TYPE(4),
-        LAZY_S_TYPE(5), ARC_TYPE(6), SPP_SHIFT_TYPE(9), GENERIC_TYPE(10),
-        UNKNOWN_PATH_TYPE(100);
-
-        private int value;
-
-        private TPathType(int value) {
-            this.value = value;
-        }
-
-    }
-
-    ;
-
-////Enumeration of standard path types
-//public enum TPathType {LINE_TYPE(0), SPP_TYPE(1), SPLINE_TYPE(2), SCP_TYPE(3), SIDE_TYPE(4),
-//			    LAZY_S_TYPE(5), ARC_TYPE(6), SPP_SHIFT_TYPE(9), GENERIC_TYPE(10),
-//			    UNKNOWN_PATH_TYPE(100);
-//
-//		private int value;
-//		private TPathType(int value){
-//		    this.value = value;
-//		}
-//};
-
     public enum THeadingRule {POSITIVE_HEADING, NEGATIVE_HEADING}
-
-    ;
-
-    //Enumeration of path guidance type
-//enum TGuideType {NO_GUIDANCE = 0, TAPE_GUIDANCE = 2, LASER_GUIDANCE = 1, TAPE_LASER_GUIDANCE = 3};
-    static final short NO_GUIDANCE = ((short) 0);
-    static final short TAPE_GUIDANCE = ((short) 1);
-    static final short LASER_GUIDANCE = ((short) 2);
-    static final short TAPE_LASER_GUIDANCE = ((short) 3);
-    static final short OD_LEFT_GUIDANCE = ((short) 4);
-    static final short OD_RIGHT_GUIDANCE = ((short) 5);
-
-    static final float COMMON_CARRIER_COST = (100.0f);
-
-    //��֧���Ͷ���
-    static final int NO_BRANCH = 0;                       // �޷�֧
-    static final int LEFT_BRANCH = 1;                     // ���֧
-    static final int RIGHT_BRANCH = 2;                    // �ҷ�֧
-    static final int ERROR_BRANCH = 3;                    // ��֧����2��������
-
-//////////////////////////////////////////////////////////////////////////////
-
-
-//class OS_API Path{ static CNodeBase* m_pNodeBase; }
-
-
-    //class Path
 
 
     public int m_uId;                  // Path ID number, 从1开始
@@ -122,39 +55,12 @@ public abstract class Path {
 
     public int m_clr = 255;              //绘图颜色
 
-    //#ifdef _MFC_VER
-//	Color m_clr;	//��ͼ��ɫ
-    Color m_oldclr;    //��ѡ���߶�ʱ����Ҫ����ԭʼ��ɫ
-//#endif
-
-    //	public static CNodeBase m_pNodeBase; // Pointer to the nodes data base
-//	public static NodeBase m_pNodeBase = null;   //后续应该注释掉，多层之后没意义了
     public NodeBase m_pNodeBase;
 
-    //	abstract  void Draw(ScreenReference ScrnRef,  Canvas  Grp, Color crPath);
-    // The default constructor
     public Path() {
         m_uObstacle = 0;
         m_fVeloLimit = new float[2];
         m_fTimeValue = new float[2];
-    }
-
-//	void Create(short uId, short uStartNode, short uEndNode, float fVeloLimit,
-//			short uType, short uGuideType,float fNavParam, short uExtType);
-
-    // Get the guide method on this path
-    public short GuideType() {
-        return m_uGuideType;
-    }
-
-
-//////////////////////////////////////////////////////////////////////////////
-//Implementation of class "Path"
-
-    Path(int uId, int uStartNode, int uEndNode, float[] fVeloLimit, short uType, short uGuideType, float fNavParam, short uExtType, NodeBase nodeBase) {
-//	SetColor(RGB(255,255,255));
-//	SetOldColor(RGB(255,255,255));
-        Create(uId, uStartNode, uEndNode, fVeloLimit, uType, uGuideType, fNavParam, uExtType, nodeBase);
     }
 
     abstract public void Draw(CoordinateConversion ScrnRef, Canvas Grp, int cr, int nWidth);
@@ -332,10 +238,7 @@ public abstract class Path {
 //}
 
     public boolean Create(DataInputStream dis) {
-        short uGuideType;
-        float fDummy;
 
-        // Read the path data
         try {
             // ����ʱ��Ӧ����д���˳��
             int ch1 = dis.read();
@@ -442,8 +345,6 @@ public abstract class Path {
     }
 
     public boolean Save(DataOutputStream dis) {
-        short uGuideType;
-        float fDummy;
 
         // Read the path data
         try {

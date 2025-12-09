@@ -1,15 +1,10 @@
 package com.siasun.dianshi.bean.pp;
 
-//import java.awt.BasicStroke;
-//import android.graphics.Color;
-//import android.graphics.Canvas;
-//import android.graphics.Point;import android.graphics.Canvas;
 
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.Typeface;
 
@@ -37,22 +32,15 @@ public class Bezier {
     public float m_fCurvature;
     public float m_fTotalLen;
 
-    private final int offset_bezier = 40;
 
     private FindOptControlPoint findOptControlPoint = new FindOptControlPoint();
 
-    //    private boolean isLegitimate; //20200210 贝塞尔合理性判断
     public boolean m_bCurvature; //是否曲率合适
 
-//	private	void(*UserDataCreateProc)(Bezier*, void*);
-
-
-    // The trajectory generation function
     public Point2d TrajFun() {
         return m_pt;
     }
 
-    // The tangent angle generation function
     public Angle TangentFun() {
         return m_angTangent;
     }
@@ -102,18 +90,12 @@ public class Bezier {
 
     public Bezier(int nCountKeyPoints, Point2d[] pptKey) {
         m_ptKey = null;
-//			m_pSamplePoints = null;
-
-
         Create(nCountKeyPoints, pptKey);
     }
 
 
     public Bezier(final Posture pstStart, final Posture pstEnd, float fLen1, float fLen2) {
         m_ptKey = null;
-//			m_pSamplePoints = null;
-
-
         Create(pstStart, pstEnd, fLen1, fLen2);
     }
 
@@ -121,21 +103,13 @@ public class Bezier {
     public Bezier() {
         m_ptKey = null;
         m_pt = null;
-//			m_pSamplePoints = null;
     }
 
 
     private void Clear() {
         if (m_ptKey != null) {
-//				delete[]m_ptKey;
             m_ptKey = null;
         }
-
-//			if (m_pSamplePoints != null)
-//			{
-//				delete[]m_pSamplePoints;
-//				m_pSamplePoints = null;
-//			}
     }
 
 
@@ -320,114 +294,8 @@ public class Bezier {
     }
 
 
-//		void operator = (const Bezier& Obj)
-//		{
-//			Clear();
-//
-//			m_nCountKeyPoints = Obj.m_nCountKeyPoints;
-//			Create(m_nCountKeyPoints, Obj.m_ptKey);
-//		}
-
-
-//		public boolean AddKeyPoint(int nIdx, final Point2d pt)
-//		{
-//
-//			Point2d[] p = new Point2d[m_nCountKeyPoints + 1];
-//			if (p == null)
-//				return false;
-//
-//
-//			for (int i = 0; i < nIdx; i++)
-//				p[i] = m_ptKey[i];
-//
-//			p[nIdx] = pt;
-//
-//			for (int i = nIdx + 1; i < m_nCountKeyPoints + 1; i++)
-//				p[i] = m_ptKey[i - 1];
-//
-//
-//			m_ptKey = null;
-//		//	delete []m_ptKey;
-//
-//
-//			m_ptKey = p;
-//
-//			m_nCountKeyPoints++;
-//
-//
-//			return CreateSamplePoints();
-//		}
-
-
-//		boolean RemoveKeyPoint(int nIdx)
-//		{
-//
-//			if (m_nCountKeyPoints == 4 || nIdx == 0 || nIdx == m_nCountKeyPoints - 1)
-//				return false;
-//
-//
-//			for (int i = nIdx; i < m_nCountKeyPoints - 1; i++)
-//				m_ptKey[i] = m_ptKey[i + 1];
-//
-//			m_nCountKeyPoints--;
-//
-//
-//			return CreateSamplePoints();
-//		}
-
-
-//		void CreateUserData(void(*pProc)(Bezier*, void*), void* pParam)
-//		{
-//			UserDataCreateProc = pProc;
-//			UserDataCreateProc(this, pParam);
-//		}
-
-
-//		float GetUserData(int nSampleIdx, int nDataIdx) const
-//		{
-//			return m_pSamplePoints[nSampleIdx].fUserData[nDataIdx];
-//		}
-//
-//		boolean CheckConstraints(float fMaxCurvature, float fMaxCurvatureDiff) const
-//		{
-//			float t;
-//			for (int i = 0; i < m_nSampleCount; i++)
-//			{
-//				CCurveSamplePoint& sp = m_pSamplePoints[i];
-//
-//
-//				if (sp.fCurvature > fMaxCurvature)
-//					return false;
-//			}
-//
-//			return true;
-//		}
-
 
     public void SetCurT(float t) {
-        float f1 = (1 - t);
-        float f2 = f1 * f1;
-        float f3 = f2 * f1;
-
-
-//		#if 0
-//			m_pt.x = f3 * m_ptKey[0].x + 3 * t * f2 * m_ptKey[1].x +
-//						3 * t * t * f1 * m_ptKey[2].x + t * t * t * m_ptKey[3].x;
-//
-//			m_pt.y = f3 * m_ptKey[0].y + 3 * t * f2 * m_ptKey[1].y +
-//						3 * t * t * f1 * m_ptKey[2].y + t * t * t * m_ptKey[3].y;
-//
-//
-//			dx1 = 3 * (m_ptKey[1].x - m_ptKey[0].x) +
-//				6 * (m_ptKey[2].x - 2 * m_ptKey[1].x + m_ptKey[0].x) * t +
-//				3 * (m_ptKey[3].x - 3 * m_ptKey[2].x + 3 * m_ptKey[1].x - m_ptKey[0].x) * t * t;
-//
-//			dy1 = 3 * (m_ptKey[1].y - m_ptKey[0].y) +
-//				6 * (m_ptKey[2].y - 2 * m_ptKey[1].y + m_ptKey[0].y) * t +
-//				3 * (m_ptKey[3].y - 3 * m_ptKey[2].y + 3 * m_ptKey[1].y - m_ptKey[0].y) * t * t;
-//
-//
-//		#else
 
         int n = m_nCountKeyPoints - 1; // 从3开始
         m_pt = new Point2d();
@@ -496,9 +364,6 @@ public class Bezier {
             _dy2 += c * m_ptKey[i].y * f;
         }
 
-        float dd3 = dx2 - _dx2;
-        float dd4 = dy2 - _dy2;
-//		#endif
 
 
         float f = dx1 * dx1 + dy1 * dy1;
@@ -521,37 +386,6 @@ public class Bezier {
             return 0;
         else if (fLen >= m_fTotalLen)
             return 1;
-
-
-//		#if 0
-
-//			int nMin, nMax, n;
-//			nMin = 0;
-//			nMax = m_nSampleCount;
-//			n = (nMin + nMax) / 2;
-//
-//			while (nMax - nMin > 2)
-//			{
-//				float fProgress = m_pSamplePoints[n].fProgress;
-//				if (fProgress > fLen)
-//				{
-//					nMax = n;
-//				}
-//				n = (nMin + nMax) / 2;
-//			}
-//		#endif
-
-//			for (int i = 0; i < m_nSampleCount; i++)
-//			{
-//				float fProgress = m_pSamplePoints[i].fProgress;
-//				if (fProgress > fLen)
-//				{
-//					float fProgress_1 = m_pSamplePoints[i - 1].fProgress;
-//					t = (float)(i - 1) / m_nSampleCount;
-//					t *= 1 + (fLen - fProgress_1) / (fProgress - fProgress_1);
-//					return t;
-//				}
-//			}
 
         return 1;
     }
@@ -677,170 +511,6 @@ public class Bezier {
             return true;
         }
     }
-
-
-//		public boolean GetClosestPoint(final Point2d pt, Point2d[] pptClosest, float[] pT)
-//		{
-
-//			int nClosest = 0;
-//			Point2d ptClosestSample = m_pSamplePoints[0].GetPoint2dObject();
-//
-
-//			float fMinDist = ptClosestSample.DistanceTo(pt);
-//			for (int i = 1; i < m_nSampleCount; i++)
-//			{
-
-//				Point2d[] ptSample = m_pSamplePoints[i].GetPoint2dObject();
-//
-
-//				float fDist = ptSample.DistanceTo(pt);
-//
-
-//				if (fDist < fMinDist)
-//				{
-//					ptClosestSample = pt;
-//					fMinDist = fDist;
-//					nClosest = i;
-//				}
-//			}
-//
-
-//			Point2d pt1, pt2;
-//			float t1, t2;
-//
-
-//			if (nClosest == 0)
-//			{
-//				pt1 = m_pSamplePoints[0];
-//				pt2 = m_pSamplePoints[1];
-//
-//				t1 = m_pSamplePoints[0].t;
-//				t2 = m_pSamplePoints[1].t;
-//			}
-
-//			else if (nClosest == m_nSampleCount - 1)
-//			{
-//				pt1 = m_pSamplePoints[m_nSampleCount - 1];
-//				pt2 = m_ptKey[m_nCountKeyPoints - 1];
-//
-//				t1 = m_pSamplePoints[m_nSampleCount - 1].t;
-//				t2 = 1;
-//			}
-//
-
-//			else
-//			{
-
-//				pt1 = m_pSamplePoints[nClosest - 1];
-//				pt2 = m_pSamplePoints[nClosest + 1];
-//
-//				t1 = m_pSamplePoints[nClosest - 1].t;
-//				t2 = m_pSamplePoints[nClosest + 1].t;
-//			}
-//
-
-//			Line ln = new Line(pt1, pt2);
-//
-
-//			Point2d ptFoot;
-//			float fLambda;
-//
-
-//			ln.DistanceToPoint(false, pt, fLambda, ptFoot);
-//
-//			if (fLambda < 0)
-//			{
-//				if (nClosest == 0 && ptFoot.DistanceTo(m_ptKey[0]) < 0.03f)
-//				{
-//					if (pptClosest != null)
-//						pptClosest = m_ptKey[0];
-//
-//					if (pT != null)
-//						pT = 0;
-//
-//					return true;
-//				}
-//				else
-//					return false;
-//			}
-//			else if (fLambda > 1)
-//			{
-//				if (nClosest == m_nSampleCount - 1 && ptFoot.DistanceTo(m_ptKey[m_nCountKeyPoints - 1]) < 0.03f)
-//				{
-//					if (pptClosest != null)
-//						pptClosest = m_ptKey[m_nCountKeyPoints - 1];
-//
-//					if (pT != null)
-//						pT = 1;
-//
-//					return true;
-//				}
-//				else
-//					return false;
-//			}
-//			else
-//			{
-
-//				float d1 = ptFoot.DistanceTo(pt1);
-//				float d2 = ptFoot.DistanceTo(pt2);
-//
-
-//				float t = (d1 * t2 + d2 * t1) / (d1 + d2);
-//
-
-//				SetCurT(t);
-//
-//				if (pptClosest != null)
-//					*pptClosest = ptFoot;
-//
-//				if (pT != null)
-//					*pT = t;
-//
-//				return true;
-//			}
-//		}
-
-
-//		boolean Create(CArchive& ar)
-//		{
-//			int nCountKeyPoints;
-//
-//		#if 0
-
-//			ar >> nCountKeyPoints;
-//		#else
-//			nCountKeyPoints = 2;
-//		#endif
-//
-
-//			Point2d* pptKey = new Point2d[nCountKeyPoints];
-//			if (pptKey == null)
-//				return false;
-//
-
-//			for (int i = 0; i < nCountKeyPoints; i++)
-//				ar >> m_ptKey[i].x >> m_ptKey[i].y;
-//
-
-//			if (!Create(nCountKeyPoints, pptKey))
-//				return false;
-//
-
-//			delete []pptKey;
-//
-//			return true;
-//		}
-
-
-//		boolean Save(CArchive& ar)
-//		{
-//			ar << m_nCountKeyPoints;
-//
-//			for (int i = 0; i < m_nCountKeyPoints; i++)
-//				ar << m_ptKey[i].x << m_ptKey[i].y;
-//
-//			return true;
-//		}
 
     public boolean ISInRect(double minx, double miny, double maxx, double maxy) {
         double dleft, dright, dtop, dbottom;
@@ -983,21 +653,11 @@ public class Bezier {
 //    }
 
     public void Draw(CoordinateConversion ScrnRef, Canvas Grp, int cr, int nWidth, int nPointSize, boolean bShowKeyPoints) {
-//		CPen pen(PS_SOLID, nWidth, crColor);
-//		CPen* pOldPen = pDC->SelectObject(&pen);
-//		Grp.setStroke(new BasicStroke(nWidth));
-//		Grp.setColor(cr);
-        int width = Grp.getWidth();
-        int Height = Grp.getHeight();
+
         Paint paint = new Paint();
         paint.setAntiAlias(true);
 
-//        if (BuildConfig.HAS_MAP) {
-//            if (cr != Color.GREEN) {
-//                cr = Color.RED;
-//            }
-//            nWidth = 6;
-//        }
+
 
         paint.setColor(cr);
 
@@ -1005,46 +665,7 @@ public class Bezier {
 
         paint.setStrokeWidth(nWidth);
 
-//        //提高绘图效率
-//        Point2d pnt2d = new Point2d(m_fTotalLen, 0);
-//        int nPix = (Math.abs((ScrnRef.GetWindowPoint(pnt2d)).x - (ScrnRef.GetWindowPoint(pnt2d)).y));
-//        int nCount = nPix / 10;
-//        if (nCount < 10) {
-//            nCount = 10;
-//        } else if (nCount > offset_bezier)
-//            nCount = offset_bezier;
 //
-//        Point pntLast = new Point(0, 0);
-//        int Hgt = Grp.getHeight();
-//        int wih = Grp.getWidth();
-//        for (int i = 0; i <= nCount; i++) {
-//            float t = (float) i / nCount;
-//
-//            SetCurT(t);
-//            Point pnt = ScrnRef.GetWindowPoint(m_pt);
-//            if (pnt.x > wih || pnt.y > Hgt || pnt.x < 0 || pnt.y < 0) {
-//                pntLast = pnt;
-//                continue;
-//            }
-//            if (i != 0) {
-//                if (pntLast.x < 0 || pntLast.y < 0 || pnt.x < 0 || pnt.y < 0 ||
-//                        pntLast.x > width || pnt.x > width ||
-//                        pntLast.y > Height || pnt.y > Height) {
-//                    int temp = 100;
-//                } else {
-//                    if (Math.abs(m_pt.x) < 0.1f && Math.abs(m_pt.y) < 0.1f) {
-//                        int temp = 100;
-//                        Grp.drawLine(pntLast.x, pntLast.y, pnt.x, pnt.y, paint);
-//                    } else
-//                        Grp.drawLine(pntLast.x, pntLast.y, pnt.x, pnt.y, paint);
-//                }
-//            }
-//            pntLast = pnt;
-//        }
-//
-//        m_ptKey[0].Draw(ScrnRef, Grp, cr, nPointSize);
-//        m_ptKey[m_nCountKeyPoints - 1].Draw(ScrnRef, Grp, cr, nPointSize);
-
         Path path = new Path();
         PointF mStart = ScrnRef.worldToScreen(m_ptKey[0].x, m_ptKey[0].y);
         PointF mControl1 = ScrnRef.worldToScreen(m_ptKey[1].x, m_ptKey[1].y);

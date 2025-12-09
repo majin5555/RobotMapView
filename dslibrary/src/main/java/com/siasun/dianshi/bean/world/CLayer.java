@@ -491,25 +491,16 @@ public class CLayer extends NodeBase {
     public void Draw(CoordinateConversion ScrnRef, Canvas canvas) {
         if (m_PathBase != null && m_PathBase.m_MyNode != null) {
             m_PathBase.Draw(ScrnRef, canvas, Color.BLACK);
-//            m_PathBase.DrawPathID(ScrnRef, canvas);
-
-//            m_PathBase.m_MyNode.DrawNodeID(ScrnRef, canvas);
-//            m_PathBase.m_MyNode.Draw(ScrnRef, canvas, Color.BLACK);
         }
-
     }
 
-    //现阶段判断只有一条线，或者两条线包含该节点
-    //TaskNodeId：NodeId节点所在的任务，如果包含该点的有连个路段，要自动连接以前的两个路段
     public void DeleteNode(int NodeId) {
         Vector<Integer> vPathID = new Vector();
-        //得到包含节点的路径
         for (int i = 0; i < m_PathBase.m_uCount; i++) {
             Path pPath = m_PathBase.m_pPathIdx[i].m_ptr;
             if (pPath.m_uStartNode == NodeId || pPath.m_uEndNode == NodeId)
-                vPathID.add(i);           // 曲线的序号
+                vPathID.add(i);
         }
-        //如果包含该节点的路径很多，需要增加线，将断开的位置自动连接上
         int leftNode = -1;
         int rightNode = -1;
         // 取得与该节点所有相邻节点的编号
@@ -1332,19 +1323,11 @@ public class CLayer extends NodeBase {
      point：当前点的位置。
      ***********************/
     public void DragPath(int KeyID, int PathID, Point2d pt, int nMoveMode) {
-//        int iii = 0;//
-//        Point2d ptT = pt;
         Point2d ptFoot = new Point2d();
         GenericPath pPath = (GenericPath) (m_PathBase.m_pPathIdx[PathID].m_ptr);
         Bezier Curve = pPath.m_Curve;
 
-        //控制点不允许拖拽至起点与终点 20191127
-	/*int i = KeyID;
-	if(sqrt((Curve.m_ptKey[i].x-Curve.m_ptKey[0].x)*(Curve.m_ptKey[i].x-Curve.m_ptKey[0].x)+
-			(Curve.m_ptKey[i].y-Curve.m_ptKey[0].y)*(Curve.m_ptKey[i].y-Curve.m_ptKey[0].y)) < 0.001 ||
-			sqrt((Curve.m_ptKey[i].x-Curve.m_ptKey[Curve.m_nCountKeyPoints - 1].x)*(Curve.m_ptKey[i].x-Curve.m_ptKey[Curve.m_nCountKeyPoints - 1].x)+
-			(Curve.m_ptKey[i].y-Curve.m_ptKey[Curve.m_nCountKeyPoints - 1].y)*(Curve.m_ptKey[i].y-Curve.m_ptKey[Curve.m_nCountKeyPoints - 1].y)) < 0.001)
-			return;*/
+
 
         Point2d lambda = new Point2d();
         // 计算此点到路径方向直线的投影点
@@ -1393,205 +1376,6 @@ public class CLayer extends NodeBase {
                 pt = ptFoot;
             }
         }
-
-        // 可以改变姿态模式 2019.11.20
-//        if(nMoveMode == 1)
-//        {
-//            if(sqrt((pt.x-Curve.m_ptKey[0].x)*(pt.x-Curve.m_ptKey[0].x)+
-//                    (pt.y-Curve.m_ptKey[0].y)*(pt.y-Curve.m_ptKey[0].y)) < 0.001 ||
-//                    sqrt((pt.x-Curve.m_ptKey[Curve.m_nCountKeyPoints - 1].x)*(pt.x-Curve.m_ptKey[Curve.m_nCountKeyPoints - 1].x)+
-//                            (pt.y-Curve.m_ptKey[Curve.m_nCountKeyPoints - 1].y)*(pt.y-Curve.m_ptKey[Curve.m_nCountKeyPoints - 1].y)) < 0.001)
-//                return;
-//
-//            if (KeyID == 1)
-//            {
-//                //如果方向有很多个，不允许移动节点
-//                int NodeID = pPath->m_uStartNode;
-//                CNode &pNode= pPath->GetStartNode();
-//                CAngle Angles[4];
-//                int nHeadingAngleCount = m_World->m_layer[m_WorldInterface.m_iActLayId].GetNodeHeadingAngle(NodeID, Angles, 4);
-//                if(m_nKeyChangeAllMode)//1224
-//                {
-//                    if (nHeadingAngleCount > 1)
-//                    {
-//                        return;
-//                    }
-//                }
-//
-//                //得到和曲线起点相关联的曲线
-//                vector<int> vPathID;
-//                GetPathIncludeNode(NodeID,vPathID);
-//                //如果包含的路径中含有直线，不允许移动
-//                for (int i = 0;i< vPathID.size();i++ )
-//                {
-//                    CPath* pPathT = m_World->m_layer[m_WorldInterface.m_iActLayId].m_pPathIdx[vPathID[i]].m_ptr;
-//                    if (pPathT->m_uType == LINE_TYPE && (m_nKeyChangeAllMode == 1))
-//                    {
-//                        return;
-//                    }
-//                }
-//                //如果全部是曲线，为了保证相切性，所有的曲线控制点都需要响相应的做旋转变换
-//                //移除当前的路段
-//                vPathID.erase(find(vPathID.begin(), vPathID.end(), PathID));
-//                CPoint2d ptS = pPath->GetStartPnt();
-//                CAngle angT(ptT, ptS);
-//
-//                ////////////////////////////////////////////////////// 不改变长度
-//                float Len = sqrt((pPath->m_Curve.m_ptKey[0].x-pPath->m_Curve.m_ptKey[1].x)*
-//                        (pPath->m_Curve.m_ptKey[0].x-pPath->m_Curve.m_ptKey[1].x)+
-//                        (pPath->m_Curve.m_ptKey[0].y-pPath->m_Curve.m_ptKey[1].y)*
-//                                (pPath->m_Curve.m_ptKey[0].y-pPath->m_Curve.m_ptKey[1].y));
-//                CLine lnt(ptS, !angT, Len);
-//                ptT = lnt.m_ptEnd;
-//                /////////////////////////////////////////////////////////
-//                if (m_nKeyChangeAllMode)
-//                {
-//                    for (int i = 0;i< vPathID.size();i++ )
-//                    {
-//                        CAngle angLen;
-//                        CGenericPath* pPathT = (CGenericPath*)(m_World->m_layer[m_WorldInterface.m_iActLayId].m_pPathIdx[vPathID[i]].m_ptr);
-//                        if (pPathT->m_uStartNode == NodeID)
-//                        {
-//                            float fTotalLen = sqrt((pPathT->m_Curve.m_ptKey[0].x-pPathT->m_Curve.m_ptKey[1].x)*
-//                                    (pPathT->m_Curve.m_ptKey[0].x-pPathT->m_Curve.m_ptKey[1].x)+
-//                                    (pPathT->m_Curve.m_ptKey[0].y-pPathT->m_Curve.m_ptKey[1].y)*
-//                                            (pPathT->m_Curve.m_ptKey[0].y-pPathT->m_Curve.m_ptKey[1].y));
-//                            if(pPathT->GetHeading(pNode) == pPath->GetHeading(pNode))
-//                            {
-//                                angLen = !angT;
-//                            }
-//                            else
-//                                angLen = angT;
-//                            CLine ln(ptS, angLen, fTotalLen);
-//                            pPathT->m_Curve.m_ptKey[1] = ln.m_ptEnd;
-//                            pPathT->ModifyParmByCurve();
-//
-//						::SendMessage(GetSafeHwnd(), WM_PATH_CHANGE, pPathT->m_uId, NULL);	//1121
-//                        }
-//                        if (pPathT->m_uEndNode == NodeID)
-//                        {
-//                            int nKeyCount = pPathT->m_Curve.m_nCountKeyPoints-1;
-//                            float fTotalLen = sqrt((pPathT->m_Curve.m_ptKey[nKeyCount].x-pPathT->m_Curve.m_ptKey[nKeyCount-1].x)*
-//                                    (pPathT->m_Curve.m_ptKey[nKeyCount].x-pPathT->m_Curve.m_ptKey[nKeyCount-1].x)+
-//                                    (pPathT->m_Curve.m_ptKey[nKeyCount].y-pPathT->m_Curve.m_ptKey[nKeyCount-1].y)*
-//                                            (pPathT->m_Curve.m_ptKey[nKeyCount].y-pPathT->m_Curve.m_ptKey[nKeyCount-1].y));
-//                            if(pPathT->GetHeading(pNode) == pPath->GetHeading(pNode))
-//                            {
-//                                angLen = angT;
-//                            }
-//                            else
-//                                angLen = !angT;
-//                            CLine ln(ptS, angLen, fTotalLen);
-//                            pPathT->m_Curve.m_ptKey[nKeyCount-1] = ln.m_ptEnd;
-//                            pPathT->ModifyParmByCurve();
-//
-//						::SendMessage(GetSafeHwnd(), WM_PATH_CHANGE, pPathT->m_uId, NULL);	//1121
-//                        }
-//
-//                    }
-//                }
-//
-//                pt = ptT;
-//            }
-//            else if (KeyID == Curve.m_nCountKeyPoints - 2)
-//            {
-//                //如果方向有很多个，不允许移动节点
-//                int NodeID = pPath->m_uEndNode;
-//                CNode &pNode= pPath->GetEndNode();
-//                CAngle Angles[4];
-//                int nHeadingAngleCount = m_World->m_layer[m_WorldInterface.m_iActLayId].GetNodeHeadingAngle(NodeID, Angles, 4);
-//                if (m_nKeyChangeAllMode)
-//                {
-//                    if (nHeadingAngleCount > 1)
-//                    {
-//                        return;
-//                    }
-//                }
-//
-//                //得到和曲线起点相关联的曲线
-//                vector<int> vPathID;
-//                GetPathIncludeNode(NodeID,vPathID);
-//                //如果包含的路径中含有直线，不允许移动
-//                for (int i = 0;i< vPathID.size();i++ )
-//                {
-//                    CPath* pPathT = m_World->m_layer[m_WorldInterface.m_iActLayId].m_pPathIdx[vPathID[i]].m_ptr;
-//                    if (pPathT->m_uType == LINE_TYPE && (m_nKeyChangeAllMode == 1))
-//                    {
-//                        return;
-//                    }
-//                }
-//                //如果全部是曲线，为了保证相切性，所有的曲线控制点都需要响相应的做旋转变换
-//                //移除当前的路段
-//                vPathID.erase(find(vPathID.begin(), vPathID.end(), PathID));
-//                CPoint2d ptE = pPath->GetEndNode();
-//                CAngle angT(ptT, ptE);
-//
-//                /////////////////////////////////////12.23 不改变长度
-//                int nKeyC = pPath->m_Curve.m_nCountKeyPoints-1;
-//                float Len = sqrt((pPath->m_Curve.m_ptKey[nKeyC].x-pPath->m_Curve.m_ptKey[nKeyC-1].x)*
-//                        (pPath->m_Curve.m_ptKey[nKeyC].x-pPath->m_Curve.m_ptKey[nKeyC-1].x)+
-//                        (pPath->m_Curve.m_ptKey[nKeyC].y-pPath->m_Curve.m_ptKey[nKeyC-1].y)*
-//                                (pPath->m_Curve.m_ptKey[nKeyC].y-pPath->m_Curve.m_ptKey[nKeyC-1].y));
-//                CLine lnt(ptE, !angT, Len);
-//                ptT = lnt.m_ptEnd;
-//                ////////////////12.23
-//                if(m_nKeyChangeAllMode)
-//                {
-//                    for (int i = 0;i< vPathID.size();i++ )
-//                    {
-//                        CAngle angLen;
-//                        CGenericPath* pPathT = (CGenericPath*)(m_World->m_layer[m_WorldInterface.m_iActLayId].m_pPathIdx[vPathID[i]].m_ptr);
-//                        if (pPathT->m_uStartNode == NodeID)
-//                        {
-//                            float fTotalLen = sqrt((pPathT->m_Curve.m_ptKey[0].x-pPathT->m_Curve.m_ptKey[1].x)*
-//                                    (pPathT->m_Curve.m_ptKey[0].x-pPathT->m_Curve.m_ptKey[1].x)+
-//                                    (pPathT->m_Curve.m_ptKey[0].y-pPathT->m_Curve.m_ptKey[1].y)*
-//                                            (pPathT->m_Curve.m_ptKey[0].y-pPathT->m_Curve.m_ptKey[1].y));
-//                            if(pPathT->GetHeading(pNode) == pPath->GetHeading(pNode))
-//                            {
-//                                angLen = angT;
-//                            }
-//                            else
-//                                angLen = !angT;
-//                            CLine ln(ptE, angLen, fTotalLen);
-//                            pPathT->m_Curve.m_ptKey[1] = ln.m_ptEnd;
-//                            pPathT->ModifyParmByCurve();
-//                        }
-//                        if (pPathT->m_uEndNode == NodeID)
-//                        {
-//                            int nKeyCount = pPathT->m_Curve.m_nCountKeyPoints-1;
-//                            float fTotalLen = sqrt((pPathT->m_Curve.m_ptKey[nKeyCount].x-pPathT->m_Curve.m_ptKey[nKeyCount-1].x)*
-//                                    (pPathT->m_Curve.m_ptKey[nKeyCount].x-pPathT->m_Curve.m_ptKey[nKeyCount-1].x)+
-//                                    (pPathT->m_Curve.m_ptKey[nKeyCount].y-pPathT->m_Curve.m_ptKey[nKeyCount-1].y)*
-//                                            (pPathT->m_Curve.m_ptKey[nKeyCount].y-pPathT->m_Curve.m_ptKey[nKeyCount-1].y));
-//                            if(pPathT->GetHeading(pNode) == pPath->GetHeading(pNode))
-//                            {
-//                                angLen = !angT;
-//                            }
-//                            else
-//                                angLen = angT;
-//                            CLine ln(ptE, angLen, fTotalLen);
-//                            pPathT->m_Curve.m_ptKey[nKeyCount-1] = ln.m_ptEnd;
-//                            pPathT->ModifyParmByCurve();
-//                        }
-//					::SendMessage(GetSafeHwnd(), WM_PATH_CHANGE, pPathT->m_uId, NULL);	//1121
-//                    }
-//                }
-//
-//                pt = ptT;
-//            }
-//        }
-        ////////////////////////////////1203
-//        if (pPath.m_Curve.BezierDragCtrl(KeyID, 1))
-//        {
-//            pPath.SetColor(RGB(255,255,255));
-//        }
-//        else
-//        {
-//            pPath.SetColor(RGB(255,0,0));
-//        }
-        ///////////////////////////////////
-        ///////////////////////////
         Curve.m_ptKey[KeyID] = pt;
         Curve.CreateSamplePoints();
         pPath.ModifyParmByCurve();
@@ -1611,29 +1395,14 @@ public class CLayer extends NodeBase {
             this.m_iLayerIdx = WorldFileIO.readInt(dis);
 
             m_PathBase = new PathBase();
-//            m_PathBase.m_MyNode = new NodeBase().GetNodeBaseObject();
             m_PathBase.m_MyNode = GetNodeBaseObject(); //此处GetNodeBaseObject()返回的是CLayer的对象
-            // Step 1: Init the node bank data
-            //	ar >> *CPath::m_pNodeBase;
             m_PathBase.m_MyNode.CreateParm(dis);
-            // super.Create(dis);
 
-            // Step 2: Init the path bank data
-//		PathBase PathBase = GetPathBaseObject();
             m_PathBase.Create(dis);
 
-            // 占位用
-//            float m_radio = 0.0f;
+
             Point2d m_lenth = new Point2d();
             Point2d m_startNode = new Point2d();
-//            ch1 = dis.read();
-//            ch2 = dis.read();
-//            ch3 = dis.read();
-//            ch4 = dis.read();
-//            if ((ch1 | ch2 | ch3 | ch4) < 0)
-//                throw new EOFException();
-//            tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
-//            m_radio = Float.intBitsToFloat(tempI);
 
             float m_radio = WorldFileIO.readFloat(dis);
             m_lenth.Create(dis);
@@ -1660,10 +1429,6 @@ public class CLayer extends NodeBase {
                 }
                 m_PathBase.m_MyNode = GetNodeBaseObject();
 
-//            m_PathBase.m_MyNode = GetNodeBaseObject();
-//            if (m_PathBase.m_MyNode == null) {
-//                return;
-//            }
                 m_PathBase.m_MyNode.SaveParm(dos);
                 m_PathBase.Save(dos);
                 // 占位用
@@ -1679,86 +1444,5 @@ public class CLayer extends NodeBase {
             e.printStackTrace();
         }
     }
-
-    // 由拟合出来的连续Bezier曲线生成路段
-//    public int CreatePathByBeziers(int StartId, Vector<Bezier> vBezier) {
-//        //  int StartNodeId = -1;   //路段起点ID
-//        int StartNodeId = StartId;   //路段起点ID
-//        int EndNodeId = -1;    //路段终点ID
-//        Posture pstStart = new Posture();
-//        Posture pstEnd = new Posture();
-//        for (int i = 0; i < vBezier.size(); i++) {
-//            if (i == 0 && StartNodeId != -1) {
-//                Node node = m_PathBase.m_MyNode.GetNode(StartNodeId);
-//                if (node != null) {
-//                    vBezier.get(i).m_ptKey[0].x = node.x;
-//                    vBezier.get(i).m_ptKey[0].y = node.y;
-//                }
-//            }
-//            pstStart.x = vBezier.get(i).m_ptKey[0].x;
-//            pstStart.y = vBezier.get(i).m_ptKey[0].y;
-//            Line lineS = new Line(vBezier.get(i).m_ptKey[0], vBezier.get(i).m_ptKey[1]);
-//            pstStart.fThita = lineS.m_angSlant.m_fRad;
-//            pstEnd.x = vBezier.get(i).m_ptKey[3].x;
-//            pstEnd.y = vBezier.get(i).m_ptKey[3].y;
-//            Line lineE = new Line(vBezier.get(i).m_ptKey[2], vBezier.get(i).m_ptKey[3]);
-//            pstEnd.fThita = lineE.m_angSlant.m_fRad;
-//            float fDist1 = vBezier.get(i).m_ptKey[0].DistanceTo(vBezier.get(i).m_ptKey[1]);
-//            float fDist2 = vBezier.get(i).m_ptKey[2].DistanceTo(vBezier.get(i).m_ptKey[3]);
-//            AddGenericPath(pstStart, pstEnd, fDist1, fDist2, StartNodeId, EndNodeId);
-//            StartNodeId = m_PathBase.m_pPathIdx[m_PathBase.m_uCount - 1].m_ptr.m_uEndNode;
-//            EndNodeId = -1;
-//        }
-//        m_PathBase.m_pPathIdx[m_PathBase.m_uCount - 1].m_ptr.GetEndNode().m_uType = 4;
-//        EndNodeId = m_PathBase.m_pPathIdx[m_PathBase.m_uCount - 1].m_ptr.m_uEndNode;
-//        return EndNodeId;
-//    }
-
-    // 由拟合出来的直线生成路段
-//    public int CreatePathByLine(int StartId, Line line) {
-//        int StartNodeId = StartId;   //路段起点ID
-//        int EndNodeId = -1;    //路段终点ID
-//        Posture pstStart = new Posture();
-//        Posture pstEnd = new Posture();
-//        if (StartNodeId == -1) {
-//            pstStart.x = line.m_ptStart.x;
-//            pstStart.y = line.m_ptStart.y;
-//        } else {
-//            Node node = m_PathBase.m_MyNode.GetNode(StartNodeId);
-//            if (node != null) {
-//                pstStart.x = node.x;
-//                pstStart.y = node.y;
-//            }
-//        }
-//
-//        pstEnd.x = line.m_ptEnd.x;
-//        pstEnd.y = line.m_ptEnd.y;
-//        AddLinePath(pstStart, pstEnd, StartNodeId, EndNodeId, m_fVeloLimit, m_uGuideType);
-//        EndNodeId = m_PathBase.m_pPathIdx[m_PathBase.m_uCount - 1].m_ptr.m_uEndNode;
-//        m_PathBase.m_pPathIdx[m_PathBase.m_uCount - 1].m_ptr.GetEndNode().m_uType = 4;
-//        return EndNodeId;
-//    }
-
-    //
-    // 设置所有新增路段的默认参数
-    //
-    //fVeloLimit:正逆限速 uGuideType:导航类型 uExtType:扩展属性
-//    public void SetPathBaseParam(float[] fVeloLimit, short uGuideType, int f_area, int b_area, int move_direc, int path_ex_attr) {
-//        m_fVeloLimit[0] = fVeloLimit[0];     //正向限速
-//        m_fVeloLimit[1] = fVeloLimit[1];     //逆向限速
-//        m_uGuideType = uGuideType; //导航类型
-//        Params.FORWARD_AREA = f_area;
-//        Params.BACKWARD_AREA = b_area;
-//        Params.MOVE_DIRECTION = move_direc;
-//        Params.DEFAULT_EXT_TYPE = path_ex_attr;
-//    }
-
-    //
-    // 设置所有新增节点的默认参数
-    //
-    // NodeType:节点类型
-//    public void SetNodeBaseParam(short NodeType) {
-//        Params.NODE_TYPE = NodeType;
-//    }
 
 }

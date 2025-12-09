@@ -23,29 +23,18 @@ public class PathBase {
     //   Implementation of class "PathBase".
 
     public PathBase() {
-        // Init the class fields to initial values
         m_uCount = 0;
         m_pPathIdx = null;
     }
 
-//	public ~PathBase()
-//	{
-//		CleanUp();
-//	}
-
-    //
-    //   Clean up the memory occupied by the path bank.
-    //
     private void CleanUp() {
         for (short i = 0; i < m_uCount; i++) {
             if (m_pPathIdx[i].m_ptr != null)
                 m_pPathIdx[i].m_ptr = null;
-            //	delete m_pPathIdx[i].m_ptr;
         }
 
         if (m_pPathIdx != null)
             m_pPathIdx = null;
-        //	free(m_pPathIdx);
 
         m_uCount = 0;
         m_pPathIdx = null;
@@ -55,9 +44,6 @@ public class PathBase {
         return this;
     }
 
-    //
-    //   Get the pointer to the specified path object (form #1).
-    //
     public Path GetPathPointer(short uPath) {
         for (short i = 0; i < m_uCount; i++) {
             Path pPath = m_pPathIdx[i].m_ptr;
@@ -69,9 +55,6 @@ public class PathBase {
         return null;
     }
 
-    //
-    //   Get the pointer to the specified path object (form #2).
-    //
     public Path GetPathPointer(int uNode1, int uNode2) {
         for (short i = 0; i < m_uCount; i++) {
             Path pPath = m_pPathIdx[i].m_ptr;
@@ -98,7 +81,7 @@ public class PathBase {
         int[] ret = new int[2];
         ret[0] = -1;
         ret[1] = -1;
-        // 依次对每个路径进行判断
+        
         for (int i = 0; i < m_uCount; i++) {
             Path pPath = m_pPathIdx[i].m_ptr;
 
@@ -111,7 +94,6 @@ public class PathBase {
                 nHitType = _nHitType;           // 0:曲线上， >0:控制点处
                 ret[0] = i;
                 ret[1] = nHitType;
-                // return i;                       // 曲线的序号
                 return ret;
             }
         }
@@ -121,7 +103,6 @@ public class PathBase {
 
     public void Create(DataInputStream dis) {
         try {
-            // ����ʱ��Ӧ����д���˳��
             int ch1 = dis.read();
             int ch2 = dis.read();
             if ((ch1 | ch2) < 0) {

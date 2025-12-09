@@ -22,25 +22,7 @@ import java.io.IOException;
 public class Node extends Point2d {
     public final short MAX_NODE_ID = (short) 0xFF00;
 
-//	//#define WORLD_FORMAT_VER1_0             // Ver1.0 : Node without heading
-//	#define WORLD_FORMAT_VER2_0               // Ver2.0 : Node with heading
-//	#define WORLD_FORMAT_VER2_1               // Ver2.1 : Node with RF-ID code
-//	#define WORLD_FORMAT_VER3_0               // Ver3.0 : �ҵر���롢�ٶȡ��ر���Ч���
-//	#define WORLD_USE_OFFSET
-//	#define WORLD_USE_MARKOFFSET
-//
-//	// �ڵ����ͺ궨��
-//	#define MARK_NODE          BIT(0)      // �ýڵ��Ƿ��еر�
-//	#define CONVEYOR_NODE      BIT(1)      // �ýڵ��Ƿ�������վ
-//	#define SPINTURN_NODE      BIT(2)      // �ýڵ��Ƿ��Ǹ�������
-//	#define CHARGER_NODE       BIT(3)      // �ýڵ��Ƿ��Ǹ����վ
-//	#define TEMP_MARK1_NODE    BIT(4)      // �ýڵ��Ƿ��ǵ�1����ʱ�ر��
-//	#define TEMP_MARK2_NODE    BIT(5)      // �ýڵ��Ƿ��ǵ�2����ʱ�ر��
-//	#define RFID_MARK_NODE     BIT(6)      // �ýڵ��Ƿ���RFID��ǩ
-//	#define PNT_UNKNOWN_NODE   BIT(7)      // �Ƿ���һ����λ����Ϣ�Ľڵ�
 
-
-    //public  final short MARK_NODE = (((short) 1) << (0));
     public final short MARK_NODE = 1;           // 该节点是否有地标
     public final short CONVEYOR_NODE = 2;      // 该节点是否是移载站
     public final short SPINTURN_NODE = 4;       // 该节点是否是个自旋点
@@ -177,20 +159,9 @@ public class Node extends Point2d {
 //
 //	#ifdef _MFC_VER
 //		// Archive I/O routine
-//		friend  CArchive& operator >> (CArchive& ar, Node& Obj);
-//		friend  CArchive& operator << (CArchive& ar, Node& Obj);
-//
-//		// Test whether the point is within the node's selection area
-//		virtual int PointHitTest(Point& pnt, CScreenReference& ScrnRef);
-//
-//		public void Draw(CScreenReference& ScrnRef, CDC* pDC, Color cr);
-//		public void Draw(DrawNodeType DrawNode);
-//		public void DrawID(CScreenReference& ScrnRef, CDC* pDC, LOGFONT* pLogFont = NULL);
-//	#endif	};
-//	Node(short uId, Point2d  pt, short uType, short uExtType, float fHeading, char  pTag) 
-    public Node(int uId, Point2d pt) {
-//		(Point2d)this = Point2d(pt);
 
+
+    public Node(int uId, Point2d pt) {
         x = pt.x;
         y = pt.y;
         m_uId = uId;
@@ -200,10 +171,6 @@ public class Node extends Point2d {
         m_fHeading = 0.0f;
         m_Tag = new RfId();
         m_Tag.Init(null);
-//		m_uType = uType;
-//		m_uExtType = uExtType;
-//		m_fHeading = fHeading;
-        //	m_Tag.Init(pTag);
     }
 
     public Node(int uId, Point2d pt, Short uLayerID) {
@@ -397,31 +364,24 @@ public class Node extends Point2d {
 //
 
     public void Create(DataInputStream dis) {
-//	    File file = new File(strFile);
-        //   try {
-//	        BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
-//       DataInputStream dis = new DataInputStream(bis);
         try {
             // ����ʱ��Ӧ����д���˳��
             int ch1 = dis.read();
             int ch2 = dis.read();
-            if ((ch1 | ch2) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2) < 0) throw new EOFException();
             this.m_uId = ((ch2 << 8) + (ch1 << 0));
             //   this.m_uId =  (short)((ch2 << 8) + (ch1 << 0));
 
             ch1 = dis.read();
             ch2 = dis.read();
-            if ((ch1 | ch2) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2) < 0) throw new EOFException();
             this.m_uType = (short) ((ch2 << 8) + (ch1 << 0));
 
             ch1 = dis.read();
             ch2 = dis.read();
             int ch3 = dis.read();
             int ch4 = dis.read();
-            if ((ch1 | ch2 | ch3 | ch4) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             int tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
             this.x = Float.intBitsToFloat(tempI);
 
@@ -429,23 +389,20 @@ public class Node extends Point2d {
             ch2 = dis.read();
             ch3 = dis.read();
             ch4 = dis.read();
-            if ((ch1 | ch2 | ch3 | ch4) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
             this.y = Float.intBitsToFloat(tempI);
 
             ch1 = dis.read();
             ch2 = dis.read();
-            if ((ch1 | ch2) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2) < 0) throw new EOFException();
             this.m_uExtType = (short) ((ch2 << 8) + (ch1 << 0));
 
             ch1 = dis.read();
             ch2 = dis.read();
             ch3 = dis.read();
             ch4 = dis.read();
-            if ((ch1 | ch2 | ch3 | ch4) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
             this.m_fHeading = Float.intBitsToFloat(tempI);
 
@@ -455,8 +412,7 @@ public class Node extends Point2d {
             ch2 = dis.read();
             ch3 = dis.read();
             ch4 = dis.read();
-            if ((ch1 | ch2 | ch3 | ch4) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
             this.m_fChkMarkDist = Float.intBitsToFloat(tempI);
 
@@ -464,8 +420,7 @@ public class Node extends Point2d {
             ch2 = dis.read();
             ch3 = dis.read();
             ch4 = dis.read();
-            if ((ch1 | ch2 | ch3 | ch4) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
             this.m_fChkMarkVel = Float.intBitsToFloat(tempI);
 
@@ -473,8 +428,7 @@ public class Node extends Point2d {
             ch2 = dis.read();
             ch3 = dis.read();
             ch4 = dis.read();
-            if ((ch1 | ch2 | ch3 | ch4) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
             this.m_fMarkWidth = Float.intBitsToFloat(tempI);
 
@@ -482,8 +436,7 @@ public class Node extends Point2d {
             ch2 = dis.read();
             ch3 = dis.read();
             ch4 = dis.read();
-            if ((ch1 | ch2 | ch3 | ch4) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
             this.m_fOffset1 = Float.intBitsToFloat(tempI);
 
@@ -491,8 +444,7 @@ public class Node extends Point2d {
             ch2 = dis.read();
             ch3 = dis.read();
             ch4 = dis.read();
-            if ((ch1 | ch2 | ch3 | ch4) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
             this.m_fOffset2 = Float.intBitsToFloat(tempI);
 
@@ -500,8 +452,7 @@ public class Node extends Point2d {
             ch2 = dis.read();
             ch3 = dis.read();
             ch4 = dis.read();
-            if ((ch1 | ch2 | ch3 | ch4) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
             this.m_fFwdMarkOffset = Float.intBitsToFloat(tempI);
 
@@ -509,45 +460,38 @@ public class Node extends Point2d {
             ch2 = dis.read();
             ch3 = dis.read();
             ch4 = dis.read();
-            if ((ch1 | ch2 | ch3 | ch4) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
             this.m_fBwdMarkOffset = Float.intBitsToFloat(tempI);
 
             ch1 = dis.read();
             ch2 = dis.read();
-            if ((ch1 | ch2) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2) < 0) throw new EOFException();
             this.m_uLayerID = (short) ((ch2 << 8) + (ch1 << 0));
 
             ch1 = dis.read();
             ch2 = dis.read();
-            if ((ch1 | ch2) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2) < 0) throw new EOFException();
             this.m_uStationType = (short) ((ch2 << 8) + (ch1 << 0));
 
             ch1 = dis.read();
             ch2 = dis.read();
-            if ((ch1 | ch2) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2) < 0) throw new EOFException();
             this.m_uStationTempId = (short) ((ch2 << 8) + (ch1 << 0));
 
             ch1 = dis.read();
             ch2 = dis.read();
-            if ((ch1 | ch2) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2) < 0) throw new EOFException();
             this.m_uStationId = (short) ((ch2 << 8) + (ch1 << 0));
 
             ch1 = dis.read();
             ch2 = dis.read();
-            if ((ch1 | ch2) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2) < 0) throw new EOFException();
             m_uCarrierType = (short) ((ch2 << 8) + (ch1 << 0));
 
             ch1 = dis.read();
             ch2 = dis.read();
-            if ((ch1 | ch2) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2) < 0) throw new EOFException();
             m_uOnLine = (short) ((ch2 << 8) + (ch1 << 0));
 
 
@@ -561,10 +505,6 @@ public class Node extends Point2d {
 
 
     public void Save(DataOutputStream dis) {
-//	    File file = new File(strFile);
-        //   try {
-//	        BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
-//       DataInputStream dis = new DataInputStream(bis);
         try {
             TranBytes tan = new TranBytes();
             int ch1 = this.m_uId;
@@ -628,86 +568,14 @@ public class Node extends Point2d {
         }
     }
 
-//	CArchive& operator >> (CArchive& ar, Node& Obj)
-//	{
-//		ar >> Obj.m_uId >> Obj.m_uType;
-//		ar >> Obj.x >> Obj.y;
-//
-//	#ifdef WORLD_FORMAT_VER2_0
-//		ar >> Obj.m_uExtType;
-//		ar >> Obj.m_fHeading;
-//
-//	#ifdef WORLD_FORMAT_VER2_1
-//		ar >> Obj.m_Tag;
-//
-//	#ifdef WORLD_FORMAT_VER3_0
-//		ar >> Obj.m_fChkMarkDist >> Obj.m_fChkMarkVel >> Obj.m_fMarkWidth;
-//	#endif
-//
-//	#endif
-//
-//	#ifdef WORLD_USE_OFFSET
-//		ar >> Obj.m_fOffset1;
-//		ar >> Obj.m_fOffset2;
-//	#endif
-//
-//	#ifdef WORLD_USE_MARKOFFSET
-//		ar >> Obj.m_fFwdMarkOffset;
-//		ar >> Obj.m_fBwdMarkOffset;
-//	#endif
-//
-//	#endif
-//
-//		return ar;
-//	}
-//
-//	CArchive& operator << (CArchive& ar, Node& Obj)
-//	{
-//		ar << Obj.m_uId << Obj.m_uType;
-//		ar << Obj.x << Obj.y;
-//
-//	#ifdef WORLD_FORMAT_VER2_0
-//		ar << Obj.m_uExtType;
-//		ar << Obj.m_fHeading;
-//
-//	#ifdef WORLD_FORMAT_VER2_1
-//		ar << Obj.m_Tag;
-//
-//	#ifdef WORLD_FORMAT_VER3_0
-//		ar << Obj.m_fChkMarkDist << Obj.m_fChkMarkVel << Obj.m_fMarkWidth;
-//	#endif
-//
-//	#endif
-//
-//	#ifdef WORLD_USE_OFFSET
-//		ar << Obj.m_fOffset1;
-//		ar << Obj.m_fOffset2;
-//	#endif
-//
-//	#ifdef WORLD_USE_MARKOFFSET
-//		ar << Obj.m_fFwdMarkOffset;
-//		ar << Obj.m_fBwdMarkOffset;
-//	#endif
-//
-//	#endif
-//
-//		return ar;
-//	}
-
-    //
-    //   Test whether the given window point is within the selection area of the
-    //   node.
-    //
     public boolean PointHitTest(Point point, CoordinateConversion ScrnRef) {
         Point2d ptNode = GetPoint2dObject();
-//        Point pntTemp = new Point();
-//        pntTemp = ScrnRef.GetWindowPoint(ptNode);
         PointF pntTemp = ScrnRef.worldToScreen(ptNode.x, ptNode.y);
         PointF p11 = new PointF();
         PointF p12 = new PointF();
-        p11.x =  (pntTemp.x - offset);
-        p11.y =   (pntTemp.y - offset);
-        p12.x =   (pntTemp.x + offset);
+        p11.x = (pntTemp.x - offset);
+        p11.y = (pntTemp.y - offset);
+        p12.x = (pntTemp.x + offset);
         p12.y = (pntTemp.y + offset);
         if (point.x >= p11.x && point.x <= p12.x && point.y >= p11.y && point.y <= p12.y) {
             return true;
@@ -715,12 +583,8 @@ public class Node extends Point2d {
         return false;
     }
 
-    //
-    //   Draw the node.
-    //   Draw：这个位置里面会崩溃
     public void Draw(CoordinateConversion ScrnRef, Canvas Grp, int color) {
         try {
-//            Point pnt1 = ScrnRef.GetWindowPoint(GetPoint2dObject());
             PointF pnt1 = ScrnRef.worldToScreen(GetPoint2dObject().x, GetPoint2dObject().y);
             int width = Grp.getWidth();
             int Height = Grp.getHeight();
@@ -729,10 +593,7 @@ public class Node extends Point2d {
             }
             Paint paint = new Paint();
             paint.setAntiAlias(true);
-            /*����paint����ɫ*/
             paint.setColor(color);
-            /*����paint�� style ΪSTROKE������*/
-            paint.setStyle(Paint.Style.STROKE);
             paint.setStyle(Paint.Style.FILL);
             //	RectF ret = new RectF(pnt1.x-2, pnt1.y-2, 4, 4);
             RectF ret = new RectF(pnt1.x - 5, pnt1.y - 5, pnt1.x + 5, pnt1.y + 5);
@@ -746,46 +607,4 @@ public class Node extends Point2d {
             System.out.println(ex.toString());
         }
     }
-
-    public void DrawID(CoordinateConversion ScrnRef, Canvas Grp ) {
-        PointF pnt1 = ScrnRef.worldToScreen(x, y);
-        String str = String.valueOf(m_uId);
-
-        int width = Grp.getWidth();
-        int Height = Grp.getHeight();
-        if ((pnt1.x < 0 || pnt1.x > width) && (pnt1.y < 0 || pnt1.y > Height)) {
-            return;
-        }
-        Paint paint = new Paint();
-//        paint.setTypeface(pLogFont);
-        paint.setTextSize(25); //设置画笔字体的大小
-        Color clr = new Color();
-        paint.setColor(clr.rgb(0, 255, 255));
-
-//	   Grp.drawLine(140, 140, 1000,1000);
-        //   Grp.drawString(str,600, 400);
-        //	Grp.drawOval(100-3, 100-3, 30, 30);
-        Grp.drawText(str, pnt1.x + 4, pnt1.y + 14, paint);
-
-
-	/*
-		Point pnt1 = ScrnRef.GetWindowPoint(pt);
-		CFont font;
-		CFont* pOldFont = NULL;
-		if (font.CreateFontIndirect(&logNodeFont))
-			pOldFont = pDC->SelectObject(&font);
-		pDC->SetBkMode(TRANSPARENT);
-		pDC->SetTextColor(RGB(0,255,255));
-		CString strId;
-		strId.Format(_T("%d"),m_uId);
-		CString str;
-		str.Format(_T("%d"), m_uId);
-		pDC->TextOut(pnt1.x,pnt1.y, str);
-		if (pOldFont != NULL)
-			pDC->SelectObject(pOldFont);
-		font.DeleteObject();
-	*/
-    }
-
-
 }

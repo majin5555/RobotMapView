@@ -18,9 +18,6 @@ public class Transform extends Posture {
         super.SetPosture(ptOrigin, angSlant);
     }
 
-    //
-    //   Init the origin and slant angle of the local frame.
-    //
     public void Init(Posture pstLocal) {
         SetPosture(pstLocal.x, pstLocal.y, pstLocal.fThita);
     }
@@ -39,10 +36,6 @@ public class Transform extends Posture {
         Create(x, y, angle);
     }
 
-    //
-    //   GetWorldPoint: A transformation from the local frame to the
-    //   world frame.
-    //
     public Point2d GetWorldPoint(Point2d ptLocal) {
         Point2d pt = new Point2d();
         pt.x = x + ptLocal.x * (float) Math.cos(fThita) - ptLocal.y * (float) Math.sin(fThita);
@@ -51,10 +44,6 @@ public class Transform extends Posture {
         return pt;
     }
 
-    //
-    //   GetWorldPoint: A reverse transformation from the world frame to the
-    //   local frame.
-    //
     public Point2d GetLocalPoint(Point2d ptWorld) {
         Point2d pt = new Point2d();
         float fDx = ptWorld.x - x;
@@ -66,10 +55,6 @@ public class Transform extends Posture {
         return pt;
     }
 
-    //
-    //   GetWorldPosture: A posture transformation from the local frame to
-    //   the world frame.
-    //
     public Posture GetWorldPosture(Posture pstLocal) {
         Posture pst = new Posture();
 
@@ -80,10 +65,6 @@ public class Transform extends Posture {
         return pst;
     }
 
-    //
-    //   GetLocalPosture: A reverse posture transformation from the world
-    //   frame to the local frame.
-    //
     public Posture GetLocalPosture(Posture pstWorld) {
         Posture pst = new Posture();
 

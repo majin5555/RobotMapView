@@ -56,15 +56,11 @@ public class Scp {
     public void SetCurX(float fX) {
         // Step 1: Initializations
 
-
-//		#if defined _TRAJ_POINT_
         //   Powers of the rate "X/Xe"
         float fRate = fX / m_fXe;
         float fRate_3 = fRate * fRate * fRate;
         float fRate_4 = fRate_3 * fRate;
         float fRate_5 = fRate_4 * fRate;
-//		#endif
-
 
         //   Powers of "X"
         float fX_2 = fX * fX;
@@ -76,12 +72,8 @@ public class Scp {
         float fXe_4 = fXe_3 * m_fXe;
         float fXe_5 = fXe_4 * m_fXe;
 
-
-//		#if defined _TRAJ_POINT_
         //  Caculate Y(X) at the current point (in local frame)
         float fY = m_fYe * (10 * fRate_3 - 15 * fRate_4 + 6 * fRate_5);
-//		#endif
-
 
         //  Caculate the 1st derivative of Y(X) at the current point
         float fY1 = m_fYe * (30 * fX_2 / fXe_3 - 60 * fX_3 / fXe_4 + 30 * fX_4 / fXe_5);
@@ -92,16 +84,12 @@ public class Scp {
         //  Caculate the square of the 1st derivative of Y(X)
         float fY1_2 = fY1 * fY1;
 
-
-//		#if defined _TRAJ_POINT_
         // Step 2: Obtain the coordinates of the current point
         m_ptLocal = new Point2d();
         m_ptLocal.x = fX;
         m_ptLocal.y = fY;
 
         m_pt = m_Transform.GetWorldPoint(m_ptLocal);
-//		#endif
-
 
         // Step 3: Caculate the tangent angle at the current point
         m_angTangent0 = new Angle((float) Math.atan(fY1));
@@ -172,44 +160,5 @@ public class Scp {
         return fResult;
     }
 
-    //
-    //   Find the X coordinate of the reference point.
-    //
-//		public boolean FindRefX(Point2d pt, float fRefX, float fErrX)
-//		{
-//			Point2d ptLocal = m_Transform.GetLocalPoint(pt);
-//
-//			if (((m_fXe > 0) && (ptLocal.x < 0)) || ((m_fXe < 0) && (ptLocal.x > 0)))
-//				fRefX = 0;
-//			else if (((m_fXe > 0) && (ptLocal.x > m_fXe)) || ((m_fXe < 0) && (ptLocal.x < m_fXe)))
-//				fRefX = m_fXe;
-//			else if (((m_fYe > 0) && (ptLocal.y < 0)) || ((m_fYe < 0) && (ptLocal.y > 0)))
-//				fRefX = 0;
-//			else if (((m_fYe > 0) && (ptLocal.y > m_fYe)) || ((m_fYe < 0) && (ptLocal.y < m_fYe)))
-//				fRefX = m_fXe;
-//			else if (Math.abs(ptLocal.y) < 0.0001f)
-//				fRefX = 0;
-//			else if (Math.abs(ptLocal.y - m_fYe) < 0.0001f)
-//				fRefX = m_fXe;
-//			else
-//				fRefX = NewtonRoot(ptLocal.x, ptLocal.y);
-//
-//			fErrX = ptLocal.x - fRefX;
-//
-//			return true;
-//		}
-
-    //
-    //   Find the error in the Y direction.
-    //
-//		boolean FindErrY(Point2d pt, float fErrY)
-//		{
-//			Point2d pt1 = m_Transform.GetLocalPoint(pt);
-//			float fAbsXe = (float)Math.abs(m_fXe);
-//			pt1.x = Limit(pt1.x, fAbsXe);
-//			SetCurX(pt1.x);
-//			fErrY = pt1.y - m_ptLocal.y;
-//			return true;
-//		}
 
 }

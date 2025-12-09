@@ -27,28 +27,10 @@ public class LinePath extends Path {
     private static final int offset = 20;
 
     public void SwabWord(short uWord) {
-//		byte b1 = (byte) (uWord&0XFF);
-//		byte b2 = (byte) (uWord<<8);
-//		short tWordH = b1;
-//		short tWordL = b2;
-
-//		union
-//		{
-//			USHORT uWord;
-//			UCHAR c[2];
-//		} DataBuf;
-//
-//		DataBuf.uWord = uWord;
-//		_swab((char*)DataBuf.c, (char*)DataBuf.c, 2);
-//		uWord = DataBuf.uWord;
     }
 
     public LinePath() {
     }
-//	public LinePath(short nNextID, int nStartNodeId, int nEndNodeId, float fVeloLimit, short tapeGuidance, int uObstacle, THeadingRule positiveHeading, int uExtType)
-//	{
-//		super.Create(nNextID,(short)nStartNodeId,(short)nEndNodeId, fVeloLimit,tapeGuidance,(short)uObstacle,positiveHeading,(short) uExtType);
-//	}
 
     public LinePath(int uId, int uStartNode, int uEndNode, float[] fVeloLimit, short nGuideType,
                     short uObstacle, short uDir, short uExtType, NodeBase nodeBase) {
@@ -69,7 +51,7 @@ public class LinePath extends Path {
     }
 
 
-    //Setup: Find the vehicle's headings at the 2 nodes.
+
     public void Setup() {
         // Do initializations
         // Get the path's start/end points
@@ -86,12 +68,7 @@ public class LinePath extends Path {
         m_fSize = ln.Length();
     }
 
-    //
-//GetHeading: Determine the vehicle's heading angle at the specified
-//node.
-//
-//Note: MAKE SURE THAT "nd" IS A VERTEX OF THE PATH !
-//
+
     @Override
     public Angle GetHeading(Node node) {
         return m_angHeading;
@@ -130,28 +107,7 @@ public class LinePath extends Path {
 
 ///////////////20191014
 
-    //CTraj* MakeTraj()
-//{
-//CLineTraj* pLineTraj = new CLineTraj;
-//Point2d& ptStart = GetStartPnt();
-//Point2d& ptEnd = GetEndPnt();
-////CPnt ptStart = pDoc->GetPathStartPntByID(m_uId);
-////CPnt ptEnd = pDoc->GetPathEndPntByID(m_uId);
-//if (m_uPathHeading == 1)
-//{
-////Point2d ptTemp = ptStart;
-////ptStart = ptEnd;
-////ptEnd = ptTemp;
-//pLineTraj->CreateTraj(ptStart, ptEnd, BACKWARD);
-//}
-//else
-//{
-//
-//pLineTraj->CreateTraj(ptStart, ptEnd, FORWARD);
-//}
-//
-//return pLineTraj;
-//}	
+	
 //BOOL GetSweepingRegion(CVehicleContour &Vehicle, CSweepingArea &SweepingRegion)
 //{
 //double dContour = (double)sqrt((Vehicle.m_rgn0.m_pVertex[0].x-Vehicle.m_rgn0.m_pVertex[1].x)*(Vehicle.m_rgn0.m_pVertex[0].x-Vehicle.m_rgn0.m_pVertex[1].x)+(Vehicle.m_rgn0.m_pVertex[0].y-Vehicle.m_rgn0.m_pVertex[1].y)*(Vehicle.m_rgn0.m_pVertex[0].y-Vehicle.m_rgn0.m_pVertex[1].y));
@@ -196,52 +152,8 @@ public class LinePath extends Path {
 //return TRUE;
 //}
 //
-//BOOL GetSweepingEndRegion(CVehicleContour& Vehicle, CSweepingArea& SweepingRegion)
-//{
-//double fLen = m_fSize;
-//int nCount = 1/*(int)(fLen / 0.05f)*/;
-//SweepingRegion.SetSize(nCount);
 //
-//CLineTraj* pTraj = (CLineTraj*)MakeTraj();
-//
-//for (int i = 0; i < nCount; i++)
-//{
-//pTraj->SetProgress(0.0f, fLen);
-//CPosture pst = pTraj->PostureFun();
-//
-//Vehicle.SetPosture(pst);
-//SweepingRegion.AddContour(Vehicle);
-//}
-//
-//delete pTraj;
-//pTraj = NULL;
-//return TRUE;
-//}
-//
-/////////////////////
-//boolean Create(FILE *StreamIn)
-//{
-//unsigned int uObstacle, uDir;            // Positive input/negative input
-//
-//// Init the fields in the base class
-//if (!Path::Create(StreamIn))
-//return false;
-//
-//if (fscanf(StreamIn, ",\t%u,\t%u\n", &uObstacle, &uDir) == EOF)
-//return false;
-//
-//m_uObstacle = uObstacle;
-//if (uDir == NEGATIVE_HEADING)
-//{
-//short uTemp = m_uStartNode;
-//m_uStartNode = m_uEndNode;
-//m_uEndNode = uTemp;
-//
-//SwabWord(m_uObstacle);
-//}
-//
-//// Find the heading angles at the 2 nodes
-//Setup();
+
 //return true;
 //}
 //BOOL ISInRect(double minx, double miny, double maxx, double maxy)

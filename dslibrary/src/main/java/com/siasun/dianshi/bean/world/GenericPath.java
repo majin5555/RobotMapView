@@ -51,20 +51,7 @@ public class GenericPath extends Path {
     private final int pathOffset = 20;
     private final int nodeOffset = 20;
 
-//	virtual boolean IsTangency() {return m_bTangency;}
 
-    // Make a trajectory from the path
-//	virtual CTraj* MakeTraj();
-
-    // Fuzzy node checking limit (5 degree)
-//	virtual float FuzzyNodeCheckLimit() { return 0.087f; }
-
-//  - GENERICPATH.CPP -
-//
-//Implementation of class "GenericPath" - a class defining a generic path in
-//AGVS map.
-//
-//
 
     public static float BEZIER_K = 0.95f;
     private float m_fTurnVel1 = 1.0f; //入弯速度
@@ -87,7 +74,7 @@ public class GenericPath extends Path {
 //////////////////////////////////////////////////////////////////////////////
 //Implementation of class "GenericPath".
 
-    //���캯��
+
     public GenericPath(int uId, int nStartNode, int nEndNode, Posture pstStart, Posture pstEnd, float fLen1, float fLen2,
                        float[] fVeloLimit, short nGuideType, short uObstacle, short uDir, short uExtType, NodeBase nodeBase) {
         short type = 10;
@@ -121,9 +108,7 @@ public class GenericPath extends Path {
         Create(pstStart, pstEnd, 2, pptCtrl);
     }
 
-    //
-//ȱʡ�Ĺ��캯����
-//
+
     public GenericPath() {
         m_pstStart = new Posture();
         m_pstEnd = new Posture();
@@ -145,13 +130,7 @@ public class GenericPath extends Path {
         return m_bTangency;
     }
 
-    //
-//   判断给定的屏幕点是否落在曲线上。
-//   返回值：
-//     -1: 未落在曲线上
-//      0: 落在曲线的一般位置上
-//    1~n: (n为关键点个数)落在某个关键点上，返回关键点序号(以1为起始序号, 1-起点，2-第一个控制点 3-第二个控制点，4-终点)
-//
+
     @Override
     int PointHitTest(Point pnt, CoordinateConversion ScrnRef) {
         // 判断屏幕点是否落在某个关键点处
@@ -194,9 +173,7 @@ public class GenericPath extends Path {
         return -1;
     }
 
-    //
-//��������ױ��������ߡ�
-//
+
     private boolean Create(Posture pstStart, Posture pstEnd, int nCountCtrlPoints, Point2d[] pptCtrl) {
         m_pstStart = pstStart;
         m_pstEnd = pstEnd;
@@ -215,9 +192,7 @@ public class GenericPath extends Path {
         return Init();
     }
 
-    //
-//�������ױ���������·����
-//
+
     private boolean Create(Posture pstStart, Posture pstEnd, float fLen1, float fLen2) {
         m_pstStart = pstStart;
         m_pstEnd = pstEnd;
@@ -242,62 +217,7 @@ public class GenericPath extends Path {
         return true;
     }
 
-//
-//����Բ��·������Bezier����·�Ρ�
-//
-//boolean CreateFromArcPath(CArcPath& ArcPath)
-//{
-//Point2d& pt1 = ArcPath.GetStartPnt();
-//Point2d& pt2 = ArcPath.GetEndPnt();
-//Point2d& ptCenter = ArcPath.GetCenter();
-//
-//CLine ln1(ptCenter, pt1);
-//CLine ln2(ptCenter, pt2);
-//
-//// Բ�ĵ���ʼ/��ֹ��ķ����
-//Angle ang1 = ln1.GetSlantAngle();
-//Angle ang2 = ln2.GetSlantAngle();
-//
-//// ��ʼ�����ֹ�㴦�ķ����
-//Angle angStart, angEnd;
-//
-//if (ArcPath.GetTurnDir() == COUNTER_CLOCKWISE)
-//{
-//angStart = ang1 + PI / 2;
-//angEnd = ang2 + PI / 2;
-//}
-//else
-//{
-//angStart = ang1 - PI / 2;
-//angEnd = ang2 - PI / 2;
-//}
-//
-//m_pstStart.GetPoint2dObject() = pt1;
-//m_pstStart.SetAngle(angStart);
-//
-//m_pstEnd.GetPoint2dObject() = pt2;
-//m_pstEnd.SetAngle(angEnd);
-//
-//Angle angTurn = ArcPath.GetTurnAngle();
-//float fLen = ArcPath.GetRadius() * tan(angTurn.m_fRad / 2);
-//fLen *= BEZIER_K;
-//
-//// �������ױ���������·��
-//if (!Create(m_pstStart, m_pstEnd, fLen, fLen))
-//return false;
-//
-//m_uId = ArcPath.m_uId;
-//m_uType = GENERIC_TYPE;
-//m_uExtType = 0;
-//m_uStartNode = ArcPath.m_uStartNode;
-//m_uEndNode = ArcPath.m_uEndNode;
-//m_fVeloLimit[0] = ArcPath.m_fVeloLimit[0];
-//m_fVeloLimit[1] = ArcPath.m_fVeloLimit[1];
-//m_uGuideType = ArcPath.m_uGuideType;
-//m_fNavParam = ArcPath.m_fNavParam;
-//m_uObstacle = ArcPath.m_uObstacle;
-//m_uFwdRotoScannerObstacle = ArcPath.m_uFwdRotoScannerObstacle;
-//m_uFwdObdetectorObstacle = ArcPath.m_uFwdObdetectorObstacle;
+
 //m_uBwdRotoScannerObstacle = ArcPath.m_uBwdRotoScannerObstacle;
 //m_uBwdObdetectorObstacle = ArcPath.m_uBwdObdetectorObstacle;
 //}
@@ -767,11 +687,6 @@ public class GenericPath extends Path {
 
 
     public void Draw(CoordinateConversion ScrnRef, Canvas Grp, int cr, int nWidth) {
-//        if (!m_bCurvature) {
-//            cr = Color.RED;
-//            nWidth = 5;
-//        }
-
         m_Curve.Draw(ScrnRef, Grp, cr, nWidth, nWidth, false);
     }
 
@@ -786,7 +701,6 @@ public class GenericPath extends Path {
         m_Curve.SetCurT(0.8f);
         Point2d pntT = m_Curve.TrajFun();
         PointF pnt1 = ScrnRef.worldToScreen(pntT.x, pntT.y);
-//        Point pnt1 = ScrnRef.GetWindowPoint(pntT);
         String str = String.valueOf(m_uId);
         int width = Grp.getWidth();
         int Height = Grp.getHeight();
@@ -800,5 +714,4 @@ public class GenericPath extends Path {
 
         Grp.drawText(str, pnt1.x + 4, pnt1.y + 14, paint);
     }
-
 }
