@@ -43,38 +43,39 @@ class OnlinePoseView(context: Context?, parent: WeakReference<MapView>) :
     private val transformMatrix = Matrix()
 
     // 上线点图标
-    private val onlinePointBitmap: Bitmap? by lazy {
-        ContextCompat.getDrawable(context!!, R.drawable.online)!!.toBitmap() // 使用这个扩展函数可以直接转换
-    }
+    private var onlinePointBitmap: Bitmap? = null
 
     // 原点图标
-    private val originPointBitmap: Bitmap? by lazy {
-        ContextCompat.getDrawable(context!!, R.drawable.origin_point)!!.toBitmap() // 使用这个扩展函数可以直接转换
-    }
+    private var originPointBitmap: Bitmap? = null
 
-    // 上线点列表
+    // 上线点列表 - 线程安全处理
     private val initPoseList = mutableListOf<InitPose>()
 
     // 控制是否绘制原点与上线点
     private var isDrawingEnabled = true
 
-
     // 保存parent引用以便安全访问
-    private var mapViewRef: WeakReference<MapView>? = parent
+    private val mapViewRef: WeakReference<MapView> = parent
+
+    // 可复用的PointF对象，减少内存分配
+    private var tempPoint = PointF()
+    private val labelPoint = PointF()
+
+    // 字符串资源缓存
+    private val originPointText by lazy {
+        context?.getString(R.string.origin_point) ?: ""
+    }
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        mapViewRef?.get()?.let {
+        val mapView = mapViewRef.get() ?: return
+
+        if (isDrawingEnabled) {
             // 绘制原点
-            if (isDrawingEnabled) {
-                // 设置绘制参数（根据缩放比例调整）
-                paint.strokeWidth = BASE_LINE_WIDTH
-                paint.textSize = BASE_TEXT_SIZE
+            drawOriginPoint(canvas, mapView)
 
-                drawOriginPoint(canvas, it)
-
-                // 绘制上线点
-                drawInitPoses(canvas, it)
-            }
+            // 绘制上线点
+            drawInitPoses(canvas, mapView)
         }
     }
 
@@ -82,23 +83,27 @@ class OnlinePoseView(context: Context?, parent: WeakReference<MapView>) :
      * 绘制原点图标和标签
      */
     private fun drawOriginPoint(canvas: Canvas, mapView: MapView) {
+        // 延迟初始化bitmap，避免在构造时创建
+        if (originPointBitmap == null && context != null) {
+            originPointBitmap = try {
+                ContextCompat.getDrawable(context, R.drawable.origin_point)?.toBitmap()
+            } catch (e: Exception) {
+                null
+            }
+        }
+
         originPointBitmap?.also { bitmap ->
             paint.color = Color.GREEN
 
-            // 计算原点在视图中的位置
-            val originPoint = mapView.worldToScreen(0f, 0f)
+            // 计算原点在视图中的位置 - 复用tempPoint对象
+            tempPoint = mapView.worldToScreen(0f, 0f)
 
             // 绘制带有变换的原点图标
-            drawIconWithTransform(canvas, bitmap, originPoint.x, originPoint.y, 0f)
+            drawIconWithTransform(canvas, bitmap, tempPoint.x, tempPoint.y, 0f)
 
-            // 绘制原点标签
-            drawLabel(
-                canvas, context!!.getString(R.string.origin_point), PointF(
-                    originPoint.x + LABEL_OFFSET,
-                    originPoint.y + LABEL_OFFSET,
-                ), paint
-            )
-
+            // 绘制原点标签 - 复用labelPoint对象
+            labelPoint.set(tempPoint.x + LABEL_OFFSET, tempPoint.y + LABEL_OFFSET)
+            drawLabel(canvas, originPointText, labelPoint, paint)
         }
     }
 
@@ -106,28 +111,40 @@ class OnlinePoseView(context: Context?, parent: WeakReference<MapView>) :
      * 绘制所有上线点图标和标签
      */
     private fun drawInitPoses(canvas: Canvas, mapView: MapView) {
-        if (initPoseList.isEmpty()) return
+        // 创建列表副本避免并发修改问题
+        val posesCopy = synchronized(initPoseList) {
+            initPoseList.toList()
+        }
+
+        if (posesCopy.isEmpty()) return
+
+        // 延迟初始化bitmap，避免在构造时创建
+        if (onlinePointBitmap == null && context != null) {
+            onlinePointBitmap = try {
+                ContextCompat.getDrawable(context, R.drawable.online)?.toBitmap()
+            } catch (e: Exception) {
+                null
+            }
+        }
 
         paint.color = Color.BLACK
 
-        for (initPose in initPoseList) {
-            // 计算上线点在视图中的位置
-            val point = mapView.worldToScreen(
-                initPose.initPos[0], initPose.initPos[1]
-            )
+        for (initPose in posesCopy) {
+            // 计算上线点在视图中的位置 - 复用tempPoint对象
+            tempPoint = mapView.worldToScreen(initPose.initPos[0], initPose.initPos[1])
 
             onlinePointBitmap?.also { bitmap ->
                 // 绘制带有变换的上线点图标
                 drawIconWithTransform(
                     canvas,
                     bitmap,
-                    point.x,
-                    point.y,
+                    tempPoint.x,
+                    tempPoint.y,
                     -Math.toDegrees(initPose.initPos[2].toDouble()).toFloat()
                 )
 
                 // 绘制上线点标签
-                drawLabel(canvas, initPose.name, point, paint)
+                drawLabel(canvas, initPose.name, tempPoint, paint)
             }
         }
     }
@@ -161,30 +178,55 @@ class OnlinePoseView(context: Context?, parent: WeakReference<MapView>) :
 
 
     /**
-     * 设置上线点列表
+     * 设置上线点列表 - 线程安全处理
      * @param data 上线点数据列表
      */
     fun setInitPoses(data: MutableList<InitPose>) {
-        initPoseList.clear()
-        initPoseList.addAll(data)
+        synchronized(initPoseList) {
+            initPoseList.clear()
+            initPoseList.addAll(data)
+        }
         postInvalidate()
     }
 
     /**
-     * 追加上线点数据
+     * 追加上线点数据 - 线程安全处理
      * @param data 要追加的上线点数据列表
      */
     fun addInitPoses(data: MutableList<InitPose>) {
-        initPoseList.addAll(data)
+        synchronized(initPoseList) {
+            initPoseList.addAll(data)
+        }
         postInvalidate()
     }
 
     /**
-     * 清除上线点列表
+     * 清除上线点列表 - 线程安全处理
      */
     fun clearInitPoses() {
-        initPoseList.clear()
+        synchronized(initPoseList) {
+            initPoseList.clear()
+        }
         postInvalidate()
+    }
+
+    /**
+     * 清理资源，防止内存泄漏
+     */
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+
+        // 清理bitmap资源
+        onlinePointBitmap?.recycle()
+        originPointBitmap?.recycle()
+
+        // 清理数据
+        synchronized(initPoseList) {
+            initPoseList.clear()
+        }
+
+        // 禁用绘制
+        isDrawingEnabled = false
     }
 
 
