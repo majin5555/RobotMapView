@@ -87,237 +87,13 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.btnMove.setOnClickListener {
             mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SHOW_MAP)
         }
-        //添加避让点
-        mBinding.btnCreateStation.onClick {
-            XpopUtils(this).showCmsStationDialog(onConfirmCall = { result ->
-                result?.let {
-                    cmsStation.add(result)
-                    mBinding.mapView.setCmsStations(cmsStation)
-                }
 
-            }, onDeleteCall = {
-
-            }, mapId
-            )
-        }
-        //编辑避让点
-        mBinding.btnEdit.onClick {
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CMS_STATION_EDIT)
-        }
-        // 设置避让点点击监听器
-        mBinding.mapView.setOnStationClickListener(object :
-            com.siasun.dianshi.view.StationsView.OnStationClickListener {
-            @RequiresApi(Build.VERSION_CODES.R)
-            override fun onStationClick(station: CmsStation) {
-                // 处理避让点点击事件
-                LogUtil.d("点击了避让点: $station")
-            }
-        })
-
-        //删除避让点
-        mBinding.btnDeleteStation.onClick {
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CMS_STATION_DELETE)
-        }
-
-
-        // 设置避让点删除监听器
-        mBinding.mapView.setOnStationDeleteListener(object :
-            com.siasun.dianshi.view.StationsView.OnStationDeleteListener {
-            override fun onStationDelete(station: CmsStation) {
-                // 处理避让点删除事件
-                LogUtil.d("删除了避让点: $station")
-                // 这里可以添加删除避让点的业务逻辑，比如调用API删除服务器上的避让点
-            }
-        })
-
-        //添加虚拟墙
-        mBinding.btnVirAdd.setOnClickListener {
-            // 创建虚拟墙模式
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_ADD)
-            // 默认创建普通虚拟墙
-            mBinding.mapView.addVirtualWall(3)
-        }
-        //编辑虚拟墙
-        mBinding.btnVirEdit.setOnClickListener {
-            // 编辑虚拟墙模式
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_EDIT)
-
-        }
-        //删除虚拟墙
-        mBinding.btnVirDel.setOnClickListener {
-            // 删除虚拟墙模式
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_DELETE)
-        }
-
-        //删除噪点
-        mBinding.btnRemoveNoise.setOnClickListener {
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_REMOVE_NOISE)
-            // 设置去除噪点监听器
-            mBinding.mapView.setOnRemoveNoiseListener(object : MapView.IRemoveNoiseListener {
-                override fun onRemoveNoise(leftTop: PointF, rightBottom: PointF) {
-                    // 处理噪点区域信息，这里可以添加日志或者发送到控制器
-                    LogUtil.d("去除噪点区域: 左上角(${leftTop.x}, ${leftTop.y}), 右下角(${rightBottom.x}, ${rightBottom.y})")
-                }
-            })
-        }
-
-        //创建定位区域
-        mBinding.btnPostingAreaAdd.onClick {
-            // 设置创建定位区域模式
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_POSITING_AREA_ADD)
-
-        }
-
-        // 设置定位区域创建监听器
-        mBinding.mapView.setOnPositingAreaCreatedListener(object :
-            PostingAreasView.OnPositingAreaCreatedListener {
-            override fun onPositingAreaCreated(area: PositingArea) {
-                // 切换回移动模式
-                mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SHOW_MAP)
-            }
-        })
-
-        //编辑定位区域
-        mBinding.btnPostingAreaEdit.setOnClickListener {
-            // 随机选择一个定位区域高亮显示
-            if (mBinding.mapView.getPositingAreas().toMutableList().isNotEmpty()) {
-                mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_POSITING_AREA_EDIT)
-
-                // 生成0到positingAreas.size-1之间的随机索引
-                val randomIndex =
-                    Random.nextInt(mBinding.mapView.getPositingAreas().toMutableList().size)
-
-                // 通过随机索引获取定位区域对象
-                val randomArea = mBinding.mapView.getPositingAreas().toMutableList()[randomIndex]
-
-                // 方式1：通过对象设置选中区域
-                mBinding.mapView.setSelectedPositingArea(randomArea)
-
-            }
-        }
-
-        //删除定位区域
-        mBinding.btnPostingAreaDel.onClick {
-            // 随机选择一个定位区域进行删除
-            if (mBinding.mapView.getPositingAreas().toMutableList().isNotEmpty()) {
-                // 生成0到positingAreas.size-1之间的随机索引
-                val randomIndex =
-                    Random.nextInt(mBinding.mapView.getPositingAreas().toMutableList().size)
-
-                // 通过随机索引获取要删除的定位区域
-                val randomArea = mBinding.mapView.getPositingAreas().toMutableList()[randomIndex]
-
-                // 删除该定位区域
-                mBinding.mapView.deletePositingArea(randomArea)
-
-                // 更新本地列表
-                mBinding.mapView.getPositingAreas().toMutableList().remove(randomArea)
-
-                LogUtil.d("随机删除了定位区域: ${randomArea.id}")
-            }
-        }
-
-        //保存定位区域
-        mBinding.btnPostingAreaCommit.setOnClickListener {
-            MainController.sendPositingArea(
-                mapId, mBinding.mapView.getPositingAreas().toMutableList()
-            )
-        }
-
-        //编辑清扫区域
-        mBinding.btnEditArea.onClick {
-            if (mBinding.mapView.getCleanAreaData().toMutableList().isNotEmpty()) {
-                // 生成0到positingAreas.size-1之间的随机索引
-                val randomIndex =
-                    Random.nextInt(mBinding.mapView.getCleanAreaData().toMutableList().size)
-
-                // 通过随机索引获取要删除的定位区域
-                val randomArea = mBinding.mapView.getCleanAreaData().toMutableList()[randomIndex]
-
-                // 设置地图的工作模式为编辑清扫区域模式
-                mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CLEAN_AREA_EDIT)
-
-                // 将选中的区域设置到PolygonEditView中进行编辑
-                mBinding.mapView.setSelectedArea(randomArea)
-            }
-        }
-
-        // 设置清扫区域编辑监听器
-        mBinding.mapView.setOnCleanAreaEditListener(object :
-            PolygonEditView.OnCleanAreaEditListener {
-
-            override fun onVertexDragEnd(area: CleanAreaNew, vertexIndex: Int) {
-                LogUtil.d("onVertexDragEnd area $area")
-                if (area.routeType == AreaType.AREA_AUTO) {
-                    MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
-                    LogUtil.i(
-                        "编辑区域onVertexDragEnd  申请路径规划 ${area.toJson()}", null, TAG_PP
-                    )
-                }
-            }
-
-            override fun onVertexAdded(
-                area: CleanAreaNew, vertexIndex: Int, x: Float, y: Float
-            ) {
-                if (area.routeType == AreaType.AREA_AUTO) {
-                    MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
-                    LogUtil.i("编辑区域onVertexAdded  申请路径规划 ${area.toJson()}", null, TAG_PP)
-                }
-            }
-
-            override fun onEdgeRemoved(area: CleanAreaNew, edgeIndex: Int) {
-                if (area.routeType == AreaType.AREA_AUTO) {
-                    MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
-                    LogUtil.i("编辑区域onEdgeRemoved  申请路径规划 ${area.toJson()}", null, TAG_PP)
-                }
-            }
-
-            override fun onAreaCreated(area: CleanAreaNew) {
-                // 将新创建的清扫区域添加到本地列表
-                LogUtil.d("创建了新的清扫区域: ${area.sub_name}, ID: ${area.regId}")
-                if (area.routeType == AreaType.AREA_AUTO) {
-                    MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
-                    LogUtil.i("创建了新的清扫区域  申请路径规划 ${area.toJson()}", null, TAG_PP)
-                }
-            }
-        })
-
-        //添加清扫区域
-        mBinding.btnAddArea.onClick {
-            // 设置地图的工作模式为添加清扫区域模式
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CLEAN_AREA_ADD)
-            // 创建一个新的清扫区域
-            val newArea = CleanAreaNew().apply {
-                sub_name = "清扫区域${cleanAreas.size + 1}"
-                regId = cleanAreas.size + 1//随机申城
-                layer_id = mapId
-                routeType = 0 // 自动生成
-                areaType = 1
-                cleanShape = 3 // 回字型
-                areaPathType = 0 // 普通清扫区域
-            }
-            cleanAreas.add(newArea)
-            mBinding.mapView.createCleanArea(newArea)
-        }
-
-        //删除清扫区域
-        mBinding.btnDeleteArea.onClick {
-            if (cleanAreas.isNotEmpty()) {
-                // 随机生成一个索引
-                val randomIndex = Random.nextInt(cleanAreas.size)
-                // 删除随机选中的清扫区域
-                cleanAreas.removeAt(randomIndex)
-                // 更新清扫区域数据
-                mBinding.mapView.setCleanAreaData(cleanAreas)
-                LogUtil.d("随机删除了一个清扫区域，当前剩余 ${cleanAreas.size} 个清扫区域")
-            } else {
-                LogUtil.d("没有清扫区域可以删除")
-            }
-        }
-        //保存清扫区域
-        mBinding.btnSaveArea.onClick {
-            mViewModel.saveArea(mapId, cleanAreas)
-        }
+        initStation()
+        iniVirtualWall()
+        initRemoveNoise()
+        initPostingArea()
+        initCleanArea()
+        initElevator()
 
         //添加特殊区域
         mBinding.btnAddSpArea.onClick {
@@ -413,6 +189,295 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         }
     }
 
+    /**
+     * 乘梯点
+     */
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun initElevator() {
+        //编辑乘梯点
+        mBinding.btnEditElevator.onClick {
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_ELEVATOR_EDIT)
+        }
+
+        //删除乘梯点
+        mBinding.btnDeleteElevator.onClick {
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_ELEVATOR_DELETE)
+        }
+
+        //设置乘梯点编辑监听器
+        mBinding.mapView.setOnElevatorEditListener(object :
+            com.siasun.dianshi.view.ElevatorView.OnElevatorEditListener {
+            override fun onElevatorEdit(elevator: com.siasun.dianshi.bean.ElevatorPoint) {
+                //处理乘梯点编辑事件
+                LogUtil.d("编辑乘梯点: $elevator")
+            }
+        })
+
+        //设置乘梯点删除监听器
+        mBinding.mapView.setOnElevatorDeleteListener(object :
+            com.siasun.dianshi.view.ElevatorView.OnElevatorDeleteListener {
+            override fun onElevatorDelete(elevator: com.siasun.dianshi.bean.ElevatorPoint) {
+                //处理乘梯点删除事件
+                LogUtil.d("删除乘梯点: $elevator")
+            }
+        })
+    }
+
+    /**
+     * 清扫区域
+     */
+    private fun initCleanArea() {
+        //编辑清扫区域
+        mBinding.btnEditArea.onClick {
+            if (mBinding.mapView.getCleanAreaData().toMutableList().isNotEmpty()) {
+                // 生成0到positingAreas.size-1之间的随机索引
+                val randomIndex =
+                    Random.nextInt(mBinding.mapView.getCleanAreaData().toMutableList().size)
+
+                // 通过随机索引获取要删除的定位区域
+                val randomArea = mBinding.mapView.getCleanAreaData().toMutableList()[randomIndex]
+
+                // 设置地图的工作模式为编辑清扫区域模式
+                mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CLEAN_AREA_EDIT)
+
+                // 将选中的区域设置到PolygonEditView中进行编辑
+                mBinding.mapView.setSelectedArea(randomArea)
+            }
+        }
+
+        // 设置清扫区域编辑监听器
+        mBinding.mapView.setOnCleanAreaEditListener(object :
+            PolygonEditView.OnCleanAreaEditListener {
+
+            override fun onVertexDragEnd(area: CleanAreaNew, vertexIndex: Int) {
+                LogUtil.d("onVertexDragEnd area $area")
+                if (area.routeType == AreaType.AREA_AUTO) {
+                    MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
+                    LogUtil.i(
+                        "编辑区域onVertexDragEnd  申请路径规划 ${area.toJson()}", null, TAG_PP
+                    )
+                }
+            }
+
+            override fun onVertexAdded(
+                area: CleanAreaNew, vertexIndex: Int, x: Float, y: Float
+            ) {
+                if (area.routeType == AreaType.AREA_AUTO) {
+                    MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
+                    LogUtil.i("编辑区域onVertexAdded  申请路径规划 ${area.toJson()}", null, TAG_PP)
+                }
+            }
+
+            override fun onEdgeRemoved(area: CleanAreaNew, edgeIndex: Int) {
+                if (area.routeType == AreaType.AREA_AUTO) {
+                    MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
+                    LogUtil.i("编辑区域onEdgeRemoved  申请路径规划 ${area.toJson()}", null, TAG_PP)
+                }
+            }
+
+            override fun onAreaCreated(area: CleanAreaNew) {
+                // 将新创建的清扫区域添加到本地列表
+                LogUtil.d("创建了新的清扫区域: ${area.sub_name}, ID: ${area.regId}")
+                if (area.routeType == AreaType.AREA_AUTO) {
+                    MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
+                    LogUtil.i("创建了新的清扫区域  申请路径规划 ${area.toJson()}", null, TAG_PP)
+                }
+            }
+        })
+
+        //添加清扫区域
+        mBinding.btnAddArea.onClick {
+            // 设置地图的工作模式为添加清扫区域模式
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CLEAN_AREA_ADD)
+            // 创建一个新的清扫区域
+            val newArea = CleanAreaNew().apply {
+                sub_name = "清扫区域${cleanAreas.size + 1}"
+                regId = cleanAreas.size + 1//随机申城
+                layer_id = mapId
+                routeType = 0 // 自动生成
+                areaType = 1
+                cleanShape = 3 // 回字型
+                areaPathType = 0 // 普通清扫区域
+            }
+            cleanAreas.add(newArea)
+            mBinding.mapView.createCleanArea(newArea)
+        }
+
+        //删除清扫区域
+        mBinding.btnDeleteArea.onClick {
+            if (cleanAreas.isNotEmpty()) {
+                // 随机生成一个索引
+                val randomIndex = Random.nextInt(cleanAreas.size)
+                // 删除随机选中的清扫区域
+                cleanAreas.removeAt(randomIndex)
+                // 更新清扫区域数据
+                mBinding.mapView.setCleanAreaData(cleanAreas)
+                LogUtil.d("随机删除了一个清扫区域，当前剩余 ${cleanAreas.size} 个清扫区域")
+            } else {
+                LogUtil.d("没有清扫区域可以删除")
+            }
+        }
+        //保存清扫区域
+        mBinding.btnSaveArea.onClick {
+            mViewModel.saveArea(mapId, cleanAreas)
+        }
+    }
+
+    /**
+     * 定位区域
+     */
+    private fun initPostingArea() {
+        //创建定位区域
+        mBinding.btnPostingAreaAdd.onClick {
+            // 设置创建定位区域模式
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_POSITING_AREA_ADD)
+        }
+
+        // 设置定位区域创建监听器
+        mBinding.mapView.setOnPositingAreaCreatedListener(object :
+            PostingAreasView.OnPositingAreaCreatedListener {
+            override fun onPositingAreaCreated(area: PositingArea) {
+                // 切换回移动模式
+                mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SHOW_MAP)
+            }
+        })
+
+        //编辑定位区域
+        mBinding.btnPostingAreaEdit.setOnClickListener {
+            // 随机选择一个定位区域高亮显示
+            if (mBinding.mapView.getPositingAreas().toMutableList().isNotEmpty()) {
+                mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_POSITING_AREA_EDIT)
+
+                // 生成0到positingAreas.size-1之间的随机索引
+                val randomIndex =
+                    Random.nextInt(mBinding.mapView.getPositingAreas().toMutableList().size)
+
+                // 通过随机索引获取定位区域对象
+                val randomArea = mBinding.mapView.getPositingAreas().toMutableList()[randomIndex]
+
+                // 方式1：通过对象设置选中区域
+                mBinding.mapView.setSelectedPositingArea(randomArea)
+
+            }
+        }
+
+        //删除定位区域
+        mBinding.btnPostingAreaDel.onClick {
+            // 随机选择一个定位区域进行删除
+            if (mBinding.mapView.getPositingAreas().toMutableList().isNotEmpty()) {
+                // 生成0到positingAreas.size-1之间的随机索引
+                val randomIndex =
+                    Random.nextInt(mBinding.mapView.getPositingAreas().toMutableList().size)
+
+                // 通过随机索引获取要删除的定位区域
+                val randomArea = mBinding.mapView.getPositingAreas().toMutableList()[randomIndex]
+
+                // 删除该定位区域
+                mBinding.mapView.deletePositingArea(randomArea)
+
+                // 更新本地列表
+                mBinding.mapView.getPositingAreas().toMutableList().remove(randomArea)
+
+                LogUtil.d("随机删除了定位区域: ${randomArea.id}")
+            }
+        }
+
+        //保存定位区域
+        mBinding.btnPostingAreaCommit.setOnClickListener {
+            MainController.sendPositingArea(
+                mapId, mBinding.mapView.getPositingAreas().toMutableList()
+            )
+        }
+
+    }
+
+    /**
+     * 删除噪点
+     */
+    private fun initRemoveNoise() {
+        //删除噪点
+        mBinding.btnRemoveNoise.setOnClickListener {
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_REMOVE_NOISE)
+        }
+        // 设置去除噪点监听器
+        mBinding.mapView.setOnRemoveNoiseListener(object : MapView.IRemoveNoiseListener {
+            override fun onRemoveNoise(leftTop: PointF, rightBottom: PointF) {
+                // 处理噪点区域信息，这里可以添加日志或者发送到控制器
+                LogUtil.d("去除噪点区域: 左上角(${leftTop.x}, ${leftTop.y}), 右下角(${rightBottom.x}, ${rightBottom.y})")
+            }
+        })
+    }
+
+    /**
+     * 避让点
+     */
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun initStation() {
+        //添加避让点
+        mBinding.btnCreateStation.onClick {
+            XpopUtils(this).showCmsStationDialog(onConfirmCall = { result ->
+                result?.let {
+                    cmsStation.add(result)
+                    mBinding.mapView.setCmsStations(cmsStation)
+                }
+
+            }, onDeleteCall = {
+
+            }, mapId
+            )
+        }
+        //编辑避让点
+        mBinding.btnEditStation.onClick {
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CMS_STATION_EDIT)
+        }
+        // 设置避让点点击监听器
+        mBinding.mapView.setOnStationClickListener(object :
+            com.siasun.dianshi.view.StationsView.OnStationClickListener {
+            @RequiresApi(Build.VERSION_CODES.R)
+            override fun onStationClick(station: CmsStation) {
+                // 处理避让点点击事件
+                LogUtil.d("点击了避让点: $station")
+            }
+        })
+        //删除避让点
+        mBinding.btnDeleteStation.onClick {
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CMS_STATION_DELETE)
+        }
+
+        // 设置避让点删除监听器
+        mBinding.mapView.setOnStationDeleteListener(object :
+            com.siasun.dianshi.view.StationsView.OnStationDeleteListener {
+            override fun onStationDelete(station: CmsStation) {
+                // 处理避让点删除事件
+                LogUtil.d("删除了避让点: $station")
+                // 这里可以添加删除避让点的业务逻辑，比如调用API删除服务器上的避让点
+            }
+        })
+    }
+
+    /**
+     * 虚拟墙
+     */
+    private fun iniVirtualWall() {
+        //添加虚拟墙
+        mBinding.btnVirAdd.setOnClickListener {
+            // 创建虚拟墙模式
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_ADD)
+            // 默认创建普通虚拟墙
+            mBinding.mapView.addVirtualWall(3)
+        }
+        //编辑虚拟墙
+        mBinding.btnVirEdit.setOnClickListener {
+            // 编辑虚拟墙模式
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_EDIT)
+
+        }
+        //删除虚拟墙
+        mBinding.btnVirDel.setOnClickListener {
+            // 删除虚拟墙模式
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_DELETE)
+        }
+    }
 
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initData() {
@@ -554,39 +619,39 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //            }
 //        })
 
-        //加载顶视路线
-        mViewModel.getMergedPose(mapId, onComplete = { mergedPoses ->
-            mergedPoses?.data?.let {
-                mBinding.mapView.setTopViewPathDada(it)
-            }
-        })
-
-        //加载避让点
-        mViewModel.getStationData(mapId, onComplete = { cmsStations ->
-            if (cmsStations != null) {
-                cmsStation.addAll(cmsStations)
-                mBinding.mapView.setCmsStations(cmsStation)
-            }
-        })
+//        //加载顶视路线
+//        mViewModel.getMergedPose(mapId, onComplete = { mergedPoses ->
+//            mergedPoses?.data?.let {
+//                mBinding.mapView.setTopViewPathDada(it)
+//            }
+//        })
+//
+//        //加载避让点
+//        mViewModel.getStationData(mapId, onComplete = { cmsStations ->
+//            if (cmsStations != null) {
+//                cmsStation.addAll(cmsStations)
+//                mBinding.mapView.setCmsStations(cmsStation)
+//            }
+//        })
 //        //加载充电站
 //        mViewModel.getMachineStation(onComplete = { machineStation ->
 //            LogUtil.d("获取充电站信息 $machineStation")
 //            val result = machineStation?.find { it.mapId == mapId }
 //            mBinding.mapView.setMachineStation(result)
 //        })
-//        //加载乘梯点
-//        mViewModel.getCmsElevator(mapId, onComplete = { elevatorPoint ->
-//            LogUtil.d("获取乘梯点 $elevatorPoint")
-//            mBinding.mapView.setElevators(elevatorPoint)
-//        })
-//
-        //获取区域
-        mViewModel.getAreaList(mapId, onComplete = { cleanAreasRoot ->
-            cleanAreasRoot?.let {
-                cleanAreas.addAll(it.cleanAreas)
-                mBinding.mapView.setCleanAreaData(cleanAreas)
-            }
+        //加载乘梯点
+        mViewModel.getCmsElevator(mapId, onComplete = { elevatorPoint ->
+            LogUtil.d("获取乘梯点 $elevatorPoint")
+            mBinding.mapView.setElevators(elevatorPoint)
         })
+
+//        //获取区域
+//        mViewModel.getAreaList(mapId, onComplete = { cleanAreasRoot ->
+//            cleanAreasRoot?.let {
+//                cleanAreas.addAll(it.cleanAreas)
+//                mBinding.mapView.setCleanAreaData(cleanAreas)
+//            }
+//        })
 
 
 //        //获取特殊区域

@@ -14,19 +14,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent">
-
-        <!--确定-->
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/btn_edit"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@mipmap/btn_confirm"
-            android:text="编辑"
-            android:textSize="17sp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/btn_normal"
-            app:layout_constraintTop_toTopOf="parent" />
-
         <!--确定-->
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_normal"
@@ -36,29 +23,41 @@
             android:text="普通"
             android:textSize="17sp"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/btn_create"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <!--确定-->
+
         <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/btn_create"
+            android:id="@+id/btn_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@mipmap/btn_confirm"
+            android:text="编辑避让点"
+            android:textSize="17sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/btn_create_station"
+            app:layout_constraintTop_toTopOf="parent" />
+
+
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_create_station"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="20dp"
             android:background="@mipmap/btn_confirm"
-            android:text="新建"
+            android:text="新建避让点"
             android:textSize="17sp"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/btn_confirm"
+            app:layout_constraintEnd_toStartOf="@+id/btn_save_station"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <!--确定-->
+
         <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/btn_confirm"
+            android:id="@+id/btn_save_station"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@mipmap/btn_confirm"
-            android:text="保存"
+            android:text="保存避让点"
             android:textSize="17sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
