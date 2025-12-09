@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.PointF
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
@@ -42,6 +43,7 @@ import com.siasun.dianshi.bean.SpArea
 import com.siasun.dianshi.bean.WorkAreasNew
 import com.siasun.dianshi.bean.world.World
 import com.siasun.dianshi.framework.ext.toJson
+import com.siasun.dianshi.io.WorldFileUtil
 import com.siasun.dianshi.mapviewdemo.CLEAN_PATH_PLAN
 import com.siasun.dianshi.mapviewdemo.GLOBAL_PATH_PLAN
 import com.siasun.dianshi.mapviewdemo.KEY_POSITING_AREA_VALUE
@@ -59,7 +61,11 @@ import com.siasun.dianshi.view.SpPolygonEditView
 import com.siasun.dianshi.xpop.XpopUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileOutputStream
+import android.os.Environment
+import android.widget.Toast
 
 /**
  * 显示地图
@@ -112,24 +118,91 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     @RequiresApi(Build.VERSION_CODES.R)
     private fun initPath() {
         lifecycleScope.launch(Dispatchers.IO) {
-            reloadWorld()
+            try {
+                // 读取world_pad.dat文件
+                val worldFile = File(getFilePath(mapId, PAD_WORLD_NAME))
+                if (worldFile.exists()) {
+                    val world = WorldFileUtil.readWorldFile(worldFile.absolutePath)
+                    if (world != null) {
+                        withContext(Dispatchers.Main) {
+                            // 将World数据设置到MapView
+                            mBinding.mapView.setWorld(world)
+                            // 刷新MapView
+                            mBinding.mapView.invalidate()
+                        }
+                    }
+                } else {
+                    Log.e("ShowMapViewActivity", "world_pad.dat file not found")
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Log.e("ShowMapViewActivity", "Error reading world_pad.dat: ${e.message}")
+            }
+        }
+        
+        // 编辑路线
+        mBinding.btnEditPath.onClick {
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_PATH_EDIT)
+        }
+        
+        // 合并路线
+        mBinding.btnMergePath.onClick {
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_PATH_MERGE)
+        }
+        
+        // 删除路线
+        mBinding.btnDeletePath.onClick { 
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_PATH_DELETE) 
+        }
+        
+        // 曲线转直线
+        mBinding.btnConvertPathToLine.onClick { 
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_PATH_CONVERT_TO_LINE) 
+        }
+        
+        // 保存路线
+        mBinding.btnSavePath.onClick {
+            savePathsToFile()
         }
     }
-
-    private var mWorld = World()
-
-    @RequiresApi(Build.VERSION_CODES.R)
-    private fun reloadWorld() {
-        //判断没有world_pad.dat 创建一个
-        val worldFile = File(getFilePath(mapId, PAD_WORLD_NAME))
-        if (!worldFile.exists()) {
-            FileIOUtil.createOrExistsFile(worldFile)
-            mWorld.saveWorld(getFolderPath(mapId), PAD_WORLD_NAME)
+    
+    /**
+     * 保存路线到world_pad.dat文件
+     */
+    private fun savePathsToFile() {
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                try {
+                    // 获取world数据
+                    val worldFile = File(getFilePath(mapId, PAD_WORLD_NAME))
+                    val world = mBinding.mapView.getWorld()
+                    if (world != null) {
+                        // 保存world数据
+                        WorldFileUtil.writeWorldFile(world, worldFile.absolutePath)
+                        
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(this@ShowMapViewActivity, "路线保存成功", Toast.LENGTH_SHORT).show()
+                            LogUtil.d("路线保存成功: ${worldFile.absolutePath}")
+                        }
+                    } else {
+                        LogUtil.e("world数据为空，无法保存")
+                    }
+                } catch (e: Exception) {
+                    LogUtil.e("保存文件失败: ${e.message}")
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(this@ShowMapViewActivity, "路线保存失败", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
         }
-        //读取world_pad.dat
-        mWorld.readWorld(getFolderPath(mapId), PAD_WORLD_NAME)
-        //向mapView 设置路径
-        mBinding.mapView.setWorld(mWorld)
+    }
+    
+    /**
+     * 路径数据更改回调
+     */
+    fun onPathDataChanged() {
+        LogUtil.d("路径数据已更改")
+        // 可以在这里添加数据更改的通知逻辑
     }
 
 
@@ -696,6 +769,13 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
+    override fun onDestroy() {
+        super.onDestroy()
+        // 释放资源
+//        mBinding.mapView.descendantFocusability()
+    }
+    
+    @RequiresApi(Build.VERSION_CODES.R)
     override fun initData() {
         super.initData()
         MainController.sendGetPositingAreas(mapId)
@@ -757,7 +837,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 if (memoryInfo.lowMemory) {
                     // 内存不足时，清理旧路径和对象池
                     LogUtil.w("系统内存不足，清理旧路径和对象池", null, TAG_PP)
-                    mBinding.mapView.clearPathPlan() // 假设MapView有清理路径的方法
+//                    mBinding.mapView.clearPathPlan() // 假设MapView有清理路径的方法
                     PathPlanningUtil.clearObjectPools() // 清理对象池
                 }
 
@@ -771,12 +851,12 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                             )
 
                             // 清除旧的清扫路径
-                            mBinding.mapView.clearCleanPathPlan()
+//                            mBinding.mapView.clearCleanPathPlan()
 
                             val cleanPathPlanResultBean =
                                 PathPlanningUtil.getPathPlanResultBean(result, mBinding.mapView)
                             if (cleanPathPlanResultBean.m_bIsPlanOk) {
-                                mBinding.mapView.setCleanPathPlanResultBean(cleanPathPlanResultBean)
+//                                mBinding.mapView.setCleanPathPlanResultBean(cleanPathPlanResultBean)
                             } else {
                                 LogUtil.e("清扫路径规划解析失败", null, TAG_PP)
                             }
@@ -793,14 +873,14 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                             )
 
                             // 清除旧的全局路径
-                            mBinding.mapView.clearGlobalPathPlan()
+//                            mBinding.mapView.clearGlobalPathPlan()
 
                             val globalPathPlanResultBean =
                                 PathPlanningUtil.getPathPlanResultBean(result)
                             if (globalPathPlanResultBean.m_bIsPlanOk) {
-                                mBinding.mapView.setGlobalPathPlanResultBean(
-                                    globalPathPlanResultBean
-                                )
+//                                mBinding.mapView.setGlobalPathPlanResultBean(
+//                                    globalPathPlanResultBean
+//                                )
                             } else {
                                 LogUtil.e("全局路径规划解析失败", null, TAG_PP)
                             }
@@ -813,7 +893,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 )
                 e.printStackTrace()
                 // 异常处理：清理可能已创建的资源
-                mBinding.mapView.clearPathPlan() // 清理所有路径
+//                mBinding.mapView.clearPathPlan() // 清理所有路径
                 PathPlanningUtil.clearObjectPools() // 清理对象池
             }
         }

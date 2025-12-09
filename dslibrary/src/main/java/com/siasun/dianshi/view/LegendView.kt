@@ -127,11 +127,11 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
         }
         //路径
         mBinding.cbWorldPath.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                parentRef.get()?.mPathView?.setDrawingEnabled(true) // 启用绘制
-            } else {
-                parentRef.get()?.mPathView?.setDrawingEnabled(false) // 禁用绘制
-            }
+//            if (isChecked) {
+//                parentRef.get()?.mPathView?.setDrawingEnabled(true) // 启用绘制
+//            } else {
+//                parentRef.get()?.mPathView?.setDrawingEnabled(false) // 禁用绘制
+//            }
 
         }
         //混行区

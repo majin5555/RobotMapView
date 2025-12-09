@@ -128,8 +128,7 @@ public abstract class Path {
 //Get the pointer to the start node.
 //
     public Node GetStartNode() {
-        Node pNode = new Node();
-        pNode = m_pNodeBase.GetNode(m_uStartNode);
+        Node pNode = m_pNodeBase.GetNode(m_uStartNode);
         //assert pNode != null ?true:false;
         return pNode;
     }

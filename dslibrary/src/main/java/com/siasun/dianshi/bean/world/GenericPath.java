@@ -27,15 +27,15 @@ import java.io.IOException;
 
 
 public class GenericPath extends Path {
-    protected Angle m_angStartHeading;     // ��������ʼ�ڵ㴦�ķ����
-    protected Angle m_angEndHeading;       // ��������ֹ�ڵ㴦�ķ����
-    protected int m_nCountCtrlPoints;   // 控制点个数--2
-    protected Point2d[] m_pptCtrl;            // ָ�������и������Ƶ��ָ��(���������˽ڵ�)
+    public Angle m_angStartHeading;     // ��������ʼ�ڵ㴦�ķ����
+    public Angle m_angEndHeading;       // ��������ֹ�ڵ㴦�ķ����
+    public int m_nCountCtrlPoints;   // 控制点个数--2
+    public Point2d[] m_pptCtrl;            // ָ�������и������Ƶ��ָ��(���������˽ڵ�)
 
-    protected Posture m_pstStart;            // ��ʼ��̬
-    protected Posture m_pstEnd;              // ��ֹ��̬
-    protected boolean m_bTangency;           //���з�ʽΪ���л���ƽ��, �˶���ʽ 0:���� 1:ƽ��
-    protected short m_uRunFunction;         //���з�ʽΪ���л���ƽ��, �˶���ʽ 0:ƽ�� 1:���� 2: ��ת
+    public Posture m_pstStart;            // ��ʼ��̬
+    public Posture m_pstEnd;              // ��ֹ��̬
+    public boolean m_bTangency;           //���з�ʽΪ���л���ƽ��, �˶���ʽ 0:���� 1:ƽ��
+    public short m_uRunFunction;         //���з�ʽΪ���л���ƽ��, �˶���ʽ 0:ƽ�� 1:���� 2: ��ת
 
     public Bezier m_Curve;               // ���߶���
     // ��������ױ���������
@@ -225,7 +225,7 @@ public class GenericPath extends Path {
     //
 //�������ṩ�Ĺؼ���������λ�ó�ʼ����·����
 //
-    protected boolean Init() {
+    public boolean Init() {
         // ��ʱΪ���йؼ������ռ䣬�Ա��������߶���
         Point2d[] pptKey = new Point2d[m_nCountCtrlPoints + 2];
         if (pptKey == null)
