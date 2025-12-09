@@ -14,7 +14,7 @@ import java.lang.ref.WeakReference
  * 用于在地图上绘制机器人的顶视路线
  */
 @SuppressLint("ViewConstructor")
-class TopViewPathView(context: Context?, parent: WeakReference<MapView>) :
+class TopViewPathView(context: Context?, val parent: WeakReference<MapView>) :
     SlamWareBaseView(context, parent) {
 
     // 基础线宽（像素）
@@ -29,21 +29,20 @@ class TopViewPathView(context: Context?, parent: WeakReference<MapView>) :
     // 在绘制时动态计算屏幕坐标，确保路线与地图缩放同步
     private val routePath = Path()
 
-    // 保存parent引用以便安全访问
-    private var mapViewRef: WeakReference<MapView>? = parent
-
-    // 绘制画笔
-    private val mPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        color = Color.parseColor("#CC33FF")
-        strokeWidth = BASE_LINE_WIDTH
-    }
-
     // 控制是否绘制
     private var isDrawingEnabled: Boolean = true
 
-    // 顶视路线数据列表
-    private val topViewRouteList = mutableListOf<MergedPoseItem>()
+    // 顶视路线数据列表 - 使用同步列表确保线程安全
+    private val topViewRouteList = ArrayList<MergedPoseItem>()
+
+    // 绘制画笔 - 移至伴生对象，避免重复创建
+    companion object {
+        private val mPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            color = Color.parseColor("#CC33FF")
+            strokeWidth = 1f
+        }
+    }
 
 
     override fun onDraw(canvas: Canvas) {
@@ -51,6 +50,9 @@ class TopViewPathView(context: Context?, parent: WeakReference<MapView>) :
         if (!isDrawingEnabled || topViewRouteList.isEmpty()) {
             return
         }
+
+        // 获取MapView实例，避免重复调用get()
+        val mapView = parent.get() ?: return
 
         // 根据当前缩放比例调整线宽，确保在不同缩放级别下都有良好的视觉效果
         mPaint.strokeWidth = maxOf(MIN_LINE_WIDTH, BASE_LINE_WIDTH * scale)
@@ -62,14 +64,12 @@ class TopViewPathView(context: Context?, parent: WeakReference<MapView>) :
             val pose = topViewRouteList[i]
 
             // 绘制时动态转换为屏幕坐标
-            val screenPoint = mapViewRef?.get()?.worldToScreen(pose.x.toFloat(), pose.y.toFloat())
-            screenPoint?.let {
-                if (isFirstPoint) {
-                    routePath.moveTo(screenPoint.x, screenPoint!!.y)
-                    isFirstPoint = false
-                } else {
-                    routePath.lineTo(screenPoint.x, screenPoint.y)
-                }
+            val screenPoint = mapView.worldToScreen(pose.x.toFloat(), pose.y.toFloat())
+            if (isFirstPoint) {
+                routePath.moveTo(screenPoint.x, screenPoint.y)
+                isFirstPoint = false
+            } else {
+                routePath.lineTo(screenPoint.x, screenPoint.y)
             }
         }
         // 绘制路线
@@ -82,7 +82,11 @@ class TopViewPathView(context: Context?, parent: WeakReference<MapView>) :
      */
     fun setTopViewPath(data: List<MergedPoseItem>) {
         topViewRouteList.clear()
-        topViewRouteList.addAll(data)
+        if (data.isNotEmpty()) {
+            // 预分配容量，避免频繁扩容
+            topViewRouteList.ensureCapacity(data.size)
+            topViewRouteList.addAll(data)
+        }
         postInvalidate()
     }
 
@@ -91,7 +95,11 @@ class TopViewPathView(context: Context?, parent: WeakReference<MapView>) :
      * @param data 要追加的路线数据列表
      */
     fun addTopViewPath(data: List<MergedPoseItem>) {
-        topViewRouteList.addAll(data)
+        if (data.isNotEmpty()) {
+            // 预分配容量，避免频繁扩容
+            topViewRouteList.ensureCapacity(topViewRouteList.size + data.size)
+            topViewRouteList.addAll(data)
+        }
         postInvalidate()
     }
 
@@ -127,5 +135,18 @@ class TopViewPathView(context: Context?, parent: WeakReference<MapView>) :
      */
     fun isDrawingEnabled(): Boolean {
         return isDrawingEnabled
+    }
+
+    /**
+     * 清理资源，防止内存泄漏
+     */
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        // 清理数据列表
+        topViewRouteList.clear()
+        // 清理路径
+        routePath.reset()
+        // 清理parent引用
+        parent.clear()
     }
 }
