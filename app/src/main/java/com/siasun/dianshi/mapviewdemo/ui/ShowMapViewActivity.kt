@@ -46,6 +46,7 @@ import com.siasun.dianshi.mapviewdemo.TAG_PP
 import com.siasun.dianshi.mapviewdemo.utils.GsonUtil
 import com.siasun.dianshi.mapviewdemo.utils.PathPlanningUtil
 import com.siasun.dianshi.view.HomeDockView
+import com.siasun.dianshi.view.MixAreaView
 import com.siasun.dianshi.view.PolygonEditView
 import com.siasun.dianshi.view.PostingAreasView
 import com.siasun.dianshi.xpop.XpopUtils
@@ -86,15 +87,95 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SHOW_MAP)
         }
 
-        initMergedPose()
-        initStation()
-        iniVirtualWall()
-        initRemoveNoise()
-        initPostingArea()
-        initCleanArea()
-        initElevator()
-        initPose()
-        initMachineStation()
+//        initMergedPose()
+//        initStation()
+//        iniVirtualWall()
+//        initRemoveNoise()
+//        initPostingArea()
+//        initCleanArea()
+//        initElevator()
+//        initPose()
+//        initMachineStation()
+        initMixArea()
+    }
+
+    private fun initMixArea() {
+        //获取混行区域
+        mViewModel.getMixAreaData(mapId) { workAreasNew ->
+            workAreasNew?.let {
+                mMixArea.addAll(workAreasNew.workAreasList)
+                mBinding.mapView.setMixAreaData(mMixArea)
+            }
+        }
+        //添加混行区域
+        mBinding.btnAddMixArea.onClick {
+            // 设置地图的工作模式为添加清扫区域模式
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_MIX_AREA_ADD)
+            // 创建一个新的清扫区域
+            val newArea = WorkAreasNew().apply {
+                name = "混行区域${mMixArea.size + 1}"
+                id = "${mMixArea.size + 1}"//随机申城
+            }
+            mMixArea.add(newArea)
+            mBinding.mapView.createMixArea(newArea)
+        }
+        //编辑混行区
+        mBinding.btnEditMixArea.onClick {
+            if (mBinding.mapView.getMixAreaData().toMutableList().isNotEmpty()) {
+                // 生成0到positingAreas.size-1之间的随机索引
+                val randomIndex =
+                    Random.nextInt(mBinding.mapView.getMixAreaData().toMutableList().size)
+
+                // 通过随机索引获取要删除的定位区域
+                val randomArea = mBinding.mapView.getMixAreaData().toMutableList()[randomIndex]
+
+                // 设置地图的工作模式为编辑清扫区域模式
+                mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_MIX_AREA_EDIT)
+
+                // 将选中的区域设置到PolygonEditView中进行编辑
+                mBinding.mapView.setSelectedMixArea(randomArea)
+            }
+        }
+
+        //设置混行区域编辑监听器
+        mBinding.mapView.setOnMixAreaEditListener(object : MixAreaView.OnMixAreaEditListener {
+
+            override fun onVertexDragEnd(area: WorkAreasNew, vertexIndex: Int) {
+                LogUtil.i("编辑区域onVertexDragEnd   ${area.toJson()}")
+            }
+
+            override fun onVertexAdded(
+                area: WorkAreasNew, vertexIndex: Int, x: Float, y: Float
+            ) {
+                LogUtil.i("编辑混行区域onVertexAdded   ${area.toJson()}")
+            }
+
+            override fun onEdgeRemoved(area: WorkAreasNew, edgeIndex: Int) {
+                LogUtil.i("编辑混行区域onEdgeRemoved  ${area.toJson()}")
+            }
+
+            override fun onAreaCreated(area: WorkAreasNew) {
+                LogUtil.i("创建了新的混行区域   ${area.toJson()}")
+            }
+        })
+        //删除混行区域
+        mBinding.btnDeleteMixArea.onClick {
+            if (mMixArea.isNotEmpty()) {
+                // 随机生成一个索引
+                val randomIndex = Random.nextInt(mMixArea.size)
+                // 删除随机选中的清扫区域
+                mMixArea.removeAt(randomIndex)
+                // 更新清扫区域数据
+                mBinding.mapView.setMixAreaData(mMixArea)
+                LogUtil.d("随机删除了一个清扫区域，当前剩余 ${cleanAreas.size} 个清扫区域")
+            } else {
+                LogUtil.d("没有清扫区域可以删除")
+            }
+        }
+        //保存混行区
+        mBinding.btnSaveMixArea.onClick {
+            LogUtil.d("保存混行区 ${mBinding.mapView.getMixAreaData().toJson()}")
+        }
     }
 
     /**
@@ -116,8 +197,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.mapView.setOnMachineStationClickListener(object :
             HomeDockView.OnMachineStationClickListener {
             override fun onMachineStationClick(
-                station: com.siasun.dianshi.bean.MachineStation,
-                type: Int
+                station: com.siasun.dianshi.bean.MachineStation, type: Int
             ) {
                 //处理充电站点击事件
                 when (type) {
@@ -134,8 +214,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.mapView.setOnMachineStationDeleteListener(object :
             HomeDockView.OnMachineStationDeleteListener {
             override fun onMachineStationDelete(
-                station: com.siasun.dianshi.bean.MachineStation,
-                type: Int
+                station: com.siasun.dianshi.bean.MachineStation, type: Int
             ) {
                 //处理充电站删除事件
                 when (type) {
@@ -735,14 +814,6 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //            LogUtil.d("获取特殊区域 $it")
 //            mSpArea.addAll(it)
 //            mBinding.mapView.setSpAreaData(mSpArea)
-//        }
-//
-//        //获取混行区域
-//        mViewModel.getMixAreaData(mapId) { workAreasNew ->
-//            workAreasNew?.let {
-//                mMixArea.addAll(workAreasNew.workAreasList)
-//                mBinding.mapView.setMixAreaData(mMixArea)
-//            }
 //        }
     }
 }

@@ -65,7 +65,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         MODE_SP_AREA_EDIT, // 编辑特殊区域模式
         MODE_SP_AREA_ADD, // 创建特殊区域模式
         MODE_MIX_AREA_ADD, // 创建混行区域模式
-        MODE_MIX_AREA_EDIT, // 编辑区域模式
+        MODE_MIX_AREA_EDIT, // 编辑混行区域模式
     }
 
     // 当前工作模式
@@ -771,35 +771,6 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     fun clearPathPlan() =
         mPathView?.clearPathPlan()
 
-    /**
-     * 设置定位区域编辑监听器
-     */
-    fun setOnPositingAreaEditedListener(listener: PostingAreasView.OnPositingAreaEditedListener?) {
-        mPostingAreasView?.setOnPositingAreaEditedListener(listener)
-
-    }
-
-    /**
-     * 设置定位区域删除监听器
-     */
-    fun setOnPositingAreaDeletedListener(listener: PostingAreasView.OnPositingAreaDeletedListener?) {
-        mPostingAreasView?.setOnPositingAreaDeletedListener(listener)
-    }
-
-    /**
-     * 设置定位区域创建监听器
-     */
-    fun setOnPositingAreaCreatedListener(listener: PostingAreasView.OnPositingAreaCreatedListener?) {
-        mPostingAreasView?.setOnPositingAreaCreatedListener(listener)
-    }
-
-
-    /**
-     * 设置清扫区域编辑监听器
-     */
-    fun setOnCleanAreaEditListener(listener: PolygonEditView.OnCleanAreaEditListener?) {
-        mPolygonEditView?.setOnCleanAreaEditListener(listener)
-    }
 
     /**
      * 根据ID删除定位区域
@@ -839,6 +810,43 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      * ******************************************************
      */
 
+
+    /**
+     * 设置定位区域编辑监听器
+     */
+    fun setOnPositingAreaEditedListener(listener: PostingAreasView.OnPositingAreaEditedListener?) {
+        mPostingAreasView?.setOnPositingAreaEditedListener(listener)
+
+    }
+
+    /**
+     * 设置定位区域删除监听器
+     */
+    fun setOnPositingAreaDeletedListener(listener: PostingAreasView.OnPositingAreaDeletedListener?) {
+        mPostingAreasView?.setOnPositingAreaDeletedListener(listener)
+    }
+
+    /**
+     * 设置定位区域创建监听器
+     */
+    fun setOnPositingAreaCreatedListener(listener: PostingAreasView.OnPositingAreaCreatedListener?) {
+        mPostingAreasView?.setOnPositingAreaCreatedListener(listener)
+    }
+
+
+    /**
+     * 设置清扫区域编辑监听器
+     */
+    fun setOnCleanAreaEditListener(listener: PolygonEditView.OnCleanAreaEditListener?) {
+        mPolygonEditView?.setOnCleanAreaEditListener(listener)
+    }
+
+    /**
+     * 设置混行区域编辑监听器
+     */
+    fun setOnMixAreaEditListener(listener: MixAreaView.OnMixAreaEditListener?) {
+        mMixAreaView?.setOnMixAreaEditListener(listener)
+    }
 
     /**
      * 设置避让点点击监听器
