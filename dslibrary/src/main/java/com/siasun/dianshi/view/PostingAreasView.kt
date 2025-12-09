@@ -6,6 +6,8 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PointF
+import android.graphics.RectF
+import android.util.Log
 import android.view.MotionEvent
 import com.siasun.dianshi.R
 import com.siasun.dianshi.bean.End
@@ -44,21 +46,67 @@ class PostingAreasView(context: Context?, parent: WeakReference<MapView>) :
     private var originalStartPoint = PointF()
     private var originalEndPoint = PointF()
 
-    // 监听器
+    // 监听器 - 使用强引用确保回调能被触发
     private var onPositingAreaEditedListener: OnPositingAreaEditedListener? = null
     private var onPositingAreaDeletedListener: OnPositingAreaDeletedListener? = null
     private var onPositingAreaCreatedListener: OnPositingAreaCreatedListener? = null
 
-    // 画笔定义（使用lazy初始化，提高性能）
-    private val creatingRectPaint by lazy { createCreatingRectPaint() }
-    private val rectPaint by lazy { createRectPaint() }
-    private val selectedRectPaint by lazy { createSelectedRectPaint() }
-    private val handlePaint by lazy { createHandlePaint() }
-    private val deleteRectPaint by lazy { createDeleteRectPaint() }
-    private val textPaint by lazy { createTextPaint() }
+    // 画笔定义（使用伴生对象创建静态实例，避免重复创建）
+    companion object {
+        private val creatingRectPaint = Paint().apply {
+            color = Color.GREEN
+            style = Paint.Style.STROKE
+            strokeWidth = 3f
+            alpha = 180 // 半透明
+            isAntiAlias = true
+        }
+
+        private val rectPaint = Paint().apply {
+            color = Color.BLUE
+            style = Paint.Style.STROKE
+            strokeWidth = 2f
+            isAntiAlias = true
+        }
+
+        private val selectedRectPaint = Paint().apply {
+            color = Color.GREEN
+            style = Paint.Style.STROKE
+            strokeWidth = 4f
+            isAntiAlias = true
+        }
+
+        private val handlePaint = Paint().apply {
+            color = Color.RED
+            style = Paint.Style.FILL
+            strokeWidth = 2f
+            isAntiAlias = true
+        }
+
+        private val deleteRectPaint = Paint().apply {
+            color = Color.RED
+            style = Paint.Style.FILL
+            alpha = 128 // 半透明
+            strokeWidth = 2f
+            isAntiAlias = true
+        }
+
+        private val textPaint = Paint().apply {
+            color = Color.BLACK
+            textSize = 14f
+            isAntiAlias = true
+        }
+    }
 
     // 控制是否绘制
     private var isDrawingEnabled: Boolean = true
+
+    // 复用的PointF对象，减少内存分配
+    private val worldDelta = PointF()
+    private val screenPoint1 = PointF()
+    private val screenPoint2 = PointF()
+
+    // 复用的RectF对象
+    private val tempRect = RectF()
 
     // 拖拽手柄枚举
     private enum class DragHandle {
@@ -83,8 +131,10 @@ class PostingAreasView(context: Context?, parent: WeakReference<MapView>) :
      */
     fun setPositingAreas(areas: MutableList<PositingArea>?) {
         areas?.let {
-            positingAreas.clear()
-            positingAreas.addAll(it)
+            synchronized(positingAreas) {
+                positingAreas.clear()
+                positingAreas.addAll(it)
+            }
             postInvalidate()
         }
     }
@@ -92,7 +142,11 @@ class PostingAreasView(context: Context?, parent: WeakReference<MapView>) :
     /**
      * 获取定位区域列表
      */
-    fun getData(): MutableList<PositingArea> = positingAreas
+    fun getData(): List<PositingArea> {
+        return synchronized(positingAreas) {
+            positingAreas.toList()
+        }
+    }
 
     /**
      * 设置选中的定位区域
@@ -166,6 +220,7 @@ class PostingAreasView(context: Context?, parent: WeakReference<MapView>) :
         if (selectedAreaId == area.id) {
             clearSelectedArea()
         }
+        // 通知监听器删除完成
         onPositingAreaDeletedListener?.onPositingAreaDeleted(area)
         postInvalidate()
     }
@@ -211,51 +266,6 @@ class PostingAreasView(context: Context?, parent: WeakReference<MapView>) :
      */
     private fun findAreaById(areaId: Long): PositingArea? = positingAreas.find { it.id == areaId }
 
-    /**
-     * 画笔创建方法（分离关注点，提高代码可读性）
-     */
-    private fun createCreatingRectPaint() = Paint().apply {
-        color = Color.GREEN
-        style = Paint.Style.STROKE
-        strokeWidth = 3f
-        alpha = 180 // 半透明
-        isAntiAlias = true
-    }
-
-    private fun createRectPaint() = Paint().apply {
-        color = Color.BLUE
-        style = Paint.Style.STROKE
-        strokeWidth = 2f
-        isAntiAlias = true
-    }
-
-    private fun createSelectedRectPaint() = Paint().apply {
-        color = Color.GREEN
-        style = Paint.Style.STROKE
-        strokeWidth = 4f
-        isAntiAlias = true
-    }
-
-    private fun createHandlePaint() = Paint().apply {
-        color = Color.RED
-        style = Paint.Style.FILL
-        strokeWidth = 2f
-        isAntiAlias = true
-    }
-
-    private fun createDeleteRectPaint() = Paint().apply {
-        color = Color.RED
-        style = Paint.Style.FILL
-        alpha = 128 // 半透明
-        strokeWidth = 2f
-        isAntiAlias = true
-    }
-
-    private fun createTextPaint() = Paint().apply {
-        color = Color.BLACK
-        textSize = 14f
-        isAntiAlias = true
-    }
 
     /**
      * 检查触摸点是否在编辑手柄上
@@ -402,8 +412,14 @@ class PostingAreasView(context: Context?, parent: WeakReference<MapView>) :
                     )
 
                     // 添加到列表并通知监听器
-                    positingAreas.add(newArea)
+                    synchronized(positingAreas) {
+                        positingAreas.add(newArea)
+                        Log.d("PostingAreasView","添加到列表并通知监听器")
+                    }
+                    Log.d("PostingAreasView","添加到列表并通知监听器999")
+
                     onPositingAreaCreatedListener?.onPositingAreaCreated(newArea)
+                    Log.d("PostingAreasView","添加到列表并通知监听器888")
 
                     // 重置创建状态
                     isCreating = false
@@ -480,14 +496,13 @@ class PostingAreasView(context: Context?, parent: WeakReference<MapView>) :
      * 计算屏幕坐标差对应的世界坐标差
      */
     private fun calculateWorldDelta(mapView: MapView, currentX: Float, currentY: Float): PointF {
-        val screenPoint1 = PointF(startDragPoint.x, startDragPoint.y)
-        val screenPoint2 = PointF(currentX, currentY)
+        screenPoint1.set(startDragPoint.x, startDragPoint.y)
+        screenPoint2.set(currentX, currentY)
         val worldPoint1 = mapView.screenToWorld(screenPoint1.x, screenPoint1.y)
         val worldPoint2 = mapView.screenToWorld(screenPoint2.x, screenPoint2.y)
 
-        return PointF(
-            worldPoint2.x - worldPoint1.x, worldPoint2.y - worldPoint1.y
-        )
+        worldDelta.set(worldPoint2.x - worldPoint1.x, worldPoint2.y - worldPoint1.y)
+        return worldDelta
     }
 
     /**
@@ -530,10 +545,12 @@ class PostingAreasView(context: Context?, parent: WeakReference<MapView>) :
      * 获取点击位置的定位区域
      */
     private fun getClickedArea(x: Float, y: Float, mapView: MapView): PositingArea? {
-        for (area in positingAreas) {
-            val (left, top, right, bottom) = getScreenRect(area, mapView)
-            if (x in left..right && y >= top && y <= bottom) {
-                return area
+        synchronized(positingAreas) {
+            for (area in positingAreas) {
+                val (left, top, right, bottom) = getScreenRect(area, mapView)
+                if (x in left..right && y >= top && y <= bottom) {
+                    return area
+                }
             }
         }
         return null
@@ -551,12 +568,16 @@ class PostingAreasView(context: Context?, parent: WeakReference<MapView>) :
                     0, 0, 0, 0, 0, start = createStartPoint!!, end = createEndPoint!!, false
                 )
                 val (left, top, right, bottom) = getScreenRect(creatingArea, mapView)
-                canvas.drawRect(left, top, right, bottom, creatingRectPaint)
+                tempRect.set(left, top, right, bottom)
+                canvas.drawRect(tempRect, creatingRectPaint)
             }
 
-            // 绘制所有定位区域
-            if (positingAreas.size > 0) {
-                positingAreas.forEachIndexed { index, area ->
+            // 绘制所有定位区域 - 使用副本避免并发修改
+            val areasCopy = synchronized(positingAreas) {
+                positingAreas.toList()
+            }
+            if (areasCopy.size > 0) {
+                areasCopy.forEachIndexed { index, area ->
                     val isSelected = selectedAreaId == area.id
                     drawPositingArea(canvas, area, index, isSelected, mapView)
                 }
@@ -585,11 +606,13 @@ class PostingAreasView(context: Context?, parent: WeakReference<MapView>) :
 
         // 删除模式下绘制半透明红色覆盖
         if (isDeleteMode) {
-            canvas.drawRect(left, top, right, bottom, deleteRectPaint)
+            tempRect.set(left, top, right, bottom)
+            canvas.drawRect(tempRect, deleteRectPaint)
         }
 
         // 绘制矩形边框
-        canvas.drawRect(left, top, right, bottom, paintToUse)
+        tempRect.set(left, top, right, bottom)
+        canvas.drawRect(tempRect, paintToUse)
 
         // 绘制区域名称
         val textX = right + 5f // 矩形右侧偏右5像素
@@ -613,34 +636,34 @@ class PostingAreasView(context: Context?, parent: WeakReference<MapView>) :
         val handleSize = 20f
 
         // 绘制四个角的编辑手柄
-        canvas.drawRect(
-            left - handleSize / 2,
-            top - handleSize / 2,
-            left + handleSize / 2,
-            top + handleSize / 2,
-            handlePaint
+        tempRect.set(
+            left - handleSize / 2, top - handleSize / 2, left + handleSize / 2, top + handleSize / 2
         )
-        canvas.drawRect(
+        canvas.drawRect(tempRect, handlePaint)
+
+        tempRect.set(
             right - handleSize / 2,
             top - handleSize / 2,
             right + handleSize / 2,
-            top + handleSize / 2,
-            handlePaint
+            top + handleSize / 2
         )
-        canvas.drawRect(
+        canvas.drawRect(tempRect, handlePaint)
+
+        tempRect.set(
             left - handleSize / 2,
             bottom - handleSize / 2,
             left + handleSize / 2,
-            bottom + handleSize / 2,
-            handlePaint
+            bottom + handleSize / 2
         )
-        canvas.drawRect(
+        canvas.drawRect(tempRect, handlePaint)
+
+        tempRect.set(
             right - handleSize / 2,
             bottom - handleSize / 2,
             right + handleSize / 2,
-            bottom + handleSize / 2,
-            handlePaint
+            bottom + handleSize / 2
         )
+        canvas.drawRect(tempRect, handlePaint)
     }
 
     /**
@@ -649,5 +672,27 @@ class PostingAreasView(context: Context?, parent: WeakReference<MapView>) :
     fun setDrawingEnabled(enabled: Boolean) {
         this.isDrawingEnabled = enabled
         postInvalidate()
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+
+        // 清理资源，防止内存泄漏
+        synchronized(positingAreas) {
+            positingAreas.clear()
+        }
+
+        // 清理监听器
+        onPositingAreaEditedListener = null
+        onPositingAreaDeletedListener = null
+        onPositingAreaCreatedListener = null
+
+        // 清理状态
+        selectedAreaId = null
+        selectedArea = null
+        isCreating = false
+        createStartPoint = null
+        createEndPoint = null
+        isDrawingEnabled = false
     }
 }
