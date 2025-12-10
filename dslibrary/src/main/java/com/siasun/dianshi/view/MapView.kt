@@ -67,10 +67,15 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         MODE_SP_AREA_ADD, // 创建特殊区域模式
         MODE_MIX_AREA_ADD, // 创建混行区域模式
         MODE_MIX_AREA_EDIT, // 编辑混行区域模式
+        MODE_PATH_EDIT, // 编辑路线模式
+        MODE_PATH_MERGE, // 合并路线模式
+        MODE_PATH_DELETE, // 删除路线模式
+        MODE_PATH_CONVERT_TO_LINE // 曲线转直线模式
     }
 
     // 当前工作模式
     private var currentWorkMode = WorkMode.MODE_SHOW_MAP
+    private var mWorld: World? = null
 
     var mSrf = CoordinateConversion()//坐标转化工具类
     private var mOuterMatrix = Matrix()
@@ -101,7 +106,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     var mPolygonEditView: PolygonEditView? = null//区域
     var mSpPolygonEditView: SpPolygonEditView? = null//特殊区域
     var mMixAreaView: MixAreaView? = null//混行区域
-    var mPathView: PathView? = null//路线PP
+    var mPathView: PathView2? = null//路线PP
     var mRobotView: RobotView? = null //机器人图标
     var mWorkIngPathView: WorkIngPathView? = null //机器人工作路径
 
@@ -153,7 +158,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mPolygonEditView = PolygonEditView(context, mMapView)
         mSpPolygonEditView = SpPolygonEditView(context, mMapView)
         mMixAreaView = MixAreaView(context, mMapView)
-        mPathView = PathView(context, mMapView)
+        mPathView = PathView2(context, mMapView)
         //底图的View
         addView(mPngMapView, lp)
 
@@ -471,6 +476,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mMixAreaView?.setWorkMode(mode)
         mElevatorView?.setWorkMode(mode)
         mHomeDockView?.setWorkMode(mode)
+//        mPathView?.setWorkMode(mode)
     }
 
     /**
@@ -478,14 +484,6 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      */
     fun getCurrentWorkMode(): WorkMode {
         return currentWorkMode
-    }
-
-    /**
-     * 外部接口: 设置路径对象
-     */
-
-    fun setWorld(world: World) {
-        mPathView?.setWorld(world)
     }
 
     /**
@@ -500,6 +498,23 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         // 设置地图后自动居中显示
         setCentred()
     }
+    
+    /**
+     * 设置World数据到PathView2
+     */
+    fun setWorld(world: World) {
+        mPathView?.setWorld(world)
+        mWorld = world
+    }
+    
+    /**
+     * 获取World数据
+     */
+    fun getWorld(): World? {
+        return mWorld
+    }
+    
+
 
     /***
      * 设置地图显示
@@ -729,7 +744,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     /**
      * 设置试教点
      */
-    fun setTeachPoint(point: TeachPoint) = mPathView?.setTeachPoint(point)
+//    fun setTeachPoint(point: TeachPoint) = mPathView?.setTeachPoint(point)
 
     /**
      * 外部接口: 创建示教路径
@@ -751,30 +766,30 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     /**
      * 设置清扫路径
      */
-    fun setCleanPathPlanResultBean(pathPlanResultBean: PathPlanResultBean?) =
-        mPathView?.setCleanPathPlanResultBean(pathPlanResultBean)
+//    fun setCleanPathPlanResultBean(pathPlanResultBean: PathPlanResultBean?) =
+//        mPathView?.setCleanPathPlanResultBean(pathPlanResultBean)
 
 
     /**
      * 设置全局路径
      */
-    fun setGlobalPathPlanResultBean(pathPlanResultBean: PathPlanResultBean?) =
-        mPathView?.setGlobalPathPlanResultBean(pathPlanResultBean)
+//    fun setGlobalPathPlanResultBean(pathPlanResultBean: PathPlanResultBean?) =
+//        mPathView?.setGlobalPathPlanResultBean(pathPlanResultBean)
 
     /**
      * 清除清扫路径
      */
-    fun clearCleanPathPlan() = mPathView?.setCleanPathPlanResultBean(null)
-
-    /**
-     * 清除全局路径
-     */
-    fun clearGlobalPathPlan() = mPathView?.setGlobalPathPlanResultBean(null)
-
-    /**
-     * 清除所有路径
-     */
-    fun clearPathPlan() = mPathView?.clearPathPlan()
+//    fun clearCleanPathPlan() = mPathView?.setCleanPathPlanResultBean(null)
+//
+//    /**
+//     * 清除全局路径
+//     */
+//    fun clearGlobalPathPlan() = mPathView?.setGlobalPathPlanResultBean(null)
+//
+//    /**
+//     * 清除所有路径
+//     */
+//    fun clearPathPlan() = mPathView?.clearPathPlan()
 
 
     /**

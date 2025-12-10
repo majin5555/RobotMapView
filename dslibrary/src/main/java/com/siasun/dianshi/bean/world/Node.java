@@ -20,20 +20,6 @@ import java.io.IOException;
 
 
 public class Node extends Point2d {
-    public final short MAX_NODE_ID = (short) 0xFF00;
-
-
-    public final short MARK_NODE = 1;           // 该节点是否有地标
-    public final short CONVEYOR_NODE = 2;      // 该节点是否是移载站
-    public final short SPINTURN_NODE = 4;       // 该节点是否是个自旋点
-    public final short CHARGER_NODE = 8;       // 该节点是否是个充电站
-    public final short TEMP_MARK1_NODE = 16;     // 该节点是否是第1类临时地标点
-    public final short TEMP_MARK2_NODE = 32;     // 该节点是否是第2类临时地标点
-    public final short RFID_MARK_NODE = 64;      // 该节点是否有RFID标签
-    public final short PNT_UNKNOWN_NODE = 128;    // 是否是一个无位置信息的节点
-    public final short COM_NODE = 256;
-
-    ///////////////////////////////////
     //   "Node"��Ķ���.
 
     public int m_uId;             // 节点ID

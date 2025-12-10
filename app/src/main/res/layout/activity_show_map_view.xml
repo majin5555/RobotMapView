@@ -20,6 +20,39 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- 路线编辑控件 -->
+            <Button
+                android:id="@+id/btn_edit_path"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="编辑路线" />
+
+            <Button
+                android:id="@+id/btn_merge_path"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="合并路线" />
+
+            <Button
+                android:id="@+id/btn_delete_path"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="删除路线" />
+
+            <Button
+                android:id="@+id/btn_convert_path_to_line"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="曲线转直线"
+                app:layout_constraintTop_toBottomOf="@+id/btn_delete_path" />
+
+            <Button
+                android:id="@+id/btn_save_path"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="保存路线"
+                app:layout_constraintTop_toBottomOf="@+id/btn_convert_path_to_line" />
+
             <Button
                 android:id="@+id/btn_move"
                 android:layout_width="wrap_content"
@@ -282,7 +315,6 @@
                 android:layout_height="wrap_content"
                 android:text="保存特殊区域"
                 app:layout_constraintTop_toBottomOf="@+id/btn_add_sp_area" />
-
 
         </LinearLayout>
     </ScrollView>
