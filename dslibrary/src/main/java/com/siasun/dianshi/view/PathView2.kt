@@ -40,6 +40,12 @@ class PathView2 @SuppressLint("ViewConstructor") constructor(
     private var dragStartPoint: PointF? = null // 拖动开始的屏幕坐标
     private val SELECTION_RADIUS = 30f // 路段/节点选择半径
     
+    // 路线合并模式相关属性
+    private var selectedMergeStartNode: Node? = null // 合并路线的起点
+    private var selectedMergeStartPath: com.siasun.dianshi.bean.pp.world.Path? = null // 起点所在的路径
+    private var selectedMergeEndNode: Node? = null // 合并路线的终点
+    private var selectedMergeEndPath: com.siasun.dianshi.bean.pp.world.Path? = null // 终点所在的路径
+    
     // 删除多条路线模式相关属性
     private var isBoxSelecting: Boolean = false // 是否正在进行框选
     private var boxSelectStartPoint: PointF? = null // 框选起点
@@ -180,6 +186,9 @@ class PathView2 @SuppressLint("ViewConstructor") constructor(
         
         // 当删除节点时触发
         fun onNodeDeleted(node: Node)
+        
+        // 当创建路段时触发
+        fun onPathCreated(path: com.siasun.dianshi.bean.pp.world.Path){}
     }
 
     // 回调监听器
@@ -200,7 +209,8 @@ class PathView2 @SuppressLint("ViewConstructor") constructor(
             mode != MapView.WorkMode.MODE_PATH_NODE_ATTR_EDIT &&
             mode != MapView.WorkMode.MODE_PATH_SEGMENT_ATTR_EDIT &&
             mode != MapView.WorkMode.MODE_PATH_DELETE &&
-            mode != MapView.WorkMode.MODE_PATH_DELETE_MULTIPLE) {
+            mode != MapView.WorkMode.MODE_PATH_DELETE_MULTIPLE &&
+            mode != MapView.WorkMode.MODE_PATH_MERGE) {
             selectedPath = null
             selectedNode = null
             draggingNode = null
@@ -211,6 +221,11 @@ class PathView2 @SuppressLint("ViewConstructor") constructor(
             boxSelectStartPoint = null
             boxSelectEndPoint = null
             selectedPathsForDeletion.clear()
+            // 重置路线合并模式的属性
+            selectedMergeStartNode = null
+            selectedMergeStartPath = null
+            selectedMergeEndNode = null
+            selectedMergeEndPath = null
         } else if (mode == MapView.WorkMode.MODE_PATH_DELETE_MULTIPLE) {
             // 进入删除多条路线模式，重置相关属性
             selectedPath = null
@@ -222,6 +237,28 @@ class PathView2 @SuppressLint("ViewConstructor") constructor(
             boxSelectStartPoint = null
             boxSelectEndPoint = null
             selectedPathsForDeletion.clear()
+            // 重置路线合并模式的属性
+            selectedMergeStartNode = null
+            selectedMergeStartPath = null
+            selectedMergeEndNode = null
+            selectedMergeEndPath = null
+        } else if (mode == MapView.WorkMode.MODE_PATH_MERGE) {
+            // 进入路线合并模式，重置相关属性
+            selectedPath = null
+            selectedNode = null
+            draggingNode = null
+            draggingControlPoint = null
+            dragStartPoint = null
+            // 重置删除多条路线模式的属性
+            isBoxSelecting = false
+            boxSelectStartPoint = null
+            boxSelectEndPoint = null
+            selectedPathsForDeletion.clear()
+            // 重置路线合并模式的属性
+            selectedMergeStartNode = null
+            selectedMergeStartPath = null
+            selectedMergeEndNode = null
+            selectedMergeEndPath = null
         }
         invalidate()
     }
@@ -414,7 +451,8 @@ class PathView2 @SuppressLint("ViewConstructor") constructor(
             currentWorkMode != MapView.WorkMode.MODE_PATH_NODE_ATTR_EDIT &&
             currentWorkMode != MapView.WorkMode.MODE_PATH_SEGMENT_ATTR_EDIT &&
             currentWorkMode != MapView.WorkMode.MODE_PATH_DELETE &&
-            currentWorkMode != MapView.WorkMode.MODE_PATH_DELETE_MULTIPLE) {
+            currentWorkMode != MapView.WorkMode.MODE_PATH_DELETE_MULTIPLE &&
+            currentWorkMode != MapView.WorkMode.MODE_PATH_MERGE) {
             return super.onTouchEvent(event)
         }
 
@@ -534,6 +572,23 @@ class PathView2 @SuppressLint("ViewConstructor") constructor(
                                 draggingNode = startNode
                                 draggingControlPoint = null
                                 dragStartPoint = screenPoint
+                            } else if (currentWorkMode == MapView.WorkMode.MODE_PATH_MERGE) {
+                                // 路线合并模式下，选择起点
+                                if (selectedMergeStartNode == null) {
+                                    // 还没有选择起点，选择当前起点
+                                    selectedMergeStartNode = startNode
+                                    selectedMergeStartPath = path
+                                } else if (selectedMergeEndNode == null && path != selectedMergeStartPath) {
+                                    // 已经选择了起点，现在选择终点（必须在不同路径上）
+                                    selectedMergeEndNode = startNode
+                                    // 起点和终点都已选择，执行连接
+                                    connectSelectedNodes()
+                                } else {
+                                    // 重置选择，重新开始
+                                    selectedMergeStartNode = startNode
+                                    selectedMergeStartPath = path
+                                    selectedMergeEndNode = null
+                                }
                             }
 
                             // 触发节点选中回调（在路径编辑模式和节点属性编辑模式下都触发）
@@ -553,6 +608,9 @@ class PathView2 @SuppressLint("ViewConstructor") constructor(
                                     onPathAttributeEditListener?.onNodeSelected(startNode, path)
                                 }
                                 return
+                            } else if (currentWorkMode == MapView.WorkMode.MODE_PATH_MERGE) {
+                                invalidate()
+                                return
                             }
                         }
 
@@ -570,6 +628,23 @@ class PathView2 @SuppressLint("ViewConstructor") constructor(
                                 draggingNode = endNode
                                 draggingControlPoint = null
                                 dragStartPoint = screenPoint
+                            } else if (currentWorkMode == MapView.WorkMode.MODE_PATH_MERGE) {
+                                // 路线合并模式下，选择终点
+                                if (selectedMergeStartNode == null) {
+                                    // 还没有选择起点，选择当前终点作为起点
+                                    selectedMergeStartNode = endNode
+                                    selectedMergeStartPath = path
+                                } else if (selectedMergeEndNode == null && path != selectedMergeStartPath) {
+                                    // 已经选择了起点，现在选择终点（必须在不同路径上）
+                                    selectedMergeEndNode = endNode
+                                    // 起点和终点都已选择，执行连接
+                                    connectSelectedNodes()
+                                } else {
+                                    // 重置选择，重新开始
+                                    selectedMergeStartNode = endNode
+                                    selectedMergeStartPath = path
+                                    selectedMergeEndNode = null
+                                }
                             }
 
                             // 触发节点选中回调（在路径编辑模式和节点属性编辑模式下都触发）
@@ -588,6 +663,9 @@ class PathView2 @SuppressLint("ViewConstructor") constructor(
                                     // 路径编辑模式下每次点击都触发回调
                                     onPathAttributeEditListener?.onNodeSelected(endNode, path)
                                 }
+                                return
+                            } else if (currentWorkMode == MapView.WorkMode.MODE_PATH_MERGE) {
+                                invalidate()
                                 return
                             }
                         }
@@ -943,6 +1021,38 @@ class PathView2 @SuppressLint("ViewConstructor") constructor(
                                     // 删除多条路线模式：先正常绘制所有路线
                                     path.Draw(mapView.mSrf, canvas, mPaint)
                                 }
+                                MapView.WorkMode.MODE_PATH_MERGE -> {
+                                    // 路线合并模式：正常绘制路段，放大显示选中的节点
+                                    path.Draw(mapView.mSrf, canvas, mPaint)
+                                    
+                                    // 检查并绘制起点节点
+                                    if (startNode != null) {
+                                        if (startNode == selectedMergeStartNode) {
+                                            // 选中的起点，放大显示（绿色）
+                                            startNode.Draw(mapView.mSrf, canvas, Color.GREEN, 15, mPaint)
+                                        } else if (startNode == selectedMergeEndNode) {
+                                            // 选中的终点，放大显示（蓝色）
+                                            startNode.Draw(mapView.mSrf, canvas, Color.BLUE, 15, mPaint)
+                                        } else {
+                                            // 未选中的起点，正常显示（绿色）
+                                            startNode.Draw(mapView.mSrf, canvas, Color.GREEN, 8, mPaint)
+                                        }
+                                    }
+                                    
+                                    // 检查并绘制终点节点
+                                    if (endNode != null) {
+                                        if (endNode == selectedMergeStartNode) {
+                                            // 选中的起点，放大显示（绿色）
+                                            endNode.Draw(mapView.mSrf, canvas, Color.GREEN, 15, mPaint)
+                                        } else if (endNode == selectedMergeEndNode) {
+                                            // 选中的终点，放大显示（蓝色）
+                                            endNode.Draw(mapView.mSrf, canvas, Color.BLUE, 15, mPaint)
+                                        } else {
+                                            // 未选中的终点，正常显示（蓝色）
+                                            endNode.Draw(mapView.mSrf, canvas, Color.BLUE, 8, mPaint)
+                                        }
+                                    }
+                                }
                                 else -> {
                                     // 非编辑模式，正常绘制
                                     path.Draw(mapView.mSrf, canvas, mPaint)
@@ -1160,6 +1270,36 @@ class PathView2 @SuppressLint("ViewConstructor") constructor(
         setGlobalPathPlanResultBean(null)
         setCleanPathPlanResultBean(null)
         invalidate()
+    }
+
+    /**
+     * 连接选中的起点和终点
+     */
+    private fun connectSelectedNodes() {
+        // 确保起点和终点都已选择，并且在不同的路径上
+        if (selectedMergeStartNode == null || selectedMergeEndNode == null || 
+            selectedMergeStartPath == null) {
+            return
+        }
+        
+        val cLayer = this.cLayer ?: return
+        val mapView = mapViewRef.get() ?: return
+        
+        // 创建一个新的路径来连接两个节点
+        val newPath = cLayer.CreatePPLine(selectedMergeStartNode!!, selectedMergeEndNode!!)
+        
+        if (newPath != null) {
+            // 触发路段创建回调
+            onPathAttributeEditListener?.onPathCreated(newPath)
+            
+            // 重置选择状态
+            selectedMergeStartNode = null
+            selectedMergeStartPath = null
+            selectedMergeEndNode = null
+            
+            // 重绘视图
+            invalidate()
+        }
     }
 
     /**

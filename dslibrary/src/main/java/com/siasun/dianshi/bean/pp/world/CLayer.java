@@ -125,6 +125,47 @@ public class CLayer extends NodeBase {
     }
 
     /**
+     * 创建一条连接两个节点的路径
+     *
+     * @param startNode 起始节点
+     * @param endNode   结束节点
+     * @return 创建的路径对象
+     */
+    public Path CreatePPLine(Node startNode, Node endNode) {
+        if (startNode == null || endNode == null) {
+            return null;
+        }
+
+        // 获取路径的下一个ID
+        int nNextID = m_PathBase.NextID();
+        
+        // 创建起点和终点的姿态对象
+        Posture pstStart = new Posture();
+        pstStart.x = startNode.x;
+        pstStart.y = startNode.y;
+        pstStart.SetAngle(new Angle(0)); // 初始角度为0
+        
+        Posture pstEnd = new Posture();
+        pstEnd.x = endNode.x;
+        pstEnd.y = endNode.y;
+        pstEnd.SetAngle(new Angle(0)); // 初始角度为0
+        
+        // 创建曲线路径，使用默认的控制点距离
+        float defaultControlPointDistance = 0.5f; // 可以根据实际需求调整
+        
+        GenericPath pPath = new GenericPath(nNextID, startNode.m_uId, endNode.m_uId, 
+            pstStart, pstEnd, defaultControlPointDistance, defaultControlPointDistance, 
+            new float[2], (short) 0, (short) 0, (short) 0, (short) 3, m_PathBase.m_MyNode);
+        
+        // 将路径添加到路径数据库中
+        if (m_PathBase.AddPath(pPath)) {
+            return pPath;
+        }
+        
+        return null;
+    }
+    
+    /**
      * 添加曲线路径到图层
      *
      * @param pstStart     起点姿态（包含位置和角度）

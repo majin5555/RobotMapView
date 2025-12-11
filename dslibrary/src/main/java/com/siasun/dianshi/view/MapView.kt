@@ -69,7 +69,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         MODE_PATH_MERGE, // 合并路线模式
         MODE_PATH_DELETE, // 删除路线模式
         MODE_PATH_DELETE_MULTIPLE, // 删除多条路线模式
-        MODE_PATH_CONVERT_TO_LINE, // 曲线转直线模式
+        MODE_PATH_CONVERT_TO_LINE, // 曲线转直线模式 //暂时没有
         MODE_PATH_NODE_ATTR_EDIT, // 节点属性编辑模式
         MODE_PATH_SEGMENT_ATTR_EDIT // 路段属性编辑模式
     }
