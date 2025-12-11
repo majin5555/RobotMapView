@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.PointF
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
@@ -39,7 +40,8 @@ import com.siasun.dianshi.utils.YamlNew
 import com.siasun.dianshi.view.MapView
 import com.siasun.dianshi.bean.SpArea
 import com.siasun.dianshi.bean.WorkAreasNew
-import com.siasun.dianshi.bean.world.World
+import com.siasun.dianshi.bean.pp.world.CLayer
+import com.siasun.dianshi.bean.pp.world.World
 import com.siasun.dianshi.framework.ext.toJson
 import com.siasun.dianshi.mapviewdemo.CLEAN_PATH_PLAN
 import com.siasun.dianshi.mapviewdemo.GLOBAL_PATH_PLAN
@@ -114,9 +116,60 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     @RequiresApi(Build.VERSION_CODES.R)
     private fun initPath() {
 
+        // 设置路径属性编辑回调监听器
+        mBinding.mapView.setOnPathAttributeEditListener(object :
+            com.siasun.dianshi.view.PathView2.OnPathAttributeEditListener {
+            override fun onNodeSelected(
+                node: com.siasun.dianshi.bean.pp.world.Node,
+                path: com.siasun.dianshi.bean.pp.world.Path
+            ) {
+                // 处理选中节点事件
+                Log.d(
+                    "ShowMapViewActivity",
+                    "选中节点: id=${node.m_uId}, x=${node.x}, y=${node.y}, 所属路段: ${path.GetStartNode()?.m_uId}->${path.GetEndNode()?.m_uId}"
+                )
+                // 这里可以显示节点属性编辑界面，或者执行其他操作
+            }
+
+            override fun onPathSelected(path: com.siasun.dianshi.bean.pp.world.Path) {
+                // 处理选中路段事件
+                val startNode = path.GetStartNode()
+                val endNode = path.GetEndNode()
+                Log.d("ShowMapViewActivity", "选中路段: ${startNode?.m_uId}->${endNode?.m_uId}")
+                // 这里可以显示路段属性编辑界面，或者执行其他操作
+            }
+
+            override fun onPathDeleted(path: com.siasun.dianshi.bean.pp.world.Path) {
+                // 处理删除路段事件
+                // 直接使用Path对象中的节点ID属性，避免通过可能返回null的节点对象获取
+                val startNodeId = path.m_uStartNode
+                val endNodeId = path.m_uEndNode
+                Log.d("ShowMapViewActivity", "删除路段: $startNodeId->$endNodeId")
+                // 可以在这里添加删除路段后的业务逻辑
+                onPathDataChanged()
+            }
+
+            override fun onNodeDeleted(node: com.siasun.dianshi.bean.pp.world.Node) {
+                // 处理删除节点事件
+                Log.d("ShowMapViewActivity", "删除节点: id=${node.m_uId}, x=${node.x}, y=${node.y}")
+                // 可以在这里添加删除节点后的业务逻辑
+                onPathDataChanged()
+            }
+        })
+
         // 编辑路线
         mBinding.btnEditPath.onClick {
-//            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_PATH_EDIT)
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_PATH_EDIT)
+        }
+        //路段属性编辑
+        mBinding.btnEditPathArr.onClick {
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_PATH_SEGMENT_ATTR_EDIT)
+
+        }
+
+        //节点属性编辑
+        mBinding.btnEditPointArr.onClick {
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_PATH_NODE_ATTR_EDIT)
         }
 
         // 合并路线
@@ -127,6 +180,11 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         // 删除路线
         mBinding.btnDeletePath.onClick {
             mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_PATH_DELETE)
+        }
+
+        // 删除多条路线
+        mBinding.btnDeleteMultiplePaths.onClick {
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_PATH_DELETE_MULTIPLE)
         }
 
         // 曲线转直线
@@ -144,28 +202,42 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
      * 保存路线到world_pad.dat文件
      */
     private fun savePathsToFile() {
-//        lifecycleScope.launch {
-//            withContext(Dispatchers.IO) {
-//                try {
-//                    val world = mBinding.mapView.getWorld()
-//                    if (world != null) {
-//                        val filePath = ConstantBase.getFilePath(mapId, "world_pad.dat")
-//
-//                        // 调用World类的写入方法保存文件
-//                        if (world.saveWorld(filePath.substringBeforeLast('/'), filePath.substringAfterLast('/'))) {
-//                            LogUtil.d("成功保存路径数据到文件")
-//                        } else {
-//                            LogUtil.e("保存路径数据失败")
-//                        }
-//                    } else {
-//                        LogUtil.e("获取World对象失败")
-//                    }
-//                } catch (e: Exception) {
-//                    LogUtil.e("保存路径数据异常: ${e.message}")
-//                    e.printStackTrace()
-//                }
-//            }
-//        }
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                try {
+                    // 获取当前的CLayer对象
+                    val cLayer = mBinding.mapView.getLayer()
+                    if (cLayer != null) {
+                        // 创建World对象并传入CLayer
+                        val world = World(cLayer)
+                        val filePath = ConstantBase.getFilePath(mapId, PAD_WORLD_NAME)
+                        val file = File(filePath)
+
+                        // 创建保存目录（如果不存在）
+                        val directory = file.parentFile
+                        if (directory != null && !directory.exists()) {
+                            directory.mkdirs()
+                        }
+
+                        // 调用World类的写入方法保存文件
+                        if (world.saveWorld(
+                                getFolderPath(mapId),
+                                PAD_WORLD_NAME
+                            )
+                        ) {
+                            LogUtil.d("成功保存路径数据到文件: $filePath")
+                        } else {
+                            LogUtil.e("保存路径数据失败")
+                        }
+                    } else {
+                        LogUtil.e("获取CLayer对象失败")
+                    }
+                } catch (e: Exception) {
+                    LogUtil.e("保存路径数据异常: ${e.message}")
+                    e.printStackTrace()
+                }
+            }
+        }
     }
 
     /**
@@ -175,23 +247,25 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
                 try {
-                    val filePath = ConstantBase.getFilePath(mapId, "world_pad.dat")
+                    val filePath = ConstantBase.getFilePath(mapId, PAD_WORLD_NAME)
                     val file = File(filePath)
-
+                    //extends NodeBase
+                    val mLayers = CLayer()
                     // 检查文件是否存在
                     if (file.exists()) {
                         // 创建World对象并读取文件
-                        val world = World()
+                        val world =
+                            World(mLayers)
                         //读取world_pad.dat
-                        world.readWorld(getFolderPath(mapId), PAD_WORLD_NAME)
-                        mBinding.mapView.setWorld(world)
+                        val readWorld = world.readWorld(getFolderPath(mapId), PAD_WORLD_NAME)
+                        if (readWorld) mBinding.mapView.setLayer(mLayers)
 
                     } else {
                         LogUtil.d("路径数据文件不存在，将创建新的World对象")
                         // 创建新的World对象
-                        val world = com.siasun.dianshi.bean.world.World()
+                        World(mLayers)
                         withContext(Dispatchers.Main) {
-                            mBinding.mapView.setWorld(world)
+                            mBinding.mapView.setLayer(mLayers)
                         }
                     }
                 } catch (e: Exception) {

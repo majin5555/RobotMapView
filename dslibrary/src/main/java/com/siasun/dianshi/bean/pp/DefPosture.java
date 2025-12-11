@@ -119,9 +119,9 @@ public class DefPosture {
             ang3.m_fRad = (float) (ang1.m_fRad - PI / 18);
             Line ln2 = new Line(ln.m_ptEnd, ang2, fArrowLen / 3);
             Line ln3 = new Line(ln.m_ptEnd, ang3, fArrowLen / 3);
-            ln.Draw(mScr, Grp, Color.BLACK, 3, 2, false);
-            ln2.Draw(mScr, Grp, Color.BLACK, 3, 2, false);
-            ln3.Draw(mScr, Grp, Color.BLACK, 3, 2, false);
+            ln.Draw(mScr, Grp, Color.BLACK, 3, 2, false, paint);
+            ln2.Draw(mScr, Grp, Color.BLACK, 3, 2, false, paint);
+            ln3.Draw(mScr, Grp, Color.BLACK, 3, 2, false, paint);
         }
     }
 

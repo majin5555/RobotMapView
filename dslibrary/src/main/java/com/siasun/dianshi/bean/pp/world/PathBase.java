@@ -1,7 +1,9 @@
-package com.siasun.dianshi.bean.world;
+package com.siasun.dianshi.bean.pp.world;
 
 import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.graphics.Point;
+import android.util.Log;
 
 import com.siasun.dianshi.utils.CoordinateConversion;
 
@@ -13,14 +15,15 @@ import java.io.IOException;
 import java.util.Vector;
 
 
+// PathBase类：路径数据库的基类，管理路径索引和节点关联
 public class PathBase {
 
-    // Clean up the memory occupied by the path data base
-    public PathIndex[] m_pPathIdx;        // Head pointer to the indexes
-    public short m_uCount;               // Total number of paths
-    public NodeBase m_MyNode;
+    // 路径索引数组：存储所有路径的索引信息，每个元素指向一条具体路径
+    public PathIndex[] m_pPathIdx;        // 路径索引数组，存储所有路径的索引指针
+    public short m_uCount;                // 路径总数
+    public NodeBase m_MyNode;             // 关联的节点管理对象，包含此路径数据库中的所有节点
     /////////////////////////////////////////////////////////////////////////////
-    //   Implementation of class "PathBase".
+    //   PathBase类的实现部分
 
     public PathBase() {
         m_uCount = 0;
@@ -29,12 +32,10 @@ public class PathBase {
 
     private void CleanUp() {
         for (short i = 0; i < m_uCount; i++) {
-            if (m_pPathIdx[i].m_ptr != null)
-                m_pPathIdx[i].m_ptr = null;
+            if (m_pPathIdx[i].m_ptr != null) m_pPathIdx[i].m_ptr = null;
         }
 
-        if (m_pPathIdx != null)
-            m_pPathIdx = null;
+        if (m_pPathIdx != null) m_pPathIdx = null;
 
         m_uCount = 0;
         m_pPathIdx = null;
@@ -48,8 +49,7 @@ public class PathBase {
         for (short i = 0; i < m_uCount; i++) {
             Path pPath = m_pPathIdx[i].m_ptr;
 
-            if (pPath.m_uId == uPath)
-                return pPath;
+            if (pPath.m_uId == uPath) return pPath;
         }
 
         return null;
@@ -62,8 +62,7 @@ public class PathBase {
             int uStartNode = pPath.m_uStartNode;
             int uEndNode = pPath.m_uEndNode;
 
-            if ((uNode1 == uStartNode && uNode2 == uEndNode) ||
-                    (uNode1 == uEndNode && uNode2 == uStartNode))
+            if ((uNode1 == uStartNode && uNode2 == uEndNode) || (uNode1 == uEndNode && uNode2 == uStartNode))
                 return pPath;
         }
 
@@ -81,12 +80,11 @@ public class PathBase {
         int[] ret = new int[2];
         ret[0] = -1;
         ret[1] = -1;
-        
+
         for (int i = 0; i < m_uCount; i++) {
             Path pPath = m_pPathIdx[i].m_ptr;
 
-            if (nPathType >= 0 && pPath.m_uType != nPathType)
-                continue;
+            if (nPathType >= 0 && pPath.m_uType != nPathType) continue;
 
             int _nHitType = pPath.PointHitTest(pnt, ScrnRef);
 
@@ -101,7 +99,12 @@ public class PathBase {
         //	return -1;
     }
 
-    public void Create(DataInputStream dis) {
+    /**
+     * 数据流
+     *
+     * @param dis
+     */
+    public void read(DataInputStream dis) {
         try {
             int ch1 = dis.read();
             int ch2 = dis.read();
@@ -110,17 +113,17 @@ public class PathBase {
             }
 
             this.m_uCount = (short) ((ch2 << 8) + (ch1 << 0));// Init the count of paths
+            Log.i("readWorld", "路径总数 m_uCount " + m_uCount);
 
             // Allocate memory for the path indexes
             this.m_pPathIdx = new PathIndex[m_uCount];
+
             for (int i = 0; i < m_uCount; i++) {
                 m_pPathIdx[i] = new PathIndex();
+//                Log.d("readWorld", "路径索引数组，存储所有路径的索引指针 m_pPathIdx[" + i + "] " + m_pPathIdx[i]);
             }
 
-            //assert (this.m_pPathIdx != null);
-
             for (short i = 0; i < this.m_uCount; i++) {
-                Path pPath = null;
                 short uType;
                 ch1 = dis.read();
                 ch2 = dis.read();
@@ -129,47 +132,12 @@ public class PathBase {
                 }
 
                 uType = (short) ((ch2 << 8) + (ch1 << 0));
-                switch (uType) {
-                    case 0:
-//                        pPath = new LinePath();
-                        break;
-                    case 6:
-//                        pPath = new ArcPath();
-                        break;
-                    case 1:
-//                        pPath = new SppPath();
-                        break;
-                    case 2:
-//                        pPath = new SplinePath();
-                        break;
-                    case 4:
-//                        pPath = new SidePath();
-                        break;
-                    case 3:
-//                        pPath = new ScpPath();
-                        break;
-                    case 5:
-//                        pPath = new LazySPath();
-                        break;
-                    case 10:
-                        pPath = new GenericPath();
-                        break;
-                    case 100:
-                        //pPath = new CUnknownPath;
-                        break;
-                    default:
-                        //assert (false);
-                        break;
-                }
-
-                //assert (pPath != null);
+                Log.e("readWorld", "uType == " + uType);
+                GenericPath pPath = new GenericPath();
+                // 确保路径对象创建成功
                 pPath.m_pNodeBase = m_MyNode;
-                if (!pPath.Create(dis)) {
-                    //assert (false);
-                }
-
+                pPath.Create(dis);
                 pPath.m_uType = uType;
-
                 m_pPathIdx[i].m_ptr = pPath;
             }
         } catch (FileNotFoundException e) {
@@ -218,12 +186,10 @@ public class PathBase {
             int uStartNode = pPath.m_uStartNode;
             int uEndNode = pPath.m_uEndNode;
 
-            if (uNode == uStartNode)
-                nCount++;
+            if (uNode == uStartNode) nCount++;
             //return uEndNode;
 
-            if (uNode == uEndNode)
-                nCount++;
+            if (uNode == uEndNode) nCount++;
             //return uStartNode;
         }
         if (nCount == 1) {
@@ -243,8 +209,7 @@ public class PathBase {
         int nNextID = 0;
         for (int i = 0; i < m_uCount; i++) {
             Path pPath = m_pPathIdx[i].m_ptr;
-            if (pPath.m_uId > nNextID)
-                nNextID = pPath.m_uId;
+            if (pPath.m_uId > nNextID) nNextID = pPath.m_uId;
         }
         return (nNextID + 1);
     }
@@ -255,8 +220,7 @@ public class PathBase {
     public boolean AddPath(Path pPath) {
         // Allocate memory for the path indexes
         PathIndex[] pTemp = new PathIndex[m_uCount + 1];
-        if (pTemp == null)
-            return false;
+        if (pTemp == null) return false;
 
         for (short i = 0; i < m_uCount + 1; i++)
             pTemp[i] = new PathIndex();
@@ -281,17 +245,14 @@ public class PathBase {
         Vector<Integer> Node = new Vector();
         short i;
 
-        if (uId >= m_uCount)
-            return Node;
+        if (uId >= m_uCount) return Node;
 
         // Allocate memory for the path indexes
         PathIndex[] pTemp = new PathIndex[m_uCount - 1];
-        if (pTemp == null)
-            return Node;
+        if (pTemp == null) return Node;
 
         for (i = 0; i < m_uCount; i++)
-            if (i != uId)
-                pTemp[i] = m_pPathIdx[i];
+            if (i != uId) pTemp[i] = m_pPathIdx[i];
             else {
                 int uNode1 = m_pPathIdx[uId].m_ptr.m_uStartNode;
                 int uNode2 = m_pPathIdx[uId].m_ptr.m_uEndNode;
@@ -320,35 +281,24 @@ public class PathBase {
         return Node;
     }
 
-    public float Cost(Node pNode1, Node pNode2) {
-        Path pPath = GetPathPointer(pNode1.m_uId, pNode2.m_uId);
-        if (pPath != null) {
-            return pPath.m_fSize;
-        } else {
-            return 1000000;
-        }
-    }
 
-    public float Cost(int uNode1, int uNode2) {
-        Path pPath = GetPathPointer(uNode1, uNode1);
-        if (pPath != null) {
-            return pPath.m_fSize;
-        } else {
-            return 1000000;
-        }
-    }
-
-
-    public void Draw(CoordinateConversion scrRef, Canvas Grp, int crPath) {
+    public void Draw(CoordinateConversion scrRef, Canvas Grp, Paint paint) {
         for (short i = 0; i < m_uCount; i++) {
             if (m_pPathIdx != null && m_pPathIdx[i].m_ptr != null)
-                m_pPathIdx[i].m_ptr.Draw(scrRef, Grp, crPath, 3);
+                m_pPathIdx[i].m_ptr.Draw(scrRef, Grp, paint);
         }
     }
 
-    public void DrawPathID(CoordinateConversion ScrnRef, Canvas Grp) {
-        for (int i = 0; i < m_uCount; i++) {
-            m_pPathIdx[i].m_ptr.DrawID(ScrnRef, Grp);
-        }
-    }
+    /**
+     * 绘制路线编号
+     *
+     * @param ScrnRef
+     * @param Grp
+     * @param paint
+     */
+//    public void DrawPathID(CoordinateConversion ScrnRef, Canvas Grp, Paint paint) {
+//        for (int i = 0; i < m_uCount; i++) {
+//            m_pPathIdx[i].m_ptr.DrawID(ScrnRef, Grp, paint);
+//        }
+//    }
 }

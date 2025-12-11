@@ -1,7 +1,7 @@
 package com.siasun.dianshi.attr;
 
 
-import com.siasun.dianshi.bean.world.RfId;
+import com.siasun.dianshi.bean.pp.world.RfId;
 
 public class NodeBaseAttr {
     public int m_uId;               // 节点ID号

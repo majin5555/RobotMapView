@@ -1,4 +1,4 @@
-package com.siasun.dianshi.bean.world;
+package com.siasun.dianshi.bean.pp.world;
 
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -32,8 +32,7 @@ public class LinePath extends Path {
     public LinePath() {
     }
 
-    public LinePath(int uId, int uStartNode, int uEndNode, float[] fVeloLimit, short nGuideType,
-                    short uObstacle, short uDir, short uExtType, NodeBase nodeBase) {
+    public LinePath(int uId, int uStartNode, int uEndNode, float[] fVeloLimit, short nGuideType, short uObstacle, short uDir, short uExtType, NodeBase nodeBase) {
         short type = 0;
         //	super.Create((short)uId,(short)nStartNode,(short)nEndNode, fVeloLimit,type,nGuideType,0,uExtType);
         super.Create(uId, uStartNode, uEndNode, fVeloLimit, type, nGuideType, 0, uExtType, nodeBase);
@@ -49,7 +48,6 @@ public class LinePath extends Path {
 
         Setup();
     }
-
 
 
     public void Setup() {
@@ -89,8 +87,7 @@ public class LinePath extends Path {
 
         if (dleft > minx && dright < maxx && dtop < maxy && dbottom > miny) {
             return true;
-        } else
-            return false;
+        } else return false;
     }
 //
 //Make a trajectory from the path.
@@ -107,7 +104,7 @@ public class LinePath extends Path {
 
 ///////////////20191014
 
-	
+
 //BOOL GetSweepingRegion(CVehicleContour &Vehicle, CSweepingArea &SweepingRegion)
 //{
 //double dContour = (double)sqrt((Vehicle.m_rgn0.m_pVertex[0].x-Vehicle.m_rgn0.m_pVertex[1].x)*(Vehicle.m_rgn0.m_pVertex[0].x-Vehicle.m_rgn0.m_pVertex[1].x)+(Vehicle.m_rgn0.m_pVertex[0].y-Vehicle.m_rgn0.m_pVertex[1].y)*(Vehicle.m_rgn0.m_pVertex[0].y-Vehicle.m_rgn0.m_pVertex[1].y));
@@ -154,7 +151,7 @@ public class LinePath extends Path {
 //
 //
 
-//return true;
+    //return true;
 //}
 //BOOL ISInRect(double minx, double miny, double maxx, double maxy)
 //{
@@ -204,8 +201,7 @@ public class LinePath extends Path {
             int nDist = (int) (fDist * ScrnRef.scale);
 
             // 如果屏幕窗口距离小于3，认为鼠标触碰到路径
-            if (nDist <= offset)
-                return 0;               // 落入
+            if (nDist <= offset) return 0;               // 落入
         }
         return -1;          // 落出
     }
@@ -216,38 +212,32 @@ public class LinePath extends Path {
 
         // Init the fields in the base class
 //	if (!Path.Create(dis))
-        if (!super.Create(dis))
-            return false;
+        if (!super.Create(dis)) return false;
         try {
             //ar >> m_uFwdRotoScannerObstacle >> m_uFwdObdetectorObstacle >> m_uBwdRotoScannerObstacle >> m_uBwdObdetectorObstacle >> uDir;
             int ch1 = dis.read();
             int ch2 = dis.read();
-            if ((ch1 | ch2) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2) < 0) throw new EOFException();
             this.m_uFwdRotoScannerObstacle = ((ch2 << 8) + (ch1 << 0));
 
             ch1 = dis.read();
             ch2 = dis.read();
-            if ((ch1 | ch2) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2) < 0) throw new EOFException();
             this.m_uFwdObdetectorObstacle = ((ch2 << 8) + (ch1 << 0));
 
             ch1 = dis.read();
             ch2 = dis.read();
-            if ((ch1 | ch2) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2) < 0) throw new EOFException();
             this.m_uBwdRotoScannerObstacle = ((ch2 << 8) + (ch1 << 0));
 
             ch1 = dis.read();
             ch2 = dis.read();
-            if ((ch1 | ch2) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2) < 0) throw new EOFException();
             this.m_uBwdObdetectorObstacle = ((ch2 << 8) + (ch1 << 0));
 
             ch1 = dis.read();
             ch2 = dis.read();
-            if ((ch1 | ch2) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2) < 0) throw new EOFException();
             uDir = (short) ((ch2 << 8) + (ch1 << 0));
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -318,8 +308,7 @@ public class LinePath extends Path {
 
         // Init the fields in the base class
 //	if (!Path.Create(dis))
-        if (!super.Save(dis))
-            return false;
+        if (!super.Save(dis)) return false;
         try {
             TranBytes tan = new TranBytes();
             int ch1;
@@ -344,205 +333,29 @@ public class LinePath extends Path {
     }
 
     @Override
-    public void Draw(CoordinateConversion ScrnRef, Canvas Grp, int color, int nWidth) {
+    public void Draw(CoordinateConversion ScrnRef, Canvas Grp, Paint paint) {
         Point2d start = GetStartPnt();
         PointF pnt1 = ScrnRef.worldToScreen(start.x, start.y);
         Point2d end = GetEndPnt();
         PointF pnt2 = ScrnRef.worldToScreen(end.x, end.y);
-        //���ֱ������ͼ֮�⣬���Բ�����ֱ�� 2019.12.3
-//		CRect r;
-//		GetClientRect(GetActiveWindow(),&r);
-//		if ((pnt1.x<0||pnt1.x>r.Width()) && (pnt1.y<0||pnt1.y>r.Height())&&
-//		(pnt2.x<0||pnt2.x>r.Width()) && (pnt2.y<0||pnt2.y>r.Height()))
-//		{
-//		return;
-//		}
+
         int width = Grp.getWidth();
         int Height = Grp.getHeight();
-        if ((pnt1.x < 0 || pnt1.x > width) && (pnt1.y < 0 || pnt1.y > Height) &&
-                (pnt2.x < 0 || pnt2.x > width) && (pnt2.y < 0 || pnt2.y > Height)) {
+        if ((pnt1.x < 0 || pnt1.x > width) && (pnt1.y < 0 || pnt1.y > Height) && (pnt2.x < 0 || pnt2.x > width) && (pnt2.y < 0 || pnt2.y > Height)) {
             return;
         }
-        ////////////////////
-//		cr = m_clr;
-        Paint paint = new Paint();
-        paint.setAntiAlias(true);
-        /*����paint����ɫ*/
-        paint.setColor(color);
-        /*����paint�� style ΪSTROKE������*/
-        paint.setStyle(Paint.Style.STROKE);
-        /*����paint�������*/
-        paint.setStrokeWidth(nWidth);
 
         Grp.drawLine(pnt1.x, pnt1.y, pnt2.x, pnt2.y, paint);
         if (m_uExtType == 7) {
             paint.setColor(Color.RED);
-            paint.setStrokeWidth(nWidth + 2);
+
             Grp.drawLine(pnt1.x, pnt1.y, pnt2.x, pnt2.y, paint);
         }
-//		pDc->SelectObject(pOldPen);
     }
 
-
-    //void Draw(DrawPathType DrawPath)
-//{
-//ScreenReference ScrnRef = DrawPath.ScrnRef;
-//CDC *pDC = DrawPath.pDC;
-//int nPenWidth = DrawPath.PathWidth;
-//int nPointSize = nPenWidth+1;
-//COLORREF crColor = DrawPath.Color;
-//CPen pen(PS_SOLID, nPenWidth, crColor);
-//CPen* pOldPen = pDC->SelectObject(&pen);
-//
-//Point pnt1 = ScrnRef.GetWindowPoint(GetStartPnt());
-//Point pnt2 = ScrnRef.GetWindowPoint(GetEndPnt());
-////���ֱ������ͼ֮�⣬���Բ�����ֱ�� 2019.12.3
-//CRect r;
-//GetClientRect(GetActiveWindow(),&r);
-//if ((pnt1.x<0||pnt1.x>r.Width()) && (pnt1.y<0||pnt1.y>r.Height())&&
-//(pnt2.x<0||pnt2.x>r.Width()) && (pnt2.y<0||pnt2.y>r.Height()))
-//{
-//return;
-//}
-//////////////////////
-//pDC->MoveTo(pnt1);
-//pDC->LineTo(pnt2);
-//
-//Point pointAt;
-//pointAt.x = (pnt1.x + pnt2.x)/2;
-//pointAt.y = (pnt1.y + pnt2.y)/2;
-//CLine ln(GetStartPnt(),GetEndPnt());
-//
-//switch(DrawPath.PathStype)
-//{
-//case 0:
-//{
-//
-//}
-//break;
-//case 1:
-//{
-//Point2d ptArrowTip = ScrnRef.GetWorldPoint(pointAt);
-//CAngle angSlant = !ln.GetSlantAngle();
-//CLine ln1(ptArrowTip, angSlant + PI / 6, 0.1);
-//CLine ln2(ptArrowTip, angSlant - PI / 6, 0.1);
-//Point2d ptArrowWing1 = ln1.m_ptEnd;
-//Point2d ptArrowWing2 = ln2.m_ptEnd;
-//
-//Point pointArrowTip((int)ptArrowTip.x, (int)ptArrowTip.y);
-//Point pointArrowWing1 = ScrnRef.GetWindowPoint(ptArrowWing1);
-//Point pointArrowWing2 = ScrnRef.GetWindowPoint(ptArrowWing2);
-//
-//pDC->MoveTo(pointAt);
-//pDC->LineTo(pointArrowWing1);
-//
-//pDC->MoveTo(pointAt);
-//pDC->LineTo(pointArrowWing2);
-//}
-//break;
-//case 2:
-//{
-//Point2d ptArrowTip = ScrnRef.GetWorldPoint(pointAt);
-//CAngle angSlant = ln.GetSlantAngle();
-//CLine ln1(ptArrowTip, angSlant + PI / 6, 0.1);
-//CLine ln2(ptArrowTip, angSlant - PI / 6, 0.1);
-//Point2d ptArrowWing1 = ln1.m_ptEnd;
-//Point2d ptArrowWing2 = ln2.m_ptEnd;
-//
-//Point pointArrowTip((int)ptArrowTip.x, (int)ptArrowTip.y);
-//Point pointArrowWing1 = ScrnRef.GetWindowPoint(ptArrowWing1);
-//Point pointArrowWing2 = ScrnRef.GetWindowPoint(ptArrowWing2);
-//
-//pDC->MoveTo(pointAt);
-//pDC->LineTo(pointArrowWing1);
-//
-//
-//pDC->MoveTo(pointAt);
-//pDC->LineTo(pointArrowWing2);
-//}
-//break;
-//case 3:
-//{ 
-//pointAt.x = pnt1.x + (pnt2.x -pnt1.x)/4;
-//pointAt.y = pnt1.y + (pnt2.y -pnt1.y)/4;
-//Point2d ptArrowTip = ScrnRef.GetWorldPoint(pointAt);
-//CAngle angSlant = ln.GetSlantAngle();
-//CLine ln1(ptArrowTip, angSlant + PI / 6, 0.1);
-//CLine ln2(ptArrowTip, angSlant - PI / 6, 0.1);
-//Point2d ptArrowWing1 = ln1.m_ptEnd;
-//Point2d ptArrowWing2 = ln2.m_ptEnd;
-//
-//Point pointArrowWing1 = ScrnRef.GetWindowPoint(ptArrowWing1);
-//Point pointArrowWing2 = ScrnRef.GetWindowPoint(ptArrowWing2);
-//
-//pDC->MoveTo(pointAt);
-//pDC->LineTo(pointArrowWing1);
-//
-//
-//pDC->MoveTo(pointAt);
-//pDC->LineTo(pointArrowWing2);
-//
-//pointAt.x = pnt1.x + 3*(pnt2.x -pnt1.x)/4;
-//pointAt.y = pnt1.y + 3*(pnt2.y -pnt1.y)/4;
-//ptArrowTip = ScrnRef.GetWorldPoint(pointAt);
-//angSlant = !ln.GetSlantAngle();
-//CLine ln11(ptArrowTip, angSlant + PI / 6, 0.1);
-//CLine ln22(ptArrowTip, angSlant - PI / 6, 0.1);
-//Point2d ptArrowWing11 = ln11.m_ptEnd;
-//Point2d ptArrowWing22 = ln22.m_ptEnd;
-//
-//Point pointArrowWing11 = ScrnRef.GetWindowPoint(ptArrowWing11);
-//Point pointArrowWing22 = ScrnRef.GetWindowPoint(ptArrowWing22);
-//
-//pDC->MoveTo(pointAt);
-//pDC->LineTo(pointArrowWing11);
-//
-//
-//pDC->MoveTo(pointAt);
-//pDC->LineTo(pointArrowWing22);
-//}
-//break;
-//default:
-//break;
-//}
-//pDC->SelectObject(pOldPen);
-//}
-////
-////�жϸ�������Ļ���Ƿ�����·���ϡ�
-////����ֵ��
-////-1:  δ����·����
-////0:   ����·����
-////
-//int PointHitTest(Point& pnt, ScreenReference& ScrnRef)
-//{
-//// ȡ�ö�Ӧ�����������
-//Point2d pt = ScrnRef.GetWorldPoint(pnt);
-//Point2d& ptStart = GetStartPnt();
-//Point2d& ptEnd = GetEndPnt();
-//
-//// ����ֱ��
-//CLine ln(ptStart, ptEnd);
-//
-//float fLambda;
-//Point2d ptFoot;
-//
-//// ����㵽��ֱ�ߵ���̾���
-//float fDist = ln.DistanceToPoint(false, pt, &fLambda, &ptFoot);
-//if (fLambda >= 0 && fLambda <= 1)
-//{
-//// ���㵽��Ļ���ھ���
-//int nDist = (int)(fDist * ScrnRef.m_fRatio);
-//
-//// �����Ļ���ھ���С��3����Ϊ��괥����·��
-//if (nDist <= 3)
-//return 0;               // ����
-//}
-//
-//return -1;          // ���
-//}
     @Override
-    public void DrawID(CoordinateConversion scrnRef, Canvas Grp) {
-        Point pnt1 = new Point(0, 0);
+    public void DrawID(CoordinateConversion scrnRef, Canvas Grp, Paint paint) {
+        Point pnt1 = new Point();
 
         PointF start = scrnRef.worldToScreen(GetStartNode().GetPoint2dObject().x, GetStartNode().GetPoint2dObject().y);
         PointF end = scrnRef.worldToScreen(GetEndNode().GetPoint2dObject().x, GetEndNode().GetPoint2dObject().y);
@@ -553,10 +366,7 @@ public class LinePath extends Path {
         pnt1.y = pnt1.y / 2;
 
         String str = String.valueOf(m_uId);
-        Paint paint = new Paint();
-        paint.setAntiAlias(true);
         paint.setColor(Color.BLUE);
-        paint.setStyle(Paint.Style.STROKE);
         Grp.drawText(str, pnt1.x + 4 * scrnRef.scale, pnt1.y + 4 * scrnRef.scale, paint);
     }
 

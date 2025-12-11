@@ -26,6 +26,16 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="编辑路线" />
+            <Button
+                android:id="@+id/btn_edit_point_arr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="编辑节点属性" />
+      <Button
+                android:id="@+id/btn_edit_path_arr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="编辑路段属性" />
 
             <Button
                 android:id="@+id/btn_merge_path"
@@ -38,6 +48,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="删除路线" />
+                
+            <Button
+                android:id="@+id/btn_delete_multiple_paths"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="删除多条路线" />
 
             <Button
                 android:id="@+id/btn_convert_path_to_line"

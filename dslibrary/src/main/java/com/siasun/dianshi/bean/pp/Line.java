@@ -11,7 +11,6 @@ import com.siasun.dianshi.utils.CoordinateConversion;
 import java.io.Serializable;
 
 
-
 public class Line implements Serializable {
 
     public static final float PI = ((float) 3.14159265);
@@ -55,8 +54,7 @@ public class Line implements Serializable {
         float fTotalLen = ptStart.DistanceTo(ptEnd);
 
         // ���ֱ��̫�̣�����false
-        if (fTotalLen < MIN_LINE_LEN)
-            return false;
+        if (fTotalLen < MIN_LINE_LEN) return false;
 
         // �������/�յ�/����
         m_ptStart = ptStart;
@@ -78,11 +76,10 @@ public class Line implements Serializable {
 
     public boolean Create(final Point2d ptStart, final Angle angSlant, float fTotalLen) {
         // ֱ�߲��ܹ���
-        if (fTotalLen < MIN_LINE_LEN)
-            return false;
+        if (fTotalLen < MIN_LINE_LEN) return false;
 
         // �����յ�����
-        Point2d ptEnd = new Point2d(0, 0);
+        Point2d ptEnd = new Point2d();
         ptEnd.x = (float) (ptStart.x + fTotalLen * Math.cos(angSlant.m_fRad));
         ptEnd.y = (float) (ptStart.y + fTotalLen * Math.sin(angSlant.m_fRad));
 
@@ -123,8 +120,7 @@ public class Line implements Serializable {
         l2dy = line2.m_ptEnd.y - line2.m_ptStart.y;
         det = l1dy * l2dx - l1dx * l2dy;
 
-        if (Math.abs(det) < fSmallGate)
-            return false;
+        if (Math.abs(det) < fSmallGate) return false;
 
         ldx1 = m_ptStart.x - line2.m_ptStart.x;
         ldy1 = m_ptStart.y - line2.m_ptStart.y;
@@ -135,11 +131,9 @@ public class Line implements Serializable {
 
         pnt.y = m_ptStart.y + l1dy * lambda1;
 
-        if (onSegment1 != false)
-            onSegment1 = (lambda1 >= 0.0 && lambda1 <= 1.0);
+        if (onSegment1 != false) onSegment1 = (lambda1 >= 0.0 && lambda1 <= 1.0);
 
-        if (onSegment2 != false)
-            onSegment2 = (lambda2 >= 0.0 && lambda2 <= 1.0);
+        if (onSegment2 != false) onSegment2 = (lambda2 >= 0.0 && lambda2 <= 1.0);
 
         return true;
     }
@@ -152,8 +146,7 @@ public class Line implements Serializable {
         float maxY = Math.max(m_ptStart.y, m_ptEnd.y);
         if (minX <= pnt.x && pnt.x <= maxX && minY <= pnt.y && pnt.y <= maxY) {
             return true;
-        } else
-            return false;
+        } else return false;
     }
 
 
@@ -173,10 +166,8 @@ public class Line implements Serializable {
 
         if (bIsSegment) {
             /* make sure point is on line (lambda <- [0..1]) */
-            if (lambda < 0)
-                lambda = 0;
-            else if (lambda > 1)
-                lambda = 1.0f;
+            if (lambda < 0) lambda = 0;
+            else if (lambda > 1) lambda = 1.0f;
         }
 
         float x = m_ptStart.x + lambda * dx;
@@ -200,8 +191,7 @@ public class Line implements Serializable {
         Angle m_angSlantT = new Angle((float) (m_angSlant.m_fRad + Math.PI));
         if (m_angSlant.ApproxEqualTo(ang1, fMaxAngDiff) || (m_angSlantT).ApproxEqualTo(ang1, fMaxAngDiff))
             return true;
-        else
-            return false;
+        else return false;
     }
 
     //
@@ -211,8 +201,7 @@ public class Line implements Serializable {
     public boolean ContainPoint(Point2d pt, boolean bExtend) {
         //if (pt == m_ptStart || pt == m_ptEnd)
         //	return true;
-        if ((Math.abs(pt.x - m_ptStart.x) < 0.001 && Math.abs(pt.y - m_ptStart.y) < 0.001) ||
-                (Math.abs(pt.x - m_ptEnd.x) < 0.001 && Math.abs(pt.y - m_ptEnd.y) < 0.001))
+        if ((Math.abs(pt.x - m_ptStart.x) < 0.001 && Math.abs(pt.y - m_ptStart.y) < 0.001) || (Math.abs(pt.x - m_ptEnd.x) < 0.001 && Math.abs(pt.y - m_ptEnd.y) < 0.001))
             return true;
 
         // !!!!!!!!! 下面的计算可能有问题，当ln1, ln2非常短时，可能会出现错误结果!!!!
@@ -238,8 +227,7 @@ public class Line implements Serializable {
                 ret2 = true;
             }
 
-            if (ret1 || ret2)
-                return true;
+            if (ret1 || ret2) return true;
         }
 
         // 只允许点落在线段以内
@@ -261,8 +249,7 @@ public class Line implements Serializable {
                 ret2 = true;
             }
 
-            if (ret1 || ret2)
-                return true;
+            if (ret1 || ret2) return true;
             //	else if ((ln2.GetSlantAngle() == m_angSlant) && (ln1.GetSlantAngle() == !m_angSlant))
             //	else if ((ln2.GetSlantAngle() == m_angSlant) && (ln1.GetSlantAngle() == m_angSlantT))
             fTemp = (float) Math.abs(ln2.GetSlantAngle().m_fRad - m_angSlant.m_fRad);
@@ -279,8 +266,7 @@ public class Line implements Serializable {
                 ret2 = true;
             }
 
-            if (ret1 || ret2)
-                return true;
+            if (ret1 || ret2) return true;
         }
 
         return false;
@@ -291,8 +277,7 @@ public class Line implements Serializable {
         Point2d pt1 = new Point2d();
         float k1, k2;
         //判断两直线是否平行
-        if (IsParallelTo(Line, 0))
-            return false;
+        if (IsParallelTo(Line, 0)) return false;
         // 情形1：第一条直线平行于Y轴
         if (Math.abs(m_ptEnd.x - m_ptStart.x) < MIN_LINE_LEN) {
             if (Math.abs(Line.m_ptEnd.x - Line.m_ptStart.x) < MIN_LINE_LEN) {
@@ -322,8 +307,7 @@ public class Line implements Serializable {
             pt1.y = m_ptStart.y + (pt1.x - m_ptStart.x) * k1;
         }
         // 交点需要处于两条线段以内
-        if (!ContainPoint(pt1, true) || !Line.ContainPoint(pt1, true))
-            return false;
+        if (!ContainPoint(pt1, true) || !Line.ContainPoint(pt1, true)) return false;
         pt.x = pt1.x;
         pt.y = pt1.y;
         fDist = pt1.DistanceTo(m_ptStart);
@@ -333,8 +317,8 @@ public class Line implements Serializable {
     //
 //����Ļ�ϻ��ƴ�ֱ�ߡ�
 //
-    public void Draw(CoordinateConversion ScrnRef, Canvas Grp, int color, int nWidth, int nPointSize, boolean bBigVertex) {
-        Paint paint = new Paint();
+    public void Draw(CoordinateConversion ScrnRef, Canvas Grp, int color, int nWidth, int nPointSize, boolean bBigVertex, Paint paint) {
+//        Paint paint = new Paint();
         paint.setAntiAlias(true);
         /*����paint����ɫ*/
         paint.setColor(color);
@@ -350,16 +334,13 @@ public class Line implements Serializable {
         Grp.drawLine(pnt1.x, pnt1.y, pnt2.x, pnt2.y, paint);
 
         if (bBigVertex) {
-            m_ptStart.Draw(ScrnRef, Grp, color, nPointSize /* *2 */);
-            m_ptEnd.Draw(ScrnRef, Grp, color, nPointSize /* *2*/);
+            m_ptStart.Draw(ScrnRef, Grp, color, nPointSize, paint);
+            m_ptEnd.Draw(ScrnRef, Grp, color, nPointSize, paint);
         }
     }
 
     @Override
     public String toString() {
-        return "Line{" +
-                "m_ptStart=" + m_ptStart +
-                ", m_ptEnd=" + m_ptEnd +
-                '}';
+        return "Line{" + "m_ptStart=" + m_ptStart + ", m_ptEnd=" + m_ptEnd + '}';
     }
 }

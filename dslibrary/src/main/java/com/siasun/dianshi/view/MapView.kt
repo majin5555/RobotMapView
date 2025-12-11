@@ -23,14 +23,12 @@ import com.siasun.dianshi.bean.MachineStation
 import com.siasun.dianshi.bean.MapData
 import com.siasun.dianshi.bean.MergedPoseItem
 import com.siasun.dianshi.bean.Point2d
-import com.siasun.dianshi.bean.pp.PathPlanResultBean
 import com.siasun.dianshi.bean.PositingArea
 import com.siasun.dianshi.bean.SpArea
-import com.siasun.dianshi.bean.TeachPoint
 import com.siasun.dianshi.bean.WorkAreasNew
 import com.siasun.dianshi.bean.pp.DefPosture
 import com.siasun.dianshi.bean.pp.Posture
-import com.siasun.dianshi.bean.world.World
+import com.siasun.dianshi.bean.pp.world.CLayer
 import com.siasun.dianshi.utils.CoordinateConversion
 import com.siasun.dianshi.utils.MathUtils
 import com.siasun.dianshi.utils.RadianUtil
@@ -70,12 +68,14 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         MODE_PATH_EDIT, // 编辑路线模式
         MODE_PATH_MERGE, // 合并路线模式
         MODE_PATH_DELETE, // 删除路线模式
-        MODE_PATH_CONVERT_TO_LINE // 曲线转直线模式
+        MODE_PATH_DELETE_MULTIPLE, // 删除多条路线模式
+        MODE_PATH_CONVERT_TO_LINE, // 曲线转直线模式
+        MODE_PATH_NODE_ATTR_EDIT, // 节点属性编辑模式
+        MODE_PATH_SEGMENT_ATTR_EDIT // 路段属性编辑模式
     }
 
     // 当前工作模式
     private var currentWorkMode = WorkMode.MODE_SHOW_MAP
-    private var mWorld: World? = null
 
     var mSrf = CoordinateConversion()//坐标转化工具类
     private var mOuterMatrix = Matrix()
@@ -209,16 +209,16 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         val point = screenToWorld(event.x, event.y)
         mLegendView?.setScreen(point)
 
-        // 如果是擦除噪点模式、创建定位区域模式、编辑定位区域模式、删除定位区域模式、编辑清扫区域模式或创建清扫区域模式
-        if (currentWorkMode == WorkMode.MODE_REMOVE_NOISE || currentWorkMode == WorkMode.MODE_POSITING_AREA_ADD || currentWorkMode == WorkMode.MODE_POSITING_AREA_EDIT || currentWorkMode == WorkMode.MODE_POSITING_AREA_DELETE || currentWorkMode == WorkMode.MODE_CLEAN_AREA_EDIT || currentWorkMode == WorkMode.MODE_CLEAN_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_EDIT) {
-            // 让事件传递给子视图（如RemoveNoiseView或PostingAreasView）处理
+        // 如果是擦除噪点模式、创建定位区域模式、编辑定位区域模式、删除定位区域模式、编辑清扫区域模式或创建清扫区域模式，或者路径编辑模式
+        if (currentWorkMode == WorkMode.MODE_REMOVE_NOISE || currentWorkMode == WorkMode.MODE_POSITING_AREA_ADD || currentWorkMode == WorkMode.MODE_POSITING_AREA_EDIT || currentWorkMode == WorkMode.MODE_POSITING_AREA_DELETE || currentWorkMode == WorkMode.MODE_CLEAN_AREA_EDIT || currentWorkMode == WorkMode.MODE_CLEAN_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_EDIT || currentWorkMode == WorkMode.MODE_PATH_EDIT) {
+            // 让事件传递给子视图（如RemoveNoiseView、PostingAreasView或PathView）处理
             // 先调用父类的onTouchEvent让事件传递给子视图
             super.onTouchEvent(event)
             // 返回true表示事件已处理，禁止手势检测器处理，从而禁止底图拖动
             return true
         }
 
-        // 非擦除噪点模式和非编辑定位区域模式，由手势检测器处理事件
+        // 非特殊模式，由手势检测器处理事件
         return mGestureDetector!!.onTouchEvent(event)
     }
 
@@ -476,7 +476,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mMixAreaView?.setWorkMode(mode)
         mElevatorView?.setWorkMode(mode)
         mHomeDockView?.setWorkMode(mode)
-//        mPathView?.setWorkMode(mode)
+        mPathView?.setWorkMode(mode)
     }
 
     /**
@@ -500,21 +500,26 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     }
     
     /**
+     * 设置路径属性编辑回调监听器
+     */
+    fun setOnPathAttributeEditListener(listener: PathView2.OnPathAttributeEditListener) {
+        mPathView?.setOnPathAttributeEditListener(listener)
+    }
+
+    /**
      * 设置World数据到PathView2
      */
-    fun setWorld(world: World) {
-        mPathView?.setWorld(world)
-        mWorld = world
+    fun setLayer(cLayer: CLayer) {
+        mPathView?.setLayer(cLayer)
     }
     
     /**
-     * 获取World数据
+     * 获取当前的CLayer对象，用于保存路径数据
      */
-    fun getWorld(): World? {
-        return mWorld
+    fun getLayer(): CLayer? {
+        return mPathView?.getLayer()
     }
     
-
 
     /***
      * 设置地图显示
