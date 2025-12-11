@@ -125,6 +125,59 @@ public class CLayer extends NodeBase {
     }
 
     /**
+     * 创建一个新节点
+     *
+     * @param pt 节点位置坐标
+     * @return 创建的节点对象
+     */
+    public Node CreateNode(Point2d pt) {
+        // 获取下一个可用的节点ID
+        int nNewID = NextID();
+        
+        // 创建新节点
+        Node newNode = new Node(nNewID, pt);
+        
+        // 设置节点的默认属性
+        newNode.m_uType = 1; // 默认节点类型
+        newNode.m_uExtType = 0; // 默认扩展类型
+        newNode.m_uExtType2 = 0; // 默认扩展类型2
+        newNode.m_fHeading = 0.0f; // 默认航向角
+        newNode.m_Tag = new RfId(); // 创建新的标签对象
+        newNode.m_Tag.Init(null); // 初始化标签
+        
+        // 设置标记相关属性
+        newNode.m_fChkMarkDist = 0.45f; // 检测标记距离
+        newNode.m_fChkMarkVel = 0.1f; // 检测标记速度
+        newNode.m_fMarkWidth = 0.0f; // 标记有效宽度
+        
+        // 设置偏移量
+        newNode.m_fOffset1 = 0.0f;
+        newNode.m_fOffset2 = 0.0f;
+        
+        // 设置标记偏移
+        newNode.m_fFwdMarkOffset = 0.0f;
+        newNode.m_fBwdMarkOffset = 0.0f;
+        
+        // 设置图层和站类型
+        newNode.m_uLayerID = 0;
+        newNode.m_uStationType = 0; // 0:临时站
+        newNode.m_uStationTempId = 0;
+        newNode.m_uStationId = 0;
+        
+        // 设置车辆类型和上线状态
+        newNode.m_uCarrierType = 255; // 默认车辆类型
+        newNode.m_uOnLine = 1; // 允许上线
+        
+        // 将节点添加到节点集合中
+        if (AddNode(newNode) < 0) {
+            return null;
+        }
+        
+        // 返回创建的节点
+        return GetNode(nNewID);
+    }
+    
+    /**
      * 创建一条连接两个节点的路径
      *
      * @param startNode 起始节点
@@ -160,6 +213,97 @@ public class CLayer extends NodeBase {
         // 将路径添加到路径数据库中
         if (m_PathBase.AddPath(pPath)) {
             return pPath;
+        }
+        
+        return null;
+    }
+    
+    /**
+     * 创建路径的通用方法
+     * 
+     * @param startPoint 起点坐标
+     * @param endPoint 终点坐标
+     * @param startNodeId 起点节点ID，-1表示创建新节点
+     * @param endNodeId 终点节点ID，-1表示创建新节点
+     * @param pathType 路径类型（0表示直线，10表示曲线）
+     * @param speed 速度参数
+     * @param guidFunction 引导功能类型
+     * @param controlPointDistance 控制点距离（仅用于曲线类型）
+     * @return 创建的路径对象，失败返回null
+     */
+    public Path CreatePath(Point2d startPoint, Point2d endPoint, int startNodeId, int endNodeId, 
+                           int pathType, float[] speed, short guidFunction, float controlPointDistance) {
+        Node startNode;
+        Node endNode;
+        
+        // 处理起点节点
+        if (startNodeId < 0) {
+            // 创建新节点
+            startNode = CreateNode(startPoint);
+            if (startNode == null) {
+                return null;
+            }
+        } else {
+            // 使用现有节点
+            startNode = GetNode(startNodeId);
+            if (startNode == null) {
+                return null;
+            }
+        }
+        
+        // 处理终点节点
+        if (endNodeId < 0) {
+            // 创建新节点
+            endNode = CreateNode(endPoint);
+            if (endNode == null) {
+                return null;
+            }
+        } else {
+            // 使用现有节点
+            endNode = GetNode(endNodeId);
+            if (endNode == null) {
+                return null;
+            }
+        }
+        
+        // 获取路径的下一个ID
+        int nextPathId = m_PathBase.NextID();
+        
+        // 创建起点和终点的姿态对象
+        Posture pstStart = new Posture();
+        pstStart.x = startNode.x;
+        pstStart.y = startNode.y;
+        pstStart.SetAngle(new Angle(0)); // 初始角度为0
+        
+        Posture pstEnd = new Posture();
+        pstEnd.x = endNode.x;
+        pstEnd.y = endNode.y;
+        pstEnd.SetAngle(new Angle(0)); // 初始角度为0
+        
+        Path createdPath;
+        
+        // 根据路径类型创建不同类型的路径
+        if (pathType == 0) {
+            // 创建直线路径
+            createdPath = new LinePath(nextPathId, startNode.m_uId, endNode.m_uId, 
+                speed, guidFunction, (short) 0, (short) 0, (short) 3, m_PathBase.m_MyNode);
+        } else if (pathType == 10) {
+            // 创建曲线路径
+            if (controlPointDistance <= 0) {
+                controlPointDistance = 0.5f; // 默认控制点距离
+            }
+            
+            createdPath = new GenericPath(nextPathId, startNode.m_uId, endNode.m_uId, 
+                pstStart, pstEnd, controlPointDistance, controlPointDistance, 
+                speed, guidFunction, (short) 0, (short) 0, (short) 3, m_PathBase.m_MyNode);
+        } else {
+            // 不支持的路径类型
+            return null;
+        }
+        
+        // 将路径添加到路径数据库中
+        if (createdPath != null && m_PathBase.AddPath(createdPath)) {
+            return createdPath;
         }
         
         return null;

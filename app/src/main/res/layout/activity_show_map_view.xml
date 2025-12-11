@@ -63,11 +63,18 @@
                 app:layout_constraintTop_toBottomOf="@+id/btn_delete_path" />
 
             <Button
+                android:id="@+id/btn_create_path"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="创建路线"
+                app:layout_constraintTop_toBottomOf="@+id/btn_convert_path_to_line" />
+
+            <Button
                 android:id="@+id/btn_save_path"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="保存路线"
-                app:layout_constraintTop_toBottomOf="@+id/btn_convert_path_to_line" />
+                app:layout_constraintTop_toBottomOf="@+id/btn_create_path" />
 
             <Button
                 android:id="@+id/btn_move"

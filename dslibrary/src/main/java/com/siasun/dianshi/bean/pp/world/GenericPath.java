@@ -849,29 +849,30 @@ public class GenericPath extends Path {
     android.graphics.Path mBezirPath = new android.graphics.Path();
 
     public void Draw(CoordinateConversion conversion, Canvas canvas, Paint paint) {
+        if (m_Curve != null && m_Curve.m_ptKey != null) {
+            PointF mStart = conversion.worldToScreen(m_Curve.m_ptKey[0].x, m_Curve.m_ptKey[0].y);
+            PointF mControl1 = conversion.worldToScreen(m_Curve.m_ptKey[1].x, m_Curve.m_ptKey[1].y);
+            PointF mControl2 = conversion.worldToScreen(m_Curve.m_ptKey[2].x, m_Curve.m_ptKey[2].y);
+            PointF mEnd = conversion.worldToScreen(m_Curve.m_ptKey[3].x, m_Curve.m_ptKey[3].y);
 
-        PointF mStart = conversion.worldToScreen(m_Curve.m_ptKey[0].x, m_Curve.m_ptKey[0].y);
-        PointF mControl1 = conversion.worldToScreen(m_Curve.m_ptKey[1].x, m_Curve.m_ptKey[1].y);
-        PointF mControl2 = conversion.worldToScreen(m_Curve.m_ptKey[2].x, m_Curve.m_ptKey[2].y);
-        PointF mEnd = conversion.worldToScreen(m_Curve.m_ptKey[3].x, m_Curve.m_ptKey[3].y);
-
-        // 重置路径，避免重复绘制
-        mBezirPath.reset();
-        mBezirPath.moveTo(mStart.x, mStart.y);
-        mBezirPath.cubicTo(mControl1.x, mControl1.y, mControl2.x, mControl2.y, mEnd.x, mEnd.y);
-        paint.setColor(Color.BLACK);
-        paint.setStyle(Paint.Style.STROKE);
-        canvas.drawPath(mBezirPath, paint);
+            // 重置路径，避免重复绘制
+            mBezirPath.reset();
+            mBezirPath.moveTo(mStart.x, mStart.y);
+            mBezirPath.cubicTo(mControl1.x, mControl1.y, mControl2.x, mControl2.y, mEnd.x, mEnd.y);
+            paint.setColor(Color.BLACK);
+            paint.setStyle(Paint.Style.STROKE);
+            canvas.drawPath(mBezirPath, paint);
+        }
     }
 
 
     /**
      * 绘制路径的控制点
      *
-     * @param ScrnRef 坐标转换对象
-     * @param Grp     画布对象
-     * @param cr      控制点颜色
-     * @param nPointSize  控制点大小
+     * @param ScrnRef    坐标转换对象
+     * @param Grp        画布对象
+     * @param cr         控制点颜色
+     * @param nPointSize 控制点大小
      */
     public void DrawCtrlPoints(CoordinateConversion ScrnRef, Canvas Grp, int cr, int nPointSize, Paint paint) {
         m_Curve.DrawCtrlPoints(ScrnRef, Grp, cr, nPointSize, paint);

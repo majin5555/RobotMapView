@@ -192,6 +192,11 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_PATH_CONVERT_TO_LINE)
         }
 
+        // 创建路线
+        mBinding.btnCreatePath.onClick {
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_PATH_CREATE)
+        }
+
         // 保存路线
         mBinding.btnSavePath.onClick {
             savePathsToFile()
