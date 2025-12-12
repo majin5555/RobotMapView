@@ -41,8 +41,10 @@ class ShowMapViewModel : BaseViewModel() {
 
     val saveSpecialArea = MutableLiveData<Boolean>()
 
-
     val saveWorksArea = MutableLiveData<Boolean>()
+
+    // 编辑虚拟墙类型的LiveData变量
+    val editVirtualWallType = MutableLiveData<Boolean>()
 
 
     /**
@@ -80,6 +82,20 @@ class ShowMapViewModel : BaseViewModel() {
                 onComplete.invoke(it)
             }
         })
+    }
+
+    /**
+     * 触发编辑虚拟墙类型
+     */
+    fun triggerEditVirtualWallType() {
+        editVirtualWallType.postValue(true)
+    }
+
+    /**
+     * 取消编辑虚拟墙类型
+     */
+    fun cancelEditVirtualWallType() {
+        editVirtualWallType.postValue(false)
     }
 
 

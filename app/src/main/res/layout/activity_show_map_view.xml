@@ -258,6 +258,13 @@
                 app:layout_constraintTop_toBottomOf="@+id/btn_vir_add" />
 
             <Button
+                android:id="@+id/btnVirTypeEdit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="编辑虚拟墙类型"
+                app:layout_constraintTop_toBottomOf="@+id/btn_vir_add" />
+
+            <Button
                 android:id="@+id/btn_vir_del"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

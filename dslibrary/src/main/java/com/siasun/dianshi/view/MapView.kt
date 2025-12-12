@@ -51,6 +51,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         MODE_SHOW_MAP,         // 移动地图模式
         MODE_VIRTUAL_WALL_ADD, // 创建虚拟墙模式
         MODE_VIRTUAL_WALL_EDIT,// 编辑虚拟墙模式
+        MODE_VIRTUAL_WALL_TYPE_EDIT,// 编辑虚拟墙类型模式
         MODE_VIRTUAL_WALL_DELETE, // 删除虚拟墙模式
         MODE_CMS_STATION_EDIT,  // 修改避让点模式
         MODE_CMS_STATION_DELETE, // 删除避让点模式
@@ -486,6 +487,20 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mElevatorView?.setWorkMode(mode)
         mHomeDockView?.setWorkMode(mode)
         mWorldPadView?.setWorkMode(mode)
+    }
+
+    /**
+     * 设置工作模式为编辑虚拟墙类型模式
+     */
+    fun setVirtualWallTypeEditMode() {
+        setWorkMode(WorkMode.MODE_VIRTUAL_WALL_TYPE_EDIT)
+    }
+
+    /**
+     * 退出编辑虚拟墙类型模式
+     */
+    fun exitVirtualWallTypeEditMode() {
+        setWorkMode(WorkMode.MODE_SHOW_MAP)
     }
 
     /**
@@ -925,6 +940,22 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      */
     fun setOnMachineStationDeleteListener(listener: HomeDockView.OnMachineStationDeleteListener?) {
         mHomeDockView?.setOnMachineStationDeleteListener(listener)
+    }
+
+    /**
+     * 设置虚拟墙点击监听器
+     */
+    fun setOnVirtualWallClickListener(listener: VirtualWallView.OnVirtualWallClickListener) {
+        mWallView?.setOnVirtualWallClickListener(listener)
+    }
+
+    /**
+     * 更新虚拟墙类型
+     * @param lineIndex 虚拟墙索引
+     * @param newConfig 新的虚拟墙类型配置
+     */
+    fun updateVirtualWallType(lineIndex: Int, newConfig: Int) {
+        mWallView?.updateVirtualWallType(lineIndex, newConfig)
     }
 
     /**
