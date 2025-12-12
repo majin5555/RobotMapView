@@ -20,6 +20,7 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
     private lateinit var mBinding: MapViewLegendBinding
     private val parentRef: WeakReference<MapView> = parent
 
+
     // 懒加载字符串资源，避免重复获取
     private val currentMapText by lazy { context.getString(R.string.current_map) }
     private val pointXText by lazy { "X:" }
@@ -38,6 +39,7 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
     private fun init(context: Context, attrs: AttributeSet?) {
         val inflater = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
         mBinding = MapViewLegendBinding.inflate(inflater, this, true)
+        setCheckboxVisibility(attrs)
     }
 
     init {
@@ -127,12 +129,11 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
         }
         //路径
         mBinding.cbWorldPath.setOnCheckedChangeListener { _, isChecked ->
-//            if (isChecked) {
-//                parentRef.get()?.mPathView?.setDrawingEnabled(true) // 启用绘制
-//            } else {
-//                parentRef.get()?.mPathView?.setDrawingEnabled(false) // 禁用绘制
-//            }
-
+            if (isChecked) {
+                parentRef.get()?.mWorldPadView?.setDrawingEnabled(true) // 启用绘制
+            } else {
+                parentRef.get()?.mWorldPadView?.setDrawingEnabled(false) // 禁用绘制
+            }
         }
         //混行区
         mBinding.cbMixArea.setOnCheckedChangeListener { _, isChecked ->
@@ -212,6 +213,74 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
      * 获取避让点CheckBox
      */
     fun getCbStations(): CheckBox = mBinding.cbStations
+
+    /**
+     * 设置各个CheckBox的显示隐藏
+     */
+    @SuppressLint("CustomViewStyleable")
+    private fun setCheckboxVisibility(attrs: AttributeSet?) {
+        attrs?.let {
+            val typedArray = context.obtainStyledAttributes(it, R.styleable.MapView)
+
+            // 从XML属性中读取各CheckBox的显示状态
+            mBinding.cbUpLaserPointCloud.visibility = if (typedArray.getBoolean(
+                    R.styleable.MapView_showUpLaserPointCloud, true
+                )
+            ) VISIBLE else GONE
+
+            mBinding.cbLowerLaserPointCloud.visibility = if (typedArray.getBoolean(
+                    R.styleable.MapView_showLowerLaserPointCloud, true
+                )
+            ) VISIBLE else GONE
+
+
+            mBinding.cbVirtualWall.visibility = if (typedArray.getBoolean(
+                    R.styleable.MapView_showVirtualWall, false
+                )
+            ) VISIBLE else GONE
+
+            mBinding.cbTopViewPath.visibility = if (typedArray.getBoolean(
+                    R.styleable.MapView_showTopViewPath, false
+                )
+            ) VISIBLE else GONE
+
+            mBinding.cbStations.visibility =
+                if (typedArray.getBoolean(R.styleable.MapView_showStations, false)) VISIBLE else GONE
+
+            mBinding.cbOnlinePose.visibility = if (typedArray.getBoolean(
+                    R.styleable.MapView_showOnlinePose, false
+                )
+            ) VISIBLE else GONE
+
+            mBinding.cbChargeStation.visibility = if (typedArray.getBoolean(
+                    R.styleable.MapView_showChargeStation, false
+                )
+            ) VISIBLE else GONE
+
+            mBinding.cbElevator.visibility =
+                if (typedArray.getBoolean(R.styleable.MapView_showElevator, false)) VISIBLE else GONE
+
+
+            mBinding.cbPositingArea.visibility = if (typedArray.getBoolean(
+                    R.styleable.MapView_showPositingArea, false
+                )
+            ) VISIBLE else GONE
+
+            mBinding.cbArea.visibility =
+                if (typedArray.getBoolean(R.styleable.MapView_showArea, false)) VISIBLE else GONE
+
+            mBinding.cbWorldPath.visibility = if (typedArray.getBoolean(
+                    R.styleable.MapView_showWorldPath, false
+                )
+            ) VISIBLE else GONE
+
+            mBinding.cbMixArea.visibility =
+                if (typedArray.getBoolean(R.styleable.MapView_showMixArea, false)) VISIBLE else GONE
+
+
+            typedArray.recycle()
+        }
+    }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()

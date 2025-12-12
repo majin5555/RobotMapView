@@ -5,16 +5,12 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.Path
 import android.graphics.PointF
 import android.util.Log
 import android.view.MotionEvent
-import com.siasun.dianshi.bean.LineNew
 import com.siasun.dianshi.bean.Point2d
-import com.siasun.dianshi.bean.PointNew
-import com.siasun.dianshi.bean.TeachPoint
-import com.siasun.dianshi.bean.pp.Bezier
-import com.siasun.dianshi.bean.pp.PathPlanResultBean
+import com.siasun.dianshi.bean.pp.DefPosture
+import com.siasun.dianshi.bean.pp.Posture
 import com.siasun.dianshi.bean.pp.world.CLayer
 import com.siasun.dianshi.bean.pp.world.GenericPath
 import com.siasun.dianshi.bean.pp.world.Node
@@ -22,10 +18,10 @@ import java.lang.ref.WeakReference
 import kotlin.math.sqrt
 
 /**
- * 路线
+ * 路线 world_pad.dat文件绘制 编辑
  */
 @SuppressLint("ViewConstructor")
-class PathView2 @SuppressLint("ViewConstructor") constructor(
+class WorldPadView @SuppressLint("ViewConstructor") constructor(
     context: Context?, parent: WeakReference<MapView>
 ) : SlamWareBaseView(context, parent) {
     private var isDrawingEnabled: Boolean = true
@@ -56,65 +52,21 @@ class PathView2 @SuppressLint("ViewConstructor") constructor(
     // 创建路线模式相关属性
     private var pathCreateStartNode: Node? = null // 创建路线的起点
     private var tempPath: GenericPath? = null // 临时创建的路径（用于绘制）
-    private val redPaint: Paint by lazy { // 红色画笔，用于标记选中的路线
-        Paint().apply {
-            color = Color.RED
-            strokeWidth = 3f
-            isAntiAlias = true
-            style = Paint.Style.STROKE
-        }
-    }
 
-    // 编辑模式下的特殊画笔
-    private val mSelectedPaint: Paint by lazy {
-        Paint().apply {
-            color = Color.GREEN
-            strokeWidth = 3f
-            isAntiAlias = true
-            style = Paint.Style.STROKE
-        }
-    }
-
-    private val mDraggingPaint: Paint by lazy {
-        Paint().apply {
-            color = Color.RED
-            strokeWidth = 2f
-            isAntiAlias = true
-            style = Paint.Style.FILL
-        }
-    }
-
-    // 专用画笔：起点蓝色、终点黑色、控制点绿色
-    private val mStartPointPaint: Paint by lazy {
-        Paint().apply {
-            color = Color.BLUE
-            strokeWidth = 2f
-            isAntiAlias = true
-            style = Paint.Style.FILL
-        }
-    }
-
-    private val mEndPointPaint: Paint by lazy {
-        Paint().apply {
-            color = Color.BLACK
-            strokeWidth = 2f
-            isAntiAlias = true
-            style = Paint.Style.FILL
-        }
-    }
-
-    private val mControlPointPaint: Paint by lazy {
-        Paint().apply {
-            color = Color.GREEN
-            strokeWidth = 1f
-            isAntiAlias = true
-            style = Paint.Style.FILL
-        }
-    }
-
+    // 保存parent引用以便安全访问
+    private val mapViewRef: WeakReference<MapView> = parent
 
     // 优化：使用伴生对象创建静态Paint实例，避免重复创建
     companion object {
+        // 编辑模式下的特殊画笔
+        private val mSelectedPaint: Paint by lazy {
+            Paint().apply {
+                color = Color.GREEN
+                strokeWidth = 3f
+                isAntiAlias = true
+                style = Paint.Style.STROKE
+            }
+        }
         private val mRedPaint: Paint by lazy {
             Paint().apply {
                 color = Color.RED
@@ -123,86 +75,13 @@ class PathView2 @SuppressLint("ViewConstructor") constructor(
                 style = Paint.Style.FILL
             }
         }
-        private val mGreenPaint: Paint by lazy {
-            Paint().apply {
-                color = Color.GREEN // 修复：将颜色从RED改为GREEN
-                strokeWidth = 1f
-                isAntiAlias = true
-                style = Paint.Style.FILL
-            }
-        }
-        private val mTeachPaint: Paint by lazy {
-            Paint().apply {
-                color = Color.GREEN
-                strokeWidth = 1f
-                isAntiAlias = true
-                style = Paint.Style.FILL
-            }
-        }
-        private val mLinePaint: Paint by lazy {
-            Paint().apply {
-                color = Color.BLACK
-                strokeWidth = 1f
-                isAntiAlias = true
-                style = Paint.Style.STROKE
-            }
-        }
-        private val mBezierPaint: Paint by lazy {
-            Paint().apply {
-                color = Color.BLACK
-                strokeWidth = 1f
-                isAntiAlias = true
-                style = Paint.Style.STROKE
-            }
-        }
-
         private val mPaint = Paint().apply {
             isAntiAlias = true
             style = Paint.Style.STROKE
             color = Color.BLACK
         }
-
-        // 采样率，减少绘制点数以提高性能
-        private const val SAMPLE_RATE = 1
     }
 
-    //试教中的绿色的点的集合 - 使用同步集合确保线程安全
-    private val teachPointList = mutableListOf<TeachPoint>()
-    private var mCleanPathPlanResultBean: PathPlanResultBean? = null // 清扫路径规划结果
-    private var mGlobalPathPlanResultBean: PathPlanResultBean? = null //全局路径规划结果
-
-
-    // 优化：创建可复用的Path对象，避免在onDraw中频繁创建
-    private val bezierPath = Path()
-
-    // 保存parent引用以便安全访问
-    private val mapViewRef: WeakReference<MapView> = parent
-
-    // 节点和路段属性编辑回调接口
-    interface OnPathAttributeEditListener {
-        // 当选中节点时触发
-        fun onNodeSelected(node: Node, path: com.siasun.dianshi.bean.pp.world.Path)
-
-        // 当选中路段时触发
-        fun onPathSelected(path: com.siasun.dianshi.bean.pp.world.Path)
-
-        // 当删除路段时触发
-        fun onPathDeleted(path: com.siasun.dianshi.bean.pp.world.Path)
-
-        // 当删除节点时触发
-        fun onNodeDeleted(node: Node)
-
-        // 当创建路段时触发
-        fun onPathCreated(path: com.siasun.dianshi.bean.pp.world.Path) {}
-    }
-
-    // 回调监听器
-    private var onPathAttributeEditListener: OnPathAttributeEditListener? = null
-
-    // 设置回调监听器
-    fun setOnPathAttributeEditListener(listener: OnPathAttributeEditListener) {
-        this.onPathAttributeEditListener = listener
-    }
 
     /**
      * 设置工作模式
@@ -1010,54 +889,6 @@ class PathView2 @SuppressLint("ViewConstructor") constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if (isDrawingEnabled) {
-//
-//            // 绘制试教中的点 - 使用副本避免并发修改
-//            val pointListCopy = synchronized(teachPointList) {
-//                teachPointList.toList()
-//            }
-//            for (point in pointListCopy) {
-//                drawTeachPointIng(canvas, point)
-//            }
-//
-//            // 绘制清扫路线
-//            mCleanPathPlanResultBean?.let { cleanPath ->
-//                // 采样绘制直线
-//                for (i in cleanPath.m_vecLineOfPathPlan.indices step SAMPLE_RATE) {
-//                    drawPPLinePath(canvas, cleanPath.m_vecLineOfPathPlan[i])
-//                }
-//                // 采样绘制贝塞尔曲线
-//                for (i in cleanPath.m_vecBezierOfPathPlan.indices step SAMPLE_RATE) {
-//                    drawPPBezierPath(canvas, cleanPath.m_vecBezierOfPathPlan[i])
-//                }
-//            }
-//
-//            // 绘制全局路径
-//            mGlobalPathPlanResultBean?.let { globalPath ->
-//                // 采样绘制直线
-//                for (i in globalPath.m_vecLineOfPathPlan.indices step SAMPLE_RATE) {
-//                    drawPPLinePath(canvas, globalPath.m_vecLineOfPathPlan[i])
-//                }
-//                // 采样绘制贝塞尔曲线
-//                for (i in globalPath.m_vecBezierOfPathPlan.indices step SAMPLE_RATE) {
-//                    drawPPBezierPath(canvas, globalPath.m_vecBezierOfPathPlan[i])
-//                }
-//
-//                // 创建世界系坐标点
-//                if (globalPath.startPoint != null && globalPath.startPoint.size >= 3 &&
-//                    globalPath.endPoint != null && globalPath.endPoint.size >= 3
-//                ) {
-//                    val startPoint2d = PointNew(globalPath.startPoint[0], globalPath.startPoint[1])
-//                    val endPoint2d = PointNew(globalPath.endPoint[0], globalPath.endPoint[1])
-//
-//                    drawStartAndEndPoint(
-//                        canvas,
-//                        startPoint2d,
-//                        endPoint2d,
-//                        startPointText,
-//                        endPointText
-//                    )
-//                }
-//            }
             val mapView = mapViewRef.get() ?: return
 
             cLayer?.let { it ->
@@ -1065,10 +896,7 @@ class PathView2 @SuppressLint("ViewConstructor") constructor(
                 canvas.save()
                 canvas.concat(mMatrix)
 
-                //绘制world_pad.dat文件路线
-//                it.Draw(canvas, mapView.mSrf, mPaint)
                 if (it.m_PathBase != null && it.m_PathBase.m_MyNode != null) {
-//                 it.m_PathBase.Draw(mapView.mSrf, canvas, mPaint)
 
                     for (i in 0 until it.m_PathBase.m_uCount) {
                         if (it.m_PathBase.m_pPathIdx != null && it.m_PathBase.m_pPathIdx[i].m_ptr != null) {
@@ -1209,80 +1037,16 @@ class PathView2 @SuppressLint("ViewConstructor") constructor(
                                 else -> {
                                     // 非编辑模式，正常绘制
                                     path.Draw(mapView.mSrf, canvas, mPaint)
-                                    // 绘制路段编号
-                                    path.DrawID(mapView.mSrf, canvas, mPaint)
-                                    // 绘制节点（红色）
-                                    startNode?.Draw(mapView.mSrf, canvas, Color.RED, 10, mPaint)
-                                    endNode?.Draw(mapView.mSrf, canvas, Color.RED, 10, mPaint)
+//                                    // 绘制路段编号
+//                                    path.DrawID(mapView.mSrf, canvas, mPaint)
+//                                    // 绘制节点（红色）
+//                                    startNode?.Draw(mapView.mSrf, canvas, Color.RED, 10, mPaint)
+//                                    endNode?.Draw(mapView.mSrf, canvas, Color.RED, 10, mPaint)
                                 }
                             }
                         }
                     }
                 }
-
-//                for (i in 0 until m_uCount) {
-//                    m_pPathIdx.get(i).m_ptr.DrawID(ScrnRef, Grp, paint)
-//                }
-
-//                    mRouteEdit.m_KeyPst.Draw(mapView.mSrf, canvas, mPaint)
-//
-//                    //重点显示要编辑的路径
-//                    for (i in mRouteEdit.m_nCurPathIndex.indices) {
-//                        val pPath = it.m_PathBase.m_pPathIdx[mRouteEdit.m_nCurPathIndex[i]].m_ptr
-//                        if (pPath != null) {
-//                            //避免删除节点，会引起删除线，需要进行是否为空的判断
-//                            pPath.Draw(mapView.mSrf, canvas, Color.GREEN, 3)
-//                            // 修改操作下显示控制点
-//                            if (pPath.m_uType.toInt() == 10 && mRouteEdit.mEditWorldStage == mRouteEdit.WRD_MOD_NODE) {
-//                                (pPath as GenericPath).DrawCtrlPoints(
-//                                    mapView.mSrf,
-//                                    canvas,
-//                                    null,
-//                                    Color.GREEN,
-//                                    5
-//                                )
-//                                if (mRouteEdit.mCurKeyId > 0) {
-//                                    (pPath).m_Curve.m_ptKey[mRouteEdit.mCurKeyId - 1].Draw(
-//                                        mapView.mSrf, canvas, Color.RED, 8
-//                                    )
-//                                }
-//                            }
-//                            //在"GetStartNode"这里会空
-//                            val tempStart = pPath.GetStartNode()
-//                            val tempEnd = pPath.GetEndNode()
-//                            if (tempStart == null || tempEnd == null) {
-//                                continue
-//                            }
-//                            pPath.GetStartNode().Draw(mapView.mSrf, canvas, Color.GREEN)
-//                            tempEnd.Draw(mapView.mSrf, canvas, Color.GREEN)
-//                        }
-//                    }
-//
-//                    //显示选择的节点
-//                    if (mRouteEdit.mCurNodeId != -1) {
-//                        val node = it.GetNode(mRouteEdit.mCurNodeId)
-//                        // 修改操作下显示带位子的点
-//                        if (node != null && mRouteEdit.mEditWorldStage == mRouteEdit.WRD_MOD_NODE) {
-//                            //将节点的姿态绘制出来。便于修改角度
-//                            mRouteEdit.m_ModNodePos.Clear()
-//                            val pst = Posture()
-//                            pst.x = node.x
-//                            pst.y = node.y
-//                            val mAngles = arrayOfNulls<Angle>(4)
-//                            val nCount = it.GetNodeHeadingAngle(mRouteEdit.mCurNodeId, mAngles, 4)
-//                            if (nCount > 0) {
-//                                pst.fThita = mAngles[0]!!.m_fRad
-//                            }
-//                            mRouteEdit.m_ModNodePos.AddPst(pst)
-//                            mRouteEdit.m_ModNodePos.m_SelectPstID = 0 //默认被选中
-//                            mRouteEdit.m_ModNodePos.Draw(mapView.mSrf, canvas, mPaint)
-//                        }
-//                        node?.Draw(mapView.mSrf, canvas, Color.RED)
-//                    }
-//                    if (mRouteEdit.m_RegConDownCount == 1 && mRouteEdit.mEditWorldStage == mRouteEdit.WRD_ADD_REG_CON) {
-//                        mRouteEdit.m_RegConStart.Draw(mapView.mSrf, canvas, Color.BLUE, 5) //color
-//                    }
-
                 // 恢复画布状态
                 canvas.restore()
 
@@ -1292,7 +1056,7 @@ class PathView2 @SuppressLint("ViewConstructor") constructor(
                     canvas.save()
                     canvas.concat(mMatrix)
                     for (path in selectedPathsForDeletion) {
-                        path.Draw(mapView.mSrf, canvas, redPaint)
+                        path.Draw(mapView.mSrf, canvas, mRedPaint)
                     }
                     canvas.restore()
 
@@ -1342,115 +1106,11 @@ class PathView2 @SuppressLint("ViewConstructor") constructor(
                     canvas.save()
                     canvas.concat(mMatrix)
                     // 绘制临时曲线路段
-                    tempPath!!.Draw(mapView.mSrf, canvas, redPaint)
+                    tempPath!!.Draw(mapView.mSrf, canvas, mRedPaint)
                     canvas.restore()
                 }
             }
         }
-    }
-
-    /**
-     * 绘制示教点
-     *
-     */
-    private fun drawTeachPointIng(canvas: Canvas, point: TeachPoint) {
-        val mapView = mParent.get() ?: return
-        // 避免重复创建PointF对象
-        val pnt = mapView.worldToScreen(point.x.toFloat(), point.y.toFloat())
-        drawCircle(canvas, pnt, 10f, mTeachPaint)
-    }
-
-    /**
-     * 绘制直线
-     */
-    private fun drawPPLinePath(canvas: Canvas, line: LineNew) {
-        val mapView = mParent.get() ?: return
-        val startPoint = mapView.worldToScreen(line.ptStart.X, line.ptStart.Y)
-        val endPoint = mapView.worldToScreen(line.ptEnd.X, line.ptEnd.Y)
-        drawLine(canvas, startPoint, endPoint, mLinePaint)
-    }
-
-    /**
-     * 绘制曲线
-     */
-    private fun drawPPBezierPath(canvas: Canvas, bezier: Bezier) {
-        val mapView = mParent.get() ?: return
-
-        // 确保贝塞尔曲线有足够的控制点
-        if (bezier.m_ptKey.size < 4) return
-
-        // 复用Path对象，避免每次绘制都创建新的Path
-        bezierPath.reset()
-        val mStart = mapView.worldToScreen(bezier.m_ptKey[0].x, bezier.m_ptKey[0].y)
-        val mControl1 = mapView.worldToScreen(bezier.m_ptKey[1].x, bezier.m_ptKey[1].y)
-        val mControl2 = mapView.worldToScreen(bezier.m_ptKey[2].x, bezier.m_ptKey[2].y)
-        val mEnd = mapView.worldToScreen(bezier.m_ptKey[3].x, bezier.m_ptKey[3].y)
-        bezierPath.moveTo(mStart.x, mStart.y)
-        bezierPath.cubicTo(mControl1.x, mControl1.y, mControl2.x, mControl2.y, mEnd.x, mEnd.y)
-        drawPath(canvas, bezierPath, mBezierPaint)
-    }
-
-    /**
-     * @description 绘制路径起点与终点
-     * @author CheFuX1n9
-     * @since 2024/5/20 10:16
-     */
-    private fun drawStartAndEndPoint(
-        canvas: Canvas,
-        startPoint2d: PointNew,
-        endPoint2d: PointNew,
-        startPointName: String?,
-        endPointName: String?
-    ) {
-        val mapView = mParent.get() ?: return
-        // 世界系坐标点转换屏幕像素点
-        val startPoint = mapView.worldToScreen(startPoint2d.X, startPoint2d.Y)
-        val endPoint = mapView.worldToScreen(endPoint2d.X, endPoint2d.Y)
-
-        drawCircle(canvas, startPoint, 10f, mGreenPaint)
-        // 添加空值检查，避免空指针异常
-        startPointName?.let { drawLabel(canvas, it, startPoint, mGreenPaint) }
-        drawCircle(canvas, endPoint, 10f, mRedPaint)
-        endPointName?.let { drawLabel(canvas, it, endPoint, mRedPaint) }
-    }
-
-    /**
-     * 外部接口: 设置试教点 试教中
-     */
-    fun setTeachPoint(point: TeachPoint) {
-        synchronized(teachPointList) {
-            teachPointList.add(point)
-        }
-        invalidate()
-    }
-
-    /**
-     * 设置清扫路线数据
-     */
-    fun setCleanPathPlanResultBean(pathPlanResultBean: PathPlanResultBean?) {
-        mCleanPathPlanResultBean = pathPlanResultBean
-        invalidate()
-    }
-
-    fun setGlobalPathPlanResultBean(pathPlanResultBean: PathPlanResultBean?) {
-        mGlobalPathPlanResultBean = pathPlanResultBean
-        invalidate()
-    }
-
-    /**
-     * 外部接口: 设置试教点 清除
-     */
-    fun clearTeachPoint() {
-        synchronized(teachPointList) {
-            teachPointList.clear()
-        }
-        invalidate()
-    }
-
-    fun clearPathPlan() {
-        setGlobalPathPlanResultBean(null)
-        setCleanPathPlanResultBean(null)
-        invalidate()
     }
 
     /**
@@ -1490,16 +1150,6 @@ class PathView2 @SuppressLint("ViewConstructor") constructor(
         postInvalidate()
     }
 
-    override fun onDetachedFromWindow() {
-        super.onDetachedFromWindow()
-
-        // 清理资源，防止内存泄漏
-        clearTeachPoint()
-        clearPathPlan()
-        mCleanPathPlanResultBean = null
-        mGlobalPathPlanResultBean = null
-        draggingControlPoint = null
-    }
 
     fun setLayer(cLayer: CLayer) {
         this.cLayer = cLayer
@@ -1521,13 +1171,88 @@ class PathView2 @SuppressLint("ViewConstructor") constructor(
     }
 
     /**
+     * 根据关键位姿创建示教路径（会直接生成地图）
+     *
+     * @param point2ds 路径关键点数组
+     * @param m_KeyPst 路径的关键位姿信息
+     * @param pathParam 路径参数
+     */
+    fun createTeachPath(point2ds: Array<Point2d>, m_KeyPst: DefPosture, pathParam: Short) {
+        val startPst: Posture = m_KeyPst.m_PstV.get(0)
+        val endPst: Posture = m_KeyPst.m_PstV.get(3)
+
+        // 设置控制点
+        val pptCtrl = arrayOfNulls<Point2d>(2)
+        pptCtrl[0] = point2ds[1]
+        pptCtrl[1] = point2ds[2]
+
+        // 调用CLayer的AddGenericPath_PPteach方法创建曲线路径
+        // 参数说明：
+        // - startPst: 起点姿态
+        // - endPst: 终点姿态
+        // - pptCtrl: 控制点数组
+        // - -1: 起点节点ID，-1表示创建新节点
+        // - -1: 终点节点ID，-1表示创建新节点
+        // - pathParam: 路径参数
+        // 
+        // 注意：在当前的设计中，createTeachPath方法的目的是创建新的示教路径，
+        // 因此我们总是创建新的起点和终点节点，而不是使用现有的节点。
+        // 这与CLayer.AddGenericPath_PPteach方法的预期用法一致（-1表示创建新节点）。
+        cLayer?.AddGenericPath_PPteach(
+            startPst, endPst, pptCtrl, -1, -1, pathParam
+        )
+
+        // 获取刚创建的路径的起点和终点节点ID（可选）
+        cLayer?.let {
+            if (it.m_PathBase != null && it.m_PathBase.m_uCount > 0) {
+                val newPath = it.m_PathBase.m_pPathIdx[it.m_PathBase.m_uCount - 1].m_ptr
+                val startNodeId = newPath.m_uStartNode
+                val endNodeId = newPath.m_uEndNode
+                // 可以在这里使用startNodeId和endNodeId，或者将它们返回给调用者
+            }
+        }
+    }
+
+
+    // 节点和路段属性编辑回调接口
+    interface OnPathAttributeEditListener {
+        // 当选中节点时触发
+        fun onNodeSelected(node: Node, path: com.siasun.dianshi.bean.pp.world.Path)
+
+        // 当选中路段时触发
+        fun onPathSelected(path: com.siasun.dianshi.bean.pp.world.Path)
+
+        // 当删除路段时触发
+        fun onPathDeleted(path: com.siasun.dianshi.bean.pp.world.Path)
+
+        // 当删除节点时触发
+        fun onNodeDeleted(node: Node)
+
+        // 当创建路段时触发
+        fun onPathCreated(path: com.siasun.dianshi.bean.pp.world.Path) {}
+    }
+
+    // 回调监听器
+    private var onPathAttributeEditListener: OnPathAttributeEditListener? = null
+
+    // 设置回调监听器
+    fun setOnPathAttributeEditListener(listener: OnPathAttributeEditListener) {
+        this.onPathAttributeEditListener = listener
+    }
+
+    /**
      * 清除当前选择
      */
-    fun clearSelection() {
+    private fun clearSelection() {
         selectedPath = null
         draggingNode = null
         draggingControlPoint = null
         dragStartPoint = null
         invalidate()
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        clearSelection()
     }
 }

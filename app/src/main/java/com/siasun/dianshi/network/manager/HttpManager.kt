@@ -6,7 +6,7 @@ import com.siasun.dianshi.framework.utils.NetworkUtil
 import com.siasun.dianshi.network.constant.BASE_URL
 import com.pnc.core.network.error.NoNetWorkException
 import com.pnc.core.network.error.ERROR
-import com.pnc.core.network.interceptor.CookiesInterceptor
+import com.siasun.dianshi.network.interceptor.CookiesInterceptor
 import com.pnc.core.network.interceptor.HeaderInterceptor
 import com.pnc.core.network.interceptor.ModifyBaseUrlInterceptor
 import okhttp3.Interceptor

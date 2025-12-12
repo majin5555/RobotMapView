@@ -15,6 +15,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import com.ngu.lcmtypes.laser_t
 import com.ngu.lcmtypes.robot_control_t
+import com.siasun.dianshi.R
 import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.CmsStation
 import com.siasun.dianshi.bean.ElevatorPoint
@@ -25,8 +26,10 @@ import com.siasun.dianshi.bean.MergedPoseItem
 import com.siasun.dianshi.bean.Point2d
 import com.siasun.dianshi.bean.PositingArea
 import com.siasun.dianshi.bean.SpArea
+import com.siasun.dianshi.bean.TeachPoint
 import com.siasun.dianshi.bean.WorkAreasNew
 import com.siasun.dianshi.bean.pp.DefPosture
+import com.siasun.dianshi.bean.pp.PathPlanResultBean
 import com.siasun.dianshi.bean.pp.Posture
 import com.siasun.dianshi.bean.pp.world.CLayer
 import com.siasun.dianshi.utils.CoordinateConversion
@@ -107,7 +110,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     var mPolygonEditView: PolygonEditView? = null//区域
     var mSpPolygonEditView: SpPolygonEditView? = null//特殊区域
     var mMixAreaView: MixAreaView? = null//混行区域
-    var mPathView: PathView2? = null//路线PP
+    var mWorldPadView: WorldPadView? = null//路线PP
+    var mPathView: PathView? = null//路线PP 接收PP返回的路线
     var mRobotView: RobotView? = null //机器人图标
     var mWorkIngPathView: WorkIngPathView? = null //机器人工作路径
 
@@ -152,6 +156,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mTopViewPathView = TopViewPathView(context, mMapView)
 
         mLegendView = LegendView(context, attrs, mMapView)
+
         mRobotView = RobotView(context, mMapView)
         mWorkIngPathView = WorkIngPathView(context, mMapView)
         mRemoveNoiseView = RemoveNoiseView(context, mMapView)
@@ -159,7 +164,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mPolygonEditView = PolygonEditView(context, mMapView)
         mSpPolygonEditView = SpPolygonEditView(context, mMapView)
         mMixAreaView = MixAreaView(context, mMapView)
-        mPathView = PathView2(context, mMapView)
+        mPathView = PathView(context, mMapView)
+        mWorldPadView = WorldPadView(context, mMapView)
         //底图的View
         addView(mPngMapView, lp)
 
@@ -193,6 +199,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         addMapLayers(mMixAreaView)
         //显示路线
         addMapLayers(mPathView)
+        //显示路线PP
+        addMapLayers(mWorldPadView)
 
         //  修改LegendView的布局参数，使其显示在右上角
         addView(mLegendView, LayoutParams(
@@ -477,7 +485,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mMixAreaView?.setWorkMode(mode)
         mElevatorView?.setWorkMode(mode)
         mHomeDockView?.setWorkMode(mode)
-        mPathView?.setWorkMode(mode)
+        mWorldPadView?.setWorkMode(mode)
     }
 
     /**
@@ -499,28 +507,28 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         // 设置地图后自动居中显示
         setCentred()
     }
-    
+
     /**
      * 设置路径属性编辑回调监听器
      */
-    fun setOnPathAttributeEditListener(listener: PathView2.OnPathAttributeEditListener) {
-        mPathView?.setOnPathAttributeEditListener(listener)
+    fun setOnPathAttributeEditListener(listener: WorldPadView.OnPathAttributeEditListener) {
+        mWorldPadView?.setOnPathAttributeEditListener(listener)
     }
 
     /**
      * 设置World数据到PathView2
      */
     fun setLayer(cLayer: CLayer) {
-        mPathView?.setLayer(cLayer)
+        mWorldPadView?.setLayer(cLayer)
     }
-    
+
     /**
      * 获取当前的CLayer对象，用于保存路径数据
      */
     fun getLayer(): CLayer? {
-        return mPathView?.getLayer()
+        return mWorldPadView?.getLayer()
     }
-    
+
 
     /***
      * 设置地图显示
@@ -750,7 +758,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     /**
      * 设置试教点
      */
-//    fun setTeachPoint(point: TeachPoint) = mPathView?.setTeachPoint(point)
+    fun setTeachPoint(point: TeachPoint) = mPathView?.setTeachPoint(point)
 
     /**
      * 外部接口: 创建示教路径
@@ -765,37 +773,37 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
                 pst.fThita = 0f
                 m_KeyPst.AddPst(pst)
             }
-//             CreateTeachPath(mWorld, pptKey, m_KeyPst, pathParam)
+            mWorldPadView?.createTeachPath(pptKey, m_KeyPst, pathParam)
         }
     }
 
     /**
      * 设置清扫路径
      */
-//    fun setCleanPathPlanResultBean(pathPlanResultBean: PathPlanResultBean?) =
-//        mPathView?.setCleanPathPlanResultBean(pathPlanResultBean)
+    fun setCleanPathPlanResultBean(pathPlanResultBean: PathPlanResultBean?) =
+        mPathView?.setCleanPathPlanResultBean(pathPlanResultBean)
 
 
     /**
      * 设置全局路径
      */
-//    fun setGlobalPathPlanResultBean(pathPlanResultBean: PathPlanResultBean?) =
-//        mPathView?.setGlobalPathPlanResultBean(pathPlanResultBean)
+    fun setGlobalPathPlanResultBean(pathPlanResultBean: PathPlanResultBean?) =
+        mPathView?.setGlobalPathPlanResultBean(pathPlanResultBean)
 
     /**
      * 清除清扫路径
      */
-//    fun clearCleanPathPlan() = mPathView?.setCleanPathPlanResultBean(null)
-//
-//    /**
-//     * 清除全局路径
-//     */
-//    fun clearGlobalPathPlan() = mPathView?.setGlobalPathPlanResultBean(null)
-//
-//    /**
-//     * 清除所有路径
-//     */
-//    fun clearPathPlan() = mPathView?.clearPathPlan()
+    fun clearCleanPathPlan() = mPathView?.setCleanPathPlanResultBean(null)
+
+    /**
+     * 清除全局路径
+     */
+    fun clearGlobalPathPlan() = mPathView?.setGlobalPathPlanResultBean(null)
+
+    /**
+     * 清除所有路径
+     */
+    fun clearPathPlan() = mPathView?.clearPathPlan()
 
 
     /**
