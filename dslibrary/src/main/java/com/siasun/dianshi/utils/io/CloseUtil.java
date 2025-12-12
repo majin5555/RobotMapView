@@ -1,4 +1,4 @@
-package com.siasun.dianshi.io;
+package com.siasun.dianshi.utils.io;
 
 import java.io.Closeable;
 import java.io.IOException;

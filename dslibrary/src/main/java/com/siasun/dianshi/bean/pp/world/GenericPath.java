@@ -1,4 +1,4 @@
-package com.siasun.dianshi.bean.world;
+package com.siasun.dianshi.bean.pp.world;
 
 import static java.lang.Math.abs;
 
@@ -8,7 +8,6 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.Rect;
-import android.graphics.Typeface;
 
 import com.siasun.dianshi.bean.Point2d;
 import com.siasun.dianshi.bean.TranBytes;
@@ -16,7 +15,7 @@ import com.siasun.dianshi.bean.pp.Angle;
 import com.siasun.dianshi.bean.pp.Bezier;
 import com.siasun.dianshi.bean.pp.Line;
 import com.siasun.dianshi.bean.pp.Posture;
-import com.siasun.dianshi.io.WorldFileIO;
+import com.siasun.dianshi.utils.io.WorldFileIO;
 import com.siasun.dianshi.utils.CoordinateConversion;
 
 import java.io.DataInputStream;
@@ -26,57 +25,177 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 
 
+/**
+ * GenericPath类：通用路径类，继承自Path抽象类
+ * 用于表示机器人的通用路径，基于贝塞尔曲线实现
+ * 支持路径的创建、绘制、数据读写等功能
+ */
 public class GenericPath extends Path {
-    public Angle m_angStartHeading;     // ��������ʼ�ڵ㴦�ķ����
-    public Angle m_angEndHeading;       // ��������ֹ�ڵ㴦�ķ����
-    public int m_nCountCtrlPoints;   // 控制点个数--2
-    public Point2d[] m_pptCtrl;            // ָ�������и������Ƶ��ָ��(���������˽ڵ�)
+    /**
+     * 路径起始节点处的航向角
+     */
+    public Angle m_angStartHeading;
+    /**
+     * 路径结束节点处的航向角
+     */
+    public Angle m_angEndHeading;
+    /**
+     * 控制点个数，通常为2个
+     */
+    public int m_nCountCtrlPoints;
+    /**
+     * 控制点数组，用于描述贝塞尔曲线的形状
+     */
+    public Point2d[] m_pptCtrl;
 
-    public Posture m_pstStart;            // ��ʼ��̬
-    public Posture m_pstEnd;              // ��ֹ��̬
-    public boolean m_bTangency;           //���з�ʽΪ���л���ƽ��, �˶���ʽ 0:���� 1:ƽ��
-    public short m_uRunFunction;         //���з�ʽΪ���л���ƽ��, �˶���ʽ 0:ƽ�� 1:���� 2: ��ת
+    /**
+     * 路径起始状态，包含位置和角度信息
+     */
+    public Posture m_pstStart;
+    /**
+     * 路径结束状态，包含位置和角度信息
+     */
+    public Posture m_pstEnd;
+    /**
+     * 相切标志：是否采用相切平移模式，运动模式 0:相切 1:平移
+     */
+    public boolean m_bTangency;
+    /**
+     * 运行功能：运动模式 0:平移 1:相切 2:自旋
+     */
+    public short m_uRunFunction;
 
-    public Bezier m_Curve;               // ���߶���
-    // ��������ױ���������
+    /**
+     * 贝塞尔曲线对象，用于路径的几何表示
+     */
+    public Bezier m_Curve;
+    // 曲线约束条件参数
+    /**
+     * 最大速度
+     */
     public float m_fVelMax;
+    /**
+     * 最大角度差
+     */
     public float m_fThitaDiffMax;
+    /**
+     * 最大角速度
+     */
     public float m_fAngVelMax;
+    /**
+     * 角加速度
+     */
     public float m_fAngVelACC;
+    /**
+     * 线加速度
+     */
     public float m_fVelACC;
+    /**
+     * 角度跳跃的长度阈值
+     */
     public float m_fLenForAngJump;
+    /**
+     * 起始和结束点的最大角度差
+     */
     public float m_fThitaDiffMaxForStAndEd;
+    /**
+     * 字节序转换对象，用于文件读写时的字节序处理
+     */
     TranBytes m_TranFloat = new TranBytes();
 
+    /**
+     * 路径点击检测的偏移量（屏幕坐标）
+     */
     private final int pathOffset = 20;
+    /**
+     * 节点点击检测的偏移量（屏幕坐标）
+     */
     private final int nodeOffset = 20;
 
-
-
+    /**
+     * 贝塞尔曲线的K值，用于曲线形状控制
+     */
     public static float BEZIER_K = 0.95f;
-    private float m_fTurnVel1 = 1.0f; //入弯速度
-    private float m_fTurnVel2 = 1.0f; //出弯速度
-    private int nDriveUnitCount = 1; //驱动单元数量
+    /**
+     * 入弯速度
+     */
+    private float m_fTurnVel1 = 1.0f;
+    /**
+     * 出弯速度
+     */
+    private float m_fTurnVel2 = 1.0f;
+    /**
+     * 驱动单元数量
+     */
+    private int nDriveUnitCount = 1;
+    /**
+     * 驱动单元安装位置X坐标
+     */
     private float drive_unit_x = 0.f;
+    /**
+     * 驱动单元安装位置Y坐标
+     */
     private float drive_unit_y = 0.f;
-    private float fVelMax = 1.f; //轮最大速度
+    /**
+     * 轮最大速度
+     */
+    private float fVelMax = 1.f;
+    /**
+     * 轮最大加速度
+     */
     private float fVelACC = 0.2f;
+    /**
+     * 舵最大速度
+     */
     private float fThitaDiffMax = 1.f;
+    /**
+     * 舵最大加速度
+     */
     private float fAngVelACC = 1.f;
+    /**
+     * 最大打舵角度
+     */
     private float fSteerAngle = 80.f;
+    /**
+     * 用户自定义数据数组
+     */
     private float[] fUserData = new float[10];
-    private int UnitType = 5; //驱动单元类型 5-双轮差动
+    /**
+     * 驱动单元类型，5表示双轮差动
+     */
+    private int UnitType = 5;
 
-    public boolean m_bCurvature; //曲线曲率是否满足
+    /**
+     * 曲线曲率是否满足要求的标志
+     */
+    public boolean m_bCurvature;
+    /**
+     * 日志标签
+     */
     private static String TAG = GenericPath.class.getSimpleName();
 
 
 //////////////////////////////////////////////////////////////////////////////
-//Implementation of class "GenericPath".
+// GenericPath类的实现部分
 
-
-    public GenericPath(int uId, int nStartNode, int nEndNode, Posture pstStart, Posture pstEnd, float fLen1, float fLen2,
-                       float[] fVeloLimit, short nGuideType, short uObstacle, short uDir, short uExtType, NodeBase nodeBase) {
+    /**
+     * 构造方法：创建通用路径对象
+     *
+     * @param uId        路径ID
+     * @param nStartNode 起始节点ID
+     * @param nEndNode   结束节点ID
+     * @param pstStart   起始姿态
+     * @param pstEnd     结束姿态
+     * @param fLen1      起始节点到第一个控制点的长度
+     * @param fLen2      结束节点到第二个控制点的长度
+     * @param fVeloLimit 速度限制数组
+     * @param nGuideType 引导类型
+     * @param uObstacle  障碍物类型
+     * @param uDir       方向
+     * @param uExtType   扩展类型
+     * @param nodeBase   节点管理对象
+     */
+    public GenericPath(int uId, int nStartNode, int nEndNode, Posture pstStart, Posture pstEnd, float fLen1, float fLen2, float[] fVeloLimit, short nGuideType, short uObstacle, short uDir, short uExtType, NodeBase nodeBase) {
         short type = 10;
         m_fVelMax = 0.7f;
         m_fThitaDiffMax = 0.6f;
@@ -91,8 +210,24 @@ public class GenericPath extends Path {
         Create(pstStart, pstEnd, fLen1, fLen2);
     }
 
-    public GenericPath(int uId, int nStartNode, int nEndNode, Posture pstStart, Posture pstEnd, Point2d[] pptCtrl /*float fLen1, float fLen2*/,
-                       float[] fVeloLimit, short nGuideType, short uObstacle, short uDir, short uExtType, NodeBase nodeBase, short pathParam) {
+    /**
+     * 构造方法：使用控制点创建通用路径对象
+     *
+     * @param uId        路径ID
+     * @param nStartNode 起始节点ID
+     * @param nEndNode   结束节点ID
+     * @param pstStart   起始姿态
+     * @param pstEnd     结束姿态
+     * @param pptCtrl    控制点数组
+     * @param fVeloLimit 速度限制数组
+     * @param nGuideType 引导类型
+     * @param uObstacle  障碍物类型
+     * @param uDir       方向
+     * @param uExtType   扩展类型
+     * @param nodeBase   节点管理对象
+     * @param pathParam  路径参数
+     */
+    public GenericPath(int uId, int nStartNode, int nEndNode, Posture pstStart, Posture pstEnd, Point2d[] pptCtrl /*float fLen1, float fLen2*/, float[] fVeloLimit, short nGuideType, short uObstacle, short uDir, short uExtType, NodeBase nodeBase, short pathParam) {
         short type = 10;
         m_fVelMax = 0.7f;
         m_fThitaDiffMax = 0.6f;
@@ -109,6 +244,9 @@ public class GenericPath extends Path {
     }
 
 
+    /**
+     * 默认构造方法：创建空的通用路径对象
+     */
     public GenericPath() {
         m_pstStart = new Posture();
         m_pstEnd = new Posture();
@@ -126,11 +264,23 @@ public class GenericPath extends Path {
 
     }
 
+    /**
+     * 获取相切标志
+     *
+     * @return 是否相切
+     */
     public boolean GetTangency() {
         return m_bTangency;
     }
 
 
+    /**
+     * 点命中测试：判断屏幕点是否命中路径或其关键点
+     *
+     * @param pnt     屏幕坐标点
+     * @param ScrnRef 坐标转换对象
+     * @return -1：未命中；0：命中路径；>0：命中第n个关键点
+     */
     @Override
     int PointHitTest(Point pnt, CoordinateConversion ScrnRef) {
         // 判断屏幕点是否落在某个关键点处
@@ -138,13 +288,9 @@ public class GenericPath extends Path {
 //            Point pntKey = ScrnRef.GetWindowPoint(m_Curve.m_ptKey[i]);
             PointF pntKey = ScrnRef.worldToScreen(m_Curve.m_ptKey[i].x, m_Curve.m_ptKey[i].y);
             int offSet = 20;
-            Rect r = new Rect((int) (pntKey.x - nodeOffset)
-                    , (int) (pntKey.y - nodeOffset)
-                    , (int) (pntKey.x + nodeOffset)
-                    , (int) (pntKey.y + nodeOffset)); // Construct an emtpy rectangle
+            Rect r = new Rect((int) (pntKey.x - nodeOffset), (int) (pntKey.y - nodeOffset), (int) (pntKey.x + nodeOffset), (int) (pntKey.y + nodeOffset)); // Construct an emtpy rectangle
 
-            if (pnt.x >= r.left && pnt.x <= (r.left + r.width()) &&
-                    pnt.y < r.bottom && pnt.y >= (r.bottom - r.height()))
+            if (pnt.x >= r.left && pnt.x <= (r.left + r.width()) && pnt.y < r.bottom && pnt.y >= (r.bottom - r.height()))
                 return i + 1;
         }
 
@@ -166,14 +312,22 @@ public class GenericPath extends Path {
             nDist = abs(nDist);
             ///////////////////
             // 如果屏幕窗口距离小于3，认为鼠标触碰到路径
-            if (nDist <= pathOffset)
-                return 0;
+            if (nDist <= pathOffset) return 0;
         }
 
         return -1;
     }
 
 
+    /**
+     * 创建路径：使用控制点创建路径
+     *
+     * @param pstStart         起始姿态
+     * @param pstEnd           结束姿态
+     * @param nCountCtrlPoints 控制点数量
+     * @param pptCtrl          控制点数组
+     * @return 创建是否成功
+     */
     private boolean Create(Posture pstStart, Posture pstEnd, int nCountCtrlPoints, Point2d[] pptCtrl) {
         m_pstStart = pstStart;
         m_pstEnd = pstEnd;
@@ -181,8 +335,7 @@ public class GenericPath extends Path {
 
         // Ϊ�ؼ������ռ�
         m_pptCtrl = new Point2d[m_nCountCtrlPoints];
-        if (m_pptCtrl == null)
-            return false;
+        if (m_pptCtrl == null) return false;
 
         // ���ƿ��Ƶ�����
         for (int i = 0; i < m_nCountCtrlPoints; i++)
@@ -193,6 +346,15 @@ public class GenericPath extends Path {
     }
 
 
+    /**
+     * 创建路径：使用长度参数创建路径
+     *
+     * @param pstStart 起始姿态
+     * @param pstEnd   结束姿态
+     * @param fLen1    起始节点到第一个控制点的长度
+     * @param fLen2    结束节点到第二个控制点的长度
+     * @return 创建是否成功
+     */
     private boolean Create(Posture pstStart, Posture pstEnd, float fLen1, float fLen2) {
         m_pstStart = pstStart;
         m_pstEnd = pstEnd;
@@ -200,8 +362,7 @@ public class GenericPath extends Path {
 
         // Ϊ�ؼ������ռ�
         m_pptCtrl = new Point2d[m_nCountCtrlPoints];
-        if (m_pptCtrl == null)
-            return false;
+        if (m_pptCtrl == null) return false;
 
         Line ln1 = new Line(pstStart, fLen1);
         m_pptCtrl[0] = ln1.GetEndPoint();
@@ -222,14 +383,15 @@ public class GenericPath extends Path {
 //m_uBwdObdetectorObstacle = ArcPath.m_uBwdObdetectorObstacle;
 //}
 
-    //
-//�������ṩ�Ĺؼ���������λ�ó�ʼ����·����
-//
+    /**
+     * 初始化路径：根据提供的关键点位置初始化路径
+     *
+     * @return 初始化是否成功
+     */
     public boolean Init() {
         // ��ʱΪ���йؼ������ռ䣬�Ա��������߶���
         Point2d[] pptKey = new Point2d[m_nCountCtrlPoints + 2];
-        if (pptKey == null)
-            return false;
+        if (pptKey == null) return false;
 
         // ��һ�������һ���ؼ���ʵ������·���Ķ˽ڵ�
         pptKey[0] = new Point2d();
@@ -270,99 +432,73 @@ public class GenericPath extends Path {
         return true;
     }
 
-    //
-    //GetHeading: Get the vehicle's heading angle at the specified node.
-    //
+    /**
+     * 获取车辆在指定节点处的航向角
+     *
+     * @param nd 节点对象
+     * @return 航向角对象
+     */
     @Override
     public Angle GetHeading(Node nd) {
-        if (nd.m_uId == m_uStartNode)
-            return m_angStartHeading;
-        else
-            return m_angEndHeading;
+        if (nd.m_uId == m_uStartNode) return m_angStartHeading;
+        else return m_angEndHeading;
     }
 
-    //
-//Make a trajectory from the path.
-//
-//CTraj* MakeTraj()
-//{
-//#if 0
-//CBezierTraj* pBezierTraj = new CBezierTraj;
-//
-//Point2d& ptStart = GetStartPnt();
-//Point2d& ptEnd = GetEndPnt();
-//pBezierTraj->CreateTraj(ptStart, ptEnd, m_CtrlPnt[1], ptEnd, FORWARD, m_TurnDir, m_bTangency, m_angShiftHeading);
-//return pBezierTraj;
-//#endif
-//return null;
-//}
-//
-//boolean Create(FILE *StreamIn)
-//{
-//return true;
-//}
-//
-//boolean Save(FILE *StreamOut)
-//{
-//return true;
-//}
+
+    /**
+     * 从数据流创建路径对象
+     *
+     * @param dis 数据输入流
+     * @return 创建是否成功
+     */
     public boolean Create(DataInputStream dis) {
         short uDir;            // Positive input/negative input
-        short uTemp;
         Point2d[] CtrlPnt = new Point2d[2];
         CtrlPnt[0] = new Point2d();
         CtrlPnt[1] = new Point2d();
-        float angShiftHeading;
+
         boolean bTangency = false;
 
         //读取path基本数据类型
-        if (!super.Create(dis))
-            return false;
+        if (!super.Create(dis)) return false;
         try {
             //ar >> m_uFwdRotoScannerObstacle >> m_uFwdObdetectorObstacle >> m_uBwdRotoScannerObstacle >> m_uBwdObdetectorObstacle >> uDir;
             int ch1 = dis.read();
             int ch2 = dis.read();
-            if ((ch1 | ch2) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2) < 0) throw new EOFException();
             this.m_uFwdRotoScannerObstacle = ((ch2 << 8) + (ch1 << 0));
 
             ch1 = dis.read();
             ch2 = dis.read();
-            if ((ch1 | ch2) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2) < 0) throw new EOFException();
             this.m_uFwdObdetectorObstacle = ((ch2 << 8) + (ch1 << 0));
 
             ch1 = dis.read();
             ch2 = dis.read();
-            if ((ch1 | ch2) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2) < 0) throw new EOFException();
             this.m_uBwdRotoScannerObstacle = ((ch2 << 8) + (ch1 << 0));
 
             ch1 = dis.read();
             ch2 = dis.read();
-            if ((ch1 | ch2) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2) < 0) throw new EOFException();
             this.m_uBwdObdetectorObstacle = ((ch2 << 8) + (ch1 << 0));
 
             ch1 = dis.read();
             ch2 = dis.read();
-            if ((ch1 | ch2) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2) < 0) throw new EOFException();
             uDir = (short) ((ch2 << 8) + (ch1 << 0));
 
             ch1 = dis.read();
             ch2 = dis.read();
             int ch3 = dis.read();
             int ch4 = dis.read();
-            if ((ch1 | ch2 | ch3 | ch4) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             int tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
-            angShiftHeading = Float.intBitsToFloat(tempI);
+            float angShiftHeading = Float.intBitsToFloat(tempI);
 
             ch1 = dis.read();
             ch2 = dis.read();
-            if ((ch1 | ch2) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2) < 0) throw new EOFException();
             this.m_uRunFunction = (short) ((ch2 << 8) + (ch1 << 0));
 
 
@@ -373,15 +509,13 @@ public class GenericPath extends Path {
             ch2 = dis.read();
             ch3 = dis.read();
             ch4 = dis.read();
-            if ((ch1 | ch2 | ch3 | ch4) < 0)
-                throw new EOFException();
+            if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             this.m_nCountCtrlPoints = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
 //	#else
 //		m_nCountCtrlPoints = 2;
 //	#endif
 
-            if (m_pptCtrl != null)
-                m_pptCtrl = null;
+            if (m_pptCtrl != null) m_pptCtrl = null;
 //			delete []m_pptCtrl;
 
             m_pptCtrl = new Point2d[m_nCountCtrlPoints];
@@ -394,8 +528,7 @@ public class GenericPath extends Path {
                 ch2 = dis.read();
                 ch3 = dis.read();
                 ch4 = dis.read();
-                if ((ch1 | ch2 | ch3 | ch4) < 0)
-                    throw new EOFException();
+                if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
                 tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
                 m_pptCtrl[i].x = Float.intBitsToFloat(tempI);
 
@@ -403,8 +536,7 @@ public class GenericPath extends Path {
                 ch2 = dis.read();
                 ch3 = dis.read();
                 ch4 = dis.read();
-                if ((ch1 | ch2 | ch3 | ch4) < 0)
-                    throw new EOFException();
+                if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
                 tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
                 m_pptCtrl[i].y = Float.intBitsToFloat(tempI);
             }
@@ -524,10 +656,10 @@ public class GenericPath extends Path {
         m_bTangency = !bTangency; //2019.11.19
         Point2d ptStart = new Point2d();
         Point2d ptEnd = new Point2d();
-        ptStart.x = GetStartNode().GetPoint2dObject().x;
-        ptStart.y = GetStartNode().GetPoint2dObject().y;
-        ptEnd.x = GetEndNode().GetPoint2dObject().x;
-        ptEnd.y = GetEndNode().GetPoint2dObject().y;
+        ptStart.x = GetStartNode().x;
+        ptStart.y = GetStartNode().y;
+        ptEnd.x = GetEndNode().x;
+        ptEnd.y = GetEndNode().y;
 
         m_pstStart.x = ptStart.x;
         m_pstStart.y = ptStart.y;
@@ -543,6 +675,12 @@ public class GenericPath extends Path {
         return Init();
     }
 
+    /**
+     * 将路径对象保存到数据流
+     *
+     * @param dos 数据输出流
+     * @return 保存是否成功
+     */
     public boolean Save(DataOutputStream dos) {
         short uDir;            // Positive input/negative input
         short uTemp;
@@ -552,8 +690,7 @@ public class GenericPath extends Path {
         float angShiftHeading = 0.0f;
         boolean bTangency = false;
 
-        if (!super.Save(dos))
-            return false;
+        if (!super.Save(dos)) return false;
         try {
             TranBytes tan = new TranBytes();
             int ch1;
@@ -653,6 +790,9 @@ public class GenericPath extends Path {
         return true;
     }
 
+    /**
+     * 根据曲线修改路径参数：当曲线发生变化时更新路径的相关参数
+     */
     public void ModifyParmByCurve() {
         // 更新控制点
         for (int i = 0; i < m_nCountCtrlPoints; i++) {
@@ -676,42 +816,81 @@ public class GenericPath extends Path {
         m_fSize = m_Curve.m_fTotalLen;  ///////////////////////////？？
     }
 
+    /**
+     * 获取曲线曲率是否满足要求的标志
+     *
+     * @return 曲率是否满足要求
+     */
     public boolean isM_bCurvature() {
         return m_bCurvature;
     }
 
+    /**
+     * 判断路径是否在指定矩形范围内
+     *
+     * @param minx 矩形最小x坐标
+     * @param miny 矩形最小y坐标
+     * @param maxx 矩形最大x坐标
+     * @param maxy 矩形最大y坐标
+     * @return 是否在矩形范围内
+     */
     @Override
     public boolean ISInRect(double minx, double miny, double maxx, double maxy) {
         return m_Curve.ISInRect(minx, miny, maxx, maxy);
     }
 
 
-    public void Draw(CoordinateConversion ScrnRef, Canvas Grp, int cr, int nWidth) {
-        m_Curve.Draw(ScrnRef, Grp, cr, nWidth, nWidth, false);
+    /**
+     * 绘制路径
+     *
+     * @param ScrnRef 坐标转换对象
+     */
+    android.graphics.Path mBezirPath = new android.graphics.Path();
+
+    public void Draw(CoordinateConversion conversion, Canvas canvas, Paint paint) {
+        if (m_Curve != null && m_Curve.m_ptKey != null) {
+            PointF mStart = conversion.worldToScreen(m_Curve.m_ptKey[0].x, m_Curve.m_ptKey[0].y);
+            PointF mControl1 = conversion.worldToScreen(m_Curve.m_ptKey[1].x, m_Curve.m_ptKey[1].y);
+            PointF mControl2 = conversion.worldToScreen(m_Curve.m_ptKey[2].x, m_Curve.m_ptKey[2].y);
+            PointF mEnd = conversion.worldToScreen(m_Curve.m_ptKey[3].x, m_Curve.m_ptKey[3].y);
+
+            // 重置路径，避免重复绘制
+            mBezirPath.reset();
+            mBezirPath.moveTo(mStart.x, mStart.y);
+            mBezirPath.cubicTo(mControl1.x, mControl1.y, mControl2.x, mControl2.y, mEnd.x, mEnd.y);
+            paint.setColor(Color.BLACK);
+            paint.setStyle(Paint.Style.STROKE);
+            canvas.drawPath(mBezirPath, paint);
+        }
     }
 
 
-    // 画出此路径曲线的控制点
-    public void DrawCtrlPoints(CoordinateConversion ScrnRef, Canvas Grp, Typeface pLogFont, int cr, int nWidth) {
-        m_Curve.DrawCtrlPoints(ScrnRef, Grp, pLogFont, cr, nWidth);
+    /**
+     * 绘制路径的控制点
+     *
+     * @param ScrnRef    坐标转换对象
+     * @param Grp        画布对象
+     * @param cr         控制点颜色
+     * @param nPointSize 控制点大小
+     */
+    public void DrawCtrlPoints(CoordinateConversion ScrnRef, Canvas Grp, int cr, int nPointSize, Paint paint) {
+        m_Curve.DrawCtrlPoints(ScrnRef, Grp, cr, nPointSize, paint);
     }
 
+    /**
+     * 绘制路径ID
+     *
+     * @param ScrnRef 坐标转换对象
+     * @param Grp     画布对象
+     */
     @Override
-    public void DrawID(CoordinateConversion ScrnRef, Canvas Grp) {
+    public void DrawID(CoordinateConversion ScrnRef, Canvas Grp, Paint paint) {
         m_Curve.SetCurT(0.8f);
         Point2d pntT = m_Curve.TrajFun();
         PointF pnt1 = ScrnRef.worldToScreen(pntT.x, pntT.y);
         String str = String.valueOf(m_uId);
-        int width = Grp.getWidth();
-        int Height = Grp.getHeight();
-        if ((pnt1.x < 0 || pnt1.x > width) && (pnt1.y < 0 || pnt1.y > Height)) {
-            return;
-        }
-        Paint paint = new Paint();
-        paint.setAntiAlias(true);
         paint.setColor(Color.BLUE);
-        paint.setStyle(Paint.Style.STROKE);
-
-        Grp.drawText(str, pnt1.x + 4, pnt1.y + 14, paint);
+        paint.setStyle(Paint.Style.FILL);
+        Grp.drawText(str, pnt1.x, pnt1.y + 16, paint);
     }
 }

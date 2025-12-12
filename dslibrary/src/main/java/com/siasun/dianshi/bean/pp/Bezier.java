@@ -294,7 +294,6 @@ public class Bezier {
     }
 
 
-
     public void SetCurT(float t) {
 
         int n = m_nCountKeyPoints - 1; // 从3开始
@@ -363,7 +362,6 @@ public class Bezier {
             _dx2 += c * m_ptKey[i].x * f;
             _dy2 += c * m_ptKey[i].y * f;
         }
-
 
 
         float f = dx1 * dx1 + dy1 * dy1;
@@ -648,54 +646,25 @@ public class Bezier {
         return ret;
     }
 
-//    public void SetLegitimate(boolean legitimate) {
-//        isLegitimate = legitimate;
-//    }
 
-    public void Draw(CoordinateConversion ScrnRef, Canvas Grp, int cr, int nWidth, int nPointSize, boolean bShowKeyPoints) {
-
-        Paint paint = new Paint();
-        paint.setAntiAlias(true);
-
-
-
-        paint.setColor(cr);
-
-        paint.setStyle(Paint.Style.STROKE);
-
-        paint.setStrokeWidth(nWidth);
-
-//
+    public void Draw(CoordinateConversion ScrnRef, Canvas Grp, Paint paint) {
         Path path = new Path();
         PointF mStart = ScrnRef.worldToScreen(m_ptKey[0].x, m_ptKey[0].y);
         PointF mControl1 = ScrnRef.worldToScreen(m_ptKey[1].x, m_ptKey[1].y);
         PointF mControl2 = ScrnRef.worldToScreen(m_ptKey[2].x, m_ptKey[2].y);
         PointF mEnd = ScrnRef.worldToScreen(m_ptKey[3].x, m_ptKey[3].y);
-//        int mStartX = ScrnRef.GetWindowPoint(new Point2d(, )).x;
 
         path.moveTo(mStart.x, mStart.y);
         path.cubicTo(mControl1.x, mControl1.y, mControl2.x, mControl2.y, mEnd.x, mEnd.y);
         Grp.drawPath(path, paint);
-
-
-        // 绘制采样点
-//		CreateSamplePoints();
-//		for (int i = 0; i < m_nSampleCount; i++) {
-//			Point2d pnt = new Point2d();
-//			pnt.x = m_pSamplePoints[i].x;
-//			pnt.y = m_pSamplePoints[i].y;
-//			pnt.Draw(ScrnRef, Grp, Color.RED, 1);
-//		}
     }
 
     //
     //  画出控制点
     //
-    public void DrawCtrlPoints(CoordinateConversion ScrnRef, Canvas Grp, Typeface pLogFont, int cr, int nWidth) {
-
+    public void DrawCtrlPoints(CoordinateConversion ScrnRef, Canvas Grp, int cr, int nPointSize,Paint paint) {
         for (int i = 1; i < m_nCountKeyPoints - 1; i++) {
-//			DrawCtrlID(i,ScrnRef, Grp,pLogFont, cr, nWidth);
-            m_ptKey[i].Draw(ScrnRef, Grp, cr, nWidth);
+            m_ptKey[i].Draw(ScrnRef, Grp, cr, nPointSize,  paint);
         }
     }
 

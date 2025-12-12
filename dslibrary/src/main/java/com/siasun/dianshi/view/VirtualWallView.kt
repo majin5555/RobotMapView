@@ -56,6 +56,19 @@ class VirtualWallView(
     // 用于绘制虚线的路径效果
     private val dashPathEffect: DashPathEffect = DashPathEffect(floatArrayOf(10f, 5f), 0f)
 
+    // 虚拟墙点击回调接口
+    interface OnVirtualWallClickListener {
+        fun onVirtualWallClick(lineIndex: Int, config: Int)
+    }
+
+    // 虚拟墙点击监听器
+    private var virtualWallClickListener: OnVirtualWallClickListener? = null
+
+    // 设置虚拟墙点击监听器
+    fun setOnVirtualWallClickListener(listener: OnVirtualWallClickListener) {
+        this.virtualWallClickListener = listener
+    }
+
     // 伴生对象存储画笔，避免重复创建
     companion object {
         private val mPaint: Paint = Paint().apply {
@@ -202,6 +215,9 @@ class VirtualWallView(
             selectedLineIndex = -1
             isEditing = false
             touchedPointIndex = -1
+        }
+        if (mode != MapView.WorkMode.MODE_VIRTUAL_WALL_TYPE_EDIT) {
+            selectedLineIndex = -1
         }
         postInvalidate()
     }
@@ -401,6 +417,10 @@ class VirtualWallView(
                 consumed = handleDeleteModeTouch(event, mapView)
             }
 
+            MapView.WorkMode.MODE_VIRTUAL_WALL_TYPE_EDIT -> {
+                consumed = handleTypeEditModeTouch(event, mapView)
+            }
+
             else -> {
                 consumed = false
             }
@@ -595,6 +615,36 @@ class VirtualWallView(
 
         // 清理父引用
         parent.clear()
+    }
+
+    /**
+     * 处理编辑虚拟墙类型模式的触摸事件
+     */
+    private fun handleTypeEditModeTouch(event: MotionEvent, mapView: MapView): Boolean {
+        if (event.action == MotionEvent.ACTION_DOWN) {
+            val touchPoint = PointF(event.x, event.y)
+            selectedLineIndex = findNearestLine(touchPoint)
+            if (selectedLineIndex != -1) {
+                // 触发回调，通知虚拟墙被点击
+                val line = virtualWall.LAYER[0].LINE[selectedLineIndex]
+                virtualWallClickListener?.onVirtualWallClick(selectedLineIndex, line.CONFIG)
+                postInvalidate()
+                return true // 消费事件
+            }
+        }
+        return false // 不消费事件
+    }
+
+    /**
+     * 更新虚拟墙类型
+     * @param lineIndex 虚拟墙索引
+     * @param newConfig 新的类型配置 (1: 重点虚拟墙, 2: 虚拟门, 3: 普通虚拟墙)
+     */
+    fun updateVirtualWallType(lineIndex: Int, newConfig: Int) {
+        if (virtualWall.LAYER.isNotEmpty() && lineIndex >= 0 && lineIndex < virtualWall.LAYER[0].LINE.size) {
+            virtualWall.LAYER[0].LINE[lineIndex].CONFIG = newConfig
+            postInvalidate()
+        }
     }
 
     /**

@@ -1,4 +1,4 @@
-package com.siasun.dianshi.io;
+package com.siasun.dianshi.utils.io;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;

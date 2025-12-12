@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.PointF
 import java.lang.ref.WeakReference
 import java.util.Collections
@@ -16,7 +17,9 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
     SlamWareBaseView(context, parent) {
     private var radius = 8f
 
-    private var pathList: MutableList<PointF>? = null
+    //实时路径
+    private var pathList: MutableList<PointF> =
+        Collections.synchronizedList(mutableListOf<PointF>())
 
     // 机器人有任务 实时路径，限制最大长度防止内存溢出
     private val MAX_PATH_POINTS = 1000 // 可根据实际需求调整
@@ -28,27 +31,31 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
     // 伴生对象存储画笔，避免重复创建
     companion object {
         private val mPaint: Paint = Paint().apply {
-            strokeWidth = 1f
+            strokeWidth = 5f
             isAntiAlias = true
-            style = Paint.Style.FILL
-            alpha = 100
-            color = Color.parseColor("#d2f0f4")
+            style = Paint.Style.STROKE
+            color = Color.parseColor("#FFC0CB")
         }
     }
 
+    //绘制车实时路径
+    private val mCarPath = Path()
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
         val mapView = parent.get() ?: return
+
+        mCarPath.reset()
         // 绘制已设置的路径列表
-        pathList?.forEach { pointF ->
-            // 复用PointF对象
-            tempPoint = mapView.worldToScreen(pointF.x, pointF.y)
-            drawCircle(
-                canvas,
-                tempPoint, radius * scale, mPaint
+        pathList.forEachIndexed { index, pointF ->
+            val pnt1Windows: PointF = mapView.worldToScreen(pointF.x, pointF.y)
+            if (index == 0) mCarPath.moveTo(pnt1Windows.x, pnt1Windows.y) else mCarPath.lineTo(
+                pnt1Windows.x, pnt1Windows.y
             )
+            //实时路径
+            canvas.drawPath(mCarPath, mPaint)
         }
+
 
         // 绘制实时路径（cartPosList）
         synchronized(cartPosList) {
@@ -56,8 +63,7 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
                 // 复用PointF对象
                 tempPoint = mapView.worldToScreen(pointF.x, pointF.y)
                 drawCircle(
-                    canvas,
-                    tempPoint, radius * scale, mPaint
+                    canvas, tempPoint, radius * scale, mPaint
                 )
             }
         }
@@ -78,10 +84,11 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
     }
 
     /**
-     * 设置路径列表
+     * 外部接口:
+     * 更新车行车轨迹
      */
-    fun setPathList(list: MutableList<PointF>?) {
-        this.pathList = list
+    fun setPathList(point: PointF) {
+        pathList.add(point)
         postInvalidate()
     }
 
@@ -92,8 +99,7 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
         super.onDetachedFromWindow()
 
         // 清空路径列表
-        pathList?.clear()
-        pathList = null
+        pathList.clear()
 
         // 清空机器人位置列表
         cartPosList.clear()

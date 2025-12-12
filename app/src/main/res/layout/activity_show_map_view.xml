@@ -8,7 +8,17 @@
     <com.siasun.dianshi.view.MapView
         android:id="@+id/map_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        app:showArea="false"
+        app:showChargeStation="false"
+        app:showElevator="false"
+        app:showMixArea="false"
+        app:showOnlinePose="false"
+        app:showPositingArea="false"
+        app:showStations="false"
+        app:showTopViewPath="false"
+        app:showVirtualWall="false"
+        app:showWorldPath="false" />
 
 
     <ScrollView
@@ -28,6 +38,18 @@
                 android:text="编辑路线" />
 
             <Button
+                android:id="@+id/btn_edit_point_arr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="编辑节点属性" />
+
+            <Button
+                android:id="@+id/btn_edit_path_arr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="编辑路段属性" />
+
+            <Button
                 android:id="@+id/btn_merge_path"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -40,6 +62,12 @@
                 android:text="删除路线" />
 
             <Button
+                android:id="@+id/btn_delete_multiple_paths"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="删除多条路线" />
+
+            <Button
                 android:id="@+id/btn_convert_path_to_line"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -47,11 +75,18 @@
                 app:layout_constraintTop_toBottomOf="@+id/btn_delete_path" />
 
             <Button
+                android:id="@+id/btn_create_path"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="创建路线"
+                app:layout_constraintTop_toBottomOf="@+id/btn_convert_path_to_line" />
+
+            <Button
                 android:id="@+id/btn_save_path"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="保存路线"
-                app:layout_constraintTop_toBottomOf="@+id/btn_convert_path_to_line" />
+                app:layout_constraintTop_toBottomOf="@+id/btn_create_path" />
 
             <Button
                 android:id="@+id/btn_move"
@@ -220,6 +255,13 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="编辑虚拟墙"
+                app:layout_constraintTop_toBottomOf="@+id/btn_vir_add" />
+
+            <Button
+                android:id="@+id/btnVirTypeEdit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="编辑虚拟墙类型"
                 app:layout_constraintTop_toBottomOf="@+id/btn_vir_add" />
 
             <Button

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="MapView">
+        <!-- 上激光点云 -->
+        <attr name="showUpLaserPointCloud" default="true" format="boolean" />
+        <!-- 下激光点云 -->
+        <attr name="showLowerLaserPointCloud" default="true" format="boolean" />
+        <!--虚拟墙-->
+        <attr name="showVirtualWall" default="false" format="boolean" />
+        <!--顶视路线-->
+        <attr name="showTopViewPath" default="false" format="boolean" />
+        <!--避让点-->
+        <attr name="showStations" default="false" format="boolean" />
+        <!--上线点-->
+        <attr name="showOnlinePose" default="false" format="boolean" />
+        <!--充电站-->
+        <attr name="showChargeStation" default="false" format="boolean" />
+        <!--乘梯点-->
+        <attr name="showElevator" default="false" format="boolean" />
+        <!--定位区域-->
+        <attr name="showPositingArea" default="false" format="boolean" />
+        <!--清扫区域-->
+        <attr name="showArea" default="false" format="boolean" />
+        <!--路线-->
+        <attr name="showWorldPath" default="false" format="boolean" />
+        <!--混行区域-->
+        <attr name="showMixArea" default="false" format="boolean" />
+    </declare-styleable>
+</resources>

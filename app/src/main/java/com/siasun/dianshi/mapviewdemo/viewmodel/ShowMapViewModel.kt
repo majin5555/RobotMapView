@@ -22,8 +22,6 @@ import com.siasun.dianshi.network.manager.ApiManager
 import com.siasun.dianshi.network.request.RequestGetSpecialArea
 import com.siasun.dianshi.network.request.RequestSaveSpecialArea
 import com.siasun.dianshi.network.request.RequestSaveVirtualWall
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
 
 
 /**
@@ -43,8 +41,10 @@ class ShowMapViewModel : BaseViewModel() {
 
     val saveSpecialArea = MutableLiveData<Boolean>()
 
-
     val saveWorksArea = MutableLiveData<Boolean>()
+
+    // 编辑虚拟墙类型的LiveData变量
+    val editVirtualWallType = MutableLiveData<Boolean>()
 
 
     /**
@@ -84,20 +84,39 @@ class ShowMapViewModel : BaseViewModel() {
         })
     }
 
+    /**
+     * 触发编辑虚拟墙类型
+     */
+    fun triggerEditVirtualWallType() {
+        editVirtualWallType.postValue(true)
+    }
+
+    /**
+     * 取消编辑虚拟墙类型
+     */
+    fun cancelEditVirtualWallType() {
+        editVirtualWallType.postValue(false)
+    }
+
 
     /**
      * 获取定位页面数据
      * 虚拟墙,上线点,顶视路线
      */
     fun getMergedPose(layerId: Int, onComplete: (mergedPoses: MergedPoseBean?) -> Unit) {
-        viewModelScope.launch {
-
-            val mergedDeferred = async {
+        launchUIWithResult(
+            responseBlock = {
                 ApiManager.api.getMergedPose(RequestCommonMapId(layerId))
+            },
+            errorCall = object : IApiErrorCallback {
+                override fun onError(code: Int?, error: String?) {
+                    super.onError(code, error)
+                }
+            },
+            successBlock = {
+                onComplete.invoke(it)
             }
-            val mergedPoses = mergedDeferred.await()
-            onComplete.invoke(mergedPoses.data)
-        }
+        )
     }
 
     /**
@@ -107,44 +126,56 @@ class ShowMapViewModel : BaseViewModel() {
     fun getInitPose(
         layerId: Int, onComplete: (initPoses: InitPoseRoot?) -> Unit
     ) {
-
-        viewModelScope.launch {
-            val poseDeferred = async {
+        launchUIWithResult(
+            responseBlock = {
                 ApiManager.api.getInitPose(RequestCommonMapId(layerId))
+            },
+            errorCall = object : IApiErrorCallback {
+                override fun onError(code: Int?, error: String?) {
+                    super.onError(code, error)
+                }
+            },
+            successBlock = {
+                onComplete.invoke(it)
             }
-            val initPoses = poseDeferred.await()
-            onComplete.invoke(initPoses.data)
-        }
+        )
     }
 
     //获取充电站
     fun getMachineStation(
         onComplete: (machineStations: MutableList<MachineStation>?) -> Unit
     ) {
-        viewModelScope.launch {
-
-            val machineStationsDeferred = async {
+        launchUIWithResult(
+            responseBlock = {
                 ApiManager.api.getMachineStation()
+            },
+            errorCall = object : IApiErrorCallback {
+                override fun onError(code: Int?, error: String?) {
+                    super.onError(code, error)
+                }
+            },
+            successBlock = {
+                onComplete.invoke(it)
             }
-            val machineStations = machineStationsDeferred.await()
-            onComplete.invoke(machineStations.data)
-        }
+        )
     }
 
     fun getStationData(
         layerId: Int, onComplete: (cmsStations: MutableList<CmsStation>?) -> Unit
     ) {
-        viewModelScope.launch {
-
-            val cmsStationDeferred = async {
+        launchUIWithResult(
+            responseBlock = {
                 ApiManager.api.getCmsStation(RequestCommonMapId(layerId))
+            },
+            errorCall = object : IApiErrorCallback {
+                override fun onError(code: Int?, error: String?) {
+                    super.onError(code, error)
+                }
+            },
+            successBlock = {
+                onComplete.invoke(it)
             }
-
-            val cmsStations = cmsStationDeferred.await()
-
-            onComplete.invoke(cmsStations.data)
-
-        }
+        )
     }
 
     /**
@@ -249,18 +280,19 @@ class ShowMapViewModel : BaseViewModel() {
     fun getMixAreaData(
         layerId: Int, onComplete: (workList: CmsWorkAreasListRoot?) -> Unit
     ) {
-        viewModelScope.launch {
-
-            val workAreasNewDeferred = async {
+        launchUIWithResult(
+            responseBlock = {
                 ApiManager.api.getCmsWorkAreas(RequestCommonMapId(layerId))
+            },
+            errorCall = object : IApiErrorCallback {
+                override fun onError(code: Int?, error: String?) {
+                    super.onError(code, error)
+                }
+            },
+            successBlock = {
+                onComplete.invoke(it)
             }
-
-            val workAreasNew = workAreasNewDeferred.await()
-
-            onComplete.invoke(
-                workAreasNew.data
-            )
-        }
+        )
     }
 
     /**

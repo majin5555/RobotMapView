@@ -15,6 +15,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import com.ngu.lcmtypes.laser_t
 import com.ngu.lcmtypes.robot_control_t
+import com.siasun.dianshi.R
 import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.CmsStation
 import com.siasun.dianshi.bean.ElevatorPoint
@@ -23,14 +24,14 @@ import com.siasun.dianshi.bean.MachineStation
 import com.siasun.dianshi.bean.MapData
 import com.siasun.dianshi.bean.MergedPoseItem
 import com.siasun.dianshi.bean.Point2d
-import com.siasun.dianshi.bean.pp.PathPlanResultBean
 import com.siasun.dianshi.bean.PositingArea
 import com.siasun.dianshi.bean.SpArea
 import com.siasun.dianshi.bean.TeachPoint
 import com.siasun.dianshi.bean.WorkAreasNew
 import com.siasun.dianshi.bean.pp.DefPosture
+import com.siasun.dianshi.bean.pp.PathPlanResultBean
 import com.siasun.dianshi.bean.pp.Posture
-import com.siasun.dianshi.bean.world.World
+import com.siasun.dianshi.bean.pp.world.CLayer
 import com.siasun.dianshi.utils.CoordinateConversion
 import com.siasun.dianshi.utils.MathUtils
 import com.siasun.dianshi.utils.RadianUtil
@@ -50,6 +51,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         MODE_SHOW_MAP,         // 移动地图模式
         MODE_VIRTUAL_WALL_ADD, // 创建虚拟墙模式
         MODE_VIRTUAL_WALL_EDIT,// 编辑虚拟墙模式
+        MODE_VIRTUAL_WALL_TYPE_EDIT,// 编辑虚拟墙类型模式
         MODE_VIRTUAL_WALL_DELETE, // 删除虚拟墙模式
         MODE_CMS_STATION_EDIT,  // 修改避让点模式
         MODE_CMS_STATION_DELETE, // 删除避让点模式
@@ -70,12 +72,15 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         MODE_PATH_EDIT, // 编辑路线模式
         MODE_PATH_MERGE, // 合并路线模式
         MODE_PATH_DELETE, // 删除路线模式
-        MODE_PATH_CONVERT_TO_LINE // 曲线转直线模式
+        MODE_PATH_DELETE_MULTIPLE, // 删除多条路线模式
+        MODE_PATH_CONVERT_TO_LINE, // 曲线转直线模式 //暂时没有
+        MODE_PATH_NODE_ATTR_EDIT, // 节点属性编辑模式
+        MODE_PATH_SEGMENT_ATTR_EDIT, // 路段属性编辑模式
+        MODE_PATH_CREATE // 创建路线模式
     }
 
     // 当前工作模式
     private var currentWorkMode = WorkMode.MODE_SHOW_MAP
-    private var mWorld: World? = null
 
     var mSrf = CoordinateConversion()//坐标转化工具类
     private var mOuterMatrix = Matrix()
@@ -106,7 +111,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     var mPolygonEditView: PolygonEditView? = null//区域
     var mSpPolygonEditView: SpPolygonEditView? = null//特殊区域
     var mMixAreaView: MixAreaView? = null//混行区域
-    var mPathView: PathView2? = null//路线PP
+    var mWorldPadView: WorldPadView? = null//路线PP
+    var mPathView: PathView? = null//路线PP 接收PP返回的路线
     var mRobotView: RobotView? = null //机器人图标
     var mWorkIngPathView: WorkIngPathView? = null //机器人工作路径
 
@@ -151,6 +157,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mTopViewPathView = TopViewPathView(context, mMapView)
 
         mLegendView = LegendView(context, attrs, mMapView)
+
         mRobotView = RobotView(context, mMapView)
         mWorkIngPathView = WorkIngPathView(context, mMapView)
         mRemoveNoiseView = RemoveNoiseView(context, mMapView)
@@ -158,7 +165,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mPolygonEditView = PolygonEditView(context, mMapView)
         mSpPolygonEditView = SpPolygonEditView(context, mMapView)
         mMixAreaView = MixAreaView(context, mMapView)
-        mPathView = PathView2(context, mMapView)
+        mPathView = PathView(context, mMapView)
+        mWorldPadView = WorldPadView(context, mMapView)
         //底图的View
         addView(mPngMapView, lp)
 
@@ -192,6 +200,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         addMapLayers(mMixAreaView)
         //显示路线
         addMapLayers(mPathView)
+        //显示路线PP
+        addMapLayers(mWorldPadView)
 
         //  修改LegendView的布局参数，使其显示在右上角
         addView(mLegendView, LayoutParams(
@@ -209,16 +219,16 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         val point = screenToWorld(event.x, event.y)
         mLegendView?.setScreen(point)
 
-        // 如果是擦除噪点模式、创建定位区域模式、编辑定位区域模式、删除定位区域模式、编辑清扫区域模式或创建清扫区域模式
-        if (currentWorkMode == WorkMode.MODE_REMOVE_NOISE || currentWorkMode == WorkMode.MODE_POSITING_AREA_ADD || currentWorkMode == WorkMode.MODE_POSITING_AREA_EDIT || currentWorkMode == WorkMode.MODE_POSITING_AREA_DELETE || currentWorkMode == WorkMode.MODE_CLEAN_AREA_EDIT || currentWorkMode == WorkMode.MODE_CLEAN_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_EDIT) {
-            // 让事件传递给子视图（如RemoveNoiseView或PostingAreasView）处理
+        // 如果是擦除噪点模式、创建定位区域模式、编辑定位区域模式、删除定位区域模式、编辑清扫区域模式或创建清扫区域模式，或者路径编辑模式
+        if (currentWorkMode == WorkMode.MODE_REMOVE_NOISE || currentWorkMode == WorkMode.MODE_POSITING_AREA_ADD || currentWorkMode == WorkMode.MODE_POSITING_AREA_EDIT || currentWorkMode == WorkMode.MODE_POSITING_AREA_DELETE || currentWorkMode == WorkMode.MODE_CLEAN_AREA_EDIT || currentWorkMode == WorkMode.MODE_CLEAN_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_EDIT || currentWorkMode == WorkMode.MODE_PATH_EDIT) {
+            // 让事件传递给子视图（如RemoveNoiseView、PostingAreasView或PathView）处理
             // 先调用父类的onTouchEvent让事件传递给子视图
             super.onTouchEvent(event)
             // 返回true表示事件已处理，禁止手势检测器处理，从而禁止底图拖动
             return true
         }
 
-        // 非擦除噪点模式和非编辑定位区域模式，由手势检测器处理事件
+        // 非特殊模式，由手势检测器处理事件
         return mGestureDetector!!.onTouchEvent(event)
     }
 
@@ -476,7 +486,21 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mMixAreaView?.setWorkMode(mode)
         mElevatorView?.setWorkMode(mode)
         mHomeDockView?.setWorkMode(mode)
-        mPathView?.setWorkMode(mode)
+        mWorldPadView?.setWorkMode(mode)
+    }
+
+    /**
+     * 设置工作模式为编辑虚拟墙类型模式
+     */
+    fun setVirtualWallTypeEditMode() {
+        setWorkMode(WorkMode.MODE_VIRTUAL_WALL_TYPE_EDIT)
+    }
+
+    /**
+     * 退出编辑虚拟墙类型模式
+     */
+    fun exitVirtualWallTypeEditMode() {
+        setWorkMode(WorkMode.MODE_SHOW_MAP)
     }
 
     /**
@@ -498,22 +522,27 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         // 设置地图后自动居中显示
         setCentred()
     }
-    
+
+    /**
+     * 设置路径属性编辑回调监听器
+     */
+    fun setOnPathAttributeEditListener(listener: WorldPadView.OnPathAttributeEditListener) {
+        mWorldPadView?.setOnPathAttributeEditListener(listener)
+    }
+
     /**
      * 设置World数据到PathView2
      */
-    fun setWorld(world: World) {
-        mPathView?.setWorld(world)
-        mWorld = world
+    fun setLayer(cLayer: CLayer) {
+        mWorldPadView?.setLayer(cLayer)
     }
-    
+
     /**
-     * 获取World数据
+     * 获取当前的CLayer对象，用于保存路径数据
      */
-    fun getWorld(): World? {
-        return mWorld
+    fun getLayer(): CLayer? {
+        return mWorldPadView?.getLayer()
     }
-    
 
 
     /***
@@ -744,7 +773,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     /**
      * 设置试教点
      */
-//    fun setTeachPoint(point: TeachPoint) = mPathView?.setTeachPoint(point)
+    fun setTeachPoint(point: TeachPoint) = mPathView?.setTeachPoint(point)
 
     /**
      * 外部接口: 创建示教路径
@@ -759,37 +788,37 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
                 pst.fThita = 0f
                 m_KeyPst.AddPst(pst)
             }
-//             CreateTeachPath(mWorld, pptKey, m_KeyPst, pathParam)
+            mWorldPadView?.createTeachPath(pptKey, m_KeyPst, pathParam)
         }
     }
 
     /**
      * 设置清扫路径
      */
-//    fun setCleanPathPlanResultBean(pathPlanResultBean: PathPlanResultBean?) =
-//        mPathView?.setCleanPathPlanResultBean(pathPlanResultBean)
+    fun setCleanPathPlanResultBean(pathPlanResultBean: PathPlanResultBean?) =
+        mPathView?.setCleanPathPlanResultBean(pathPlanResultBean)
 
 
     /**
      * 设置全局路径
      */
-//    fun setGlobalPathPlanResultBean(pathPlanResultBean: PathPlanResultBean?) =
-//        mPathView?.setGlobalPathPlanResultBean(pathPlanResultBean)
+    fun setGlobalPathPlanResultBean(pathPlanResultBean: PathPlanResultBean?) =
+        mPathView?.setGlobalPathPlanResultBean(pathPlanResultBean)
 
     /**
      * 清除清扫路径
      */
-//    fun clearCleanPathPlan() = mPathView?.setCleanPathPlanResultBean(null)
-//
-//    /**
-//     * 清除全局路径
-//     */
-//    fun clearGlobalPathPlan() = mPathView?.setGlobalPathPlanResultBean(null)
-//
-//    /**
-//     * 清除所有路径
-//     */
-//    fun clearPathPlan() = mPathView?.clearPathPlan()
+    fun clearCleanPathPlan() = mPathView?.setCleanPathPlanResultBean(null)
+
+    /**
+     * 清除全局路径
+     */
+    fun clearGlobalPathPlan() = mPathView?.setGlobalPathPlanResultBean(null)
+
+    /**
+     * 清除所有路径
+     */
+    fun clearPathPlan() = mPathView?.clearPathPlan()
 
 
     /**
@@ -911,6 +940,22 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      */
     fun setOnMachineStationDeleteListener(listener: HomeDockView.OnMachineStationDeleteListener?) {
         mHomeDockView?.setOnMachineStationDeleteListener(listener)
+    }
+
+    /**
+     * 设置虚拟墙点击监听器
+     */
+    fun setOnVirtualWallClickListener(listener: VirtualWallView.OnVirtualWallClickListener) {
+        mWallView?.setOnVirtualWallClickListener(listener)
+    }
+
+    /**
+     * 更新虚拟墙类型
+     * @param lineIndex 虚拟墙索引
+     * @param newConfig 新的虚拟墙类型配置
+     */
+    fun updateVirtualWallType(lineIndex: Int, newConfig: Int) {
+        mWallView?.updateVirtualWallType(lineIndex, newConfig)
     }
 
     /**

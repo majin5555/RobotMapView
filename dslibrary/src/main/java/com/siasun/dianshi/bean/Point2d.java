@@ -4,6 +4,7 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.util.Log;
 
 import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.fastjson.annotation.JSONType;
@@ -38,10 +39,9 @@ public class Point2d implements Serializable {
 
     // The constructor
     public Point2d(float fx, float fy) {
-        int _id = 0;
         x = fx;
         y = fy;
-        id = _id;
+        id = 0;
     }
 
 
@@ -62,7 +62,12 @@ public class Point2d implements Serializable {
     }
 
 
-    public void Create(DataInputStream dis) {
+    /**
+     * 读取
+     *
+     * @param dis
+     */
+    public void read(DataInputStream dis) {
         try {
             int ch1 = dis.read();
             int ch2 = dis.read();
@@ -71,7 +76,7 @@ public class Point2d implements Serializable {
             if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             int tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
             this.id = tempI;
-
+            Log.d("readWorld", "Point2d id  " + id);
             ch1 = dis.read();
             ch2 = dis.read();
             ch3 = dis.read();
@@ -79,6 +84,7 @@ public class Point2d implements Serializable {
             if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
             this.x = Float.intBitsToFloat(tempI);
+            Log.d("readWorld", "Point2d x  " + x);
 
             ch1 = dis.read();
             ch2 = dis.read();
@@ -87,6 +93,7 @@ public class Point2d implements Serializable {
             if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
             this.y = Float.intBitsToFloat(tempI);
+            Log.d("readWorld", "Point2d y  " + y);
 
             ch1 = dis.read();
             ch2 = dis.read();
@@ -95,6 +102,7 @@ public class Point2d implements Serializable {
             if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
             this.a = Float.intBitsToFloat(tempI);
+            Log.d("readWorld", "Point2d a  " + a);
 
             ch1 = dis.read();
             ch2 = dis.read();
@@ -103,8 +111,8 @@ public class Point2d implements Serializable {
             if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
             this.r = Float.intBitsToFloat(tempI);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            Log.d("readWorld", "Point2d r  " + r);
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -183,22 +191,20 @@ public class Point2d implements Serializable {
         }
     }
 
-    public void Draw(CoordinateConversion ScrnRef, Canvas canvas, int color, int nPointSize) {
-
-        if (nPointSize < 0) {
-            nPointSize = (-1) * nPointSize;
-        }
-
-
+    /**
+     * 绘制控制器点
+     *
+     * @param ScrnRef
+     * @param canvas
+     * @param color
+     * @param nPointSize
+     * @param paint
+     */
+    public void Draw(CoordinateConversion ScrnRef, Canvas canvas, int color, int nPointSize, Paint paint) {
         PointF pnt1 = ScrnRef.worldToScreen(x, y);
-        Paint paint = new Paint();
-        paint.setAntiAlias(true);
         paint.setColor(color);
-        paint.setStyle(Paint.Style.STROKE);
         paint.setStyle(Paint.Style.FILL);
-
-        RectF ret = new RectF(pnt1.x - nPointSize, pnt1.y - nPointSize, pnt1.x + nPointSize, pnt1.y + nPointSize);
-        canvas.drawOval(ret, paint);
+        canvas.drawCircle(pnt1.x, pnt1.y, nPointSize, paint);
     }
 
     @Override
