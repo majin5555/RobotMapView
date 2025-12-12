@@ -8,7 +8,6 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.Rect;
-import android.graphics.Typeface;
 
 import com.siasun.dianshi.bean.Point2d;
 import com.siasun.dianshi.bean.TranBytes;
@@ -16,7 +15,7 @@ import com.siasun.dianshi.bean.pp.Angle;
 import com.siasun.dianshi.bean.pp.Bezier;
 import com.siasun.dianshi.bean.pp.Line;
 import com.siasun.dianshi.bean.pp.Posture;
-import com.siasun.dianshi.io.WorldFileIO;
+import com.siasun.dianshi.utils.io.WorldFileIO;
 import com.siasun.dianshi.utils.CoordinateConversion;
 
 import java.io.DataInputStream;

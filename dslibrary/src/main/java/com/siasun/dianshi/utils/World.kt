@@ -2,8 +2,8 @@ package com.siasun.dianshi.utils
 
 import com.siasun.dianshi.bean.TranBytes
 import com.siasun.dianshi.bean.pp.world.CLayer
-import com.siasun.dianshi.io.FileIOUtil
-import com.siasun.dianshi.io.WorldFileIO
+import com.siasun.dianshi.utils.io.FileIOUtil
+import com.siasun.dianshi.utils.io.WorldFileIO
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.File

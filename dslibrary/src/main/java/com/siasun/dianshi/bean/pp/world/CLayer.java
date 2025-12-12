@@ -13,7 +13,7 @@ import com.siasun.dianshi.bean.pp.Angle;
 import com.siasun.dianshi.bean.pp.Bezier;
 import com.siasun.dianshi.bean.pp.Line;
 import com.siasun.dianshi.bean.pp.Posture;
-import com.siasun.dianshi.io.WorldFileIO;
+import com.siasun.dianshi.utils.io.WorldFileIO;
 import com.siasun.dianshi.utils.CoordinateConversion;
 
 import java.io.DataInputStream;
