@@ -55,6 +55,7 @@ import com.siasun.dianshi.view.MixAreaView
 import com.siasun.dianshi.view.PolygonEditView
 import com.siasun.dianshi.view.PostingAreasView
 import com.siasun.dianshi.view.SpPolygonEditView
+import com.siasun.dianshi.view.VirtualWallView
 import com.siasun.dianshi.xpop.XpopUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -102,16 +103,16 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         }
 
         initMergedPose()
-//        initStation()
-//        iniVirtualWall()
-//        initRemoveNoise()
-//        initPostingArea()
-//        initCleanArea()
-//        initElevator()
-//        initPose()
-//        initMachineStation()
-//        initMixArea()
-//        initSpAreas()
+        initStation()
+        iniVirtualWall()
+        initRemoveNoise()
+        initPostingArea()
+        initCleanArea()
+        initElevator()
+        initPose()
+        initMachineStation()
+        initMixArea()
+        initSpAreas()
         initPath()
     }
 
@@ -833,6 +834,29 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             // 删除虚拟墙模式
             mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_DELETE)
         }
+        //编辑虚拟墙类型
+        mBinding.btnVirTypeEdit.setOnClickListener {
+            // 编辑虚拟墙类型模式
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_TYPE_EDIT)
+        }
+        // 设置虚拟墙点击监听器
+        mBinding.mapView.setOnVirtualWallClickListener(object : VirtualWallView.OnVirtualWallClickListener {
+            override fun onVirtualWallClick(lineIndex: Int, config: Int) {
+                // 处理虚拟墙点击事件
+                // 这里可以显示一个对话框，让用户选择新的虚拟墙类型
+                Log.d("ShowMapViewActivity", "Virtual wall clicked: index=$lineIndex, config=$config")
+                
+                // 示例：将虚拟墙类型切换为下一种类型 (1:重点虚拟墙, 2:虚拟门, 3:普通虚拟墙)
+                val newConfig = when (config) {
+                    1 -> 2
+                    2 -> 3
+                    else -> 1
+                }
+                
+                // 更新虚拟墙类型
+                mBinding.mapView.updateVirtualWallType(lineIndex, newConfig)
+            }
+        })
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
