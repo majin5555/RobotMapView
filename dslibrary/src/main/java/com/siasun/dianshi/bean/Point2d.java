@@ -5,9 +5,6 @@ import android.graphics.Paint;
 import android.graphics.PointF;
 import android.util.Log;
 
-import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.fastjson.annotation.JSONType;
-import com.google.gson.annotations.SerializedName;
 import com.siasun.dianshi.utils.CoordinateConversion;
 
 import java.io.DataInputStream;
@@ -18,21 +15,13 @@ import java.io.IOException;
 import java.io.Serializable;
 
 
-@JSONType(orders = {"X", "Y"})
 public class Point2d implements Serializable {
 
-    @JSONField(serialize = false)
     public int id;
-    @SerializedName("X")
-    @JSONField(name = "X")
     public float x;
-    @SerializedName("Y")
-    @JSONField(name = "Y")
     public float y;
 
-    @JSONField(serialize = false)
     public float a;
-    @JSONField(serialize = false)
     public float r;
 
 
