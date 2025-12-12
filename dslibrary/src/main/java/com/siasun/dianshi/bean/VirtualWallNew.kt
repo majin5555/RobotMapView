@@ -1,4 +1,3 @@
-import com.alibaba.fastjson.annotation.JSONField
 import com.jeremyliao.liveeventbus.core.LiveEvent
 import com.siasun.dianshi.bean.PointNew
 
@@ -33,8 +32,6 @@ data class VirtualWallLineNew(
     var END: PointNew,
     var LINENUM: Int,
     var CONFIG: Int,
-    @JSONField(serialize = false)
-    var isSelect: Boolean = false
 ) : LiveEvent
 
 

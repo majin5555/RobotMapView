@@ -86,6 +86,7 @@ android {
 }
 
 dependencies {
+    api fileTree(include: ['*.jar', '*.aar'], dir: 'libs')
     implementation(project(":dslibrary")) {
         // 排除dslibrary模块可能引入的旧版Support库
 //        exclude group: 'com.android.support'
@@ -147,6 +148,7 @@ dependencies {
     api(libs.baseRecyclerView)
     api(libs.brvah)
     api(libs.xpopup)
+    api(libs.fastjson)
 
     // 以 Room 为例
     api(libs.roomtime) {

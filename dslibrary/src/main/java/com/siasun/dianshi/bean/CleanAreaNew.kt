@@ -1,7 +1,6 @@
 package com.siasun.dianshi.bean
 
 import android.graphics.PointF
-import com.alibaba.fastjson.annotation.JSONField
 import com.jeremyliao.liveeventbus.core.LiveEvent
 import java.util.Vector
 

@@ -3,7 +3,6 @@ package com.siasun.dianshi.bean;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PointF;
-import android.graphics.RectF;
 import android.util.Log;
 
 import com.alibaba.fastjson.annotation.JSONField;
