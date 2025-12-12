@@ -148,7 +148,7 @@ dependencies {
     api(libs.baseRecyclerView)
     api(libs.brvah)
     api(libs.xpopup)
-    api(libs.fastjson)
+//    api(libs.fastjson)
 
     // 以 Room 为例
     api(libs.roomtime) {
