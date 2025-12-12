@@ -60,7 +60,7 @@ shapeViewVersion = "9.6"
 shapeDrawableVersion = "3.3"
 brvahVersion = "4.1.4"
 xpopupVersion = "2.10.0"
-fastjsonVersion = "1.2.78"
+#fastjsonVersion = "1.2.78"
 
 
 [libraries]
@@ -132,7 +132,7 @@ shapeView = { group = "com.github.getActivity", name = "ShapeView", version.ref 
 shapeDrawable = { group = "com.github.getActivity", name = "ShapeDrawable", version.ref = "shapeDrawableVersion" }
 brvah = { group = "io.github.cymchad", name = "BaseRecyclerViewAdapterHelper4", version.ref = "brvahVersion" }
 xpopup = { group = "com.github.li-xiaojun", name = "XPopup", version.ref = "xpopupVersion" }
-fastjson = { group = "com.alibaba", name = "fastjson", version.ref = "fastjsonVersion" }
+#fastjson = { group = "com.alibaba", name = "fastjson", version.ref = "fastjsonVersion" }
 
 
 
