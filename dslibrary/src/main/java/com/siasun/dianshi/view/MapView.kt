@@ -296,7 +296,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     }
 
     private fun setMatrix(matrix: Matrix) {
-        mPngMapView!!.setMatrix(matrix)
+        mPngMapView?.setMatrix(matrix)
         for (mapLayer in mapLayers) {
             mapLayer.setMatrix(matrix)
         }
@@ -306,7 +306,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     private fun setMatrixWithScale(matrix: Matrix, scale: Float) {
         mOuterMatrix = matrix
         mMapScale = scale
-        mPngMapView!!.setMatrix(matrix)
+        mPngMapView?.setMatrix(matrix)
         for (mapLayer in mapLayers) {
             mapLayer.setMatrixWithScale(matrix, scale)
         }
@@ -315,7 +315,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     private fun setMatrixWithScaleAndRotation(matrix: Matrix, scale: Float, rotation: Float) {
         mOuterMatrix = matrix
         mMapScale = scale
-        mPngMapView!!.setMatrix(matrix)
+        mPngMapView?.setMatrix(matrix)
         for (mapLayer in mapLayers) {
             mapLayer.setMatrixWithScale(matrix, scale)
             mapLayer.mRotation = rotation
@@ -324,7 +324,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
 
     private fun setMatrixWithRotation(matrix: Matrix, rotation: Float) {
         mOuterMatrix = matrix
-        mPngMapView!!.setMatrix(matrix)
+        mPngMapView?.setMatrix(matrix)
         for (mapLayer in mapLayers) {
             mapLayer.setMatrixWithRotation(matrix, rotation)
         }
