@@ -169,7 +169,7 @@ class OnlinePoseView(context: Context?, parent: WeakReference<MapView>) :
 
         // 设置变换矩阵
         transformMatrix.postTranslate(x - offsetX, y - offsetY) // 平移到中心位置
-        transformMatrix.postScale(scale, scale, x, y) // 应用缩放
+//        transformMatrix.postScale(scale, scale, x, y) // 应用缩放
         transformMatrix.postRotate(rotation, x, y) // 应用旋转
 
         // 绘制图标
