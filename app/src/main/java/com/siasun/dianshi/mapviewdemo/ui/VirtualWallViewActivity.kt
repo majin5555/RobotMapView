@@ -45,7 +45,7 @@ class VirtualWallViewActivity : BaseMvvmActivity<ActivityVirtualwallBinding, Sho
                         resource.height.toFloat(),
                         resource.width.toFloat(),
                     )
-                    mBinding.mapView.setBitmap(mPngMapData, resource)
+//                    mBinding.mapView.setBitmap(mPngMapData, resource)
                 }
             })
 

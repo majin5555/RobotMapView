@@ -79,24 +79,27 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
         MainController.init()
-        val file = File(ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_PNG))
-        Glide.with(this).asBitmap().load(file).skipMemoryCache(true)
-            .diskCacheStrategy(DiskCacheStrategy.NONE).into(object : SimpleTarget<Bitmap?>() {
-                override fun onResourceReady(
-                    resource: Bitmap, transition: Transition<in Bitmap?>?
-                ) {
-                    val mPngMapData = YamlNew().loadYaml(
-                        ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_YAML),
-                        resource.height.toFloat(),
-                        resource.width.toFloat(),
-                    )
-                    mBinding.mapView.setBitmap(mPngMapData, resource)
+//        val file = File(ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_PNG))
+//        Glide.with(this).asBitmap().load(file).skipMemoryCache(true)
+//            .diskCacheStrategy(DiskCacheStrategy.NONE).into(object : SimpleTarget<Bitmap?>() {
+//                override fun onResourceReady(
+//                    resource: Bitmap, transition: Transition<in Bitmap?>?
+//                ) {
+//                    val mPngMapData = YamlNew().loadYaml(
+//                        ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_YAML),
+//                        resource.height.toFloat(),
+//                        resource.width.toFloat(),
+//                    )
+//                    mBinding.mapView.setBitmap(mPngMapData, resource)
+//
+//                }
+//            })
 
-                    // 地图加载完成后，加载路径数据
-                    readPathsFromFile()
-                }
-            })
-
+        //加载地图
+        mBinding.mapView.loadMap(
+            ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_PNG),
+            ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_YAML)
+        )
         //移动模式
         mBinding.btnMove.setOnClickListener {
             mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SHOW_MAP)
@@ -118,7 +121,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 
     @RequiresApi(Build.VERSION_CODES.R)
     private fun initPath() {
-
+        // 地图加载完成后，加载路径数据
+        readPathsFromFile()
         // 设置路径属性编辑回调监听器
         mBinding.mapView.setOnPathAttributeEditListener(object :
             com.siasun.dianshi.view.WorldPadView.OnPathAttributeEditListener {
@@ -840,19 +844,22 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_TYPE_EDIT)
         }
         // 设置虚拟墙点击监听器
-        mBinding.mapView.setOnVirtualWallClickListener(object : VirtualWallView.OnVirtualWallClickListener {
+        mBinding.mapView.setOnVirtualWallClickListener(object :
+            VirtualWallView.OnVirtualWallClickListener {
             override fun onVirtualWallClick(lineIndex: Int, config: Int) {
                 // 处理虚拟墙点击事件
                 // 这里可以显示一个对话框，让用户选择新的虚拟墙类型
-                Log.d("ShowMapViewActivity", "Virtual wall clicked: index=$lineIndex, config=$config")
-                
+                Log.d(
+                    "ShowMapViewActivity", "Virtual wall clicked: index=$lineIndex, config=$config"
+                )
+
                 // 示例：将虚拟墙类型切换为下一种类型 (1:重点虚拟墙, 2:虚拟门, 3:普通虚拟墙)
                 val newConfig = when (config) {
                     1 -> 2
                     2 -> 3
                     else -> 1
                 }
-                
+
                 // 更新虚拟墙类型
                 mBinding.mapView.updateVirtualWallType(lineIndex, newConfig)
             }

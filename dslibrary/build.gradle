@@ -48,5 +48,6 @@ dependencies {
     api(libs.shapeDrawable)
     api(libs.liveEventBus.core)
     api(libs.liveEventBus.gson)
+    api(libs.glide.core)
 //    api(libs.fastjson)
 }

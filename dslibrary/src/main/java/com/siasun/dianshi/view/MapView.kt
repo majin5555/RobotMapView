@@ -13,8 +13,13 @@ import android.view.ViewGroup
 import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import android.widget.FrameLayout
 import android.widget.ImageView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.request.target.SimpleTarget
+import com.bumptech.glide.request.transition.Transition
 import com.ngu.lcmtypes.laser_t
 import com.ngu.lcmtypes.robot_control_t
+import com.siasun.dianshi.ConstantBase
 import com.siasun.dianshi.R
 import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.CmsStation
@@ -36,6 +41,8 @@ import com.siasun.dianshi.utils.CoordinateConversion
 import com.siasun.dianshi.utils.MathUtils
 import com.siasun.dianshi.utils.RadianUtil
 import com.siasun.dianshi.utils.SlamGestureDetector
+import com.siasun.dianshi.utils.YamlNew
+import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -511,12 +518,34 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     }
 
     /**
+     * 加载地图
+     * pngPath png文件路径
+     * yamlPath yaml文件路径
+     */
+    fun loadMap(pngPath: String, yamlPath: String) {
+        val file = File(pngPath)
+        Glide.with(this).asBitmap().load(file).skipMemoryCache(true)
+            .diskCacheStrategy(DiskCacheStrategy.NONE).into(object : SimpleTarget<Bitmap?>() {
+                override fun onResourceReady(
+                    resource: Bitmap, transition: Transition<in Bitmap?>?
+                ) {
+                    val mPngMapData = YamlNew().loadYaml(
+                        yamlPath,
+                        resource.height.toFloat(),
+                        resource.width.toFloat(),
+                    )
+                    setBitmap(mPngMapData, resource)
+                }
+            })
+    }
+
+    /**
      * 设置地图数据信息
      * 设置地图
      *
      * @param bitmap
      */
-    fun setBitmap(mapData: MapData, bitmap: Bitmap) {
+    private fun setBitmap(mapData: MapData, bitmap: Bitmap) {
         mSrf.mapData = mapData
         mPngMapView?.setBitmap(bitmap)
         // 设置地图后自动居中显示
