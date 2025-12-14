@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="MapView">
+        <!-- 图例显示 -->
+        <attr name="showLegendView" default="true" format="boolean" />
         <!-- 上激光点云 -->
         <attr name="showUpLaserPointCloud" default="true" format="boolean" />
         <!-- 下激光点云 -->

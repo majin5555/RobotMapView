@@ -144,8 +144,23 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mOuterMatrix = Matrix()
         mGestureDetector = SlamGestureDetector(this, this)
         initView()
+        setViewVisibility(attrs)
     }
 
+    /**
+     * 设置各个View显示
+     */
+    private fun setViewVisibility(attrs: AttributeSet?) {
+        attrs?.let {
+            val typedArray = context.obtainStyledAttributes(it, R.styleable.MapView)
+            mLegendView?.visibility = if (typedArray.getBoolean(
+                    R.styleable.MapView_showLegendView, true
+                )
+            ) VISIBLE else GONE
+
+            typedArray.recycle()
+        }
+    }
 
     private fun setDefaultBackground(colorId: Int) = setBackgroundColor(colorId)
 
@@ -882,6 +897,12 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mRemoveNoiseView?.clearDrawing()
     }
 
+    /**
+     * 销毁
+     */
+    fun destroy() {
+
+    }
     /**
      * ******************************************************
      * *******************      监听接口        **************

@@ -36,7 +36,6 @@ import com.siasun.dianshi.mapviewdemo.RunningState
 import com.siasun.dianshi.mapviewdemo.TaskState
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityShowMapViewBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.ShowMapViewModel
-import com.siasun.dianshi.utils.YamlNew
 import com.siasun.dianshi.view.MapView
 import com.siasun.dianshi.bean.SpArea
 import com.siasun.dianshi.bean.WorkAreasNew
@@ -79,21 +78,6 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
         MainController.init()
-//        val file = File(ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_PNG))
-//        Glide.with(this).asBitmap().load(file).skipMemoryCache(true)
-//            .diskCacheStrategy(DiskCacheStrategy.NONE).into(object : SimpleTarget<Bitmap?>() {
-//                override fun onResourceReady(
-//                    resource: Bitmap, transition: Transition<in Bitmap?>?
-//                ) {
-//                    val mPngMapData = YamlNew().loadYaml(
-//                        ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_YAML),
-//                        resource.height.toFloat(),
-//                        resource.width.toFloat(),
-//                    )
-//                    mBinding.mapView.setBitmap(mPngMapData, resource)
-//
-//                }
-//            })
 
         //加载地图
         mBinding.mapView.loadMap(
@@ -135,6 +119,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                     "ShowMapViewActivity",
                     "选中节点: id=${node.m_uId}, x=${node.x}, y=${node.y}, 所属路段: ${path.GetStartNode()?.m_uId}->${path.GetEndNode()?.m_uId}"
                 )
+                mBinding.mapView.getLayer()?.updateNodeAttr(node)
+
                 // 这里可以显示节点属性编辑界面，或者执行其他操作
             }
 
@@ -143,7 +129,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 val startNode = path.GetStartNode()
                 val endNode = path.GetEndNode()
                 Log.d("ShowMapViewActivity", "选中路段: ${startNode?.m_uId}->${endNode?.m_uId}")
-                // 这里可以显示路段属性编辑界面，或者执行其他操作
+                mBinding.mapView.getLayer()?.updatePathAttr(path)
             }
 
             override fun onPathDeleted(path: com.siasun.dianshi.bean.pp.world.Path) {
