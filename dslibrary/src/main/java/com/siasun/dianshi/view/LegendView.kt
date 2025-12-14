@@ -184,36 +184,6 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
         mBinding.tvScreenPointY.text = "${screenPointYText}${String.format("%.3f", point.y)}"
     }
 
-//    mSlamMapView.setOnWorldCoordinateListener {
-//        mBinding.tvScreenPointX.text= "X:${String.format("%.3f", it.x)}"
-//        mBinding.tvScreenPointY.text = "Y:${String.format("%.3f", it.y)}"
-//    }
-
-    /**
-     * 获取上激光点云CheckBox
-     */
-    fun getCbUpLaserPointCloud(): CheckBox = mBinding.cbUpLaserPointCloud
-
-    /**
-     * 获取下激光点云CheckBox
-     */
-    fun getCbLowerLaserPointCloud(): CheckBox = mBinding.cbLowerLaserPointCloud
-
-    /**
-     * 获取虚拟墙CheckBox
-     */
-    fun getCbVirtualWall(): CheckBox = mBinding.cbVirtualWall
-
-    /**
-     * 获取顶视路线CheckBox
-     */
-    fun getCbTopViewPath(): CheckBox = mBinding.cbTopViewPath
-
-    /**
-     * 获取避让点CheckBox
-     */
-    fun getCbStations(): CheckBox = mBinding.cbStations
-
     /**
      * 设置各个CheckBox的显示隐藏
      */

@@ -5,8 +5,6 @@ import static java.lang.Math.abs;
 
 import android.graphics.Point;
 
-import com.siasun.dianshi.attr.NodeBaseAttr;
-import com.siasun.dianshi.attr.PathBaseAttr;
 import com.siasun.dianshi.bean.Point2d;
 import com.siasun.dianshi.bean.TranBytes;
 import com.siasun.dianshi.bean.pp.Angle;
@@ -133,10 +131,10 @@ public class CLayer extends NodeBase {
     public Node CreateNode(Point2d pt) {
         // 获取下一个可用的节点ID
         int nNewID = NextID();
-        
+
         // 创建新节点
         Node newNode = new Node(nNewID, pt);
-        
+
         // 设置节点的默认属性
         newNode.m_uType = 1; // 默认节点类型
         newNode.m_uExtType = 0; // 默认扩展类型
@@ -144,39 +142,39 @@ public class CLayer extends NodeBase {
         newNode.m_fHeading = 0.0f; // 默认航向角
         newNode.m_Tag = new RfId(); // 创建新的标签对象
         newNode.m_Tag.Init(null); // 初始化标签
-        
+
         // 设置标记相关属性
         newNode.m_fChkMarkDist = 0.45f; // 检测标记距离
         newNode.m_fChkMarkVel = 0.1f; // 检测标记速度
         newNode.m_fMarkWidth = 0.0f; // 标记有效宽度
-        
+
         // 设置偏移量
         newNode.m_fOffset1 = 0.0f;
         newNode.m_fOffset2 = 0.0f;
-        
+
         // 设置标记偏移
         newNode.m_fFwdMarkOffset = 0.0f;
         newNode.m_fBwdMarkOffset = 0.0f;
-        
+
         // 设置图层和站类型
         newNode.m_uLayerID = 0;
         newNode.m_uStationType = 0; // 0:临时站
         newNode.m_uStationTempId = 0;
         newNode.m_uStationId = 0;
-        
+
         // 设置车辆类型和上线状态
         newNode.m_uCarrierType = 255; // 默认车辆类型
         newNode.m_uOnLine = 1; // 允许上线
-        
+
         // 将节点添加到节点集合中
         if (AddNode(newNode) < 0) {
             return null;
         }
-        
+
         // 返回创建的节点
         return GetNode(nNewID);
     }
-    
+
     /**
      * 创建一条连接两个节点的路径
      *
@@ -191,51 +189,51 @@ public class CLayer extends NodeBase {
 
         // 获取路径的下一个ID
         int nNextID = m_PathBase.NextID();
-        
+
         // 创建起点和终点的姿态对象
         Posture pstStart = new Posture();
         pstStart.x = startNode.x;
         pstStart.y = startNode.y;
         pstStart.SetAngle(new Angle(0)); // 初始角度为0
-        
+
         Posture pstEnd = new Posture();
         pstEnd.x = endNode.x;
         pstEnd.y = endNode.y;
         pstEnd.SetAngle(new Angle(0)); // 初始角度为0
-        
+
         // 创建曲线路径，使用默认的控制点距离
         float defaultControlPointDistance = 0.5f; // 可以根据实际需求调整
-        
-        GenericPath pPath = new GenericPath(nNextID, startNode.m_uId, endNode.m_uId, 
-            pstStart, pstEnd, defaultControlPointDistance, defaultControlPointDistance, 
-            new float[2], (short) 0, (short) 0, (short) 0, (short) 3, m_PathBase.m_MyNode);
-        
+
+        GenericPath pPath = new GenericPath(nNextID, startNode.m_uId, endNode.m_uId,
+                pstStart, pstEnd, defaultControlPointDistance, defaultControlPointDistance,
+                new float[2], (short) 0, (short) 0, (short) 0, (short) 3, m_PathBase.m_MyNode);
+
         // 将路径添加到路径数据库中
         if (m_PathBase.AddPath(pPath)) {
             return pPath;
         }
-        
+
         return null;
     }
-    
+
     /**
      * 创建路径的通用方法
-     * 
-     * @param startPoint 起点坐标
-     * @param endPoint 终点坐标
-     * @param startNodeId 起点节点ID，-1表示创建新节点
-     * @param endNodeId 终点节点ID，-1表示创建新节点
-     * @param pathType 路径类型（0表示直线，10表示曲线）
-     * @param speed 速度参数
-     * @param guidFunction 引导功能类型
+     *
+     * @param startPoint           起点坐标
+     * @param endPoint             终点坐标
+     * @param startNodeId          起点节点ID，-1表示创建新节点
+     * @param endNodeId            终点节点ID，-1表示创建新节点
+     * @param pathType             路径类型（0表示直线，10表示曲线）
+     * @param speed                速度参数
+     * @param guidFunction         引导功能类型
      * @param controlPointDistance 控制点距离（仅用于曲线类型）
      * @return 创建的路径对象，失败返回null
      */
-    public Path CreatePath(Point2d startPoint, Point2d endPoint, int startNodeId, int endNodeId, 
+    public Path CreatePath(Point2d startPoint, Point2d endPoint, int startNodeId, int endNodeId,
                            int pathType, float[] speed, short guidFunction, float controlPointDistance) {
         Node startNode;
         Node endNode;
-        
+
         // 处理起点节点
         if (startNodeId < 0) {
             // 创建新节点
@@ -250,7 +248,7 @@ public class CLayer extends NodeBase {
                 return null;
             }
         }
-        
+
         // 处理终点节点
         if (endNodeId < 0) {
             // 创建新节点
@@ -265,50 +263,50 @@ public class CLayer extends NodeBase {
                 return null;
             }
         }
-        
+
         // 获取路径的下一个ID
         int nextPathId = m_PathBase.NextID();
-        
+
         // 创建起点和终点的姿态对象
         Posture pstStart = new Posture();
         pstStart.x = startNode.x;
         pstStart.y = startNode.y;
         pstStart.SetAngle(new Angle(0)); // 初始角度为0
-        
+
         Posture pstEnd = new Posture();
         pstEnd.x = endNode.x;
         pstEnd.y = endNode.y;
         pstEnd.SetAngle(new Angle(0)); // 初始角度为0
-        
+
         Path createdPath;
-        
+
         // 根据路径类型创建不同类型的路径
         if (pathType == 0) {
             // 创建直线路径
-            createdPath = new LinePath(nextPathId, startNode.m_uId, endNode.m_uId, 
-                speed, guidFunction, (short) 0, (short) 0, (short) 3, m_PathBase.m_MyNode);
+            createdPath = new LinePath(nextPathId, startNode.m_uId, endNode.m_uId,
+                    speed, guidFunction, (short) 0, (short) 0, (short) 3, m_PathBase.m_MyNode);
         } else if (pathType == 10) {
             // 创建曲线路径
             if (controlPointDistance <= 0) {
                 controlPointDistance = 0.5f; // 默认控制点距离
             }
-            
-            createdPath = new GenericPath(nextPathId, startNode.m_uId, endNode.m_uId, 
-                pstStart, pstEnd, controlPointDistance, controlPointDistance, 
-                speed, guidFunction, (short) 0, (short) 0, (short) 3, m_PathBase.m_MyNode);
+
+            createdPath = new GenericPath(nextPathId, startNode.m_uId, endNode.m_uId,
+                    pstStart, pstEnd, controlPointDistance, controlPointDistance,
+                    speed, guidFunction, (short) 0, (short) 0, (short) 3, m_PathBase.m_MyNode);
         } else {
             // 不支持的路径类型
             return null;
         }
-        
+
         // 将路径添加到路径数据库中
         if (createdPath != null && m_PathBase.AddPath(createdPath)) {
             return createdPath;
         }
-        
+
         return null;
     }
-    
+
     /**
      * 添加曲线路径到图层
      *
@@ -890,169 +888,13 @@ public class CLayer extends NodeBase {
         return NodeID;
     }
 
-    public NodeBaseAttr GetNodeAttr(int NodeID) {
-        NodeBaseAttr nodeAttr = new NodeBaseAttr();
-        Node pNode = m_PathBase.m_MyNode.GetNode(NodeID);
-        if (pNode == null) {
-            nodeAttr.m_uId = -1;
-            return nodeAttr;
-        }
-        nodeAttr.m_uId = pNode.m_uId;
-        nodeAttr.m_uType = pNode.m_uType;
-        nodeAttr.x = pNode.GetPoint2dObject().x;
-        nodeAttr.y = pNode.GetPoint2dObject().y;
-        nodeAttr.m_uExtType = pNode.m_uExtType;
-        nodeAttr.m_fHeading = pNode.m_fHeading;
-        nodeAttr.m_Tag = pNode.m_Tag;
-        nodeAttr.m_fChkMarkDist = pNode.m_fChkMarkDist;
-        nodeAttr.m_fChkMarkVel = pNode.m_fChkMarkVel;
-        nodeAttr.m_fMarkWidth = pNode.m_fMarkWidth;
-
-        nodeAttr.m_fOffset1 = pNode.m_fOffset1;
-        nodeAttr.m_fOffset2 = pNode.m_fOffset2;
-
-        nodeAttr.m_fFwdMarkOffset = pNode.m_fFwdMarkOffset;
-//        nodeAttr.m_fBwdMarkOffset = pNode.m_fBwdMarkOffset;
-        nodeAttr.m_fBwdMarkOffset = pNode.m_fBwdMarkOffset;
-
-//        nodeAttr.m_uLayerId = pNode.m_uLayerID;
-        //nodeAttr.m_uCrossType = pNode.m_uCrossType;	//LS	穿越类型，未使用
-        nodeAttr.m_uStationType = pNode.m_uStationType;
-        nodeAttr.m_uStationId = pNode.m_uStationId;
-        nodeAttr.m_uStationTempId = pNode.m_uStationTempId;
-
-        nodeAttr.m_uLayerId = (short) 0;
-
-        nodeAttr.m_uCarrierType = pNode.m_uCarrierType;  //车辆类型
-        nodeAttr.m_uOnLine = pNode.m_uOnLine;            //允许上线
-        return nodeAttr;
-    }
-
-    public PathBaseAttr GetPathAttr(int PathID) {
-        PathBaseAttr PathA = new PathBaseAttr();
-        Path pPath;
-
-        pPath = m_PathBase.m_pPathIdx[PathID].m_ptr;
-
-
-        PathA.m_uId = pPath.m_uId;
-        PathA.m_uLayerId = pPath.m_LayerID;
-//	ModifyPathID(pPath->m_uId, PathA.->m_uId);
-        PathA.m_uType = pPath.m_uType;
-        PathA.m_uExtType = pPath.m_uExtType;
-        PathA.m_uStartNode = pPath.m_uStartNode;
-        PathA.m_uEndNode = pPath.m_uEndNode;
-        PathA.m_fVeloLimit[0] = pPath.m_fVeloLimit[0];
-        PathA.m_fVeloLimit[1] = pPath.m_fVeloLimit[1];
-        PathA.m_uGuideType = pPath.m_uGuideType;
-        PathA.m_uFwdRotoScannerObstacle = pPath.m_uFwdRotoScannerObstacle;
-        PathA.m_uFwdObdetectorObstacle = pPath.m_uFwdObdetectorObstacle;
-        PathA.m_uBwdRotoScannerObstacle = pPath.m_uBwdRotoScannerObstacle;
-        PathA.m_uBwdObdetectorObstacle = pPath.m_uBwdObdetectorObstacle;
-        PathA.m_uPathHeading = pPath.m_uPathHeading;
-        PathA.m_fSize = pPath.m_fSize;
-        PathA.m_fNavParam = pPath.m_fNavParam;
-        PathA.m_uMoveHeading = pPath.m_uMoveHeading;
-//	PathA.m_fAngle = pPath->m_fAngle;
-
-        if (pPath.m_uType == 10) {
-            PathA.m_nCountKeyPoints = ((GenericPath) pPath).m_Curve.m_nCountKeyPoints;
-            PathA.m_ptKey = ((GenericPath) pPath).m_Curve.m_ptKey;
-            short count = 0;
-            //      ((GenericPath)pPath).m_Curve.GetSamplePoints(m_fSampleLen,count);
-            PathA.m_SamCount = count;
-            //      PathA.m_ptSam=((GenericPath)pPath).m_Curve.pntSam;
-            Point2d ptStart = ((GenericPath) pPath).m_Curve.m_ptKey[0];
-            Point2d ptEnd = ((GenericPath) pPath).m_Curve.m_ptKey[1];
-            Line ln = new Line(ptStart, ptEnd);
-            Angle angS = ln.GetSlantAngle();
-            PathA.m_fPathStartHeading = angS.m_fRad * 180 / Math.PI;    //曲线路段起点方向角
-
-            Point2d ptStart1 = ((GenericPath) pPath).m_Curve.m_ptKey[PathA.m_nCountKeyPoints - 2];
-            //CPoint2d ptEnd1 = ((CGenericPath*)pPath)->GetEndPnt();
-            Point2d ptEnd1 = ((GenericPath) pPath).m_Curve.m_ptKey[PathA.m_nCountKeyPoints - 1];
-
-            Line ln1 = new Line(ptStart1, ptEnd1);
-            Angle angE = ln1.GetSlantAngle();
-
-            PathA.m_fPathEndHeading = angE.m_fRad * 180 / Math.PI;        //曲线路段终点方向角
-
-            //路段限制参数（轮最大线速度，车最大角速度，最大角加速度，舵角最大变化量，） 20200331
-            PathA.m_fVelMax = ((GenericPath) pPath).m_fVelMax;                //最弱的轮的最大线速度（m/s）
-            PathA.m_fThitaDiffMax = ((GenericPath) pPath).m_fThitaDiffMax;    //最弱的舵的最大角速度(rad/s)
-
-            PathA.m_fAngVelMax = ((GenericPath) pPath).m_fAngVelMax;            //运动中心最大角速度（rad/s）
-            PathA.m_fAngVelACC = ((GenericPath) pPath).m_fAngVelACC;            //运动中心最大角加速度(rad/s/s)
-            PathA.m_fVelACC = ((GenericPath) pPath).m_fVelACC;                //运动中心最大线加速度(m/s/s)
-
-            PathA.m_fLenForAngJump = ((GenericPath) pPath).m_fLenForAngJump;                        //路段端点的打舵距离(m)
-            PathA.m_fThitaDiffMaxForStAndEd = ((GenericPath) pPath).m_fThitaDiffMaxForStAndEd;    //最弱的舵在路段端点的最大角速度(rad/s)
-
-        } else {
-            PathA.m_SamCount = 0;
-            PathA.m_ptSam = null;
-            PathA.m_nCountKeyPoints = 0;
-            PathA.m_ptKey = null;
-
-            Point2d ptStart = pPath.GetStartPnt();
-            Point2d ptEnd = pPath.GetEndPnt();
-            Line ln = new Line(ptStart, ptEnd);
-            Angle ang = ln.GetSlantAngle();
-            PathA.m_fangle = ang.m_fRad * 180 / Math.PI;               //直线路段的角度
-            //康凯要求给直线的起点和终点角度也赋值
-            PathA.m_fPathStartHeading = PathA.m_fangle;
-            PathA.m_fPathEndHeading = PathA.m_fangle;
-//20200411
-            //路段限制参数（轮最大线速度，车最大角速度，最大角加速度，舵角最大变化量，） 20200331
-            PathA.m_fVelMax = 0;                //最弱的轮的最大线速度（m/s）
-            PathA.m_fThitaDiffMax = 0;    //最弱的舵的最大角速度(rad/s)
-
-            PathA.m_fAngVelMax = 0;            //运动中心最大角速度（rad/s）
-            PathA.m_fAngVelACC = 0;            //运动中心最大角加速度(rad/s/s)
-            PathA.m_fVelACC = 0;                //运动中心最大线加速度(m/s/s)
-
-            PathA.m_fLenForAngJump = 0;                        //路段端点的打舵距离(m)
-            PathA.m_fThitaDiffMaxForStAndEd = 0;    //最弱的舵在路段端点的最大角速度(rad/s)
-
-            PathA.m_fLamdaStart = 0; //20200415
-            PathA.m_fLamdaEnd = 0; //20200415
-
-        }
-
-        //2019.11.8
-        // LINE_TYPE
-        if (pPath.m_uType == 0) {
-
-            PathA.m_uShift = 0;
-        }
-        // SIDE_TYPE
-        //fix mj 12 10
-//        if (pPath.m_uType == 4) {
-//            PathA.m_uShift = 1;
-//            PathA.m_angShiftHeading = ((SidePath) pPath).m_angHeading.m_fRad;
-//        }
-        if (pPath.m_uType == 10) {
-            if (!((GenericPath) pPath).GetTangency())//不相切
-            {
-                PathA.m_uShift = 0;
-            } else {
-                PathA.m_uShift = 1;
-            }
-        }
-
-        PathA.m_uCarrierType = pPath.m_uCarrierType;  //车辆类型
-        PathA.m_uOnLine = pPath.m_uOnLine;            //允许上线
-        return PathA;
-    }
-
     /**
      * 修改指定节点的属性
      *
      * @param nodeAttr 包含新属性的节点属性对象
-     * @param NodeID   要修改的节点ID
      */
-    public void modifyNodeAttr(NodeBaseAttr nodeAttr, int NodeID) {
-        Node pNode = m_PathBase.m_MyNode.GetNode(NodeID);
+    public void updateNodeAttr(Node nodeAttr) {
+        Node pNode = m_PathBase.m_MyNode.GetNode(nodeAttr.m_uId);
 
         pNode.m_uType = nodeAttr.m_uType;
 
@@ -1061,7 +903,7 @@ public class CLayer extends NodeBase {
         m_pnt.y = (float) nodeAttr.y;
 
         //修改节点坐标
-        ModifyNodeCoord(m_pnt, NodeID, -1);
+        ModifyNodeCoord(m_pnt, nodeAttr.m_uId, -1);
         pNode.m_uExtType = nodeAttr.m_uExtType;
         pNode.m_fHeading = nodeAttr.m_fHeading;
         pNode.m_Tag = nodeAttr.m_Tag;
@@ -1075,7 +917,7 @@ public class CLayer extends NodeBase {
         pNode.m_fFwdMarkOffset = nodeAttr.m_fFwdMarkOffset;
         pNode.m_fBwdMarkOffset = nodeAttr.m_fBwdMarkOffset;
 
-        pNode.m_uLayerID = nodeAttr.m_uLayerId;
+        pNode.m_uLayerID = nodeAttr.m_uLayerID;
         //pNode->m_uCrossType = nodeAttr.m_uCrossType;	//LS	穿越类型，未使用
         pNode.m_uStationType = nodeAttr.m_uStationType;
         pNode.m_uStationTempId = nodeAttr.m_uStationTempId;
@@ -1083,8 +925,6 @@ public class CLayer extends NodeBase {
 
         pNode.m_uCarrierType = nodeAttr.m_uCarrierType;  //车辆类型
         pNode.m_uOnLine = nodeAttr.m_uOnLine;            //允许上线
-
-
     }
 
     /**
@@ -1094,7 +934,7 @@ public class CLayer extends NodeBase {
      * @param PathID    要修改的路径ID
      * @param bChangeId 是否修改路径的起始和结束节点ID
      */
-    public void ModifyPathAttr(PathBaseAttr PathAttr, int PathID, boolean bChangeId) {
+    public void updatePathAttr(Path PathAttr, int PathID, boolean bChangeId) {
         Path pPath = null;
         for (int i = 0; i < m_PathBase.m_uCount; i++) {
             pPath = m_PathBase.m_pPathIdx[i].m_ptr;
@@ -1103,6 +943,7 @@ public class CLayer extends NodeBase {
             }
         }
 
+        assert pPath != null;
         pPath.m_uExtType = PathAttr.m_uExtType;
         //1106设置路段属性使用默认节点编号
         if (bChangeId) {
@@ -1120,21 +961,6 @@ public class CLayer extends NodeBase {
         pPath.m_uBwdObdetectorObstacle = PathAttr.m_uBwdObdetectorObstacle;
         pPath.m_uPathHeading = PathAttr.m_uPathHeading;
         pPath.m_fNavParam = PathAttr.m_fNavParam;
-
-
-        if (pPath.m_uType == 10) {
-            //路段限制参数（轮最大线速度，车最大角速度，最大角加速度，舵角最大变化量，） 20200331
-            ((GenericPath) pPath).m_fVelMax = PathAttr.m_fVelMax;                //最弱的轮的最大线速度（m/s）
-            ((GenericPath) pPath).m_fThitaDiffMax = PathAttr.m_fThitaDiffMax;    //最弱的舵的最大角速度(rad/s)
-
-            ((GenericPath) pPath).m_fAngVelMax = PathAttr.m_fAngVelMax;            //运动中心最大角速度（rad/s）
-            ((GenericPath) pPath).m_fAngVelACC = PathAttr.m_fAngVelACC;            //运动中心最大角加速度(rad/s/s)
-            ((GenericPath) pPath).m_fVelACC = PathAttr.m_fVelACC;                //运动中心最大线加速度(m/s/s)
-
-            ((GenericPath) pPath).m_fLenForAngJump = PathAttr.m_fLenForAngJump;                        //路段端点的打舵距离(m)
-            ((GenericPath) pPath).m_fThitaDiffMaxForStAndEd = PathAttr.m_fThitaDiffMaxForStAndEd;    //最弱的舵在路段端点的最大角速度(rad/s)
-
-        }
 
         pPath.m_uCarrierType = PathAttr.m_uCarrierType;  //车辆类型
         pPath.m_uOnLine = PathAttr.m_uOnLine;            //允许上线
