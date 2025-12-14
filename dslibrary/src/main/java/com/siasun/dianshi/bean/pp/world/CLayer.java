@@ -930,26 +930,19 @@ public class CLayer extends NodeBase {
     /**
      * 修改指定路径的属性
      *
-     * @param PathAttr  包含新属性的路径属性对象
-     * @param PathID    要修改的路径ID
-     * @param bChangeId 是否修改路径的起始和结束节点ID
+     * @param PathAttr 包含新属性的路径属性对象
      */
-    public void updatePathAttr(Path PathAttr, int PathID, boolean bChangeId) {
+    public void updatePathAttr(Path PathAttr) {
         Path pPath = null;
         for (int i = 0; i < m_PathBase.m_uCount; i++) {
             pPath = m_PathBase.m_pPathIdx[i].m_ptr;
-            if (pPath.m_uId == PathID) {
+            if (pPath.m_uId == PathAttr.m_uId) {
                 break;
             }
         }
 
         assert pPath != null;
         pPath.m_uExtType = PathAttr.m_uExtType;
-        //1106设置路段属性使用默认节点编号
-        if (bChangeId) {
-            pPath.m_uStartNode = PathAttr.m_uStartNode;
-            pPath.m_uEndNode = PathAttr.m_uEndNode;
-        }
 
         pPath.m_fVeloLimit[0] = PathAttr.m_fVeloLimit[0];
         pPath.m_fVeloLimit[1] = PathAttr.m_fVeloLimit[1];
