@@ -613,9 +613,6 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                         selectedNode = startNode
                                         onPathAttributeEditListener?.onNodeSelected(startNode, path)
                                     }
-                                } else {
-                                    // 路径编辑模式下每次点击都触发回调
-                                    onPathAttributeEditListener?.onNodeSelected(startNode, path)
                                 }
                                 return
                             } else if (currentWorkMode == MapView.WorkMode.MODE_PATH_MERGE) {
@@ -667,9 +664,6 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                         selectedNode = endNode
                                         onPathAttributeEditListener?.onNodeSelected(endNode, path)
                                     }
-                                } else {
-                                    // 路径编辑模式下每次点击都触发回调
-                                    onPathAttributeEditListener?.onNodeSelected(endNode, path)
                                 }
                                 return
                             } else if (currentWorkMode == MapView.WorkMode.MODE_PATH_MERGE) {
@@ -1212,8 +1206,6 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
             }
         }
     }
-
-
 
 
     // 节点和路段属性编辑回调接口
