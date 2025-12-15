@@ -630,6 +630,16 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
     }
 
     /**
+     * 清除清扫区域
+     */
+    fun cleanData() {
+        synchronized(list) {
+            list.clear()
+        }
+        postInvalidate()
+    }
+
+    /**
      * 设置是否启用绘制
      */
     fun setDrawingEnabled(enabled: Boolean) {

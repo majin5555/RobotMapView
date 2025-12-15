@@ -177,9 +177,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mUpLaserScanView = UpLaserScanView(context, mMapView)
         mDownLaserScanView = DownLaserScanView(context, mMapView)
         mTopViewPathView = TopViewPathView(context, mMapView)
-
         mLegendView = LegendView(context, attrs, mMapView)
-
         mRobotView = RobotView(context, mMapView)
         mWorkIngPathView = WorkIngPathView(context, mMapView)
         mRemoveNoiseView = RemoveNoiseView(context, mMapView)
@@ -664,6 +662,13 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     }
 
     /**
+     * 清空有任务下的路线
+     */
+    fun clearCarPath() {
+        mWorkIngPathView?.clearCarPath()
+    }
+
+    /**
      * 设置顶视路线
      */
     fun setTopViewPathDada(data: MutableList<MergedPoseItem>) {
@@ -731,6 +736,11 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      * 获取清扫区域
      */
     fun getCleanAreaData(): List<CleanAreaNew> = mPolygonEditView?.getData() ?: mutableListOf()
+
+    /**
+     * 清除清扫区域
+     */
+    fun cleanCleanArea() = mPolygonEditView?.cleanData()
 
     /**
      * 设置特殊区域
