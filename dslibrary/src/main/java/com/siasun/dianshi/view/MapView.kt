@@ -7,19 +7,20 @@ import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.graphics.PointF
 import android.graphics.RectF
+import android.os.Build
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.ViewGroup
 import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import android.widget.FrameLayout
 import android.widget.ImageView
+import androidx.annotation.RequiresApi
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
 import com.ngu.lcmtypes.laser_t
 import com.ngu.lcmtypes.robot_control_t
-import com.siasun.dianshi.ConstantBase
 import com.siasun.dianshi.R
 import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.CmsStation
@@ -334,6 +335,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
             // 使用弱引用避免内存泄漏
             val weakRef = WeakReference(this)
             val listener = object : OnGlobalLayoutListener {
+                @RequiresApi(Build.VERSION_CODES.KITKAT)
                 override fun onGlobalLayout() {
                     val mapView = weakRef.get()
                     if (mapView != null && mapView.isAttachedToWindow) {
@@ -510,20 +512,6 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     }
 
     /**
-     * 设置工作模式为编辑虚拟墙类型模式
-     */
-    fun setVirtualWallTypeEditMode() {
-        setWorkMode(WorkMode.MODE_VIRTUAL_WALL_TYPE_EDIT)
-    }
-
-    /**
-     * 退出编辑虚拟墙类型模式
-     */
-    fun exitVirtualWallTypeEditMode() {
-        setWorkMode(WorkMode.MODE_SHOW_MAP)
-    }
-
-    /**
      * 获取当前工作模式
      */
     fun getCurrentWorkMode(): WorkMode {
@@ -662,13 +650,6 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     }
 
     /**
-     * 清空有任务下的路线
-     */
-    fun clearCarPath() {
-        mWorkIngPathView?.clearCarPath()
-    }
-
-    /**
      * 设置顶视路线
      */
     fun setTopViewPathDada(data: MutableList<MergedPoseItem>) {
@@ -736,11 +717,6 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      * 获取清扫区域
      */
     fun getCleanAreaData(): List<CleanAreaNew> = mPolygonEditView?.getData() ?: mutableListOf()
-
-    /**
-     * 清除清扫区域
-     */
-    fun cleanCleanArea() = mPolygonEditView?.cleanData()
 
     /**
      * 设置特殊区域
@@ -859,21 +835,6 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     fun setGlobalPathPlanResultBean(pathPlanResultBean: PathPlanResultBean?) =
         mPathView?.setGlobalPathPlanResultBean(pathPlanResultBean)
 
-    /**
-     * 清除清扫路径
-     */
-    fun clearCleanPathPlan() = mPathView?.setCleanPathPlanResultBean(null)
-
-    /**
-     * 清除全局路径
-     */
-    fun clearGlobalPathPlan() = mPathView?.setGlobalPathPlanResultBean(null)
-
-    /**
-     * 清除所有路径
-     */
-    fun clearPathPlan() = mPathView?.clearPathPlan()
-
 
     /**
      * 根据ID删除定位区域
@@ -908,10 +869,35 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     }
 
     /**
+     * 清除清扫路径
+     */
+    fun clearCleanPathPlan() = mPathView?.setCleanPathPlanResultBean(null)
+
+    /**
+     * 清除全局路径
+     */
+    fun clearGlobalPathPlan() = mPathView?.setGlobalPathPlanResultBean(null)
+
+    /**
+     * 清除所有路径
+     */
+    fun clearPathPlan() = mPathView?.clearPathPlan()
+
+    /**
+     * 清空有任务下的路线
+     */
+    fun clearCarPath() = mWorkIngPathView?.clearCarPath()
+
+
+    /**
+     * 清除清扫区域
+     */
+    fun cleanCleanArea() = mPolygonEditView?.cleanData()
+
+    /**
      * 销毁
      */
     fun destroy() {
-
     }
     /**
      * ******************************************************

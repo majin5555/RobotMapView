@@ -59,6 +59,7 @@ import com.siasun.dianshi.xpop.XpopUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.jetbrains.anko.toast
 import java.io.File
 
 /**
@@ -89,17 +90,17 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SHOW_MAP)
         }
 
-        initMergedPose()
-        initStation()
-        iniVirtualWall()
-        initRemoveNoise()
-        initPostingArea()
-        initCleanArea()
-        initElevator()
-        initPose()
-        initMachineStation()
-        initMixArea()
-        initSpAreas()
+//        initMergedPose()
+//        initStation()
+//        iniVirtualWall()
+//        initRemoveNoise()
+//        initPostingArea()
+//        initCleanArea()
+//        initElevator()
+//        initPose()
+//        initMachineStation()
+//        initMixArea()
+//        initSpAreas()
         initPath()
     }
 
@@ -119,6 +120,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                     "ShowMapViewActivity",
                     "选中节点: id=${node.m_uId}, x=${node.x}, y=${node.y}, 所属路段: ${path.GetStartNode()?.m_uId}->${path.GetEndNode()?.m_uId}"
                 )
+                toast("选中节点: id=${node.m_uId}, x=${node.x}, y=${node.y}, 所属路段: ${path.GetStartNode()?.m_uId}->${path.GetEndNode()?.m_uId}")
                 mBinding.mapView.getLayer()?.updateNodeAttr(node)
 
                 // 这里可以显示节点属性编辑界面，或者执行其他操作
@@ -129,6 +131,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 val startNode = path.GetStartNode()
                 val endNode = path.GetEndNode()
                 Log.d("ShowMapViewActivity", "选中路段: ${startNode?.m_uId}->${endNode?.m_uId}")
+                toast("选中路段: ${startNode?.m_uId}->${endNode?.m_uId}")
+
                 mBinding.mapView.getLayer()?.updatePathAttr(path)
             }
 

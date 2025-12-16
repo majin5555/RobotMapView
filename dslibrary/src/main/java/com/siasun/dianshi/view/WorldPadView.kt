@@ -34,7 +34,8 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
     private var draggingNode: Node? = null // 当前正在拖动的节点
     private var draggingControlPoint: Point2d? = null // 当前正在拖动的控制点
     private var dragStartPoint: PointF? = null // 拖动开始的屏幕坐标
-    private val SELECTION_RADIUS = 20f // 路段/节点选择半径，增大以提高点击灵敏度
+    private val SELECTION_RADIUS_POINT = 20f // 节点选择半径，增大以提高点击灵敏度
+    private val SELECTION_RADIUS_PATH = 50f // 路段 选择半径，增大以提高点击灵敏度
 
     // 路线合并模式相关属性
     private var selectedMergeStartNode: Node? = null // 合并路线的起点
@@ -79,6 +80,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
             isAntiAlias = true
             style = Paint.Style.STROKE
             color = Color.BLACK
+            textSize = 10f
         }
     }
 
@@ -564,7 +566,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
 
                     if (pointToLineDistance(
                             screenPoint, startScreen, endScreen
-                        ) <= SELECTION_RADIUS
+                        ) <= SELECTION_RADIUS_PATH
                     ) {
                         draggingNode = null
                         draggingControlPoint = null
@@ -574,7 +576,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                         val startScreenPoint = mapView.worldToScreen(startNode.x, startNode.y)
                         if (distanceBetweenPoints(
                                 startScreenPoint, screenPoint
-                            ) <= SELECTION_RADIUS
+                            ) <= SELECTION_RADIUS_POINT
                         ) {
                             selectedPath = path
 
@@ -625,7 +627,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                         val endScreenPoint = mapView.worldToScreen(endNode.x, endNode.y)
                         if (distanceBetweenPoints(
                                 endScreenPoint, screenPoint
-                            ) <= SELECTION_RADIUS
+                            ) <= SELECTION_RADIUS_POINT
                         ) {
                             selectedPath = path
 
@@ -707,7 +709,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                 mapView.worldToScreen(controlPoint.x, controlPoint.y)
                             if (distanceBetweenPoints(
                                     controlScreenPoint, screenPoint
-                                ) <= SELECTION_RADIUS
+                                ) <= SELECTION_RADIUS_POINT
                             ) {
                                 selectedPath = path
                                 draggingControlPoint = controlPoint
