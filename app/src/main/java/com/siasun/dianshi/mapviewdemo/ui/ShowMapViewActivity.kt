@@ -39,6 +39,7 @@ import com.siasun.dianshi.mapviewdemo.viewmodel.ShowMapViewModel
 import com.siasun.dianshi.view.MapView
 import com.siasun.dianshi.bean.SpArea
 import com.siasun.dianshi.bean.WorkAreasNew
+import com.siasun.dianshi.framework.ext.toBean
 import com.siasun.dianshi.utils.World
 import com.siasun.dianshi.framework.ext.toJson
 import com.siasun.dianshi.mapviewdemo.CLEAN_PATH_PLAN
@@ -90,18 +91,18 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SHOW_MAP)
         }
 
-//        initMergedPose()
-//        initStation()
-//        iniVirtualWall()
-//        initRemoveNoise()
-//        initPostingArea()
-//        initCleanArea()
-//        initElevator()
-//        initPose()
-//        initMachineStation()
-//        initMixArea()
-//        initSpAreas()
-        initPath()
+        initMergedPose()
+        initStation()
+        iniVirtualWall()
+        initRemoveNoise()
+        initPostingArea()
+        initCleanArea()
+        initElevator()
+        initPose()
+        initMachineStation()
+        initMixArea()
+        initSpAreas()
+//        initPath()
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
@@ -198,6 +199,15 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.btnSavePath.onClick {
             savePathsToFile()
         }
+
+        val json =
+            "{\"dparams\":[],\"fparams\":[],\"iparams\":[],\"lparams\":[],\"m_cPathTypeBuffer\":[1,1,1,1,1,1,1],\"m_fCleanPathPlanStartPosBuffer\":[1.381,-2.837,3.21100414E17],\"m_fElementBuffer\":[-0.393,-0.244,0.28536794,-0.2644037,0.944546,-0.46498302,1.5813354,-0.6748804,1.5813354,-0.6748804,2.2181249,-0.8847777,2.8606145,-1.0650618,3.5171533,-1.1828197,3.5171533,-1.1828197,4.1736917,-1.3005776,4.851657,-1.406595,5.507674,-1.2394532,5.507674,-1.2394532,6.163691,-1.0723114,6.746165,-0.5978608,6.8828955,0.09815109,6.8828955,0.09815109,7.0196257,0.794163,6.5253716,1.4208747,5.8894935,1.6866018,5.8894935,1.6866018,5.253616,1.9523289,4.6056023,1.939845,3.8873608,1.8399378,3.8873608,1.8399378,3.1691194,1.7400306,2.3102486,1.5795141,1.581,1.381],\"m_fGloalPathPlanGoalPosBuffer\":[1.3759809E-38,0.0,0.0],\"m_fGloalPathPlanStartPosBuffer\":[0.4,1.5755796E-38,0.0],\"m_fRegionPointsBuffer\":[],\"m_iAddLaser\":0,\"m_iCleanPathPanType\":0,\"m_iElementSum\":56,\"m_iGloalPathPlanType\":0,\"m_iPathPlanPublicId\":10,\"m_iPathPlanPublicSubId\":0,\"m_iPathPlanRegionChoose\":46,\"m_iPathPlanType\":3,\"m_iPathSum\":7,\"m_iPlanResult\":1,\"m_iPlanResultMode\":0,\"m_iRegionNumber\":1070226997,\"m_iRegionPoints\":0,\"m_strAdditionInfo\":\"1.0.1.193\",\"m_strFrom\":\"PathPlan\",\"m_strTo\":\"pad\",\"m_uLayerNumber\":12333,\"ndparams\":0,\"nfparams\":0,\"niparams\":0,\"nlparams\":0,\"sparams\":\"\",\"utime\":0}"
+
+//        val toBean = json.toBean<PlanPathResult>()
+//        mBinding.mapView.setCleanPathPlanResultBean(
+//            PathPlanningUtil.getPathPlanResultBean(toBean, mBinding.mapView)
+//        )
+
     }
 
     /**
@@ -304,7 +314,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         }
 
         // 设置特殊区域编辑监听器
-        mBinding.mapView.setOnSpAreaEditListener(object : SpPolygonEditView.OnSpAreaEditListener {
+        mBinding.mapView.setOnSpAreaEditListener(object :
+            SpPolygonEditView.OnSpAreaEditListener {
 
             override fun onVertexDragEnd(area: SpArea, vertexIndex: Int) {
                 LogUtil.i("编辑特殊区域onVertexDragEnd    ${area.toJson()}")
@@ -574,7 +585,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                     Random.nextInt(mBinding.mapView.getCleanAreaData().toMutableList().size)
 
                 // 通过随机索引获取要删除的定位区域
-                val randomArea = mBinding.mapView.getCleanAreaData().toMutableList()[randomIndex]
+                val randomArea =
+                    mBinding.mapView.getCleanAreaData().toMutableList()[randomIndex]
 
                 // 设置地图的工作模式为编辑清扫区域模式
                 mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CLEAN_AREA_EDIT)
@@ -603,14 +615,22 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             ) {
                 if (area.routeType == AreaType.AREA_AUTO) {
                     MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
-                    LogUtil.i("编辑区域onVertexAdded  申请路径规划 ${area.toJson()}", null, TAG_PP)
+                    LogUtil.i(
+                        "编辑区域onVertexAdded  申请路径规划 ${area.toJson()}",
+                        null,
+                        TAG_PP
+                    )
                 }
             }
 
             override fun onEdgeRemoved(area: CleanAreaNew, edgeIndex: Int) {
                 if (area.routeType == AreaType.AREA_AUTO) {
                     MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
-                    LogUtil.i("编辑区域onEdgeRemoved  申请路径规划 ${area.toJson()}", null, TAG_PP)
+                    LogUtil.i(
+                        "编辑区域onEdgeRemoved  申请路径规划 ${area.toJson()}",
+                        null,
+                        TAG_PP
+                    )
                 }
             }
 
@@ -692,7 +712,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                     Random.nextInt(mBinding.mapView.getPositingAreas().toMutableList().size)
 
                 // 通过随机索引获取定位区域对象
-                val randomArea = mBinding.mapView.getPositingAreas().toMutableList()[randomIndex]
+                val randomArea =
+                    mBinding.mapView.getPositingAreas().toMutableList()[randomIndex]
 
                 // 方式1：通过对象设置选中区域
                 mBinding.mapView.setSelectedPositingArea(randomArea)
@@ -709,7 +730,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                     Random.nextInt(mBinding.mapView.getPositingAreas().toMutableList().size)
 
                 // 通过随机索引获取要删除的定位区域
-                val randomArea = mBinding.mapView.getPositingAreas().toMutableList()[randomIndex]
+                val randomArea =
+                    mBinding.mapView.getPositingAreas().toMutableList()[randomIndex]
 
                 // 删除该定位区域
                 mBinding.mapView.deletePositingArea(randomArea)
@@ -760,15 +782,16 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         })
         //添加避让点
         mBinding.btnCreateStation.onClick {
-            XpopUtils(this).showCmsStationDialog(onConfirmCall = { result ->
-                result?.let {
-                    cmsStation.add(result)
-                    mBinding.mapView.setCmsStations(cmsStation)
-                }
+            XpopUtils(this).showCmsStationDialog(
+                onConfirmCall = { result ->
+                    result?.let {
+                        cmsStation.add(result)
+                        mBinding.mapView.setCmsStations(cmsStation)
+                    }
 
-            }, onDeleteCall = {
+                }, onDeleteCall = {
 
-            }, mapId
+                }, mapId
             )
         }
         //编辑避让点
@@ -840,7 +863,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 // 处理虚拟墙点击事件
                 // 这里可以显示一个对话框，让用户选择新的虚拟墙类型
                 Log.d(
-                    "ShowMapViewActivity", "Virtual wall clicked: index=$lineIndex, config=$config"
+                    "ShowMapViewActivity",
+                    "Virtual wall clicked: index=$lineIndex, config=$config"
                 )
 
                 // 示例：将虚拟墙类型切换为下一种类型 (1:重点虚拟墙, 2:虚拟门, 3:普通虚拟墙)
@@ -920,7 +944,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 
                 // 检查当前内存状态，防止内存溢出
                 val memoryInfo = ActivityManager.MemoryInfo()
-                val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+                val activityManager =
+                    getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
                 activityManager.getMemoryInfo(memoryInfo)
                 if (memoryInfo.lowMemory) {
                     // 内存不足时，清理旧路径和对象池
@@ -944,7 +969,9 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                             val cleanPathPlanResultBean =
                                 PathPlanningUtil.getPathPlanResultBean(result, mBinding.mapView)
                             if (cleanPathPlanResultBean.m_bIsPlanOk) {
-                                mBinding.mapView.setCleanPathPlanResultBean(cleanPathPlanResultBean)
+                                mBinding.mapView.setCleanPathPlanResultBean(
+                                    cleanPathPlanResultBean
+                                )
                             } else {
                                 LogUtil.e("清扫路径规划解析失败", null, TAG_PP)
                             }
