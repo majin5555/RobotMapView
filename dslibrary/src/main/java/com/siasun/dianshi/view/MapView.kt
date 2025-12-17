@@ -810,20 +810,21 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     /**
      * 外部接口: 创建连续的示教路径
      */
-    fun createContinuousPathTeach(pptKey: Array<Point2d>?, pathParam: Short) {
+    fun createContinuousPathTeach(pptKeyList: List<Array<Point2d>>, pathParam: Short) {
         var lastEndNodeId = -1
-        if (pptKey != null) {
-            val m_KeyPst = DefPosture()
-            for (point2d in pptKey) {
-                val pst = Posture()
-                pst.x = point2d.x
-                pst.y = point2d.y
-                pst.fThita = 0f
-                m_KeyPst.AddPst(pst)
+        for (pptKey in pptKeyList) {
+            if (pptKey.isNotEmpty()) {
+                val m_KeyPst = DefPosture()
+                for (point2d in pptKey) {
+                    val pst = Posture()
+                    pst.x = point2d.x
+                    pst.y = point2d.y
+                    pst.fThita = 0f
+                    m_KeyPst.AddPst(pst)
+                }
+                // 使用前一条路径的终点作为当前路径的起点
+                lastEndNodeId = mWorldPadView?.createTeachPath(pptKey, m_KeyPst, pathParam, lastEndNodeId) ?: -1
             }
-            // 使用前一条路径的终点作为当前路径的起点
-            lastEndNodeId =
-                mWorldPadView?.createTeachPath(pptKey, m_KeyPst, pathParam, lastEndNodeId) ?: -1
         }
     }
 

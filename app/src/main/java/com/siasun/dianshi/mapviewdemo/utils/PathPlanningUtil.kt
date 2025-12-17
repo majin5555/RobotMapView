@@ -170,6 +170,9 @@ object PathPlanningUtil {
         LogUtil.i("PAD解析PP数据 示教路径路段个数：$maxSegments")
         LogUtil.i("PAD解析PP数据 示教路径点位个数：${result.m_fElementBuffer.size}")
 
+        // 收集所有路径段的关键点数组
+        val pathSegments = mutableListOf<Array<Point2d>>()
+        
         // 路段个数
         var j = 0
         for (i in 0 until maxSegments) {
@@ -190,11 +193,17 @@ object PathPlanningUtil {
             pptKey[3].x = result.m_fElementBuffer[j++]
             pptKey[3].y = result.m_fElementBuffer[j++]
 
-            val bezier = Bezier(4, pptKey)
-            pathPlanResultBean.m_vecBezierOfPathPlan.add(bezier)
-            //mMapView?.createPathTeach(pptKey, 2)//单项双向
-            mMapView?.createContinuousPathTeach(pptKey, 2)//单项双向
-            // 回收Point2d对象
+            // 移除这一行，因为会导致重复绘制路径
+             val bezier = Bezier(4, pptKey)
+             pathPlanResultBean.m_vecBezierOfPathPlan.add(bezier)
+            
+            // 将当前路径段添加到列表中
+            pathSegments.add(pptKey)
+        }
+        // 一次性调用createContinuousPathTeach方法创建所有连续路径
+        mMapView?.createContinuousPathTeach(pathSegments, 2)//单项双向
+        // 回收所有Point2d对象
+        pathSegments.forEach { pptKey ->
             pptKey.forEach { recyclePoint2d(it) }
         }
     }
