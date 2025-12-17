@@ -192,8 +192,8 @@ object PathPlanningUtil {
 
             val bezier = Bezier(4, pptKey)
             pathPlanResultBean.m_vecBezierOfPathPlan.add(bezier)
-            mMapView?.createPathTeach(pptKey, 2)//单项双向
-
+            //mMapView?.createPathTeach(pptKey, 2)//单项双向
+            mMapView?.createContinuousPathTeach(pptKey, 2)//单项双向
             // 回收Point2d对象
             pptKey.forEach { recyclePoint2d(it) }
         }

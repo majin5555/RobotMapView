@@ -1171,8 +1171,10 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
      * @param point2ds 路径关键点数组
      * @param m_KeyPst 路径的关键位姿信息
      * @param pathParam 路径参数
+     * @param startNodeId 起点节点ID，如果为-1则创建新节点
+     * @return 新创建的路径的终点节点ID，如果创建失败则返回-1
      */
-    fun createTeachPath(point2ds: Array<Point2d>, m_KeyPst: DefPosture, pathParam: Short) {
+    fun createTeachPath(point2ds: Array<Point2d>, m_KeyPst: DefPosture, pathParam: Short, startNodeId: Int = -1): Int {
         val startPst: Posture = m_KeyPst.m_PstV.get(0)
         val endPst: Posture = m_KeyPst.m_PstV.get(3)
 
@@ -1181,31 +1183,20 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
         pptCtrl[0] = point2ds[1]
         pptCtrl[1] = point2ds[2]
 
-        // 调用CLayer的AddGenericPath_PPteach方法创建曲线路径
-        // 参数说明：
-        // - startPst: 起点姿态
-        // - endPst: 终点姿态
-        // - pptCtrl: 控制点数组
-        // - -1: 起点节点ID，-1表示创建新节点
-        // - -1: 终点节点ID，-1表示创建新节点
-        // - pathParam: 路径参数
-        // 
-        // 注意：在当前的设计中，createTeachPath方法的目的是创建新的示教路径，
-        // 因此我们总是创建新的起点和终点节点，而不是使用现有的节点。
-        // 这与CLayer.AddGenericPath_PPteach方法的预期用法一致（-1表示创建新节点）。
-        cLayer?.AddGenericPath_PPteach(
-            startPst, endPst, pptCtrl, -1, -1, pathParam
+        val success = cLayer?.AddGenericPath_PPteach(
+            startPst, endPst, pptCtrl, startNodeId, -1, pathParam
         )
 
-        // 获取刚创建的路径的起点和终点节点ID（可选）
+        // 获取刚创建的路径的终点节点ID并返回
+        var endNodeId = -1
         cLayer?.let {
-            if (it.m_PathBase != null && it.m_PathBase.m_uCount > 0) {
+            if (success == true && it.m_PathBase != null && it.m_PathBase.m_uCount > 0) {
                 val newPath = it.m_PathBase.m_pPathIdx[it.m_PathBase.m_uCount - 1].m_ptr
-                val startNodeId = newPath.m_uStartNode
-                val endNodeId = newPath.m_uEndNode
-                // 可以在这里使用startNodeId和endNodeId，或者将它们返回给调用者
+                endNodeId = newPath.m_uEndNode
+                // 可以在这里使用startNodeId和endNodeId
             }
         }
+        return endNodeId
     }
 
 

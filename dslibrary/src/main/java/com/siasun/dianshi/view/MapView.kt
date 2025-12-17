@@ -225,12 +225,13 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         addMapLayers(mWorldPadView)
 
         //  修改LegendView的布局参数，使其显示在右上角
-        addView(mLegendView, LayoutParams(
-            LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT
-        ).apply {
-            gravity = android.view.Gravity.TOP or android.view.Gravity.END
-            setMargins(16, 16, 16, 16)
-        })
+        addView(
+            mLegendView, LayoutParams(
+                LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT
+            ).apply {
+                gravity = android.view.Gravity.TOP or android.view.Gravity.END
+                setMargins(16, 16, 16, 16)
+            })
 
         setCentred()
     }
@@ -805,11 +806,13 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      */
     fun setTeachPoint(point: TeachPoint) = mPathView?.setTeachPoint(point)
 
+
     /**
-     * 外部接口: 创建示教路径
+     * 外部接口: 创建连续的示教路径
      */
-    fun createPathTeach(pptKey: Array<Point2d>?, pathParam: Short) {
-        if (!pptKey.isNullOrEmpty()) {
+    fun createContinuousPathTeach(pptKey: Array<Point2d>?, pathParam: Short) {
+        var lastEndNodeId = -1
+        if (pptKey != null) {
             val m_KeyPst = DefPosture()
             for (point2d in pptKey) {
                 val pst = Posture()
@@ -818,7 +821,9 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
                 pst.fThita = 0f
                 m_KeyPst.AddPst(pst)
             }
-            mWorldPadView?.createTeachPath(pptKey, m_KeyPst, pathParam)
+            // 使用前一条路径的终点作为当前路径的起点
+            lastEndNodeId =
+                mWorldPadView?.createTeachPath(pptKey, m_KeyPst, pathParam, lastEndNodeId) ?: -1
         }
     }
 
