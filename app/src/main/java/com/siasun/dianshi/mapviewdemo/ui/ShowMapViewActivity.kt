@@ -2,18 +2,12 @@ package com.siasun.dianshi.mapviewdemo.ui
 
 import android.app.ActivityManager
 import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.PointF
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.lifecycleScope
-import com.bumptech.glide.Glide
-import kotlin.random.Random
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.request.target.SimpleTarget
-import com.bumptech.glide.request.transition.Transition
 import com.jeremyliao.liveeventbus.LiveEventBus
 import com.ngu.lcmtypes.laser_t
 import com.ngu.lcmtypes.robot_control_t
@@ -26,31 +20,30 @@ import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.CmsStation
 import com.siasun.dianshi.bean.PlanPathResult
 import com.siasun.dianshi.bean.PositingArea
+import com.siasun.dianshi.bean.SpArea
+import com.siasun.dianshi.bean.WorkAreasNew
 import com.siasun.dianshi.controller.MainController
 import com.siasun.dianshi.framework.ext.onClick
+import com.siasun.dianshi.framework.ext.toJson
 import com.siasun.dianshi.framework.log.LogUtil
+import com.siasun.dianshi.mapviewdemo.CLEAN_PATH_PLAN
+import com.siasun.dianshi.mapviewdemo.GLOBAL_PATH_PLAN
 import com.siasun.dianshi.mapviewdemo.KEY_AGV_COORDINATE
 import com.siasun.dianshi.mapviewdemo.KEY_BOTTOM_CURRENT_POINT_CLOUD
 import com.siasun.dianshi.mapviewdemo.KEY_CURRENT_POINT_CLOUD
-import com.siasun.dianshi.mapviewdemo.RunningState
-import com.siasun.dianshi.mapviewdemo.TaskState
-import com.siasun.dianshi.mapviewdemo.databinding.ActivityShowMapViewBinding
-import com.siasun.dianshi.mapviewdemo.viewmodel.ShowMapViewModel
-import com.siasun.dianshi.view.MapView
-import com.siasun.dianshi.bean.SpArea
-import com.siasun.dianshi.bean.WorkAreasNew
-import com.siasun.dianshi.framework.ext.toBean
-import com.siasun.dianshi.utils.World
-import com.siasun.dianshi.framework.ext.toJson
-import com.siasun.dianshi.mapviewdemo.CLEAN_PATH_PLAN
-import com.siasun.dianshi.mapviewdemo.GLOBAL_PATH_PLAN
 import com.siasun.dianshi.mapviewdemo.KEY_POSITING_AREA_VALUE
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_PLAN_PATH_RESULT
 import com.siasun.dianshi.mapviewdemo.PATH_MODE
+import com.siasun.dianshi.mapviewdemo.RunningState
 import com.siasun.dianshi.mapviewdemo.TAG_PP
+import com.siasun.dianshi.mapviewdemo.TaskState
+import com.siasun.dianshi.mapviewdemo.databinding.ActivityShowMapViewBinding
 import com.siasun.dianshi.mapviewdemo.utils.GsonUtil
 import com.siasun.dianshi.mapviewdemo.utils.PathPlanningUtil
+import com.siasun.dianshi.mapviewdemo.viewmodel.ShowMapViewModel
+import com.siasun.dianshi.utils.World
 import com.siasun.dianshi.view.HomeDockView
+import com.siasun.dianshi.view.MapView
 import com.siasun.dianshi.view.MixAreaView
 import com.siasun.dianshi.view.PolygonEditView
 import com.siasun.dianshi.view.PostingAreasView
@@ -62,6 +55,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.anko.toast
 import java.io.File
+import kotlin.random.Random
 
 /**
  * 显示地图
@@ -91,18 +85,18 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SHOW_MAP)
         }
 
-        initMergedPose()
-        initStation()
-        iniVirtualWall()
-        initRemoveNoise()
-        initPostingArea()
-        initCleanArea()
-        initElevator()
-        initPose()
-        initMachineStation()
-        initMixArea()
-        initSpAreas()
-//        initPath()
+//        initMergedPose()
+//        initStation()
+//        iniVirtualWall()
+//        initRemoveNoise()
+//        initPostingArea()
+//        initCleanArea()
+//        initElevator()
+//        initPose()
+//        initMachineStation()
+//        initMixArea()
+//        initSpAreas()
+        initPath()
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
@@ -223,14 +217,19 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                     if (file.exists()) {
                         //读取world_pad.dat
                         val readWorld = world.readWorld(getFolderPath(mapId), PAD_WORLD_NAME)
+                        LogUtil.d("读取world_pad.dat ${readWorld}")
                         if (readWorld) mBinding.mapView.setLayer(world.cLayer)
 
                     } else {
                         LogUtil.d("路径数据文件不存在，将创建新的World对象")
                         world.saveWorld(getFolderPath(mapId), PAD_WORLD_NAME)
                     }
+                } catch (e: NegativeArraySizeException) {
+                    LogUtil.e("加载路径数据遇到NegativeArraySizeException: ${e}")
+                    // 处理异常，例如创建一个新的World对象或显示错误信息
+                    world.saveWorld(getFolderPath(mapId), PAD_WORLD_NAME)
                 } catch (e: Exception) {
-                    LogUtil.e("加载路径数据异常: ${e.message}")
+                    LogUtil.e("加载路径数据异常: ${e}")
                     e.printStackTrace()
                 }
             }

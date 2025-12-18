@@ -115,31 +115,46 @@ public class PathBase {
             this.m_uCount = (short) ((ch2 << 8) + (ch1 << 0));// Init the count of paths
             Log.i("readWorld", "路径总数 m_uCount " + m_uCount);
 
-            // Allocate memory for the path indexes
-            this.m_pPathIdx = new PathIndex[m_uCount];
+            // 确保路径数量为正数，避免创建负长度数组
+            if (this.m_uCount > 0) {
+                // Allocate memory for the path indexes
+                this.m_pPathIdx = new PathIndex[m_uCount];
 
-            for (int i = 0; i < m_uCount; i++) {
-                m_pPathIdx[i] = new PathIndex();
+                for (int i = 0; i < m_uCount; i++) {
+                    m_pPathIdx[i] = new PathIndex();
 //                Log.d("readWorld", "路径索引数组，存储所有路径的索引指针 m_pPathIdx[" + i + "] " + m_pPathIdx[i]);
-            }
-
-            for (short i = 0; i < this.m_uCount; i++) {
-                short uType;
-                ch1 = dis.read();
-                ch2 = dis.read();
-                if ((ch1 | ch2) < 0) {
-                    throw new EOFException();
                 }
 
-                uType = (short) ((ch2 << 8) + (ch1 << 0));
-                Log.e("readWorld", "uType == " + uType);
-                GenericPath pPath = new GenericPath();
-                // 确保路径对象创建成功
-                pPath.m_pNodeBase = m_MyNode;
-                pPath.Create(dis);
-                pPath.m_uType = uType;
-                m_pPathIdx[i].m_ptr = pPath;
+                    for (short i = 0; i < this.m_uCount; i++) {
+                        Path pPath = null;
+                        short uType;
+                        ch1 = dis.read();
+                        ch2 = dis.read();
+                        if ((ch1 | ch2) < 0) {
+                            throw new EOFException();
+                        }
+
+                        uType = (short) ((ch2 << 8) + (ch1 << 0));
+                        Log.e("readWorld", "uType == " + uType);
+                        switch (uType) {
+                            case 0:
+                                pPath = new LinePath();
+                                break;
+                            case 10:
+                                pPath = new GenericPath();
+                                break;
+                        }
+                        // 确保路径对象创建成功
+                        pPath.m_pNodeBase = m_MyNode;
+                        pPath.Create(dis);
+                        pPath.m_uType = uType;
+                        m_pPathIdx[i].m_ptr = pPath;
+                    }
+            } else {
+                this.m_uCount = 0;
+                this.m_pPathIdx = null;
             }
+
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {

@@ -282,17 +282,25 @@ public class NodeBase {
             // 将小端字节序转换为节点数量
             this.m_uCount = (short) ((ch2 << 8) + (ch1 << 0));
             Log.d("readWorld", "节点集合中的节点数量 " + m_uCount);
-            // 为节点数组分配内存
-            this.m_paNode = new Node[this.m_uCount];
-//            Log.d("readWorld", "节点数组指针 " + m_paNode);
-            Log.d("readWorld", "节点数组指针长度 " + m_paNode.length);
-            // 逐个读取节点数据
-            for (int i = 0; i < this.m_uCount; i++) {
-                this.m_paNode[i] = new Node();
-                this.m_paNode[i].read(dis);
-                Log.d("readWorld", "逐个读取节点数据 m_paNode[" + i + "] " + this.m_paNode[i]);
+            
+            // 确保节点数量为正数，避免创建负长度数组
+            if (this.m_uCount > 0) {
+                // 为节点数组分配内存
+                this.m_paNode = new Node[this.m_uCount];
+//                Log.d("readWorld", "节点数组指针 " + m_paNode);
+                Log.d("readWorld", "节点数组指针长度 " + m_paNode.length);
+                // 逐个读取节点数据
+                for (int i = 0; i < this.m_uCount; i++) {
+                    this.m_paNode[i] = new Node();
+                    this.m_paNode[i].read(dis);
+                    Log.d("readWorld", "逐个读取节点数据 m_paNode[" + i + "] " + this.m_paNode[i]);
+                }
+            } else {
+                this.m_uCount = 0;
+                this.m_paNode = null;
             }
         } catch (IOException e) {
+            Log.e("readWorld", "节点NodeBase错误" + e);
             e.printStackTrace();
         }
     }// readData

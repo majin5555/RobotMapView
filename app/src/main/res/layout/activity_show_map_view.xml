@@ -9,16 +9,7 @@
         android:id="@+id/map_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:showArea="false"
-        app:showChargeStation="false"
-        app:showElevator="false"
-        app:showMixArea="false"
-        app:showOnlinePose="false"
-        app:showPositingArea="false"
-        app:showStations="false"
-        app:showTopViewPath="false"
-        app:showVirtualWall="false"
-        app:showWorldPath="false" />
+        app:showWorldPath="true" />
 
 
     <ScrollView

@@ -64,7 +64,7 @@ public class Point2d implements Serializable {
             if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             int tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
             this.id = tempI;
-            Log.d("readWorld", "Point2d id  " + id);
+//            Log.d("readWorld", "Point2d id  " + id);
             ch1 = dis.read();
             ch2 = dis.read();
             ch3 = dis.read();
@@ -72,7 +72,7 @@ public class Point2d implements Serializable {
             if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
             this.x = Float.intBitsToFloat(tempI);
-            Log.d("readWorld", "Point2d x  " + x);
+//            Log.d("readWorld", "Point2d x  " + x);
 
             ch1 = dis.read();
             ch2 = dis.read();
@@ -81,7 +81,7 @@ public class Point2d implements Serializable {
             if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
             this.y = Float.intBitsToFloat(tempI);
-            Log.d("readWorld", "Point2d y  " + y);
+//            Log.d("readWorld", "Point2d y  " + y);
 
             ch1 = dis.read();
             ch2 = dis.read();
@@ -90,7 +90,7 @@ public class Point2d implements Serializable {
             if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
             this.a = Float.intBitsToFloat(tempI);
-            Log.d("readWorld", "Point2d a  " + a);
+//            Log.d("readWorld", "Point2d a  " + a);
 
             ch1 = dis.read();
             ch2 = dis.read();
@@ -99,9 +99,10 @@ public class Point2d implements Serializable {
             if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
             this.r = Float.intBitsToFloat(tempI);
-            Log.d("readWorld", "Point2d r  " + r);
+//            Log.d("readWorld", "Point2d r  " + r);
 
         } catch (IOException e) {
+            Log.e("readWorld", "读取Point2d异常 r  " + e);
             e.printStackTrace();
         }
     }
@@ -172,9 +173,8 @@ public class Point2d implements Serializable {
             fsT = Float.intBitsToFloat(T);
             dis.writeFloat(fsT);
 
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+        } catch (Exception e) {
+            Log.e("readWorld", "保存Point2d异常 r  " + e);
             e.printStackTrace();
         }
     }

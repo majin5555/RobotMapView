@@ -518,27 +518,33 @@ public class GenericPath extends Path {
             if (m_pptCtrl != null) m_pptCtrl = null;
 //			delete []m_pptCtrl;
 
-            m_pptCtrl = new Point2d[m_nCountCtrlPoints];
-            for (int i = 0; i < m_nCountCtrlPoints; i++) {
-                m_pptCtrl[i] = new Point2d();
-            }
+            // 确保控制点数量为正数，避免创建负长度数组
+            if (this.m_nCountCtrlPoints > 0) {
+                m_pptCtrl = new Point2d[m_nCountCtrlPoints];
+                for (int i = 0; i < m_nCountCtrlPoints; i++) {
+                    m_pptCtrl[i] = new Point2d();
+                }
 
-            for (int i = 0; i < m_nCountCtrlPoints; i++) {
-                ch1 = dis.read();
-                ch2 = dis.read();
-                ch3 = dis.read();
-                ch4 = dis.read();
-                if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
-                tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
-                m_pptCtrl[i].x = Float.intBitsToFloat(tempI);
+                for (int i = 0; i < m_nCountCtrlPoints; i++) {
+                    ch1 = dis.read();
+                    ch2 = dis.read();
+                    ch3 = dis.read();
+                    ch4 = dis.read();
+                    if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
+                    tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
+                    m_pptCtrl[i].x = Float.intBitsToFloat(tempI);
 
-                ch1 = dis.read();
-                ch2 = dis.read();
-                ch3 = dis.read();
-                ch4 = dis.read();
-                if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
-                tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
-                m_pptCtrl[i].y = Float.intBitsToFloat(tempI);
+                    ch1 = dis.read();
+                    ch2 = dis.read();
+                    ch3 = dis.read();
+                    ch4 = dis.read();
+                    if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
+                    tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
+                    m_pptCtrl[i].y = Float.intBitsToFloat(tempI);
+                }
+            } else {
+                this.m_nCountCtrlPoints = 0;
+                this.m_pptCtrl = null;
             }
 
             //相切平移

@@ -4,6 +4,7 @@ package com.siasun.dianshi.bean.pp.world;
 import static java.lang.Math.abs;
 
 import android.graphics.Point;
+import android.util.Log;
 
 import com.siasun.dianshi.bean.Point2d;
 import com.siasun.dianshi.bean.TranBytes;
@@ -1050,8 +1051,10 @@ public class CLayer extends NodeBase {
             m_startNode.read(dis);
 
         } catch (IOException e) {
+            Log.e("readWorld", "读取CLayer异常 r  " + e);
             e.printStackTrace();
         }
+
     }
 
     /**

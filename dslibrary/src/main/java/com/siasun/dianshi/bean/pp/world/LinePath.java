@@ -346,11 +346,7 @@ public class LinePath extends Path {
         }
 
         Grp.drawLine(pnt1.x, pnt1.y, pnt2.x, pnt2.y, paint);
-        if (m_uExtType == 7) {
-            paint.setColor(Color.RED);
 
-            Grp.drawLine(pnt1.x, pnt1.y, pnt2.x, pnt2.y, paint);
-        }
     }
 
     @Override
