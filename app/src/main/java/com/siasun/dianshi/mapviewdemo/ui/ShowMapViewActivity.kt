@@ -85,17 +85,17 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SHOW_MAP)
         }
 
-//        initMergedPose()
-//        initStation()
-//        iniVirtualWall()
-//        initRemoveNoise()
-//        initPostingArea()
-//        initCleanArea()
-//        initElevator()
-//        initPose()
-//        initMachineStation()
-//        initMixArea()
-//        initSpAreas()
+        initMergedPose()
+        initStation()
+        iniVirtualWall()
+        initRemoveNoise()
+        initPostingArea()
+        initCleanArea()
+        initElevator()
+        initPose()
+        initMachineStation()
+        initMixArea()
+        initSpAreas()
         initPath()
     }
 

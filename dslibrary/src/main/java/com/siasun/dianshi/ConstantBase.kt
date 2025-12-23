@@ -29,13 +29,31 @@ object ConstantBase {
     /**
      * 车型
      */
+    // QD750C
+    const val QD_750C = "QD750C"
+
+    // QD750E
+    const val QD_750E = "QD750E"
+
+    // QD450C
+    const val QD_450C = "QD450C"
+
+    //KD450C
+    const val KD_450C = "KD450C"
+
+    //D700C
+    const val D_700C = "D700C"
+
+    //QD750F
+    const val QD_750F = "QD750F"
+
+
     private const val QD450C = "qd450c.json"
     private const val QD750C = "qd750c.json"
     private const val QD750E = "qd750e.json"
+    private const val QD750F = "qd750f.json"
     private const val D700C = "d700c.json"
     private const val KD450C = "kd450c.json"
-    private const val KD750F = "kd450c.json"
-
 
 
     private const val PAD_SWEEPING_MODE = "pad_sweeping_mode"//清扫模式
@@ -94,8 +112,7 @@ object ConstantBase {
         MRC05_NAV_PATH + File.separator + "visloc" + File.separator + "config" + File.separator + "XS240605"//mrc05 mergedPose.json地址
 
 
-
-    private val PAD_SWEEPING_MODE_PATH: String =
+    val PAD_SWEEPING_MODE_PATH: String =
         PAD_ROOT_PATH + File.separator + PAD_SWEEPING_MODE//PAD本地存清扫模式的地址
 
 
