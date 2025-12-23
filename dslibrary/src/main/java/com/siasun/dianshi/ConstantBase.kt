@@ -35,8 +35,14 @@ object ConstantBase {
     // QD750E
     const val QD_750E = "QD750E"
 
+    //QD750F
+    const val QD_750F = "QD750F"
+
     // QD450C
     const val QD_450C = "QD450C"
+
+    //Q450E
+    const val QD_450E = "QD450E"
 
     //KD450C
     const val KD_450C = "KD450C"
@@ -44,16 +50,14 @@ object ConstantBase {
     //D700C
     const val D_700C = "D700C"
 
-    //QD750F
-    const val QD_750F = "QD750F"
 
-
-    private const val QD450C = "qd450c.json"
-    private const val QD750C = "qd750c.json"
-    private const val QD750E = "qd750e.json"
-    private const val QD750F = "qd750f.json"
-    private const val D700C = "d700c.json"
-    private const val KD450C = "kd450c.json"
+    const val QD750C = "qd750c.json"
+    const val QD750E = "qd750e.json"
+    const val QD750F = "qd750f.json"
+    const val QD450C = "qd450c.json"
+    const val QD450E = "qd450e.json"
+    const val KD450C = "kd450c.json"
+    const val D700C = "d700c.json"
 
 
     private const val PAD_SWEEPING_MODE = "pad_sweeping_mode"//清扫模式
