@@ -493,7 +493,7 @@ public class FileIOUtil {
      * @return 字符串
      */
     public static String readFile2String(final File file, final String charsetName) {
-        if (!isFileExists(file)) return null;
+        if (!isFileExists(file)) return "Error";
         BufferedReader reader = null;
         try {
             StringBuilder sb = new StringBuilder();
@@ -512,7 +512,7 @@ public class FileIOUtil {
             return sb.toString();
         } catch (IOException e) {
             e.printStackTrace();
-            return null;
+            return "Error";
         } finally {
             CloseUtil.closeIO(reader);
         }
