@@ -128,8 +128,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      * *************** 监听器   start ***********************
      */
 
-    // 使用弱引用存储监听器，避免内存泄漏
-    private var mSingleTapListener: WeakReference<ISingleTapListener?>? = null
+    private var mSingleTapListener: ISingleTapListener? = null
     private var mGestureDetector: SlamGestureDetector? = null
 
     //删除噪点
@@ -292,7 +291,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     }
 
     private fun singleTap(event: MotionEvent) {
-        mSingleTapListener?.get()?.onSingleTapListener(event)
+        mSingleTapListener?.onSingleTapListener(mSrf.screenToWorld(event.x, event.y))
     }
 
     private fun setMatrix(matrix: Matrix) {
@@ -823,7 +822,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
                     m_KeyPst.AddPst(pst)
                 }
                 // 使用前一条路径的终点作为当前路径的起点
-                lastEndNodeId = mWorldPadView?.createTeachPath(pptKey, m_KeyPst, pathParam, lastEndNodeId) ?: -1
+                lastEndNodeId =
+                    mWorldPadView?.createTeachPath(pptKey, m_KeyPst, pathParam, lastEndNodeId) ?: -1
             }
         }
     }
@@ -1027,18 +1027,14 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     }
 
     /**
-     * 手指抬起监听
+     * 手指抬起监听 回调是世界坐标
      */
-    fun setSingleTapListener(singleTapListener: ISingleTapListener?) {
-        mSingleTapListener = if (singleTapListener != null) {
-            WeakReference(singleTapListener)
-        } else {
-            null
-        }
+    fun setSingleTapListener(listener: ISingleTapListener?) {
+        mSingleTapListener = listener
     }
 
     interface ISingleTapListener {
-        fun onSingleTapListener(event: MotionEvent?)
+        fun onSingleTapListener(point: PointF)
     }
 
     /**
