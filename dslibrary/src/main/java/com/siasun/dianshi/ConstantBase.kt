@@ -59,6 +59,12 @@ object ConstantBase {
     const val D700C = "sweeping_mode_d700c.json"
 
 
+    /**
+     * 清扫模式
+     */
+    const val sweepingMode = "sweeping_mode.json"
+
+
     private const val PAD_SWEEPING_MODE = "pad_sweeping_mode"//清扫模式
     private const val MRC05_NAV_PATH = "/userdata/CarryBoy/NAV"//车体文件夹 NAV地址
     const val MRC05_MAP = "/userdata/CarryBoy/MAP"//MRC05多地图文件地址
