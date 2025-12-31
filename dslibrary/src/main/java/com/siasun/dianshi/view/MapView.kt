@@ -222,6 +222,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         addMapLayers(mPathView)
         //显示路线PP
         addMapLayers(mWorldPadView)
+        //显示工作路径
+        addMapLayers(mWorkIngPathView)
 
         //  修改LegendView的布局参数，使其显示在右上角
         addView(
@@ -638,6 +640,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     /**
      * 机器人有任务状态下行走的路径
      */
+    @SuppressLint("DefaultLocale")
     fun setWorkingPath(array: DoubleArray) {
         num++
         if (num % 3 == 0) {

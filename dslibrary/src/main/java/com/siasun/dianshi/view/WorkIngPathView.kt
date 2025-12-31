@@ -19,15 +19,14 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
     SlamWareBaseView(context, parent) {
 
     // 机器人有任务 实时路径，限制最大长度防止内存溢出
-    private val MAX_PATH_POINTS = 1000 // 可根据实际需求调整
+    private val MAX_PATH_POINTS = 10000 // 可根据实际需求调整
 
     // 机器人实时位置 有任务状态下
     private val cartPosList = Collections.synchronizedList(mutableListOf<PointF>())
 
-
-    // 伴生对象存储画笔，避免重复创建
+    // 绘制画笔 - 移至伴生对象，避免重复创建
     companion object {
-        private val mPaint: Paint = Paint().apply {
+        private val mPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             strokeWidth = 5f
             isAntiAlias = true
             style = Paint.Style.STROKE
@@ -44,12 +43,17 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
 
         mCarPath.reset()
         synchronized(cartPosList) {
-            cartPosList.forEachIndexed { index, pointF ->
-                val pnt1Windows: PointF = mapView.worldToScreen(pointF.x, pointF.y)
-                if (index == 0) mCarPath.moveTo(pnt1Windows.x, pnt1Windows.y) else mCarPath.lineTo(
-                    pnt1Windows.x, pnt1Windows.y
-                )
-                //实时路径
+            if (cartPosList.isNotEmpty()) {
+                // 构建完整的路径
+                cartPosList.forEachIndexed { index, pointF ->
+                    val screenPoint = mapView.worldToScreen(pointF.x, pointF.y)
+                    if (index == 0) {
+                        mCarPath.moveTo(screenPoint.x, screenPoint.y)
+                    } else {
+                        mCarPath.lineTo(screenPoint.x, screenPoint.y)
+                    }
+                }
+                // 一次性绘制完整路径
                 canvas.drawPath(mCarPath, mPaint)
             }
         }
@@ -60,17 +64,25 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
      */
     fun setData(mCarPoint: PointF) {
         synchronized(cartPosList) {
-            cartPosList.add(mCarPoint)
-            // 限制路径点数量，防止内存溢出
-            if (cartPosList.size > MAX_PATH_POINTS) {
-                cartPosList.removeAt(0)
+            // 验证坐标的有效性
+            if (mCarPoint.x.isFinite() && mCarPoint.y.isFinite()) {
+                cartPosList.add(PointF(mCarPoint.x, mCarPoint.y))
+                // 限制路径点数量，防止内存溢出
+                if (cartPosList.size > MAX_PATH_POINTS) {
+                    cartPosList.removeAt(0)
+                }
+            } else {
             }
         }
         postInvalidate()
     }
 
+
     fun clearCarPath() {
-        cartPosList.clear()
+        synchronized(cartPosList) {
+            cartPosList.clear()
+        }
+        postInvalidate()
     }
 
     /**
@@ -78,9 +90,10 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
      */
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-
         // 清空机器人位置列表
-        cartPosList.clear()
+        synchronized(cartPosList) {
+            cartPosList.clear()
+        }
     }
 
 }
