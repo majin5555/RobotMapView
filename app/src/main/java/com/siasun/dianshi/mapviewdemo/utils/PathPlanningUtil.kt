@@ -30,8 +30,8 @@ import java.util.concurrent.ConcurrentLinkedQueue
  */
 object PathPlanningUtil {
     // 常量定义
-     const val MAX_PATH_SEGMENTS = 10000 // 最大路段数量，防止内存溢出
-     const val MAX_POINT_COUNT = 100000  // 最大点数量，防止内存溢出
+     const val MAX_PATH_SEGMENTS = 1000000 // 最大路段数量，防止内存溢出
+     const val MAX_POINT_COUNT = 10000000  // 最大点数量，防止内存溢出
 
     // 对象池 - 用于复用Point2d对象，减少内存分配
     private val point2dPool = ConcurrentLinkedQueue<Point2d>()
@@ -39,7 +39,7 @@ object PathPlanningUtil {
     private val pointNewPool = ConcurrentLinkedQueue<PointNew>()
 
     // 从对象池获取Point2d对象
-    private fun obtainPoint2d(): Point2d {
+    fun obtainPoint2d(): Point2d {
         return point2dPool.poll() ?: Point2d()
     }
 
@@ -112,28 +112,32 @@ object PathPlanningUtil {
      * 处理全局路径规划
      */
     private fun handleGlobalPathPlan(result: PlanPathResult, pathPlanResultBean: PathPlanResultBean) {
-        // 全局路径规划 - 接收PP返回CMS结果
-        if (result.m_strTo != "CMS" || result.m_iPlanResultMode != PATH_MODE) return
-
         pathPlanResultBean.m_iPathPlanType = GLOBAL_PATH_PLAN
 
-        // 设置起点坐标 - 限制数据量
-        result.m_fGloalPathPlanStartPosBuffer.take(3).forEachIndexed { index, fl ->
-            pathPlanResultBean.startPoint[index] = fl
+        // 放宽条件检查，允许更多类型的全局路径规划结果
+        if (result.m_iPathPlanType == GLOBAL_PATH_PLAN) {
+            // 设置起点坐标 - 限制数据量
+            result.m_fGloalPathPlanStartPosBuffer.forEachIndexed { index, fl ->
+                if (index < pathPlanResultBean.startPoint.size) {
+                    pathPlanResultBean.startPoint[index] = fl
+                }
+            }
+
+            // 设置终点坐标 - 限制数据量
+            result.m_fGloalPathPlanGoalPosBuffer.forEachIndexed { index, fl ->
+                if (index < pathPlanResultBean.endPoint.size) {
+                    pathPlanResultBean.endPoint[index] = fl
+                }
+            }
+
+            // 移除路径段数限制，确保完整显示全局路线
+            LogUtil.i("PAD解析PP数据 全局路径路段个数：${result.m_iPathSum}")
+            LogUtil.i("PAD解析PP数据 全局路径点位个数：${result.m_fElementBuffer.size}")
+            LogUtil.i("PAD解析PP数据 路径类型：${result.m_iPathPlanType}, 目标：${result.m_strTo}, 模式：${result.m_iPlanResultMode}")
+
+            // 解析路径数据
+            parsePathData(result, pathPlanResultBean)
         }
-
-        // 设置终点坐标 - 限制数据量
-        result.m_fGloalPathPlanGoalPosBuffer.take(3).forEachIndexed { index, fl ->
-            pathPlanResultBean.endPoint[index] = fl
-        }
-
-        // 限制路段数量，防止内存溢出
-        val maxSegments = minOf(result.m_iPathSum, MAX_PATH_SEGMENTS)
-        LogUtil.i("PAD解析PP数据 全局路径路段个数：$maxSegments")
-        LogUtil.i("PAD解析PP数据 全局路径点位个数：${result.m_fElementBuffer.size}")
-
-        // 解析路径数据
-        parsePathData(result, pathPlanResultBean)
     }
 
     /**
@@ -212,21 +216,40 @@ object PathPlanningUtil {
      * 解析路径数据 - 提取重复代码，减少重复创建对象
      */
     private fun parsePathData(result: PlanPathResult, pathPlanResultBean: PathPlanResultBean) {
-        // 限制路段数量，防止内存溢出
-        val maxSegments = minOf(result.m_iPathSum, MAX_PATH_SEGMENTS)
+        // 对于全局路径，移除路径段数限制，确保完整显示
+        val isGlobalPath = result.m_iPathPlanType == GLOBAL_PATH_PLAN
+        val maxSegments = if (isGlobalPath) result.m_iPathSum else minOf(result.m_iPathSum, MAX_PATH_SEGMENTS)
+        
         // 检查数据点数量是否足够
-        if (maxSegments * 8 > result.m_fElementBuffer.size) return
+        if (maxSegments * 8 > result.m_fElementBuffer.size) {
+            LogUtil.w("路径数据不足，无法解析: maxSegments=$maxSegments, bufferSize=${result.m_fElementBuffer.size}")
+            return
+        }
+
+        LogUtil.i("开始解析路径数据: isGlobalPath=$isGlobalPath, maxSegments=$maxSegments, 路径类型缓冲区大小=${result.m_cPathTypeBuffer.size}")
 
         // 路段个数
         var j = 0
+        var processedSegments = 0
         for (i in 0 until maxSegments) {
             // 优化：检查数据边界，避免数组越界
-            if (j >= result.m_cPathTypeBuffer.size) break
+            if (j >= result.m_cPathTypeBuffer.size) {
+                LogUtil.w("路径类型缓冲区越界，停止解析: j=$j, bufferSize=${result.m_cPathTypeBuffer.size}")
+                break
+            }
+            if (i >= result.m_cPathTypeBuffer.size) {
+                LogUtil.w("路径类型索引越界，停止解析: i=$i, bufferSize=${result.m_cPathTypeBuffer.size}")
+                break
+            }
 
-            when (result.m_cPathTypeBuffer[i].toInt()) {
+            val pathType = result.m_cPathTypeBuffer[i].toInt()
+            when (pathType) {
                 PATH_LINE -> {
                     // 直线 - 检查数据边界
-                    if (j + 3 >= result.m_fElementBuffer.size) break
+                    if (j + 3 >= result.m_fElementBuffer.size) {
+                        LogUtil.w("直线数据不足，无法解析: j=$j, bufferSize=${result.m_fElementBuffer.size}")
+                        break
+                    }
 
                     // 使用对象池获取PointNew对象
                     val ptStart = obtainPointNew()
@@ -237,6 +260,7 @@ object PathPlanningUtil {
                     ptEnd.Y = result.m_fElementBuffer[j++]
 
                     pathPlanResultBean.m_vecLineOfPathPlan.add(LineNew(ptStart, ptEnd))
+                    processedSegments++
 
                     // 回收PointNew对象
                     recyclePointNew(ptStart)
@@ -244,7 +268,10 @@ object PathPlanningUtil {
                 }
                 PATH_BEZIER -> {
                     // 贝塞尔 - 检查数据边界
-                    if (j + 7 >= result.m_fElementBuffer.size) break
+                    if (j + 7 >= result.m_fElementBuffer.size) {
+                        LogUtil.w("贝塞尔曲线数据不足，无法解析: j=$j, bufferSize=${result.m_fElementBuffer.size}")
+                        break
+                    }
 
                     // 使用对象池获取Point2d对象
                     val pptKey = arrayOf(
@@ -264,11 +291,17 @@ object PathPlanningUtil {
                     pptKey[3].y = result.m_fElementBuffer[j++]
 
                     pathPlanResultBean.m_vecBezierOfPathPlan.add(Bezier(4, pptKey))
+                    processedSegments++
 
                     // 回收Point2d对象
                     pptKey.forEach { recyclePoint2d(it) }
                 }
+                else -> {
+                    LogUtil.w("未知的路径类型: $pathType at index $i")
+                }
             }
         }
+        
+        LogUtil.i("路径数据解析完成: 直线=${pathPlanResultBean.m_vecLineOfPathPlan.size}, 贝塞尔=${pathPlanResultBean.m_vecBezierOfPathPlan.size}, 已处理段数=$processedSegments")
     }
 }

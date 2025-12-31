@@ -6,6 +6,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
+import android.util.Log
 import com.siasun.dianshi.R
 import com.siasun.dianshi.bean.LineNew
 import com.siasun.dianshi.bean.PointNew
@@ -100,25 +101,26 @@ class PathView @SuppressLint("ViewConstructor") constructor(
 
         // 绘制清扫路线
         mCleanPathPlanResultBean?.let { cleanPath ->
+            Log.d("mCleanPathPlanResultBean","绘制清扫路线 ${mCleanPathPlanResultBean.toString()}")
             // 采样绘制直线
-            for (i in cleanPath.m_vecLineOfPathPlan.indices step SAMPLE_RATE) {
+            for (i in cleanPath.m_vecLineOfPathPlan.indices) {
                 drawPPLinePath(canvas, cleanPath.m_vecLineOfPathPlan[i])
             }
             // 采样绘制贝塞尔曲线
-            for (i in cleanPath.m_vecBezierOfPathPlan.indices step SAMPLE_RATE) {
+            for (i in cleanPath.m_vecBezierOfPathPlan.indices) {
                 drawPPBezierPath(canvas, cleanPath.m_vecBezierOfPathPlan[i])
             }
         }
 
-        // 绘制全局路径
+        // 绘制全局路径 - 不使用采样率，确保完整显示
         mGlobalPathPlanResultBean?.let { globalPath ->
-            // 采样绘制直线
-            for (i in globalPath.m_vecLineOfPathPlan.indices step SAMPLE_RATE) {
-                drawPPLinePath(canvas, globalPath.m_vecLineOfPathPlan[i])
+            // 绘制直线 - 不跳过任何点
+            for (line in globalPath.m_vecLineOfPathPlan) {
+                drawPPLinePath(canvas, line)
             }
-            // 采样绘制贝塞尔曲线
-            for (i in globalPath.m_vecBezierOfPathPlan.indices step SAMPLE_RATE) {
-                drawPPBezierPath(canvas, globalPath.m_vecBezierOfPathPlan[i])
+            // 绘制贝塞尔曲线 - 不跳过任何点
+            for (bezier in globalPath.m_vecBezierOfPathPlan) {
+                drawPPBezierPath(canvas, bezier)
             }
 
             // 创建世界系坐标点
@@ -243,7 +245,6 @@ class PathView @SuppressLint("ViewConstructor") constructor(
         setCleanPathPlanResultBean(null)
         invalidate()
     }
-
 
 
     override fun onDetachedFromWindow() {
