@@ -1,234 +1,167 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.hjq.shape.layout.ShapeConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:background="#90000000"
-    android:padding="8dp">
-
-    <!--地图名称-->
-    <TextView
-        android:id="@+id/tv_current_map"
-        android:layout_width="150dp"
-        android:layout_height="wrap_content"
-        android:background="#00000000"
-        android:padding="10dp"
-        android:text="@string/current_map"
-        android:textColor="#ffffff"
-        android:textSize="18sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <!--上激光点云-->
-    <CheckBox
-        android:id="@+id/cb_up_laser_point_cloud"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:checked="true"
-        android:text="@string/up_point_cloud"
-        android:textColor="#ffffff"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_current_map" />
-
-    <!--下激光点云-->
-    <CheckBox
-        android:id="@+id/cb_lower_laser_point_cloud"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        android:checked="true"
-        android:text="@string/lower_laser_point_cloud"
-        android:textColor="#ffffff"
-        app:layout_constraintStart_toEndOf="@+id/cb_up_laser_point_cloud"
-        app:layout_constraintTop_toBottomOf="@+id/tv_current_map" />
-
-    <!--顶视路线-->
-    <CheckBox
-        android:id="@+id/cb_top_view_Path"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:checked="true"
-        android:text="@string/top_view_route"
-        android:textColor="#ffffff"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/cb_up_laser_point_cloud" />
-    <!--虚拟墙-->
-
-    <CheckBox
-        android:id="@+id/cb_virtual_wall"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        android:checked="true"
-        android:text="@string/virtual_wall"
-        android:textColor="#ffffff"
-        app:layout_constraintStart_toEndOf="@+id/cb_up_laser_point_cloud"
-        app:layout_constraintTop_toBottomOf="@+id/cb_lower_laser_point_cloud" />
-
-    <CheckBox
-        android:id="@+id/cb_mix_area"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:checked="true"
-        android:text="@string/mix_area"
-        android:textColor="#ffffff"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/cb_top_view_Path" />
-
-    <CheckBox
-        android:id="@+id/cb_online_pose"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        android:checked="true"
-        android:text="@string/on_line_pose"
-        android:textColor="#ffffff"
-        app:layout_constraintStart_toEndOf="@+id/cb_up_laser_point_cloud"
-        app:layout_constraintTop_toBottomOf="@+id/cb_virtual_wall" />
-
-    <CheckBox
-        android:id="@+id/cb_charge_station"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:checked="true"
-        android:text="@string/charge_station"
-        android:textColor="#ffffff"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/cb_mix_area" />
-
-    <CheckBox
-        android:id="@+id/cb_area"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:checked="true"
-        android:text="@string/area"
-        android:textColor="#ffffff"
-        app:layout_constraintStart_toStartOf="@+id/cb_lower_laser_point_cloud"
-        app:layout_constraintTop_toBottomOf="@+id/cb_online_pose" />
-
-    <CheckBox
-        android:id="@+id/cb_world_path"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:checked="true"
-        android:text="@string/world_path"
-        android:textColor="#ffffff"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/cb_charge_station" />
-
-
-    <CheckBox
-        android:id="@+id/cb_stations"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:checked="true"
-        android:text="@string/stations"
-        android:textColor="#ffffff"
-        app:layout_constraintStart_toStartOf="@+id/cb_lower_laser_point_cloud"
-        app:layout_constraintTop_toBottomOf="@+id/cb_area" />
-
-    <CheckBox
-        android:id="@+id/cb_elevator"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:checked="true"
-        android:text="@string/elevator"
-        android:textColor="#ffffff"
-        app:layout_constraintTop_toBottomOf="@+id/cb_world_path" />
-
-    <CheckBox
-        android:id="@+id/cb_positing_area"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:checked="true"
-        android:text="@string/positing_area"
-        android:textColor="#ffffff"
-        app:layout_constraintStart_toStartOf="@+id/cb_lower_laser_point_cloud"
-        app:layout_constraintTop_toBottomOf="@+id/cb_world_path" />
-
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="8dp"
+    app:shape_radius="10dp"
+    app:shape_solidColor="#00000000">
 
     <TextView
-        android:id="@+id/textView"
+        android:id="@+id/tv_legend"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:background="#00000000"
-        android:text="@string/world_coordinate"
-        android:textColor="#ffffff"
-        android:textSize="16sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/cb_elevator" />
+        android:text="@string/legend"
+        android:textColor="#003894"
+        android:textSize="24sp" />
 
-    <TextView
-        android:id="@+id/tv_point_x"
-        android:layout_width="150dp"
-        android:layout_height="wrap_content"
-        android:background="#00000000"
-        android:textColor="#ffffff"
-        android:textSize="16sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView" />
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/iv_legend"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_margin="10dp"
+        android:src="@drawable/iv_back"
+        app:layout_constraintTop_toBottomOf="@+id/tv_legend" />
 
-    <TextView
-        android:id="@+id/tv_point_y"
-        android:layout_width="150dp"
-        android:layout_height="wrap_content"
-        android:background="#00000000"
-        android:textColor="#ffffff"
-        android:textSize="16sp"
-        app:layout_constraintStart_toEndOf="@+id/tv_point_x"
-        app:layout_constraintTop_toBottomOf="@+id/textView"
-        tools:layout_editor_absoluteX="8dp" />
 
-    <TextView
-        android:id="@+id/tv_point_theta"
-        android:layout_width="150dp"
-        android:layout_height="wrap_content"
-        android:background="#00000000"
-        android:textColor="#ffffff"
-        android:textSize="16sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_point_y" />
-
-    <TextView
-        android:id="@+id/tv_point_z"
-        android:layout_width="150dp"
-        android:layout_height="wrap_content"
-        android:background="#00000000"
-        android:textColor="#ffffff"
-        android:textSize="16sp"
-        app:layout_constraintStart_toEndOf="@id/tv_point_theta"
-        app:layout_constraintTop_toBottomOf="@+id/tv_point_y" />
-
-    <TextView
-        android:id="@+id/textView2"
+    <com.hjq.shape.layout.ShapeConstraintLayout
+        android:id="@+id/con_legend"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="#00000000"
-        android:text="@string/screen_coordinate"
-        android:textColor="#ffffff"
-        android:textSize="16sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_point_theta" />
+        android:padding="8dp"
+        android:visibility="gone"
+        app:layout_constraintStart_toEndOf="@+id/iv_legend"
+        app:layout_constraintTop_toBottomOf="@+id/con_map">
 
-    <TextView
-        android:id="@+id/tv_screen_point_x"
-        android:layout_width="150dp"
-        android:layout_height="wrap_content"
-        android:background="#00000000"
-        android:textColor="#ffffff"
-        android:textSize="16sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView2" />
+        <ScrollView
+            android:id="@+id/ScrollView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            app:layout_constraintStart_toEndOf="@+id/iv_legend">
 
-    <TextView
-        android:id="@+id/tv_screen_point_y"
-        android:layout_width="150dp"
-        android:layout_height="wrap_content"
-        android:background="#00000000"
-        android:textColor="#ffffff"
-        android:textSize="16sp"
-        app:layout_constraintStart_toEndOf="@+id/tv_screen_point_x"
-        app:layout_constraintTop_toBottomOf="@+id/textView2" />
+            <com.hjq.shape.layout.ShapeLinearLayout
+                android:layout_width="160dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="10dp"
+                app:shape_radius="10dp"
+                app:shape_solidColor="#ffffff">
+
+                <!--上激光点云-->
+                <CheckBox
+                    android:id="@+id/cb_up_laser_point_cloud"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="#003894"
+                    android:checked="true"
+                    android:text="@string/up_point_cloud"
+                    android:textColor="#003894" />
+
+                <!--下激光点云-->
+                <CheckBox
+                    android:id="@+id/cb_lower_laser_point_cloud"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="#003894"
+                    android:checked="true"
+                    android:text="@string/lower_laser_point_cloud"
+                    android:textColor="#003894" />
+
+                <!--顶视路线-->
+                <CheckBox
+                    android:id="@+id/cb_top_view_Path"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="#003894"
+                    android:checked="true"
+                    android:text="@string/top_view_route"
+                    android:textColor="#003894" />
+
+                <CheckBox
+                    android:id="@+id/cb_virtual_wall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="#003894"
+                    android:checked="true"
+                    android:text="@string/virtual_wall"
+                    android:textColor="#003894" />
+
+                <CheckBox
+                    android:id="@+id/cb_mix_area"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="#003894"
+                    android:checked="true"
+                    android:text="@string/mix_area"
+                    android:textColor="#003894" />
+
+                <CheckBox
+                    android:id="@+id/cb_online_pose"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="#003894"
+                    android:checked="true"
+                    android:text="@string/on_line_pose"
+                    android:textColor="#003894" />
+
+                <CheckBox
+                    android:id="@+id/cb_charge_station"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="#003894"
+                    android:checked="true"
+                    android:text="@string/charge_station"
+                    android:textColor="#003894" />
+
+                <CheckBox
+                    android:id="@+id/cb_area"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="#003894"
+                    android:checked="true"
+                    android:text="@string/area"
+                    android:textColor="#003894" />
+
+                <CheckBox
+                    android:id="@+id/cb_world_path"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="#003894"
+                    android:checked="true"
+                    android:text="@string/world_path"
+                    android:textColor="#003894" />
+
+                <CheckBox
+                    android:id="@+id/cb_stations"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="#003894"
+                    android:checked="true"
+                    android:text="@string/stations"
+                    android:textColor="#003894" />
+
+                <CheckBox
+                    android:id="@+id/cb_elevator"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="#003894"
+                    android:checked="true"
+                    android:text="@string/elevator"
+                    android:textColor="#003894" />
+
+                <CheckBox
+                    android:id="@+id/cb_positing_area"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="#003894"
+                    android:checked="true"
+                    android:text="@string/positing_area"
+                    android:textColor="#003894" />
+
+            </com.hjq.shape.layout.ShapeLinearLayout>
+
+        </ScrollView>
+    </com.hjq.shape.layout.ShapeConstraintLayout>
+
 </com.hjq.shape.layout.ShapeConstraintLayout>

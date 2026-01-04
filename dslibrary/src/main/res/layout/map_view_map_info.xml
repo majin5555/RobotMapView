@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.hjq.shape.layout.ShapeConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="8dp"
+    app:shape_radius="10dp"
+    app:shape_solidColor="#00000000">
+
+    <com.hjq.shape.layout.ShapeConstraintLayout
+        android:id="@+id/con_map"
+        android:layout_width="160dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toEndOf="@+id/iv_legend"
+        app:layout_constraintTop_toTopOf="parent"
+        app:shape_radius="10dp"
+        app:shape_solidColor="#ffffff">
+
+        <!--地图名称-->
+        <TextView
+            android:id="@+id/tv_current_map"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:text="@string/current_map"
+            android:textColor="#003894"
+            android:textSize="18sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!--地图名称-->
+        <TextView
+            android:id="@+id/tv_current_map_value"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:textColor="#003894"
+            android:textSize="18sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_current_map" />
+
+    </com.hjq.shape.layout.ShapeConstraintLayout>
+
+
+        <com.hjq.shape.layout.ShapeConstraintLayout
+            android:layout_width="160dp"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:layout_marginTop="10dp"
+            app:layout_constraintStart_toEndOf="@+id/iv_legend"
+            app:layout_constraintTop_toBottomOf="@+id/con_map"
+            app:shape_radius="10dp"
+            app:shape_solidColor="#ffffff">
+
+            <TextView
+                android:id="@+id/textView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="@string/world_coordinate"
+                android:textColor="#003894"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/tv_point_x"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#003894"
+                android:textSize="16sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textView" />
+
+            <TextView
+                android:id="@+id/tv_point_y"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#003894"
+                android:textSize="16sp"
+                app:layout_constraintStart_toEndOf="@+id/tv_point_x"
+                app:layout_constraintTop_toBottomOf="@+id/textView" />
+
+            <TextView
+                android:id="@+id/tv_point_theta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#003894"
+                android:textSize="16sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tv_point_y" />
+
+            <TextView
+                android:id="@+id/tv_point_z"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#003894"
+                android:textSize="16sp"
+                app:layout_constraintStart_toEndOf="@id/tv_point_theta"
+                app:layout_constraintTop_toBottomOf="@+id/tv_point_y" />
+
+            <TextView
+                android:id="@+id/textView2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/screen_coordinate"
+                android:textColor="#003894"
+                android:textSize="16sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tv_point_theta" />
+
+            <TextView
+                android:id="@+id/tv_screen_point_x"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#003894"
+                android:textSize="16sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textView2" />
+
+            <TextView
+                android:id="@+id/tv_screen_point_y"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#003894"
+                android:textSize="16sp"
+                app:layout_constraintStart_toEndOf="@+id/tv_screen_point_x"
+                app:layout_constraintTop_toBottomOf="@+id/textView2" />
+
+        </com.hjq.shape.layout.ShapeConstraintLayout>
+
+
+    </com.hjq.shape.layout.ShapeConstraintLayout>
+

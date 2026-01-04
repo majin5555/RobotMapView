@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.lifecycleScope
+import com.blankj.utilcode.util.ToastUtils
 import com.jeremyliao.liveeventbus.LiveEventBus
 import com.ngu.lcmtypes.laser_t
 import com.ngu.lcmtypes.robot_control_t
@@ -99,6 +100,69 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initMixArea()
 //        initSpAreas()
         initPath()
+
+        mBinding.btnAddGloblePath.onClick {
+
+            //全局
+            val gloJson2 =
+                "{\"dparams\":[],\"fparams\":[],\"iparams\":[0,0,0,0,0,0],\"lparams\":[250,250,250,250,250,250],\"m_cPathTypeBuffer\":[1,1,1,1,1,1],\"m_fCleanPathPlanStartPosBuffer\":[0.0,0.0,0.0],\"m_fElementBuffer\":[29.556,2.773,28.81566,2.2297862,28.331419,2.521509,28.374287,3.2572424,28.374287,3.2572424,28.417152,3.992976,28.285984,4.535049,28.325058,5.2433286,28.325058,5.2433286,28.364132,5.951608,28.317911,6.563604,28.332159,7.251959,28.332159,7.251959,28.346405,7.9403143,28.321201,8.552634,28.336176,9.260889,28.336176,9.260889,28.351149,9.969143,28.30004,10.470266,28.346638,11.310041,28.346638,11.310041,28.393236,12.1498165,28.121954,13.249701,27.914,14.092],\"m_fGloalPathPlanGoalPosBuffer\":[27.914,14.092,1.46],\"m_fGloalPathPlanStartPosBuffer\":[29.556,2.773,1.55],\"m_fRegionPointsBuffer\":[],\"m_iAddLaser\":0,\"m_iCleanPathPanType\":0,\"m_iElementSum\":48,\"m_iGloalPathPlanType\":1,\"m_iPathPlanPublicId\":65538,\"m_iPathPlanPublicSubId\":127,\"m_iPathPlanRegionChoose\":0,\"m_iPathPlanType\":1,\"m_iPathSum\":6,\"m_iPlanResult\":1,\"m_iPlanResultMode\":0,\"m_iRegionNumber\":0,\"m_iRegionPoints\":0,\"m_strAdditionInfo\":\"1.0.1.176-MultyLayers\",\"m_strFrom\":\"PathPlan\",\"m_strTo\":\"CMS\",\"m_uLayerNumber\":1,\"ndparams\":0,\"nfparams\":0,\"niparams\":6,\"nlparams\":6,\"sparams\":\"\",\"utime\":0}"
+
+            val gloJson =
+                " {\"dparams\":[],\"fparams\":[],\"iparams\":[],\"lparams\":[],\"m_cPathTypeBuffer\":[],\"m_fCleanPathPlanStartPosBuffer\":[0.0,0.0,0.0],\"m_fElementBuffer\":[],\"m_fGloalPathPlanGoalPosBuffer\":[49.193,7.008,-0.89],\"m_fGloalPathPlanStartPosBuffer\":[-0.078,0.007,0.05],\"m_fRegionPointsBuffer\":[],\"m_iAddLaser\":0,\"m_iCleanPathPanType\":0,\"m_iElementSum\":0,\"m_iGloalPathPlanType\":1,\"m_iPathPlanPublicId\":65538,\"m_iPathPlanPublicSubId\":127,\"m_iPathPlanRegionChoose\":0,\"m_iPathPlanType\":1,\"m_iPathSum\":0,\"m_iPlanResult\":8,\"m_iPlanResultMode\":0,\"m_iRegionNumber\":0,\"m_iRegionPoints\":0,\"m_strAdditionInfo\":\"1.0.1.176-MultyLayers\",\"m_strFrom\":\"PathPlan\",\"m_strTo\":\"CMS\",\"m_uLayerNumber\":2,\"ndparams\":0,\"nfparams\":0,\"niparams\":0,\"nlparams\":0,\"sparams\":\"\",\"utime\":0}"
+            val toBean = gloJson2.toBean<PlanPathResult>()
+
+            val pathPlanResultBean = PathPlanningUtil1.getPathPlanResultBean(
+                toBean
+            )
+            LogUtil.d("pathPlanResultBean.m_vecLineOfPathPlan.size ${pathPlanResultBean.m_vecLineOfPathPlan.size}")
+            LogUtil.d("pathPlanResultBean.m_vecBezierOfPathPlan.size ${pathPlanResultBean.m_vecBezierOfPathPlan.size}")
+
+            LogUtil.i(
+                "CleanAutoActivity接收全局路径规划 ${pathPlanResultBean.toJson()}",
+                null,
+                TAG_PP
+            )
+
+            if ( pathPlanResultBean.m_vecBezierOfPathPlan.isNotEmpty()) {
+                mBinding.mapView.setGlobalPathPlanResultBean(
+                    pathPlanResultBean
+                )
+            } else {
+                ToastUtils.showLong("全局路径规划失败")
+            }
+        }
+
+        mBinding.btnAddCleanPath.onClick {
+            val json =
+                "{\"dparams\":[],\"fparams\":[],\"iparams\":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],\"lparams\":[251,251,251,251,251,251,251,251,255,255,255,255,255,255,255,255,255,255,255,255],\"m_cPathTypeBuffer\":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],\"m_fCleanPathPlanStartPosBuffer\":[29.555,2.786,1.55],\"m_fElementBuffer\":[27.914648,14.092113,27.932629,14.26437,27.950836,14.419361,27.968824,14.596,27.968824,14.596,27.986814,14.772638,28.010489,14.95114,28.026693,15.136461,28.026693,15.136461,28.042898,15.321781,28.07783,15.44616,28.06549,15.660672,28.06549,15.660672,28.053152,15.875183,28.275229,15.871054,28.41646,15.733574,28.41646,15.733574,28.557692,15.596093,28.528708,15.415093,28.495771,15.238,28.495771,15.238,28.462835,15.060905,28.455446,14.876434,28.433403,14.698689,28.433403,14.698689,28.411358,14.520945,28.396637,14.348806,28.375942,14.172338,28.375942,14.172338,28.385729,14.121772,28.395517,14.071205,28.405304,14.020639,28.405304,14.020639,28.238195,13.970711,28.071644,13.983357,27.907492,13.912709,27.907492,13.912709,27.74334,13.842061,27.491655,13.862228,27.536877,14.076725,27.536877,14.076725,27.582098,14.291223,27.580418,14.412807,27.600128,14.598263,27.600128,14.598263,27.619839,14.783718,27.63125,14.970391,27.648703,15.14286,27.648703,15.14286,27.666155,15.3153305,27.678793,15.490119,27.693468,15.643509,27.693468,15.643509,27.708145,15.796899,27.656052,16.055065,27.837917,16.086344,27.837917,16.086344,28.019781,16.117622,28.16111,16.024391,28.341843,16.041842,28.341843,16.041842,28.522573,16.059292,28.698399,15.948868,28.70547,15.761645,28.70547,15.761645,28.712538,15.574423,28.787008,15.427553,28.816484,15.253507,28.816484,15.253507,28.84596,15.079459,28.912094,14.931723,28.933083,14.754136,28.933083,14.754136,28.954071,14.5765505,29.066494,14.439697,29.058037,14.23402,29.058037,14.23402,29.04958,14.028343,28.55292,14.106234,28.405304,14.020639],\"m_fGloalPathPlanGoalPosBuffer\":[0.0,0.0,0.0],\"m_fGloalPathPlanStartPosBuffer\":[0.0,0.0,0.0],\"m_fRegionPointsBuffer\":[27.267136,16.693888,26.919456,13.138414,29.841938,13.705275,29.146591,16.533278],\"m_iAddLaser\":513894328,\"m_iCleanPathPanType\":3,\"m_iElementSum\":160,\"m_iGloalPathPlanType\":0,\"m_iPathPlanPublicId\":48469,\"m_iPathPlanPublicSubId\":0,\"m_iPathPlanRegionChoose\":2,\"m_iPathPlanType\":2,\"m_iPathSum\":20,\"m_iPlanResult\":1,\"m_iPlanResultMode\":0,\"m_iRegionNumber\":48469,\"m_iRegionPoints\":8,\"m_strAdditionInfo\":\"1.0.1.176-MultyLayers\",\"m_strFrom\":\"PathPlan\",\"m_strTo\":\"CMS\",\"m_uLayerNumber\":1,\"ndparams\":0,\"nfparams\":0,\"niparams\":20,\"nlparams\":20,\"sparams\":\"\",\"utime\":0}"
+            val toBean1 = json.toBean<PlanPathResult>()
+            val pathPlanResultBean = PathPlanningUtil1.getPathPlanResultBean(
+                toBean1
+            )
+            if ( pathPlanResultBean.m_vecBezierOfPathPlan.isNotEmpty()) {
+                mBinding.mapView.setCleanPathPlanResultBean(
+                    pathPlanResultBean
+                )
+            } else {
+                ToastUtils.showLong("全局路径规划失败")
+            }
+        }
+
+        mBinding.btnAddTeachPath.onClick {
+            val json =
+                "{\"dparams\":[],\"fparams\":[],\"iparams\":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],\"lparams\":[251,251,251,251,251,251,251,251,255,255,255,255,255,255,255,255,255,255,255,255],\"m_cPathTypeBuffer\":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],\"m_fCleanPathPlanStartPosBuffer\":[29.555,2.786,1.55],\"m_fElementBuffer\":[27.914648,14.092113,27.932629,14.26437,27.950836,14.419361,27.968824,14.596,27.968824,14.596,27.986814,14.772638,28.010489,14.95114,28.026693,15.136461,28.026693,15.136461,28.042898,15.321781,28.07783,15.44616,28.06549,15.660672,28.06549,15.660672,28.053152,15.875183,28.275229,15.871054,28.41646,15.733574,28.41646,15.733574,28.557692,15.596093,28.528708,15.415093,28.495771,15.238,28.495771,15.238,28.462835,15.060905,28.455446,14.876434,28.433403,14.698689,28.433403,14.698689,28.411358,14.520945,28.396637,14.348806,28.375942,14.172338,28.375942,14.172338,28.385729,14.121772,28.395517,14.071205,28.405304,14.020639,28.405304,14.020639,28.238195,13.970711,28.071644,13.983357,27.907492,13.912709,27.907492,13.912709,27.74334,13.842061,27.491655,13.862228,27.536877,14.076725,27.536877,14.076725,27.582098,14.291223,27.580418,14.412807,27.600128,14.598263,27.600128,14.598263,27.619839,14.783718,27.63125,14.970391,27.648703,15.14286,27.648703,15.14286,27.666155,15.3153305,27.678793,15.490119,27.693468,15.643509,27.693468,15.643509,27.708145,15.796899,27.656052,16.055065,27.837917,16.086344,27.837917,16.086344,28.019781,16.117622,28.16111,16.024391,28.341843,16.041842,28.341843,16.041842,28.522573,16.059292,28.698399,15.948868,28.70547,15.761645,28.70547,15.761645,28.712538,15.574423,28.787008,15.427553,28.816484,15.253507,28.816484,15.253507,28.84596,15.079459,28.912094,14.931723,28.933083,14.754136,28.933083,14.754136,28.954071,14.5765505,29.066494,14.439697,29.058037,14.23402,29.058037,14.23402,29.04958,14.028343,28.55292,14.106234,28.405304,14.020639],\"m_fGloalPathPlanGoalPosBuffer\":[0.0,0.0,0.0],\"m_fGloalPathPlanStartPosBuffer\":[0.0,0.0,0.0],\"m_fRegionPointsBuffer\":[27.267136,16.693888,26.919456,13.138414,29.841938,13.705275,29.146591,16.533278],\"m_iAddLaser\":513894328,\"m_iCleanPathPanType\":3,\"m_iElementSum\":160,\"m_iGloalPathPlanType\":0,\"m_iPathPlanPublicId\":48469,\"m_iPathPlanPublicSubId\":0,\"m_iPathPlanRegionChoose\":2,\"m_iPathPlanType\":2,\"m_iPathSum\":20,\"m_iPlanResult\":1,\"m_iPlanResultMode\":0,\"m_iRegionNumber\":48469,\"m_iRegionPoints\":8,\"m_strAdditionInfo\":\"1.0.1.176-MultyLayers\",\"m_strFrom\":\"PathPlan\",\"m_strTo\":\"CMS\",\"m_uLayerNumber\":1,\"ndparams\":0,\"nfparams\":0,\"niparams\":20,\"nlparams\":20,\"sparams\":\"\",\"utime\":0}"
+            val toBean1 = json.toBean<PlanPathResult>()
+            val pathPlanResultBean = PathPlanningUtil1.getPathPlanResultBean(
+                toBean1
+            )
+            if ( pathPlanResultBean.m_vecBezierOfPathPlan.isNotEmpty()) {
+                mBinding.mapView.setCleanPathPlanResultBean(
+                    pathPlanResultBean
+                )
+            } else {
+                ToastUtils.showLong("全局路径规划失败")
+            }
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
@@ -196,39 +260,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             savePathsToFile()
         }
 
-        val json ="{\"dparams\":[],\"fparams\":[],\"iparams\":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],\"lparams\":[251,251,251,251,251,251,251,251,255,255,255,255,255,255,255,255,255,255,255,255],\"m_cPathTypeBuffer\":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],\"m_fCleanPathPlanStartPosBuffer\":[29.555,2.786,1.55],\"m_fElementBuffer\":[27.914648,14.092113,27.932629,14.26437,27.950836,14.419361,27.968824,14.596,27.968824,14.596,27.986814,14.772638,28.010489,14.95114,28.026693,15.136461,28.026693,15.136461,28.042898,15.321781,28.07783,15.44616,28.06549,15.660672,28.06549,15.660672,28.053152,15.875183,28.275229,15.871054,28.41646,15.733574,28.41646,15.733574,28.557692,15.596093,28.528708,15.415093,28.495771,15.238,28.495771,15.238,28.462835,15.060905,28.455446,14.876434,28.433403,14.698689,28.433403,14.698689,28.411358,14.520945,28.396637,14.348806,28.375942,14.172338,28.375942,14.172338,28.385729,14.121772,28.395517,14.071205,28.405304,14.020639,28.405304,14.020639,28.238195,13.970711,28.071644,13.983357,27.907492,13.912709,27.907492,13.912709,27.74334,13.842061,27.491655,13.862228,27.536877,14.076725,27.536877,14.076725,27.582098,14.291223,27.580418,14.412807,27.600128,14.598263,27.600128,14.598263,27.619839,14.783718,27.63125,14.970391,27.648703,15.14286,27.648703,15.14286,27.666155,15.3153305,27.678793,15.490119,27.693468,15.643509,27.693468,15.643509,27.708145,15.796899,27.656052,16.055065,27.837917,16.086344,27.837917,16.086344,28.019781,16.117622,28.16111,16.024391,28.341843,16.041842,28.341843,16.041842,28.522573,16.059292,28.698399,15.948868,28.70547,15.761645,28.70547,15.761645,28.712538,15.574423,28.787008,15.427553,28.816484,15.253507,28.816484,15.253507,28.84596,15.079459,28.912094,14.931723,28.933083,14.754136,28.933083,14.754136,28.954071,14.5765505,29.066494,14.439697,29.058037,14.23402,29.058037,14.23402,29.04958,14.028343,28.55292,14.106234,28.405304,14.020639],\"m_fGloalPathPlanGoalPosBuffer\":[0.0,0.0,0.0],\"m_fGloalPathPlanStartPosBuffer\":[0.0,0.0,0.0],\"m_fRegionPointsBuffer\":[27.267136,16.693888,26.919456,13.138414,29.841938,13.705275,29.146591,16.533278],\"m_iAddLaser\":513894328,\"m_iCleanPathPanType\":3,\"m_iElementSum\":160,\"m_iGloalPathPlanType\":0,\"m_iPathPlanPublicId\":48469,\"m_iPathPlanPublicSubId\":0,\"m_iPathPlanRegionChoose\":2,\"m_iPathPlanType\":2,\"m_iPathSum\":20,\"m_iPlanResult\":1,\"m_iPlanResultMode\":0,\"m_iRegionNumber\":48469,\"m_iRegionPoints\":8,\"m_strAdditionInfo\":\"1.0.1.176-MultyLayers\",\"m_strFrom\":\"PathPlan\",\"m_strTo\":\"CMS\",\"m_uLayerNumber\":1,\"ndparams\":0,\"nfparams\":0,\"niparams\":20,\"nlparams\":20,\"sparams\":\"\",\"utime\":0}"
-        val toBean1 = json.toBean<PlanPathResult>()
-        mBinding.mapView.setCleanPathPlanResultBean(
-            PathPlanningUtil1.getPathPlanResultBean(toBean1 )
-        )
 
-        //全局
-        val gloJson ="{\"dparams\":[],\"fparams\":[],\"iparams\":[0,0,0,0,0,0],\"lparams\":[250,250,250,250,250,250],\"m_cPathTypeBuffer\":[1,1,1,1,1,1],\"m_fCleanPathPlanStartPosBuffer\":[0.0,0.0,0.0],\"m_fElementBuffer\":[29.556,2.773,28.81566,2.2297862,28.331419,2.521509,28.374287,3.2572424,28.374287,3.2572424,28.417152,3.992976,28.285984,4.535049,28.325058,5.2433286,28.325058,5.2433286,28.364132,5.951608,28.317911,6.563604,28.332159,7.251959,28.332159,7.251959,28.346405,7.9403143,28.321201,8.552634,28.336176,9.260889,28.336176,9.260889,28.351149,9.969143,28.30004,10.470266,28.346638,11.310041,28.346638,11.310041,28.393236,12.1498165,28.121954,13.249701,27.914,14.092],\"m_fGloalPathPlanGoalPosBuffer\":[27.914,14.092,1.46],\"m_fGloalPathPlanStartPosBuffer\":[29.556,2.773,1.55],\"m_fRegionPointsBuffer\":[],\"m_iAddLaser\":0,\"m_iCleanPathPanType\":0,\"m_iElementSum\":48,\"m_iGloalPathPlanType\":1,\"m_iPathPlanPublicId\":65538,\"m_iPathPlanPublicSubId\":127,\"m_iPathPlanRegionChoose\":0,\"m_iPathPlanType\":1,\"m_iPathSum\":6,\"m_iPlanResult\":1,\"m_iPlanResultMode\":0,\"m_iRegionNumber\":0,\"m_iRegionPoints\":0,\"m_strAdditionInfo\":\"1.0.1.176-MultyLayers\",\"m_strFrom\":\"PathPlan\",\"m_strTo\":\"CMS\",\"m_uLayerNumber\":1,\"ndparams\":0,\"nfparams\":0,\"niparams\":6,\"nlparams\":6,\"sparams\":\"\",\"utime\":0}"
-        val toBean = gloJson.toBean<PlanPathResult>()
-
-        // 接收CMS申请的全局路径规划结果
-        if (toBean.m_iPathPlanType == GLOBAL_PATH_PLAN) {
-            if (toBean.m_strTo == "CMS") {
-                // 路段模式
-                if (toBean.m_iPlanResultMode == PATH_MODE) {
-                    LogUtil.i(
-                        "CleanAutoActivity接收全局路径规划", null, TAG_PP
-                    )
-                    val pathPlanResultBean = PathPlanningUtil1.getPathPlanResultBean(
-                        toBean
-                    )
-
-                    LogUtil.i(
-                        "CleanAutoActivity接收全局路径规划 ${pathPlanResultBean.toJson()}",
-                        null,
-                        TAG_PP
-                    )
-                    mBinding.mapView.setGlobalPathPlanResultBean(
-                        pathPlanResultBean
-                    )
-                }
-            }
-        }
     }
 
 

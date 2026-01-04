@@ -5,7 +5,6 @@ import android.content.Context
 import android.graphics.PointF
 import android.util.AttributeSet
 import android.view.LayoutInflater
-import android.widget.CheckBox
 import android.widget.LinearLayout
 import com.siasun.dianshi.R
 import com.siasun.dianshi.databinding.MapViewLegendBinding
@@ -44,6 +43,16 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
 
     init {
         init(context, attrs)
+
+        mBinding.ivLegend.setOnClickListener {
+            if (mBinding.conLegend.visibility == VISIBLE) {
+                mBinding.ivLegend.setImageResource(R.drawable.iv_back)
+                mBinding.conLegend.visibility = GONE
+            } else {
+                mBinding.ivLegend.setImageResource(R.drawable.iv_go)
+                mBinding.conLegend.visibility = VISIBLE
+            }
+        }
 
         // 为每个CheckBox添加点击变化监听器
         // 上激光点云
@@ -144,46 +153,6 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
             }
         }
     }
-
-    /**
-     * 设置当前地图名称
-     */
-    @SuppressLint("SetTextI18n")
-    fun setMapName(name: String) {
-        mBinding.tvCurrentMap.text = "${currentMapText}${name}"
-    }
-
-    @SuppressLint("SetTextI18n")
-    fun setAgvX(x: Double) {
-        mBinding.tvPointX.text = "${pointXText}${String.format("%.3f", x)}"
-    }
-
-    @SuppressLint("SetTextI18n")
-    fun setAgvY(y: Double) {
-        mBinding.tvPointY.text = "${pointYText}${String.format("%.3f", y)}"
-    }
-
-    @SuppressLint("SetTextI18n")
-    fun setAgvT(theta: Double) {
-        mBinding.tvPointTheta.text =
-            "${pointTText}${String.format("%.3f", Math.toRadians(theta).toFloat())}"
-    }
-
-    @SuppressLint("SetTextI18n")
-    fun setAgvZ(z: Double) {
-        mBinding.tvPointZ.text =
-            "${pointZText}${String.format("%.3f", Math.toRadians(z).toFloat())}"
-    }
-
-    /**
-     * 设置屏幕坐标
-     */
-    @SuppressLint("SetTextI18n")
-    fun setScreen(point: PointF) {
-        mBinding.tvScreenPointX.text = "${screenPointXText}${String.format("%.3f", point.x)}"
-        mBinding.tvScreenPointY.text = "${screenPointYText}${String.format("%.3f", point.y)}"
-    }
-
     /**
      * 设置各个CheckBox的显示隐藏
      */
@@ -215,7 +184,11 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
             ) VISIBLE else GONE
 
             mBinding.cbStations.visibility =
-                if (typedArray.getBoolean(R.styleable.MapView_showStations, false)) VISIBLE else GONE
+                if (typedArray.getBoolean(
+                        R.styleable.MapView_showStations,
+                        false
+                    )
+                ) VISIBLE else GONE
 
             mBinding.cbOnlinePose.visibility = if (typedArray.getBoolean(
                     R.styleable.MapView_showOnlinePose, false
@@ -228,7 +201,11 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
             ) VISIBLE else GONE
 
             mBinding.cbElevator.visibility =
-                if (typedArray.getBoolean(R.styleable.MapView_showElevator, false)) VISIBLE else GONE
+                if (typedArray.getBoolean(
+                        R.styleable.MapView_showElevator,
+                        false
+                    )
+                ) VISIBLE else GONE
 
 
             mBinding.cbPositingArea.visibility = if (typedArray.getBoolean(

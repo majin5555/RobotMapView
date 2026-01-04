@@ -4,6 +4,7 @@ import VirtualWallNew
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.PointF
 import android.graphics.RectF
@@ -105,6 +106,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     private var mapLayers: MutableList<SlamWareBaseView> = CopyOnWriteArrayList()
     private var mPngMapView: PngMapView? = null //png地图
     private var mLegendView: LegendView? = null//图例
+    private var mMapNameView: MapNameView? = null//图例
 
     var mWallView: VirtualWallView? = null//虚拟墙
     var mHomeDockView: HomeDockView? = null//充电站
@@ -140,7 +142,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      */
 
     init {
-        setDefaultBackground(defaultBackGroundColor)
+        setBackgroundColor(Color.WHITE)
         mOuterMatrix = Matrix()
         mGestureDetector = SlamGestureDetector(this, this)
         initView()
@@ -178,6 +180,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mDownLaserScanView = DownLaserScanView(context, mMapView)
         mTopViewPathView = TopViewPathView(context, mMapView)
         mLegendView = LegendView(context, attrs, mMapView)
+        mMapNameView = MapNameView(context, mMapView)
         mRobotView = RobotView(context, mMapView)
         mWorkIngPathView = WorkIngPathView(context, mMapView)
         mRemoveNoiseView = RemoveNoiseView(context, mMapView)
@@ -224,8 +227,10 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         addMapLayers(mWorldPadView)
         //显示工作路径
         addMapLayers(mWorkIngPathView)
+        //地图名称
+        addView(mMapNameView)
 
-        //  修改LegendView的布局参数，使其显示在右上角
+        //修改LegendView的布局参数，使其显示在右上角（在地图名称下边）
         addView(
             mLegendView, LayoutParams(
                 LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT
@@ -234,13 +239,14 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
                 setMargins(16, 16, 16, 16)
             })
 
+
         setCentred()
     }
 
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         val point = screenToWorld(event.x, event.y)
-        mLegendView?.setScreen(point)
+        mMapNameView?.setScreen(point)
 
         // 如果是擦除噪点模式、创建定位区域模式、编辑定位区域模式、删除定位区域模式、编辑清扫区域模式或创建清扫区域模式，或者路径编辑模式
         if (currentWorkMode == WorkMode.MODE_REMOVE_NOISE || currentWorkMode == WorkMode.MODE_POSITING_AREA_ADD || currentWorkMode == WorkMode.MODE_POSITING_AREA_EDIT || currentWorkMode == WorkMode.MODE_POSITING_AREA_DELETE || currentWorkMode == WorkMode.MODE_CLEAN_AREA_EDIT || currentWorkMode == WorkMode.MODE_CLEAN_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_EDIT || currentWorkMode == WorkMode.MODE_PATH_EDIT) {
@@ -478,6 +484,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
         mPathView = null
         mRobotView = null
         mWorkIngPathView = null
+        mMapNameView = null
 
         // 清理监听器
         mSingleTapListener = null
@@ -588,7 +595,42 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      * 设置当前地图名称
      */
     fun setMapName(name: String) {
-        mLegendView?.setMapName(name)
+        mMapNameView?.setMapName(name)
+        // 地图名称改变后，重新调整LegendView位置
+        mMapNameView?.post {
+            updateLegendViewPosition()
+        }
+    }
+
+    /**
+     * 更新LegendView位置，位于MapNameView下方
+     */
+    private fun updateLegendViewPosition() {
+        mMapNameView?.let { mapNameView ->
+            mLegendView?.let { legendView ->
+                val mapNameParams = mapNameView.layoutParams as? LayoutParams
+                val legendParams = legendView.layoutParams as? LayoutParams
+
+                if (mapNameParams != null && legendParams != null) {
+                    // 获取MapNameView的位置和尺寸
+                    val mapNameLeft = mapNameView.left
+                    val mapNameTop = mapNameView.top
+                    val mapNameWidth = mapNameView.width
+                    val mapNameHeight = mapNameView.height
+
+                    if (mapNameWidth > 0 && mapNameHeight > 0) {
+                        // 计算LegendView的新位置：位于MapNameView下方
+                        val newLeft = mapNameLeft + (mapNameWidth - legendView.width) / 2
+                        val newTop = mapNameTop + mapNameHeight + 8 // 8dp的间距
+
+                        // 更新LegendView的位置
+                        legendParams.leftMargin = newLeft
+                        legendParams.topMargin = newTop
+                        legendView.layoutParams = legendParams
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -622,11 +664,11 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     @SuppressLint("SuspiciousIndentation")
     fun setAgvPose(rt: robot_control_t) {
         val dParams = rt.dparams
-        mLegendView?.setAgvX(dParams[0])
-        mLegendView?.setAgvY(dParams[1])
-        mLegendView?.setAgvT(dParams[2])
+        mMapNameView?.setAgvX(dParams[0])
+        mMapNameView?.setAgvY(dParams[1])
+        mMapNameView?.setAgvT(dParams[2])
         if (dParams.size > 8) {
-            mLegendView?.setAgvZ(dParams[8])
+            mMapNameView?.setAgvZ(dParams[8])
         }
         mRobotView?.setAgvData(dParams)
     }

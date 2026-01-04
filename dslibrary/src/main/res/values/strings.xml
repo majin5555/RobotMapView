@@ -27,4 +27,5 @@
     <string name="positing_area">定位区域</string>
     <string name="start_point">起点</string>
     <string name="end_point">终点</string>
+    <string name="legend">图例</string>
 </resources>
