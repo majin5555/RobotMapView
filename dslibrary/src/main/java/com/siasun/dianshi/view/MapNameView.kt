@@ -5,7 +5,6 @@ import android.content.Context
 import android.graphics.PointF
 import android.view.LayoutInflater
 import android.widget.LinearLayout
-import com.siasun.dianshi.R
 import com.siasun.dianshi.databinding.MapViewMapInfoBinding
 import java.lang.ref.WeakReference
 
@@ -16,11 +15,9 @@ import java.lang.ref.WeakReference
 class MapNameView(context: Context, parent: WeakReference<MapView>) :
     LinearLayout(context) {
     private lateinit var mBinding: MapViewMapInfoBinding
-    private val parentRef: WeakReference<MapView> = parent
 
 
     // 懒加载字符串资源，避免重复获取
-    private val currentMapText by lazy { context.getString(R.string.current_map) }
     private val pointXText by lazy { "X:" }
     private val pointYText by lazy { "Y:" }
     private val pointTText by lazy { "T:" }
@@ -48,7 +45,7 @@ class MapNameView(context: Context, parent: WeakReference<MapView>) :
      */
     @SuppressLint("SetTextI18n")
     fun setMapName(name: String) {
-        mBinding.tvCurrentMapValue.text = "${currentMapText}${name}"
+        mBinding.tvCurrentMapValue.text = name
     }
 
     @SuppressLint("SetTextI18n")
