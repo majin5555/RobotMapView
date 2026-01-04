@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PointF
+import androidx.core.graphics.green
 import java.lang.ref.WeakReference
 import java.util.Collections
 
@@ -30,7 +31,7 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
             strokeWidth = 5f
             isAntiAlias = true
             style = Paint.Style.STROKE
-            color = Color.parseColor("#FFC0CB")
+            color = color.green
         }
     }
 
