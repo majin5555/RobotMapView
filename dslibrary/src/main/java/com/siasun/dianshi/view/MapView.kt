@@ -596,42 +596,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      */
     fun setMapName(name: String) {
         mMapNameView?.setMapName(name)
-        // 地图名称改变后，重新调整LegendView位置
-        mMapNameView?.post {
-            updateLegendViewPosition()
-        }
     }
 
-    /**
-     * 更新LegendView位置，位于MapNameView下方
-     */
-    private fun updateLegendViewPosition() {
-        mMapNameView?.let { mapNameView ->
-            mLegendView?.let { legendView ->
-                val mapNameParams = mapNameView.layoutParams as? LayoutParams
-                val legendParams = legendView.layoutParams as? LayoutParams
-
-                if (mapNameParams != null && legendParams != null) {
-                    // 获取MapNameView的位置和尺寸
-                    val mapNameLeft = mapNameView.left
-                    val mapNameTop = mapNameView.top
-                    val mapNameWidth = mapNameView.width
-                    val mapNameHeight = mapNameView.height
-
-                    if (mapNameWidth > 0 && mapNameHeight > 0) {
-                        // 计算LegendView的新位置：位于MapNameView下方
-                        val newLeft = mapNameLeft + (mapNameWidth - legendView.width) / 2
-                        val newTop = mapNameTop + mapNameHeight + 8 // 8dp的间距
-
-                        // 更新LegendView的位置
-                        legendParams.leftMargin = newLeft
-                        legendParams.topMargin = newTop
-                        legendView.layoutParams = legendParams
-                    }
-                }
-            }
-        }
-    }
 
     /**
      * 显示虚拟墙

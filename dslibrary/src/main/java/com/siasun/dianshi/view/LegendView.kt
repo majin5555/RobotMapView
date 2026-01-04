@@ -9,6 +9,7 @@ import android.widget.LinearLayout
 import com.siasun.dianshi.R
 import com.siasun.dianshi.databinding.MapViewLegendBinding
 import java.lang.ref.WeakReference
+import androidx.core.view.isVisible
 
 /**
  * 图例
@@ -18,16 +19,6 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
     LinearLayout(context) {
     private lateinit var mBinding: MapViewLegendBinding
     private val parentRef: WeakReference<MapView> = parent
-
-
-    // 懒加载字符串资源，避免重复获取
-    private val currentMapText by lazy { context.getString(R.string.current_map) }
-    private val pointXText by lazy { "X:" }
-    private val pointYText by lazy { "Y:" }
-    private val pointTText by lazy { "T:" }
-    private val pointZText by lazy { "Z:" }
-    private val screenPointXText by lazy { "X:" }
-    private val screenPointYText by lazy { "Y:" }
 
     /**
      * 初始化
@@ -45,7 +36,7 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
         init(context, attrs)
 
         mBinding.ivLegend.setOnClickListener {
-            if (mBinding.conLegend.visibility == VISIBLE) {
+            if (mBinding.conLegend.isVisible) {
                 mBinding.ivLegend.setImageResource(R.drawable.iv_back)
                 mBinding.conLegend.visibility = GONE
             } else {
