@@ -22,6 +22,7 @@ import com.siasun.dianshi.bean.CmsStation
 import com.siasun.dianshi.bean.PlanPathResult
 import com.siasun.dianshi.bean.PositingArea
 import com.siasun.dianshi.bean.SpArea
+import com.siasun.dianshi.bean.TeachPoint
 import com.siasun.dianshi.bean.WorkAreasNew
 import com.siasun.dianshi.controller.MainController
 import com.siasun.dianshi.framework.ext.onClick
@@ -34,10 +35,13 @@ import com.siasun.dianshi.mapviewdemo.KEY_AGV_COORDINATE
 import com.siasun.dianshi.mapviewdemo.KEY_BOTTOM_CURRENT_POINT_CLOUD
 import com.siasun.dianshi.mapviewdemo.KEY_CURRENT_POINT_CLOUD
 import com.siasun.dianshi.mapviewdemo.KEY_POSITING_AREA_VALUE
+import com.siasun.dianshi.mapviewdemo.KEY_TEACH_PATH
+import com.siasun.dianshi.mapviewdemo.KEY_TEACH_STATE
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_PLAN_PATH_RESULT
 import com.siasun.dianshi.mapviewdemo.PATH_MODE
 import com.siasun.dianshi.mapviewdemo.RunningState
 import com.siasun.dianshi.mapviewdemo.TAG_PP
+import com.siasun.dianshi.mapviewdemo.TEACH_PATH_PLAN
 import com.siasun.dianshi.mapviewdemo.TaskState
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityShowMapViewBinding
 import com.siasun.dianshi.mapviewdemo.utils.GsonUtil
@@ -77,6 +81,54 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
         MainController.init()
+
+        //开始试教
+        mBinding.btnStartTeach.onClick {
+            MainController.sendStartTeachRoute()
+            ToastUtils.showLong("开始试教")
+        }
+        //结束试教
+        mBinding.btnEndTeach.onClick {
+            MainController.sendSopTeachRoute()
+            ToastUtils.showLong("结束试教")
+
+        }
+        //保存
+        mBinding.btnSaveTeach.onClick {
+            savePathsToFile()
+            ToastUtils.showLong("保存试教")
+        }
+
+        //接收路径规划结果
+        LiveEventBus.get<PlanPathResult>(KEY_UPDATE_PLAN_PATH_RESULT).observe(this) { result ->
+            try {
+                if (result.m_iPathPlanType == TEACH_PATH_PLAN) {
+                    // 接收Pad申请的示教径规划结果
+                    // 路段模式
+                    if (result.m_iPlanResultMode == PATH_MODE) {
+                        LogUtil.i(
+                            "CustomPathActivity1接收示教路径规划", null, TAG_PP
+                        )
+                        mBinding.mapView.setCleanPathPlanResultBean(
+                            PathPlanningUtil1.getPathPlanResultBean(result, mBinding.mapView)
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                LogUtil.i("接收试教路径规划失败")
+            }
+        }
+
+        //接收士教中的数据
+        LiveEventBus.get<TeachPoint>(KEY_TEACH_PATH).observe(this) {
+//            LogUtil.i("接收士教中的数据 $it", null, TAG_PP)
+            mBinding.mapView.setTeachPoint(
+                com.siasun.dianshi.bean.TeachPoint(
+                    it.x, it.y, it.theta
+                )
+            )
+        }
+
 
         //加载地图
         mBinding.mapView.loadMap(
@@ -123,7 +175,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 TAG_PP
             )
 
-            if ( pathPlanResultBean.m_vecBezierOfPathPlan.isNotEmpty()) {
+            if (pathPlanResultBean.m_vecBezierOfPathPlan.isNotEmpty()) {
                 mBinding.mapView.setGlobalPathPlanResultBean(
                     pathPlanResultBean
                 )
@@ -139,7 +191,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             val pathPlanResultBean = PathPlanningUtil1.getPathPlanResultBean(
                 toBean1
             )
-            if ( pathPlanResultBean.m_vecBezierOfPathPlan.isNotEmpty()) {
+            if (pathPlanResultBean.m_vecBezierOfPathPlan.isNotEmpty()) {
                 mBinding.mapView.setCleanPathPlanResultBean(
                     pathPlanResultBean
                 )
@@ -155,7 +207,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             val pathPlanResultBean = PathPlanningUtil1.getPathPlanResultBean(
                 toBean1
             )
-            if ( pathPlanResultBean.m_vecBezierOfPathPlan.isNotEmpty()) {
+            if (pathPlanResultBean.m_vecBezierOfPathPlan.isNotEmpty()) {
                 mBinding.mapView.setCleanPathPlanResultBean(
                     pathPlanResultBean
                 )

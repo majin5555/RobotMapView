@@ -46,6 +46,7 @@ import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.CmsPadInteraction_
 import com.siasun.dianshi.bean.PlanPathResult
 import com.siasun.dianshi.bean.PositingArea
+import com.siasun.dianshi.bean.TeachPoint
 import com.siasun.dianshi.bean.perception_t
 import com.siasun.dianshi.bean.robot_control_t_new
 import com.siasun.dianshi.controller.AbsController
@@ -67,6 +68,8 @@ import com.siasun.dianshi.mapviewdemo.KEY_NEXT_CLEANING_AREA_ID
 import com.siasun.dianshi.mapviewdemo.KEY_POSITING_AREA_VALUE
 import com.siasun.dianshi.mapviewdemo.KEY_SCHEDULED_TASK_REMINDER
 import com.siasun.dianshi.mapviewdemo.KEY_TASK_STATE
+import com.siasun.dianshi.mapviewdemo.KEY_TEACH_PATH
+import com.siasun.dianshi.mapviewdemo.KEY_TEACH_STATE
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_PLAN_PATH_RESULT
 import com.siasun.dianshi.mapviewdemo.NaviBody
 import com.siasun.dianshi.mapviewdemo.PP_VERSION
@@ -549,7 +552,6 @@ class LCMController : AbsController(), LCMSubscriber {
     private fun sendResetEv() {
         sendRobotControlNew(23, null, null, null, null, NAVI_SERVICE_COMMAND)
     }
-
 
 
     /*** pad应答导航发送标定结果*/
@@ -1510,7 +1512,7 @@ class LCMController : AbsController(), LCMSubscriber {
 //        if (iParams.size > 14) receiveBatteryValve(iParams[14].toInt())
 //
 //        //示教状态
-//        if (iParams.size > 15) receiveTeachState(iParams[15].toInt())
+        if (iParams.size > 15) receiveTeachState(iParams[15].toInt())
 //
 //        //定位信息
 //        if (iParams.size > 18) receiveLocationValve(iParams[18].toInt())
@@ -2483,17 +2485,17 @@ class LCMController : AbsController(), LCMSubscriber {
 //            LiveEventBus.get(KEY_AGV_STATE, Int::class.java).post(value)
 //        }
 //    }
-}
+    }
 
 
-/**
- * @description  TCS 信息
- * @param value  0 在线 1 逻辑在线 2 物理离线
- * @since 2024/11/23
- */
-private var mCurrentTcsState = -1
+    /**
+     * @description  TCS 信息
+     * @param value  0 在线 1 逻辑在线 2 物理离线
+     * @since 2024/11/23
+     */
+    private var mCurrentTcsState = -1
 
-private fun receiveTcsState(value: Int) {
+    private fun receiveTcsState(value: Int) {
 //    if (value == mCurrentTcsState) return
 //    else {
 //        LogUtil.i("变化 TCS 状态:${value}  -->(0 在线 1 逻辑在线 2 物理离线)", null, TAG_CAR_BODY)
@@ -2501,16 +2503,16 @@ private fun receiveTcsState(value: Int) {
 //        TCS_STATE = value
 //        LiveEventBus.get(KEY_TCS_STATE, Int::class.java).post(value)
 //    }
-}
+    }
 
-/**
- * @description  车体速度档位
- * @param value （0:空档；1: 低速档；2:高速档；3:极低速档）
- * @since 2024/11/23
- */
+    /**
+     * @description  车体速度档位
+     * @param value （0:空档；1: 低速档；2:高速档；3:极低速档）
+     * @since 2024/11/23
+     */
 
-private var mCurrentSpeedValue = -1
-private fun receiveVehicleSpeedGear(value: Int) {
+    private var mCurrentSpeedValue = -1
+    private fun receiveVehicleSpeedGear(value: Int) {
 //    if (value == mCurrentSpeedValue) return
 //    else {
 //        LogUtil.i(
@@ -2521,16 +2523,16 @@ private fun receiveVehicleSpeedGear(value: Int) {
 //        mCurrentSpeedValue = value
 //        LiveEventBus.get(KEY_VEHICLE_SPEED_GEAR, Int::class.java).post(value)
 //    }
-}
+    }
 
-/**
- * @description  急停状态
- * @param value （0:急停未触发；1:急停触发）
- * @since 2024/11/23
- */
+    /**
+     * @description  急停状态
+     * @param value （0:急停未触发；1:急停触发）
+     * @since 2024/11/23
+     */
 
-private var mCurrentWarmStopState = 0
-private fun receiveWarnStopStatus(value: Int) {
+    private var mCurrentWarmStopState = 0
+    private fun receiveWarnStopStatus(value: Int) {
 //    if (value == mCurrentWarmStopState) return
 //    else {
 //        LogUtil.i("变化 急停状态状态:${value}  -->(0:急停未触发；1:急停触发)", null, TAG_CAR_BODY)
@@ -2538,17 +2540,17 @@ private fun receiveWarnStopStatus(value: Int) {
 //        EMERGENCY_STOP = value
 //        LiveEventBus.get(KEY_WARM_STOP_STATE, Int::class.java).post(value)
 //    }
-}
+    }
 
 
-/**
- * @description  复位
- * @param value （0:未触发；1：触发）
- * @since 2024/11/23
- */
+    /**
+     * @description  复位
+     * @param value （0:未触发；1：触发）
+     * @since 2024/11/23
+     */
 
-private var mCurrentCarReset = 0
-private fun receiveCarReset(value: Int) {
+    private var mCurrentCarReset = 0
+    private fun receiveCarReset(value: Int) {
 //    if (value == mCurrentCarReset) return
 //    else {
 //        LogUtil.i("变化 复位按钮状态:${value}  -->(0:未触发；1：触发)", null, TAG_CAR_BODY)
@@ -2556,48 +2558,48 @@ private fun receiveCarReset(value: Int) {
 //        WARM_CAR_RESET = value
 //        LiveEventBus.get(KEY_WARM_CAR_RESET, Int::class.java).post(value)
 //    }
-}
+    }
 
-/**
- * @description  速度
- * @param value
- * @since 2024/11/23
- */
+    /**
+     * @description  速度
+     * @param value
+     * @since 2024/11/23
+     */
 
-private var mCurrentAgvSpeed: Double = 0.0
-private fun receiveCarSpeed(value: Double) {
+    private var mCurrentAgvSpeed: Double = 0.0
+    private fun receiveCarSpeed(value: Double) {
 //    if (value == mCurrentAgvSpeed) return
 //    else {
 ////        LogUtil.i("变化 AGV速度:${value}", null, TAG_CAR_BODY)
 //        mCurrentAgvSpeed = value
 //        LiveEventBus.get(KEY_AGV_SPEED, Double::class.java).post(value)
 //    }
-}
+    }
 
-/**
- * @description  避障
- * @param value （0: 正常1:避障中)
- * @since 2024/11/23
- */
+    /**
+     * @description  避障
+     * @param value （0: 正常1:避障中)
+     * @since 2024/11/23
+     */
 
-private var mCurrentObstacleDetectedValue: Int = -1
-private fun receiveObstacleDetected(value: Int) {
+    private var mCurrentObstacleDetectedValue: Int = -1
+    private fun receiveObstacleDetected(value: Int) {
 //    if (value == mCurrentObstacleDetectedValue) return
 //    else {
 //        LogUtil.i("变化 避障状态:${value}  -->(0: 正常 1:避障中)", null, TAG_CAR_BODY)
 //        mCurrentObstacleDetectedValue = value
 //        LiveEventBus.get(KEY_OBSTACLE_DETECTED, Int::class.java).post(value)
 //    }
-}
+    }
 
-/**
- * @description  电池状态
- * @param value  0：满电 1：正常 2：电量低 3：电量极低
- * @since 2024/11/23
- */
+    /**
+     * @description  电池状态
+     * @param value  0：满电 1：正常 2：电量低 3：电量极低
+     * @since 2024/11/23
+     */
 
-private var mCurrentBatteryStateValue: Int = -1
-private fun receiveBatteryState(value: Int) {
+    private var mCurrentBatteryStateValue: Int = -1
+    private fun receiveBatteryState(value: Int) {
 //    if (value == mCurrentBatteryStateValue) return
 //    else {
 //        LogUtil.i(
@@ -2607,17 +2609,17 @@ private fun receiveBatteryState(value: Int) {
 //        BATTERY_STATE_VALUE = value
 //        LiveEventBus.get(KEY_BATTERY_STATE_VALUE, Int::class.java).post(value)
 //    }
-}
+    }
 
 
-/**
- * @description  充电
- * @param value  0-未充电, 1-充电中
- * @since 2024/11/23
- */
+    /**
+     * @description  充电
+     * @param value  0-未充电, 1-充电中
+     * @since 2024/11/23
+     */
 
-private var mCurrentChargeState = 0
-private fun receiveChargeState(value: Int) {
+    private var mCurrentChargeState = 0
+    private fun receiveChargeState(value: Int) {
 //    // LCM返回充电状态与当前充电状态相同时, 不做处理
 //    if (mCurrentChargeState == value) return
 //    // LCM返回充电状态与当前充电状态不同时, 判断当前状态取反
@@ -2627,31 +2629,31 @@ private fun receiveChargeState(value: Int) {
 //        BATTERY_STATE = value
 //        LiveEventBus.get(KEY_CHARGE_STATE, Int::class.java).post(value)
 //    }
-}
+    }
 
-/**
- * @description  AGV 坐标
- * @param  x y theta
- * @since 2024/11/23
- */
-private fun receiveAGVXYT(rt: robot_control_t) {
-    if (rt.dparams.isNotEmpty() && rt.dparams.size >= 3) {
-        LiveEventBus.get<robot_control_t>(KEY_AGV_COORDINATE).post(rt)
+    /**
+     * @description  AGV 坐标
+     * @param  x y theta
+     * @since 2024/11/23
+     */
+    private fun receiveAGVXYT(rt: robot_control_t) {
+        if (rt.dparams.isNotEmpty() && rt.dparams.size >= 3) {
+            LiveEventBus.get<robot_control_t>(KEY_AGV_COORDINATE).post(rt)
 //        LogUtil.i(
 //            "LCM接收转发至页面AGV坐标: x:${rt.dparams[0]} y:${rt.dparams[1]} theta:${rt.dparams[2]}",
 //            null,
 //            TAG_CAR_BODY
 //        )
+        }
     }
-}
 
-/**
- * @description  接收车体运行状态
- * @value   (0:正常状态；1: 用户暂停）（暂停按钮使用）
- * @since 2024/11/27
- */
-private var mCurrentAgvRunState: Int = 0
-private fun receiveAgvRunState(value: Int) {
+    /**
+     * @description  接收车体运行状态
+     * @value   (0:正常状态；1: 用户暂停）（暂停按钮使用）
+     * @since 2024/11/27
+     */
+    private var mCurrentAgvRunState: Int = 0
+    private fun receiveAgvRunState(value: Int) {
 //    if (mCurrentAgvRunState == value) return
 //    else {
 //        LogUtil.i(
@@ -2661,37 +2663,37 @@ private fun receiveAgvRunState(value: Int) {
 //        AGV_RUN_STATE = value
 //        LiveEventBus.get(KEY_AGV_RUN_STATE, Int::class.java).post(value)
 //    }
-}
+    }
 
-/**
- * @description  接收士教状态
- * @value    1 开始士教 2 结束士教
- * @since 2024/11/27
- */
-private var mCurrentTeachState: Int = -1
-private fun receiveTeachState(value: Int) {
-//    if (mCurrentTeachState == value) return
-//    else {
-//        LogUtil.i(
-//            "变化 接收士教状态:${value}  -->(1:开始士教 2:结束士教)", null, TAG_CAR_BODY
-//        )
-//        mCurrentTeachState = value
-//        LiveEventBus.get(KEY_TEACH_STATE, Int::class.java).post(value)
-//    }
-}
+    /**
+     * @description  接收士教状态
+     * @value    1 开始士教 2 结束士教
+     * @since 2024/11/27
+     */
+    private var mCurrentTeachState: Int = -1
+    private fun receiveTeachState(value: Int) {
+    if (mCurrentTeachState == value) return
+    else {
+        LogUtil.i(
+            "变化 接收士教状态:${value}  -->(1:开始士教 2:结束士教)", null, TAG_CAR_BODY
+        )
+        mCurrentTeachState = value
+        LiveEventBus.get(KEY_TEACH_STATE, Int::class.java).post(value)
+    }
+    }
 
-/**
- * @description  车体初始化状态
- *
- * @value   bit0:车体初始化中  1
- *          bit1:车体初始化完成，导航初始化中 2
- *          bit2:车体初始化失败 4
- *          bit3:车体未初始化 8
- *          bit4:车体初始化完成,且导航初始化成功 16
- * @since 2024/11/27
- */
-private var mCurrentInitInfo: Int = -1
-private fun receiveInitInfo(value: Int) {
+    /**
+     * @description  车体初始化状态
+     *
+     * @value   bit0:车体初始化中  1
+     *          bit1:车体初始化完成，导航初始化中 2
+     *          bit2:车体初始化失败 4
+     *          bit3:车体未初始化 8
+     *          bit4:车体初始化完成,且导航初始化成功 16
+     * @since 2024/11/27
+     */
+    private var mCurrentInitInfo: Int = -1
+    private fun receiveInitInfo(value: Int) {
 //    if (mCurrentInitInfo == value) return
 //    else {
 //        LogUtil.i(
@@ -2700,15 +2702,15 @@ private fun receiveInitInfo(value: Int) {
 //        mCurrentInitInfo = value
 //        LiveEventBus.get(KEY_AGV_INIT_STATE, Int::class.java).post(value)
 //    }
-}
+    }
 
-/**
- * @description  手动切自动失败提示
- * @value  0: 切到手动;1：和控制台连接中断;2：切到自动
- * @since 2024/11/27
- */
-private var mCurrentSwitchingPrompt: Int = 0
-fun receiveModeInfo(value: Int) {
+    /**
+     * @description  手动切自动失败提示
+     * @value  0: 切到手动;1：和控制台连接中断;2：切到自动
+     * @since 2024/11/27
+     */
+    private var mCurrentSwitchingPrompt: Int = 0
+    fun receiveModeInfo(value: Int) {
 //    if (mCurrentSwitchingPrompt == value) return
 //    else {
 //        LogUtil.i(
@@ -2720,32 +2722,32 @@ fun receiveModeInfo(value: Int) {
 //        SWITCHING_PROMPT_VALUE = value
 //        LiveEventBus.get(KEY_SWITCHING_PROMPT, Int::class.java).post(value)
 //    }
-}
-
-/**
- * 车体上报设置界面的状态给pad
- */
-private fun receiveSettingViewState(rt: robot_control_t) {
-    val iParams = rt.iparams
-    if (iParams == null || iParams.isEmpty()) {
-        LogUtil.e("接收设置界面的状态信息 iParams null")
-        return
     }
-    receiveSonarState(iParams[0].toInt())
-    receiveLaserState(iParams[1].toInt())
-    receiveChargeSwitchState(iParams[2].toInt())
-    receiveCurrentPlsState(iParams[3].toInt())
-}
 
-/**
- * @description  接收声纳
- *
- * @value （0:关 1:开）
- * @since 2024/11/28
- */
-private var mCurrentSonarValue: Int = -1
+    /**
+     * 车体上报设置界面的状态给pad
+     */
+    private fun receiveSettingViewState(rt: robot_control_t) {
+        val iParams = rt.iparams
+        if (iParams == null || iParams.isEmpty()) {
+            LogUtil.e("接收设置界面的状态信息 iParams null")
+            return
+        }
+        receiveSonarState(iParams[0].toInt())
+        receiveLaserState(iParams[1].toInt())
+        receiveChargeSwitchState(iParams[2].toInt())
+        receiveCurrentPlsState(iParams[3].toInt())
+    }
 
-fun receiveSonarState(value: Int) {
+    /**
+     * @description  接收声纳
+     *
+     * @value （0:关 1:开）
+     * @since 2024/11/28
+     */
+    private var mCurrentSonarValue: Int = -1
+
+    fun receiveSonarState(value: Int) {
 //    if (mCurrentSonarValue == value) return
 //    else {
 //        LogUtil.i("变化 声纳状态:${value}  -->0:关 1:开）", null, TAG_CAR_BODY)
@@ -2753,17 +2755,17 @@ fun receiveSonarState(value: Int) {
 //        LiveEventBus.get(KEY_SONAR_VALUE, Int::class.java).post(value)
 //    }
 
-}
+    }
 
-/**
- * @description  接收激光
- *
- * @value （0:关 1:开）
- * @since 2024/11/27
- */
-private var mCurrentLaserValue: Int = -1
+    /**
+     * @description  接收激光
+     *
+     * @value （0:关 1:开）
+     * @since 2024/11/27
+     */
+    private var mCurrentLaserValue: Int = -1
 
-fun receiveLaserState(value: Int) {
+    fun receiveLaserState(value: Int) {
 //
 //    if (mCurrentLaserValue == value) return
 //    else {
@@ -2772,18 +2774,18 @@ fun receiveLaserState(value: Int) {
 //        LASER_VALUE = value
 //        LiveEventBus.get(KEY_LASER_VALUE, Int::class.java).post(value)
 //    }
-}
+    }
 
 
-/**
- * @description  充电开关状态
- *
- * @value （0:关 1:开）
- * @since 2024/11/27
- */
-private var mCurrentChargeSwitchValue: Int = -1
+    /**
+     * @description  充电开关状态
+     *
+     * @value （0:关 1:开）
+     * @since 2024/11/27
+     */
+    private var mCurrentChargeSwitchValue: Int = -1
 
-fun receiveChargeSwitchState(value: Int) {
+    fun receiveChargeSwitchState(value: Int) {
 //
 //    if (mCurrentChargeSwitchValue == value) return
 //    else {
@@ -2791,34 +2793,34 @@ fun receiveChargeSwitchState(value: Int) {
 //        mCurrentChargeSwitchValue = value
 //        LiveEventBus.get(KEY_CHARGE_SWITCH_VALUE, Int::class.java).post(value)
 //    }
-}
+    }
 
-/**
- * @description  当前pls区域
- *
- * @value
- * @since 2024/11/27
- */
-private var mCurrentCurrentPlsValue: Int = -1
+    /**
+     * @description  当前pls区域
+     *
+     * @value
+     * @since 2024/11/27
+     */
+    private var mCurrentCurrentPlsValue: Int = -1
 
-fun receiveCurrentPlsState(value: Int) {
+    fun receiveCurrentPlsState(value: Int) {
 //    if (mCurrentCurrentPlsValue == value) return
 //    else {
 //        LogUtil.i("变化 当前pls区域:${value}", null, TAG_CAR_BODY)
 //        mCurrentCurrentPlsValue = value
 //        LiveEventBus.get(KEY_CURRENT_PLS_VALUE, Int::class.java).post(value)
 //    }
-}
+    }
 
-/**
- * @description  车体上报关机信号
- *
- * @value
- * @since 2024/11/27
- */
-private var mCurrentAgvShutdownValue: Int = -1
+    /**
+     * @description  车体上报关机信号
+     *
+     * @value
+     * @since 2024/11/27
+     */
+    private var mCurrentAgvShutdownValue: Int = -1
 
-private fun receiveAgvShutdown(value: Int) {
+    private fun receiveAgvShutdown(value: Int) {
 //    if (mCurrentAgvShutdownValue == value) return
 //    else {
 //        LogUtil.i("变化 车体上报关机信号", null, TAG_CAR_BODY)
@@ -2826,57 +2828,57 @@ private fun receiveAgvShutdown(value: Int) {
 //
 //        LiveEventBus.get(KEY_AGV_SHUTDOWN_VALUE, Int::class.java).post(value)
 //    }
-}
+    }
 
-/**
- * @description  车体上报电池故障
- *
- * @value
- * @since 2024/11/27
- */
+    /**
+     * @description  车体上报电池故障
+     *
+     * @value
+     * @since 2024/11/27
+     */
 
-private fun receiveAgvBatteryError() {
+    private fun receiveAgvBatteryError() {
 //    LogUtil.i("变化 车体上报电池故障", null, TAG_CAR_BODY)
 //    LiveEventBus.get(KEY_AGV_BATTERY_ERROR_VALUE, Int::class.java).post(1)
-}
-
-/**
- * @description  接收定位区域数据源
- *
- * @value
- * @since 2024/11/27
- */
-private fun receivePositingArea(rtNew: robot_control_t_new) {
-    val sParams = rtNew.sparams
-    if (sParams == null || sParams.isEmpty()) {
-        LogUtil.i("接收导航定位区域数据 sParams null")
-        return
     }
-    val value = sParams[0]
-    LiveEventBus.get(KEY_POSITING_AREA_VALUE, String::class.java).post(value)
-    LogUtil.i("变化 接收导航定位区域${value}", null, TAG_NAV)
-}
+
+    /**
+     * @description  接收定位区域数据源
+     *
+     * @value
+     * @since 2024/11/27
+     */
+    private fun receivePositingArea(rtNew: robot_control_t_new) {
+        val sParams = rtNew.sparams
+        if (sParams == null || sParams.isEmpty()) {
+            LogUtil.i("接收导航定位区域数据 sParams null")
+            return
+        }
+        val value = sParams[0]
+        LiveEventBus.get(KEY_POSITING_AREA_VALUE, String::class.java).post(value)
+        LogUtil.i("变化 接收导航定位区域${value}", null, TAG_NAV)
+    }
 
 
-/**
- * @description  导航写完定位区域数据
- *
- * @value
- * @since 2024/11/27
- */
-private fun receiveFinishWriteSlam() {
+    /**
+     * @description  导航写完定位区域数据
+     *
+     * @value
+     * @since 2024/11/27
+     */
+    private fun receiveFinishWriteSlam() {
 //    LiveEventBus.get(KEY_FINISH_WRITE_SLAM_VALUE, Int::class.java).post(1)
 //    LogUtil.i("导航写完定位区域数据结果", null, TAG_NAV)
-}
+    }
 
-/**
- * @description  接收导航建图步数
- *
- * @value
- * @since 2024/11/27
- */
-private var stepNumber = 0
-private fun receiveTopScanSteps(rtNew: robot_control_t_new) {
+    /**
+     * @description  接收导航建图步数
+     *
+     * @value
+     * @since 2024/11/27
+     */
+    private var stepNumber = 0
+    private fun receiveTopScanSteps(rtNew: robot_control_t_new) {
 //
 //    val dParams = rtNew.dparams
 //    if (dParams == null || dParams.isEmpty()) {
@@ -2889,17 +2891,17 @@ private fun receiveTopScanSteps(rtNew: robot_control_t_new) {
 //        stepNumber = value
 //        LiveEventBus.get(KEY_NAV_TOP_SCAN_STEPS_VALUE, Int::class.java).post(value)
 //    }
-}
+    }
 
-/**
- * @description  扫描新环境状态
- *
- * @value
- * @since 2024/11/27
- */
-private var mCurrentLoadScanValue: Int = -1
+    /**
+     * @description  扫描新环境状态
+     *
+     * @value
+     * @since 2024/11/27
+     */
+    private var mCurrentLoadScanValue: Int = -1
 
-private fun receiveLoadScanState(rtNew: robot_control_t_new) {
+    private fun receiveLoadScanState(rtNew: robot_control_t_new) {
 //    val value = rtNew.iparams[0].toInt()
 //    if (mCurrentLoadScanValue == value) return
 //    else {
@@ -2911,17 +2913,17 @@ private fun receiveLoadScanState(rtNew: robot_control_t_new) {
 //        mCurrentLoadScanValue = value
 //        LiveEventBus.get(KEY_NAV_LOAD_SCAN_STATE_VALUE, Int::class.java).post(value)
 //    }
-}
+    }
 
-/**
- * @description  顶视扫描
- *
- * @value
- * @since 2024/11/27
- */
-private var mCurrentLoadTopScanValue: Int = -1
+    /**
+     * @description  顶视扫描
+     *
+     * @value
+     * @since 2024/11/27
+     */
+    private var mCurrentLoadTopScanValue: Int = -1
 
-private fun receiveLoadTopScan(rtNew: robot_control_t_new) {
+    private fun receiveLoadTopScan(rtNew: robot_control_t_new) {
 //    val value = rtNew.iparams[1].toInt()
 //    if (mCurrentLoadTopScanValue == value) return
 //    else {
@@ -2933,145 +2935,145 @@ private fun receiveLoadTopScan(rtNew: robot_control_t_new) {
 //        mCurrentLoadTopScanValue = value
 //        LiveEventBus.get(KEY_NAV_LOAD_TOP_SCAN_STATE_VALUE, Int::class.java).post(value)
 //    }
-}
+    }
 
-/**
- * @description 导航->pad  导航自动建图时向pad发送子图
- * @value  laserT
- * @since 2024/12/03
- */
+    /**
+     * @description 导航->pad  导航自动建图时向pad发送子图
+     * @value  laserT
+     * @since 2024/12/03
+     */
 
-private fun receiveSubMap(laserT: laser_t) {
+    private fun receiveSubMap(laserT: laser_t) {
 //    LiveEventBus.get(KEY_UPDATE_SUB_MAPS, laser_t::class.java).post(laserT)
-}
+    }
 
-/**
- * @description 导航->pad   车体位置
- * @value  laserT
- * @since 2024/12/03
- */
-private fun receiveRobotPos(laserT: laser_t) {
+    /**
+     * @description 导航->pad   车体位置
+     * @value  laserT
+     * @since 2024/12/03
+     */
+    private fun receiveRobotPos(laserT: laser_t) {
 //    LiveEventBus.get(KEY_UPDATE_POS, laser_t::class.java).post(laserT)
-}
+    }
 
 
-/**
- * @description 导航->pad  上激光点云
- * @value  laserT
- * @since 2024/12/03
- */
+    /**
+     * @description 导航->pad  上激光点云
+     * @value  laserT
+     * @since 2024/12/03
+     */
 
-val rcTopData = laser_t()
-private var receiveTopPointCloud = true
-private fun receiveCurrentPointCloud(laserT: laser_t) {
-    rcTopData.ranges = laserT.ranges
-    LiveEventBus.get(KEY_CURRENT_POINT_CLOUD, laser_t::class.java).post(rcTopData)
+    val rcTopData = laser_t()
+    private var receiveTopPointCloud = true
+    private fun receiveCurrentPointCloud(laserT: laser_t) {
+        rcTopData.ranges = laserT.ranges
+        LiveEventBus.get(KEY_CURRENT_POINT_CLOUD, laser_t::class.java).post(rcTopData)
 
-    if (rcTopData.ranges.isEmpty()) {
-        LogUtil.e("导航->pad 接收上激光点云数据异常")
-    } else {
-        if (receiveTopPointCloud) {
-            LogUtil.i("导航->pad 接收上激光点云数据 X:${rcTopData.ranges[0]} Y:${rcTopData.ranges[1]} T:${rcTopData.ranges[2]}")
-            receiveTopPointCloud = false
+        if (rcTopData.ranges.isEmpty()) {
+            LogUtil.e("导航->pad 接收上激光点云数据异常")
+        } else {
+            if (receiveTopPointCloud) {
+                LogUtil.i("导航->pad 接收上激光点云数据 X:${rcTopData.ranges[0]} Y:${rcTopData.ranges[1]} T:${rcTopData.ranges[2]}")
+                receiveTopPointCloud = false
+            }
         }
     }
-}
 
-/**
- * @description 导航->pad  下激光点云
- * @value  laserT
- * @since 2024/12/05
- */
-val rcBottomData = laser_t()
-private var receiveBottomPointCloud = true
-private fun receiveBottomCurrentPointCloud(laserT: laser_t) {
-    rcBottomData.ranges = laserT.ranges
-    LiveEventBus.get(KEY_BOTTOM_CURRENT_POINT_CLOUD, laser_t::class.java).post(laserT)
+    /**
+     * @description 导航->pad  下激光点云
+     * @value  laserT
+     * @since 2024/12/05
+     */
+    val rcBottomData = laser_t()
+    private var receiveBottomPointCloud = true
+    private fun receiveBottomCurrentPointCloud(laserT: laser_t) {
+        rcBottomData.ranges = laserT.ranges
+        LiveEventBus.get(KEY_BOTTOM_CURRENT_POINT_CLOUD, laser_t::class.java).post(laserT)
 
-    if (rcBottomData.ranges.isEmpty()) {
-        LogUtil.e("导航->pad 接收下激光点云数据异常")
-    } else {
-        if (receiveBottomPointCloud) {
-            LogUtil.i("导航->pad 接收下激光点云数据 X:${rcBottomData.ranges[0]} Y:${rcBottomData.ranges[1]} T:${rcBottomData.ranges[2]}")
-            receiveBottomPointCloud = false
+        if (rcBottomData.ranges.isEmpty()) {
+            LogUtil.e("导航->pad 接收下激光点云数据异常")
+        } else {
+            if (receiveBottomPointCloud) {
+                LogUtil.i("导航->pad 接收下激光点云数据 X:${rcBottomData.ranges[0]} Y:${rcBottomData.ranges[1]} T:${rcBottomData.ranges[2]}")
+                receiveBottomPointCloud = false
+            }
         }
     }
-}
 
 
-/**
- * @description 车体->PAD 接收示教中信息
- * @value  robot_control_t
- * @since 2024/12/05
- */
-private var mTeachX: Double = 0.0
-private var mTeachY: Double = 0.0
-private var mTeachT: Double = 0.0
-private fun receiveLcmTeachPoint(rt: robot_control_t) {
-//    val dParams = rt.dparams
-//    if (dParams == null) {
-//        LogUtil.i("接收示教中信息 dParams  null")
-//        return
-//    }
-//    val x = dParams[0]
-//    val y = dParams[1]
-//    val theta = dParams[2]
-//
-//    if (x == mTeachX && y == mTeachY && mTeachT == theta) return
-//    else {
-////        LogUtil.d("变化 接收示教中坐标 X:${x} Y:${y} Theta:${theta}", null, TAG_CAR_BODY)
-//        mTeachX = x
-//        mTeachY = y
-//        mTeachT = theta
-//        LiveEventBus.get(KEY_TEACH_PATH, TeachPoint::class.java).post(TeachPoint(x, y, theta))
+    /**
+     * @description 车体->PAD 接收示教中信息
+     * @value  robot_control_t
+     * @since 2024/12/05
+     */
+    private var mTeachX: Double = 0.0
+    private var mTeachY: Double = 0.0
+    private var mTeachT: Double = 0.0
+    private fun receiveLcmTeachPoint(rt: robot_control_t) {
+        val dParams = rt.dparams
+        if (dParams == null) {
+            LogUtil.i("接收示教中信息 dParams  null")
+            return
+        }
+        val x = dParams[0]
+        val y = dParams[1]
+        val theta = dParams[2]
+
+        if (x == mTeachX && y == mTeachY && mTeachT == theta) return
+        else {
+//        LogUtil.d("变化 接收示教中坐标 X:${x} Y:${y} Theta:${theta}", null, TAG_CAR_BODY)
+            mTeachX = x
+            mTeachY = y
+            mTeachT = theta
+            LiveEventBus.get(KEY_TEACH_PATH, TeachPoint::class.java).post(TeachPoint(x, y, theta))
+        }
     }
-}
 
-/**
- * @description 导航->PAD
- * @value  robot_control_t
- * @since 2024/12/05
- */
-private fun receiveOptSubMap(rt: laser_t) {
+    /**
+     * @description 导航->PAD
+     * @value  robot_control_t
+     * @since 2024/12/05
+     */
+    private fun receiveOptSubMap(rt: laser_t) {
 //    LiveEventBus.get(KEY_OPT_POSE, laser_t::class.java).post(rt)
-}
-
-
-/**
- * @description 导航->PAD 去除噪点结果
- * @value  iParams[0]:应答标志位（0：失败；1：成功）
- * @since 2024/12/05
- */
-
-private fun recRemoveNoiseResult(rtNew: robot_control_t_new) {
-    val iParams = rtNew.iparams
-    if (iParams == null || iParams.isEmpty()) {
-        LogUtil.i("去除噪点结果 iParams  null")
-        return
     }
-    val value = iParams[0].toInt()
-    LogUtil.i("变化 接收去除噪点结果  value $value  （0：失败；1：成功）")
-//    LiveEventBus.get(KEY_REMOVE_NOISE_RESULT, Int::class.java).post(value)
-}
 
-/**
- * @description 导航->PAD 导航发送标定结果
- * @value    rtNew
- * @since 2024/12/06
- */
-private fun receiveCalibrationData(rtNew: robot_control_t_new) {
+
+    /**
+     * @description 导航->PAD 去除噪点结果
+     * @value  iParams[0]:应答标志位（0：失败；1：成功）
+     * @since 2024/12/05
+     */
+
+    private fun recRemoveNoiseResult(rtNew: robot_control_t_new) {
+        val iParams = rtNew.iparams
+        if (iParams == null || iParams.isEmpty()) {
+            LogUtil.i("去除噪点结果 iParams  null")
+            return
+        }
+        val value = iParams[0].toInt()
+        LogUtil.i("变化 接收去除噪点结果  value $value  （0：失败；1：成功）")
+//    LiveEventBus.get(KEY_REMOVE_NOISE_RESULT, Int::class.java).post(value)
+    }
+
+    /**
+     * @description 导航->PAD 导航发送标定结果
+     * @value    rtNew
+     * @since 2024/12/06
+     */
+    private fun receiveCalibrationData(rtNew: robot_control_t_new) {
 //    val dParams = rtNew.dparams
 //    LogUtil.i("接收导航标定结果 dParams ${dParams[0]}")
 //    LiveEventBus.get(KEY_CALIBRATION_DATA, robot_control_t_new::class.java).post(rtNew)
-}
+    }
 
-/**
- * @description 导航->PAD 导航写入标定结果应答
- * @value   0 成功 1失败
- * @since 2024/12/06
- */
-private var mCalibrationResult = -1
-private fun receiveCalibrationResult(rtNew: robot_control_t_new) {
+    /**
+     * @description 导航->PAD 导航写入标定结果应答
+     * @value   0 成功 1失败
+     * @since 2024/12/06
+     */
+    private var mCalibrationResult = -1
+    private fun receiveCalibrationResult(rtNew: robot_control_t_new) {
 //    val iParams = rtNew.iparams
 //    if (iParams == null || iParams.isEmpty()) {
 //        LogUtil.i("导航写入标定结果应答 iParams  null")
@@ -3084,62 +3086,62 @@ private fun receiveCalibrationResult(rtNew: robot_control_t_new) {
 //        mCalibrationResult = value
 //        LiveEventBus.get(KEY_CALIBRATION_RESULT, Int::class.java).post(iParams[0].toInt())
 //    }
-}
+    }
 
-/**
- * @description 导航->PAD 导航加载扩展地图data.pb文件结果
- * @value   0 – 读取失败 1 – 读取成功
- * @since 2024/12/06
- */
-private fun receiveLoadExtendedMapDataResult(rtNew: robot_control_t_new) {
+    /**
+     * @description 导航->PAD 导航加载扩展地图data.pb文件结果
+     * @value   0 – 读取失败 1 – 读取成功
+     * @since 2024/12/06
+     */
+    private fun receiveLoadExtendedMapDataResult(rtNew: robot_control_t_new) {
 //    val iParams = rtNew.iparams
 //    if (iParams == null || iParams.isEmpty()) {
 //        LogUtil.i("导航加载扩展地图data.pb文件结果 iParams  null")
 //        return
 //    }
 //    LiveEventBus.get(KEY_EXTEND_LOAD_SUB_MAP, ByteArray::class.java).post(iParams)
-}
+    }
 
-/**
- * @description 导航->PAD 接收导航心跳返回
- * @value   * iparams[0]:导航当前状态（1：定位；2开始建图；3：结束建图；4：开始录制dx）
- *          * iparams[1]:结束建图时，后端优化状态（1：正在优化中；2：优化完成，询问pad是否保存地图；3：正在保存地图； 4：正在取消保存地图）
- * @since 2024/12/06
- */
-private fun receiveNaviHeartbeatState(rtNew: robot_control_t_new) {
+    /**
+     * @description 导航->PAD 接收导航心跳返回
+     * @value   * iparams[0]:导航当前状态（1：定位；2开始建图；3：结束建图；4：开始录制dx）
+     *          * iparams[1]:结束建图时，后端优化状态（1：正在优化中；2：优化完成，询问pad是否保存地图；3：正在保存地图； 4：正在取消保存地图）
+     * @since 2024/12/06
+     */
+    private fun receiveNaviHeartbeatState(rtNew: robot_control_t_new) {
 //    val iParams = rtNew.iparams
 //    if (iParams == null || iParams.isEmpty()) {
 //        LogUtil.i("接收导航心跳返回 iParams  null")
 //        return
 //    }
 //    LiveEventBus.get(KEY_NAV_HEARTBEAT_STATE, ByteArray::class.java).post(iParams)
-}
+    }
 
-/**
- * (CMS—>Pad)
- * 控制台版本
- */
-private fun receiveCmsVersion(cms: CmsPadInteraction_) {
-    val bParams: ByteArray = cms.bparams
+    /**
+     * (CMS—>Pad)
+     * 控制台版本
+     */
+    private fun receiveCmsVersion(cms: CmsPadInteraction_) {
+        val bParams: ByteArray = cms.bparams
 //    LiveEventBus.get(KEY_CMS_VERSION, String::class.java).post(String(bParams))
-}
+    }
 
 
-/**
- * AGV->pad
- * AGV上报软件版本号
- */
+    /**
+     * AGV->pad
+     * AGV上报软件版本号
+     */
 
-private fun sendAgvVersion(rt: robot_control_t) {
-    val bParams: ByteArray = rt.bparams
+    private fun sendAgvVersion(rt: robot_control_t) {
+        val bParams: ByteArray = rt.bparams
 //    LiveEventBus.get(KEY_AGV_VERSION, String::class.java).post(String(bParams))
-}
+    }
 
-/**
- * NAV->pad
- * NAV上报软件版本号
- */
-private fun receiveNAVVersion(rtNew: robot_control_t_new) {
+    /**
+     * NAV->pad
+     * NAV上报软件版本号
+     */
+    private fun receiveNAVVersion(rtNew: robot_control_t_new) {
 //    val bParams: ByteArray = rtNew.bparams
 //    LiveEventBus.get(KEY_NAV_VERSION, String::class.java).post(String(bParams))
 //
@@ -3147,54 +3149,54 @@ private fun receiveNAVVersion(rtNew: robot_control_t_new) {
 //        val sparams = rtNew.sparams.get(0)
 //        LiveEventBus.get(KEY_TOP_VIEW_VERSION, String::class.java).post(sparams)
 //    }
-}
+    }
 
-/**
- * LP->pad
- * LP上报软件版本号
- */
-private fun receiveLPVersion(bParams: ByteArray) {
+    /**
+     * LP->pad
+     * LP上报软件版本号
+     */
+    private fun receiveLPVersion(bParams: ByteArray) {
 //    val value = String(bParams)
 //    if (LP_VERSION != value) {
 //        LP_VERSION = value
 //        LogUtil.i("变化接收LP版本 $value")
 //    }
-}
+    }
 
-/**
- * PP->pad
- * PP上报软件版本号
- */
-private fun receivePPVersion(result: PlanPathResult) {
+    /**
+     * PP->pad
+     * PP上报软件版本号
+     */
+    private fun receivePPVersion(result: PlanPathResult) {
 //    if (result.m_iPathPlanType == PP_VERSION) {
 //        LiveEventBus.get(KEY_PP_VERSION, String::class.java).post(result.m_strAdditionInfo)
 //    }
-}
+    }
 
-/**
- * server->pad
- * server上报软件版本号
- */
+    /**
+     * server->pad
+     * server上报软件版本号
+     */
 
-private fun receiveServerVersion(rt: robot_control_t) {
+    private fun receiveServerVersion(rt: robot_control_t) {
 //    val bParams: ByteArray = rt.bparams
 //    LiveEventBus.get(KEY_SERVER_VERSION, String::class.java).post(String(bParams))
-}
+    }
 
-/**
- * PET->pad
- * PET上报软件版本号
- */
-private fun recPETVersion(perceptionT: perception_t) {
+    /**
+     * PET->pad
+     * PET上报软件版本号
+     */
+    private fun recPETVersion(perceptionT: perception_t) {
 //    LogUtil.i("PET->pad软件版本号${perceptionT.name}", null, TAG_PET)
 //    LiveEventBus.get(KEY_PET_VERSION, String::class.java).post(perceptionT.name)
-}
+    }
 
-/**
- * PET->pad
- * PET上报相机标定结果
- */
-private fun recCameraCalibrationResult(perceptionT: perception_t) {
+    /**
+     * PET->pad
+     * PET上报相机标定结果
+     */
+    private fun recCameraCalibrationResult(perceptionT: perception_t) {
 //    LogUtil.i(
 //        "PET->pad相机标定结果  相机编号${perceptionT.name}  结果 ${perceptionT.enabled}",
 //        null,
@@ -3202,11 +3204,11 @@ private fun recCameraCalibrationResult(perceptionT: perception_t) {
 //    )
 //    LiveEventBus.get(KEY_CAMERA_CALIBRATION_RESULT, CameraCalibrationBean::class.java)
 //        .post(CameraCalibrationBean(perceptionT.name, perceptionT.enabled))
-}
+    }
 
-/*** 洗地机器人是否占用一体机）*/
-private var mOccupyingEquipmentValue = 0
-private fun receiveOccupyingEquipmentState(rt: robot_control_t) {
+    /*** 洗地机器人是否占用一体机）*/
+    private var mOccupyingEquipmentValue = 0
+    private fun receiveOccupyingEquipmentState(rt: robot_control_t) {
 //    val iParams = rt.iparams
 //    if (iParams == null || iParams.isEmpty()) {
 //        LogUtil.i("洗地机器人弹出充电换水等待框 iParams null")
@@ -3221,15 +3223,15 @@ private fun receiveOccupyingEquipmentState(rt: robot_control_t) {
 //        mOccupyingEquipmentValue = value
 //        LiveEventBus.get(KEY_OCCUPYING_EQUIPMENT_VALUE, Int::class.java).post(value)
 //    }
-}
+    }
 
 
-/**
- * NAV->pad
- * 定位状态信息
- */
+    /**
+     * NAV->pad
+     * 定位状态信息
+     */
 
-private fun recNavLocationInfo(rtNew: robot_control_t_new) {
+    private fun recNavLocationInfo(rtNew: robot_control_t_new) {
 //
 //    val iParams = rtNew.iparams
 //
@@ -3240,41 +3242,41 @@ private fun recNavLocationInfo(rtNew: robot_control_t_new) {
 //
 //    receiveNavLocationState(iParams[0].toInt())
 //    receiveNavLocationType(iParams[1].toInt())
-}
+    }
 
-/**
- * 定位状态
- */
+    /**
+     * 定位状态
+     */
 
-var localState = -1
-private fun receiveNavLocationState(value: Int) {
+    var localState = -1
+    private fun receiveNavLocationState(value: Int) {
 //    if (localState != value) {
 //        localState = value
 //        LOCATION_STATE = value
 //        LiveEventBus.get(KEY_LOC_INFO_COMMAND_STATE, Int::class.java).post(value)
 //        LogUtil.i("接收 NAV->定位状态${value}", null, TAG_NAV)
 //    }
-}
+    }
 
-/**
- * 定位类型
- */
-var localType = -1
+    /**
+     * 定位类型
+     */
+    var localType = -1
 
-private fun receiveNavLocationType(value: Int) {
+    private fun receiveNavLocationType(value: Int) {
 //    if (localType != value) {
 //        localType = value
 //        LOCATION_TYPE = value
 //        LiveEventBus.get(KEY_LOC_INFO_COMMAND_TYPE, Int::class.java).post(value)
 //        LogUtil.i("接收 NAV->定位类型${value}", null, TAG_NAV)
 //    }
-}
+    }
 
-/**
- * PET->pad
- * 是否升级相机固件版本
- */
-private fun recPETCamFirmware(perceptionT: perception_t) {
+    /**
+     * PET->pad
+     * 是否升级相机固件版本
+     */
+    private fun recPETCamFirmware(perceptionT: perception_t) {
 //    val mEnabled = perceptionT.enabled
 //    LogUtil.w("接收感知相机版本升级 是否升级 $mEnabled 相机版本${perceptionT.name}", null, TAG_PET)
 //    if (mEnabled) {
@@ -3283,20 +3285,20 @@ private fun recPETCamFirmware(perceptionT: perception_t) {
 //        LiveEventBus.get(KEY_PET_CAMFIRMWARE, UpdateCamFimWareBean::class.java)
 //            .post(mUpdateCamFimWareBean)
 //    }
-}
+    }
 
-/*** 机器奥比相机排布是否合理*/
-private fun recCameraUSBReasonable(pet: perception_t) {
+    /*** 机器奥比相机排布是否合理*/
+    private fun recCameraUSBReasonable(pet: perception_t) {
 //    LogUtil.d("机器奥比相机排布是否合理 ${pet.enabled}", null, TAG_PET)
 //    LiveEventBus.get(KEY_PET_CAMERA_USB_REASONABLE, Boolean::class.java).post(pet.enabled)
-}
+    }
 
-/**
- * @description 更新pad日志信息  titleBar小三角颜色变为红色
- * @author mj
- * @since 2025/02/19
- */
-private fun receiveSyncPadLog(rt: robot_control_t) {
+    /**
+     * @description 更新pad日志信息  titleBar小三角颜色变为红色
+     * @author mj
+     * @since 2025/02/19
+     */
+    private fun receiveSyncPadLog(rt: robot_control_t) {
 //    val iParams = rt.iparams
 //    if (iParams == null || iParams.isEmpty()) {
 //        LogUtil.i("接收Server通知pad更新日志 iParams null")
@@ -3305,27 +3307,28 @@ private fun receiveSyncPadLog(rt: robot_control_t) {
 //    val value = iParams[0].toInt()
 //    LogUtil.i("Server通知pad更新titleBar日志图标为红色 $value", null, TAG_SERVER)
 //    LiveEventBus.get(KEY_UPDATE_LOG, Int::class.java).post(value)
-}
+    }
 
 
-/*** 切换地图*/
-private fun receiveSwitchMap(rt: robot_control_t) {
+    /*** 切换地图*/
+    private fun receiveSwitchMap(rt: robot_control_t) {
 //    val mSwitchMap = String(rt.bparams).toBean<SwitchMap>()
 //    LiveEventBus.get(KEY_SWITCH_MAP, SwitchMap::class.java).post(mSwitchMap)
 //    LogUtil.i("多地图 LCMController 收到切换地图指令 要切换的地图 :${mSwitchMap}")
-}
-
-/**
- * @description 接收车体发送跨楼层进出电梯的状态
- * @author mj
- * @since 2025/07/31
- */
-private fun receiveCrossFloorStage(rt: robot_control_t) {
-    val iParams = rt.iparams
-    if (iParams == null || iParams.isEmpty()) {
-        LogUtil.i("接收车体发送跨楼层进出电梯的状态 iParams null")
-        return
     }
-    val value = iParams[0].toInt()
-    LiveEventBus.get(KEY_CROSS_FLOOR_STAGE, Int::class.java).post(value)
+
+    /**
+     * @description 接收车体发送跨楼层进出电梯的状态
+     * @author mj
+     * @since 2025/07/31
+     */
+    private fun receiveCrossFloorStage(rt: robot_control_t) {
+        val iParams = rt.iparams
+        if (iParams == null || iParams.isEmpty()) {
+            LogUtil.i("接收车体发送跨楼层进出电梯的状态 iParams null")
+            return
+        }
+        val value = iParams[0].toInt()
+        LiveEventBus.get(KEY_CROSS_FLOOR_STAGE, Int::class.java).post(value)
+    }
 }

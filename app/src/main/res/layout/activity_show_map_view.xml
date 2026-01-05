@@ -30,6 +30,21 @@
             android:orientation="vertical">
             <!--   -->
             <Button
+                android:id="@+id/btn_start_teach"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="开始试教" />
+            <Button
+                android:id="@+id/btn_end_teach"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="结束试教" />
+            <Button
+                android:id="@+id/btn_save_teach"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="保存试教" />
+            <Button
                 android:id="@+id/btn_add_globle_path"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
