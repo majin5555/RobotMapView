@@ -1178,6 +1178,11 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
         val startPst: Posture = m_KeyPst.m_PstV.get(0)
         val endPst: Posture = m_KeyPst.m_PstV.get(3)
 
+        // 检查起点和终点是否重合，如果重合则不创建路径
+        if (startPst.x == endPst.x && startPst.y == endPst.y) {
+            return -1
+        }
+
         // 设置控制点
         val pptCtrl = arrayOfNulls<Point2d>(2)
         pptCtrl[0] = point2ds[1]
