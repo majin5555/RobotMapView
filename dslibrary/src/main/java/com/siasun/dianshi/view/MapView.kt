@@ -822,89 +822,21 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      */
     fun createContinuousPathTeach(pptKeyList: List<Array<Point2d>>, pathParam: Short) {
         var lastEndNodeId = -1
-        var lastEndPoint: Point2d? = null
-        
-        for ((index, pptKey) in pptKeyList.withIndex()) {
+        for (pptKey in pptKeyList) {
             if (pptKey.isNotEmpty()) {
-                // 验证路径点有效性
-                val validPoints = filterValidPoints(pptKey)
-                if (validPoints.isEmpty()) {
-                    continue
-                }
-                
                 val m_KeyPst = DefPosture()
-                
-                // 处理第一段路径或没有上一段终点的情况
-                if (index == 0 || lastEndPoint == null) {
-                    for (point2d in validPoints) {
-                        val pst = Posture()
-                        pst.x = point2d.x
-                        pst.y = point2d.y
-                        pst.fThita = 0f
-                        m_KeyPst.AddPst(pst)
-                    }
-                    lastEndNodeId = mWorldPadView?.createTeachPath(validPoints.toTypedArray(), m_KeyPst, pathParam, -1) ?: -1
-                } else {
-                    // 处理连续路径，检测起点和终点重合
-                    val firstPoint = validPoints.first()
-                    val distance = calculateDistance(lastEndPoint, firstPoint)
-                    
-                    // 如果距离小于阈值，认为是重合点，跳过第一个点
-                    val processedPoints = if (distance < MIN_POINT_DISTANCE_THRESHOLD) {
-                        validPoints.drop(1)
-                    } else {
-                        validPoints
-                    }
-                    
-                    if (processedPoints.isNotEmpty()) {
-                        for (point2d in processedPoints) {
-                            val pst = Posture()
-                            pst.x = point2d.x
-                            pst.y = point2d.y
-                            pst.fThita = 0f
-                            m_KeyPst.AddPst(pst)
-                        }
-                        // 使用前一条路径的终点作为当前路径的起点
-                        lastEndNodeId = mWorldPadView?.createTeachPath(processedPoints.toTypedArray(), m_KeyPst, pathParam, lastEndNodeId) ?: -1
-                    }
+                for (point2d in pptKey) {
+                    val pst = Posture()
+                    pst.x = point2d.x
+                    pst.y = point2d.y
+                    pst.fThita = 0f
+                    m_KeyPst.AddPst(pst)
                 }
-                
-                // 更新最后一点的坐标
-                if (validPoints.isNotEmpty()) {
-                    lastEndPoint = validPoints.last()
-                }
+                // 使用前一条路径的终点作为当前路径的起点
+                lastEndNodeId =
+                    mWorldPadView?.createTeachPath(pptKey, m_KeyPst, pathParam, lastEndNodeId) ?: -1
             }
         }
-    }
-
-    /**
-     * 过滤无效的路径点
-     */
-    private fun filterValidPoints(points: Array<Point2d>): List<Point2d> {
-        val validPoints = mutableListOf<Point2d>()
-        
-        for (point in points) {
-            // 检查坐标是否有效（非NaN、非无穷大）
-            if (point.x.isFinite() && point.y.isFinite() &&
-                !(point.x == 0f && point.y == 0f)) { // 排除(0,0)的无效点
-                validPoints.add(point)
-            }
-        }
-        
-        return validPoints
-    }
-
-    /**
-     * 计算两点之间的距离
-     */
-    private fun calculateDistance(point1: Point2d, point2: Point2d): Float {
-        val dx = point1.x - point2.x
-        val dy = point1.y - point2.y
-        return Math.sqrt((dx * dx + dy * dy).toDouble()).toFloat()
-    }
-
-    companion object {
-        private const val MIN_POINT_DISTANCE_THRESHOLD = 0.1f // 最小点距离阈值
     }
 
     /**
