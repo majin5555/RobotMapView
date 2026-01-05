@@ -144,26 +144,8 @@ object PathPlanningUtil1 {
                 if (result.m_iPlanResultMode == PATH_MODE) {
                     // 限制路段数量，防止内存溢出
                     val maxSegments = minOf(result.m_iPathSum, MAX_PATH_SEGMENTS)
-
-
                     LogUtil.i("PAD解析PP数据 示教路径路段个数：${result.m_iPathSum}")
                     LogUtil.i("PAD解析PP数据 示教路径点位个数：${result.m_fElementBuffer.size}")
-                    // 路段个数
-//                    var j = 0
-//                    for (i in 0 until result.m_iPathSum) {
-//                        val pptKey = arrayOf(Point2d(), Point2d(), Point2d(), Point2d())
-//                        pptKey[0].x = result.m_fElementBuffer[j++]
-//                        pptKey[0].y = result.m_fElementBuffer[j++]
-//                        pptKey[1].x = result.m_fElementBuffer[j++]
-//                        pptKey[1].y = result.m_fElementBuffer[j++]
-//                        pptKey[2].x  = result.m_fElementBuffer[j++]
-//                        pptKey[2].y = result.m_fElementBuffer[j++]
-//                        pptKey[3].x  = result.m_fElementBuffer[j++]
-//                        pptKey[3].y = result.m_fElementBuffer[j++]
-//                        val bezier = Bezier(4, pptKey)
-//                        pathPlanResultBean.m_vecBezierOfPathPlan.add(bezier)
-//                        mMapView?.createContinuousPathTeach(pptKey, 2)
-//                    }
                     // 收集所有路径段的关键点数组
                     val pathSegments = mutableListOf<Array<Point2d>>()
 
