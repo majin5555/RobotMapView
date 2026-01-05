@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="MapView">
+        <!-- 地图名称显示 -->
+        <attr name="showMapNameView" default="true" format="boolean" />
         <!-- 图例显示 -->
         <attr name="showLegendView" default="true" format="boolean" />
         <!-- 上激光点云 -->

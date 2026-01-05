@@ -169,7 +169,6 @@ object PathPlanningUtil1 {
                         pptKey[3].x = result.m_fElementBuffer[j++]
                         pptKey[3].y = result.m_fElementBuffer[j++]
 
-                        // 移除这一行，因为会导致重复绘制路径
                         val bezier = Bezier(4, pptKey)
                         pathPlanResultBean.m_vecBezierOfPathPlan.add(bezier)
 

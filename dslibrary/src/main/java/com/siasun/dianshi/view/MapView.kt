@@ -47,6 +47,7 @@ import com.siasun.dianshi.utils.YamlNew
 import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.CopyOnWriteArrayList
+import androidx.core.content.withStyledAttributes
 
 /**
  * 地图画布
@@ -154,13 +155,19 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
      */
     private fun setViewVisibility(attrs: AttributeSet?) {
         attrs?.let {
-            val typedArray = context.obtainStyledAttributes(it, R.styleable.MapView)
-            mLegendView?.visibility = if (typedArray.getBoolean(
-                    R.styleable.MapView_showLegendView, true
-                )
-            ) VISIBLE else GONE
+            context.withStyledAttributes(it, R.styleable.MapView) {
+                //显示图例
+                mLegendView?.visibility = if (getBoolean(
+                        R.styleable.MapView_showLegendView, true
+                    )
+                ) VISIBLE else GONE
+                //显示地图名称呢
+                mMapNameView?.visibility = if (getBoolean(
+                        R.styleable.MapView_showMapNameView, true
+                    )
+                ) VISIBLE else GONE
 
-            typedArray.recycle()
+            }
         }
     }
 
