@@ -248,9 +248,15 @@ public class PathBase {
         //free(m_pPathIdx);
         m_pPathIdx = pTemp;
 
-        if (pPath instanceof GenericPath) {
-            return ((GenericPath) pPath).isM_bCurvature();
-        }
+//        if (pPath instanceof GenericPath) {
+//            boolean mBCurvature = ((GenericPath) pPath).isM_bCurvature();
+//            if (!mBCurvature) {
+//                Log.d("AddPath", "mBCurvature " + mBCurvature);
+//                Log.d("AddPath", "mBCurvature " + ((GenericPath) pPath).m_Curve);
+//            }
+//
+//            return mBCurvature;
+//        }
 
         return true;
     }

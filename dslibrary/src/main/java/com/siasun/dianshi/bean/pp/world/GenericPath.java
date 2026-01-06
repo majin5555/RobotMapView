@@ -168,7 +168,7 @@ public class GenericPath extends Path {
     /**
      * 曲线曲率是否满足要求的标志
      */
-    public boolean m_bCurvature;
+//    public boolean m_bCurvature;
     /**
      * 日志标签
      */
@@ -204,7 +204,7 @@ public class GenericPath extends Path {
         m_fVelACC = 0.5f;
         m_fLenForAngJump = 0.1f;
         m_fThitaDiffMaxForStAndEd = 0.6f;
-        m_bCurvature = true;
+//        m_bCurvature = true;
 
         super.Create(uId, nStartNode, nEndNode, fVeloLimit, type, nGuideType, 0, uExtType, nodeBase);
         Create(pstStart, pstEnd, fLen1, fLen2);
@@ -236,7 +236,7 @@ public class GenericPath extends Path {
         m_fVelACC = 0.5f;
         m_fLenForAngJump = 0.1f;
         m_fThitaDiffMaxForStAndEd = 0.6f;
-        m_bCurvature = true;
+//        m_bCurvature = true;
 
         super.CreatePP(uId, nStartNode, nEndNode, fVeloLimit, type, nGuideType, 0, uExtType, nodeBase, pathParam);
 //        Create(pstStart, pstEnd, fLen1, fLen2);
@@ -260,8 +260,7 @@ public class GenericPath extends Path {
         m_fVelACC = 0.5f;
         m_fLenForAngJump = 0.1f;
         m_fThitaDiffMaxForStAndEd = 0.6f;
-        m_bCurvature = true;
-
+//        m_bCurvature = true;
     }
 
     /**
@@ -418,7 +417,7 @@ public class GenericPath extends Path {
 //        }
         m_Curve.Create(m_nCountCtrlPoints + 2, pptKey);
 
-        m_bCurvature = m_Curve.m_bCurvature;
+//        m_bCurvature = m_Curve.m_bCurvature;
 //        Log.d(TAG, "Init: m_bCurvature = " + m_bCurvature);
 
         // �ͷ���ʱ�ռ�
@@ -827,9 +826,9 @@ public class GenericPath extends Path {
      *
      * @return 曲率是否满足要求
      */
-    public boolean isM_bCurvature() {
-        return m_bCurvature;
-    }
+//    public boolean isM_bCurvature() {
+//        return m_bCurvature;
+//    }
 
     /**
      * 判断路径是否在指定矩形范围内

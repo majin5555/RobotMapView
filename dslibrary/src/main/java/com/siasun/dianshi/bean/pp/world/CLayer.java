@@ -410,7 +410,6 @@ public class CLayer extends NodeBase {
         int nNextID = m_PathBase.NextID();
 
         GenericPath pPath = new GenericPath(nNextID, nStartNodeId, nEndNodeId, pstStart, pstEnd, pptCtrl, new float[2], (short) 0, (short) 0, (short) 0, (short) 3, m_PathBase.m_MyNode, pathParam);
-        if (pPath == null) return false;
 
         return m_PathBase.AddPath(pPath);
     }
