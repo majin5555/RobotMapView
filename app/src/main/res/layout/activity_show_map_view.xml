@@ -8,10 +8,10 @@
         android:id="@+id/map_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:showMapNameView="false"
         app:showArea="true"
         app:showChargeStation="true"
         app:showElevator="true"
+        app:showMapNameView="false"
         app:showMixArea="true"
         app:showOnlinePose="true"
         app:showPositingArea="true"
@@ -29,16 +29,20 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
+
             <Button
                 android:id="@+id/btn_add_teach_path"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="加载试教线999" />
+                android:text="加载试教线999"
+                android:visibility="gone" />
+
             <Button
                 android:id="@+id/btn_add_teach_path888"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="加载试教线888" />
+
             <Button
                 android:id="@+id/btn_save_teach"
                 android:layout_width="wrap_content"
@@ -50,6 +54,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="开始试教" />
+
             <Button
                 android:id="@+id/btn_end_teach"
                 android:layout_width="wrap_content"
@@ -67,7 +72,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="加载清扫线" />
-
 
 
             <!-- 路线编辑控件 -->

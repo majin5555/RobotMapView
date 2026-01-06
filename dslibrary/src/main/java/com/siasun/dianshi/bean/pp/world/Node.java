@@ -382,26 +382,26 @@ public class Node extends Point2d {
     public void Draw(CoordinateConversion ScrnRef, Canvas canvas, int color, int nPointSize, Paint paint) {
         // 调用父类方法绘制节点
         super.Draw(ScrnRef, canvas, color, nPointSize, paint);
-        
+
         try {
             PointF screenPoint = ScrnRef.worldToScreen(GetPoint2dObject().x, GetPoint2dObject().y);
-            
+
             // 保存当前画笔状态
             Paint.Style originalStyle = paint.getStyle();
             float originalTextSize = paint.getTextSize();
             int originalColor = paint.getColor();
-            
+
             // 设置文本绘制参数
             paint.setStyle(Paint.Style.FILL);
 //            paint.setTextSize(14f);
             paint.setColor(Color.BLACK);
-            
+
             // 绘制节点编号，偏移量以避免覆盖节点
-            canvas.drawText(String.valueOf(m_uId), screenPoint.x + nPointSize + 2, screenPoint.y + nPointSize + 2, paint);
-            
+            canvas.drawText(String.valueOf(m_uId), screenPoint.x + nPointSize, screenPoint.y + nPointSize + 2, paint);
+
             // 恢复画笔状态
             paint.setStyle(originalStyle);
-            paint.setTextSize(originalTextSize);
+//            paint.setTextSize(originalTextSize);
             paint.setColor(originalColor);
         } catch (Exception ex) {
             System.out.println(ex.toString());

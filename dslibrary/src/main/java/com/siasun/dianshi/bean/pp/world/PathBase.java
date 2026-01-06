@@ -235,7 +235,6 @@ public class PathBase {
     public boolean AddPath(Path pPath) {
         // Allocate memory for the path indexes
         PathIndex[] pTemp = new PathIndex[m_uCount + 1];
-        if (pTemp == null) return false;
 
         for (short i = 0; i < m_uCount + 1; i++)
             pTemp[i] = new PathIndex();
@@ -247,16 +246,6 @@ public class PathBase {
 
         //free(m_pPathIdx);
         m_pPathIdx = pTemp;
-
-//        if (pPath instanceof GenericPath) {
-//            boolean mBCurvature = ((GenericPath) pPath).isM_bCurvature();
-//            if (!mBCurvature) {
-//                Log.d("AddPath", "mBCurvature " + mBCurvature);
-//                Log.d("AddPath", "mBCurvature " + ((GenericPath) pPath).m_Curve);
-//            }
-//
-//            return mBCurvature;
-//        }
 
         return true;
     }

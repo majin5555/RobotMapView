@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Color.alpha
 import android.graphics.Paint
 import android.graphics.PointF
 import android.util.Log
@@ -66,6 +67,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                 strokeWidth = 3f
                 isAntiAlias = true
                 style = Paint.Style.STROKE
+                alpha(90)
             }
         }
         private val mRedPaint: Paint by lazy {
@@ -74,6 +76,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                 strokeWidth = 1f
                 isAntiAlias = true
                 style = Paint.Style.FILL
+                alpha(90)
             }
         }
         private val mPaint = Paint().apply {
@@ -81,6 +84,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
             style = Paint.Style.STROKE
             color = Color.BLACK
             textSize = 2f
+            alpha(90)
         }
     }
 
@@ -877,7 +881,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
 
         val dx = point.x - xx
         val dy = point.y - yy
-        return Math.sqrt((dx * dx + dy * dy).toDouble()).toFloat()
+        return sqrt((dx * dx + dy * dy).toDouble()).toFloat()
     }
 
     @SuppressLint("DrawAllocation")
@@ -958,30 +962,34 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                     // 删除模式：绘制所有路段，选中时显示红色高亮
                                     if (selectedPath == path) {
                                         // 绘制选中的路段（红色高亮）
-                                        val deletePaint = Paint(mPaint).apply {
-                                            color = Color.RED
-                                            strokeWidth = 3f
-                                        }
-                                        path.Draw(mapView.mSrf, canvas, deletePaint)
+//                                        val deletePaint = Paint(mPaint).apply {
+//                                            color = Color.RED
+//                                            strokeWidth = 3f
+//                                        }
+                                        path.Draw(mapView.mSrf, canvas, mRedPaint)
                                         // 绘制路段编号
                                         path.DrawID(mapView.mSrf, canvas, mPaint)
-                                        // 绘制节点（红色）
-                                        startNode?.Draw(mapView.mSrf, canvas, Color.RED, 3, mPaint)
-                                        endNode?.Draw(mapView.mSrf, canvas, Color.RED, 3, mPaint)
+//                                        // 绘制节点（红色）
+                                        startNode?.Draw(mapView.mSrf, canvas, Color.RED, 5, mPaint)
+                                        endNode?.Draw(mapView.mSrf, canvas, Color.RED, 5, mPaint)
                                     } else {
                                         // 未选中的路段，正常绘制
                                         path.Draw(mapView.mSrf, canvas, mPaint)
+                                        // 绘制路段编号
+                                        path.DrawID(mapView.mSrf, canvas, mPaint)
                                         // 显示所有节点
                                         startNode?.Draw(
-                                            mapView.mSrf, canvas, Color.GREEN, 5, mPaint
+                                            mapView.mSrf, canvas, Color.GREEN, 3, mPaint
                                         )
-                                        endNode?.Draw(mapView.mSrf, canvas, Color.BLUE, 5, mPaint)
+//                                        endNode?.Draw(mapView.mSrf, canvas, Color.BLUE, 5, mPaint)
                                     }
                                 }
 
                                 MapView.WorkMode.MODE_PATH_DELETE_MULTIPLE -> {
                                     // 删除多条路线模式：先正常绘制所有路线
                                     path.Draw(mapView.mSrf, canvas, mPaint)
+                                    // 显示所有节点
+                                    startNode?.Draw(mapView.mSrf, canvas, Color.GREEN, 3, mPaint)
                                 }
 
                                 MapView.WorkMode.MODE_PATH_MERGE -> {
@@ -994,15 +1002,17 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                             selectedMergeStartNode -> {
                                                 // 选中的起点，放大显示（绿色）
                                                 startNode.Draw(
-                                                    mapView.mSrf, canvas, Color.GREEN, 8, mPaint
+                                                    mapView.mSrf, canvas, Color.GREEN, 5, mPaint
                                                 )
                                             }
+
                                             selectedMergeEndNode -> {
                                                 // 选中的终点，放大显示（蓝色）
                                                 startNode.Draw(
-                                                    mapView.mSrf, canvas, Color.BLUE, 8, mPaint
+                                                    mapView.mSrf, canvas, Color.BLUE, 5, mPaint
                                                 )
                                             }
+
                                             else -> {
                                                 // 未选中的起点，正常显示（绿色）
                                                 startNode.Draw(
@@ -1018,15 +1028,17 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                             selectedMergeStartNode -> {
                                                 // 选中的起点，放大显示（绿色）
                                                 endNode.Draw(
-                                                    mapView.mSrf, canvas, Color.GREEN, 8, mPaint
+                                                    mapView.mSrf, canvas, Color.GREEN, 5, mPaint
                                                 )
                                             }
+
                                             selectedMergeEndNode -> {
                                                 // 选中的终点，放大显示（蓝色）
                                                 endNode.Draw(
-                                                    mapView.mSrf, canvas, Color.BLUE, 8, mPaint
+                                                    mapView.mSrf, canvas, Color.BLUE, 5, mPaint
                                                 )
                                             }
+
                                             else -> {
                                                 // 未选中的终点，正常显示（蓝色）
                                                 endNode.Draw(
@@ -1097,7 +1109,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                     canvas.save()
                     canvas.concat(mMatrix)
                     // 绘制起点节点（红色圆点，大小为12）
-                    pathCreateStartNode!!.Draw(mapView.mSrf, canvas, Color.RED, 12, mPaint)
+                    pathCreateStartNode!!.Draw(mapView.mSrf, canvas, Color.RED, 8, mPaint)
                     // 绘制节点编号
 //                    pathCreateStartNode!!.DrawID(mapView.mSrf, canvas, mPaint)
                     canvas.restore()
@@ -1204,11 +1216,13 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
 
         // 获取刚创建的路径的终点节点ID并返回
         var endNodeId = -1
-        cLayer?.let {
-            if (success == true && it.m_PathBase != null && it.m_PathBase.m_uCount > 0) {
-                val newPath = it.m_PathBase.m_pPathIdx[it.m_PathBase.m_uCount - 1].m_ptr
-                endNodeId = newPath.m_uEndNode
-                // 可以在这里使用startNodeId和endNodeId
+        if (success == true) {
+            cLayer?.let {
+                if (it.m_PathBase != null && it.m_PathBase.m_uCount > 0) {
+                    val newPath = it.m_PathBase.m_pPathIdx[it.m_PathBase.m_uCount - 1].m_ptr
+                    endNodeId = newPath.m_uEndNode
+                    // 可以在这里使用startNodeId和endNodeId
+                }
             }
         }
         return endNodeId
