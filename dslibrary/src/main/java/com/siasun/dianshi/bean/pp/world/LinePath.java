@@ -345,8 +345,16 @@ public class LinePath extends Path {
             return;
         }
 
-        Grp.drawLine(pnt1.x, pnt1.y, pnt2.x, pnt2.y, paint);
-
+        // 检查起点和终点是否相同
+        if (pnt1.equals(pnt2)) {
+            // 起点和终点相同，绘制一个小圆点
+            float radius = 3f;
+            paint.setStyle(Paint.Style.FILL);
+            Grp.drawCircle(pnt1.x, pnt1.y, radius, paint);
+        } else {
+            // 正常绘制直线
+            Grp.drawLine(pnt1.x, pnt1.y, pnt2.x, pnt2.y, paint);
+        }
     }
 
     @Override

@@ -654,9 +654,18 @@ public class Bezier {
         PointF mControl2 = ScrnRef.worldToScreen(m_ptKey[2].x, m_ptKey[2].y);
         PointF mEnd = ScrnRef.worldToScreen(m_ptKey[3].x, m_ptKey[3].y);
 
-        path.moveTo(mStart.x, mStart.y);
-        path.cubicTo(mControl1.x, mControl1.y, mControl2.x, mControl2.y, mEnd.x, mEnd.y);
-        Grp.drawPath(path, paint);
+        // 检查起点和终点是否相同
+        if (mStart.equals(mEnd)) {
+            // 起点和终点相同，绘制一个小圆点
+            float radius = 3f;
+            paint.setStyle(Paint.Style.FILL);
+            Grp.drawCircle(mStart.x, mStart.y, radius, paint);
+        } else {
+            // 正常绘制贝塞尔曲线
+            path.moveTo(mStart.x, mStart.y);
+            path.cubicTo(mControl1.x, mControl1.y, mControl2.x, mControl2.y, mEnd.x, mEnd.y);
+            Grp.drawPath(path, paint);
+        }
     }
 
     //

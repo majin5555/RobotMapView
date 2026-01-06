@@ -80,7 +80,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
             isAntiAlias = true
             style = Paint.Style.STROKE
             color = Color.BLACK
-            textSize = 10f
+            textSize = 2f
         }
     }
 
@@ -1035,8 +1035,8 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
 //                                    // 绘制路段编号
 //                                    path.DrawID(mapView.mSrf, canvas, mPaint)
 //                                    // 绘制节点（红色）
-//                                    startNode?.Draw(mapView.mSrf, canvas, Color.RED, 10, mPaint)
-//                                    endNode?.Draw(mapView.mSrf, canvas, Color.RED, 10, mPaint)
+                                    startNode?.Draw(mapView.mSrf, canvas, Color.RED, 1, mPaint)
+                                    endNode?.Draw(mapView.mSrf, canvas, Color.GRAY, 1, mPaint)
                                 }
                             }
                         }
