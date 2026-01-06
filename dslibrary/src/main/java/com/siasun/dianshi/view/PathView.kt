@@ -101,7 +101,7 @@ class PathView @SuppressLint("ViewConstructor") constructor(
 
         // 绘制清扫路线
         mCleanPathPlanResultBean?.let { cleanPath ->
-            Log.d("mCleanPathPlanResultBean","绘制清扫路线 ${mCleanPathPlanResultBean.toString()}")
+//            Log.d("mCleanPathPlanResultBean","绘制清扫路线 ${mCleanPathPlanResultBean.toString()}")
             // 采样绘制直线
             for (i in cleanPath.m_vecLineOfPathPlan.indices) {
                 drawPPLinePath(canvas, cleanPath.m_vecLineOfPathPlan[i])

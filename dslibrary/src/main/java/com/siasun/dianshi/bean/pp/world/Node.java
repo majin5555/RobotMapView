@@ -393,7 +393,7 @@ public class Node extends Point2d {
             
             // 设置文本绘制参数
             paint.setStyle(Paint.Style.FILL);
-            paint.setTextSize(14f);
+//            paint.setTextSize(14f);
             paint.setColor(Color.BLACK);
             
             // 绘制节点编号，偏移量以避免覆盖节点

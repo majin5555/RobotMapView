@@ -917,14 +917,14 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                             val ctrlColor =
                                                 if (draggingControlPoint != null) Color.RED else Color.GREEN
                                             path.DrawCtrlPoints(
-                                                mapView.mSrf, canvas, ctrlColor, 5, mPaint
+                                                mapView.mSrf, canvas, ctrlColor, 3, mPaint
                                             )
                                         }
 
                                         // 绘制开始节点（红色）
-                                        startNode?.Draw(mapView.mSrf, canvas, Color.RED, 10, mPaint)
+                                        startNode?.Draw(mapView.mSrf, canvas, Color.RED, 5, mPaint)
                                         // 绘制结束节点（红色）
-                                        endNode?.Draw(mapView.mSrf, canvas, Color.RED, 10, mPaint)
+                                        endNode?.Draw(mapView.mSrf, canvas, Color.RED, 5, mPaint)
 
                                     } else {
                                         // 未选中的路段，正常绘制
@@ -933,11 +933,11 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                         if (currentWorkMode == MapView.WorkMode.MODE_PATH_NODE_ATTR_EDIT) {
                                             // 绘制开始节点（绿色）
                                             startNode?.Draw(
-                                                mapView.mSrf, canvas, Color.GREEN, 8, mPaint
+                                                mapView.mSrf, canvas, Color.GREEN, 1, mPaint
                                             )
                                             // 绘制结束节点（蓝色）
                                             endNode?.Draw(
-                                                mapView.mSrf, canvas, Color.BLUE, 8, mPaint
+                                                mapView.mSrf, canvas, Color.BLUE, 1, mPaint
                                             )
                                         }
                                     }
@@ -966,16 +966,16 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                         // 绘制路段编号
                                         path.DrawID(mapView.mSrf, canvas, mPaint)
                                         // 绘制节点（红色）
-                                        startNode?.Draw(mapView.mSrf, canvas, Color.RED, 10, mPaint)
-                                        endNode?.Draw(mapView.mSrf, canvas, Color.RED, 10, mPaint)
+                                        startNode?.Draw(mapView.mSrf, canvas, Color.RED, 3, mPaint)
+                                        endNode?.Draw(mapView.mSrf, canvas, Color.RED, 3, mPaint)
                                     } else {
                                         // 未选中的路段，正常绘制
                                         path.Draw(mapView.mSrf, canvas, mPaint)
                                         // 显示所有节点
                                         startNode?.Draw(
-                                            mapView.mSrf, canvas, Color.GREEN, 8, mPaint
+                                            mapView.mSrf, canvas, Color.GREEN, 5, mPaint
                                         )
-                                        endNode?.Draw(mapView.mSrf, canvas, Color.BLUE, 8, mPaint)
+                                        endNode?.Draw(mapView.mSrf, canvas, Color.BLUE, 5, mPaint)
                                     }
                                 }
 
@@ -990,41 +990,49 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
 
                                     // 检查并绘制起点节点
                                     if (startNode != null) {
-                                        if (startNode == selectedMergeStartNode) {
-                                            // 选中的起点，放大显示（绿色）
-                                            startNode.Draw(
-                                                mapView.mSrf, canvas, Color.GREEN, 15, mPaint
-                                            )
-                                        } else if (startNode == selectedMergeEndNode) {
-                                            // 选中的终点，放大显示（蓝色）
-                                            startNode.Draw(
-                                                mapView.mSrf, canvas, Color.BLUE, 15, mPaint
-                                            )
-                                        } else {
-                                            // 未选中的起点，正常显示（绿色）
-                                            startNode.Draw(
-                                                mapView.mSrf, canvas, Color.GREEN, 8, mPaint
-                                            )
+                                        when (startNode) {
+                                            selectedMergeStartNode -> {
+                                                // 选中的起点，放大显示（绿色）
+                                                startNode.Draw(
+                                                    mapView.mSrf, canvas, Color.GREEN, 8, mPaint
+                                                )
+                                            }
+                                            selectedMergeEndNode -> {
+                                                // 选中的终点，放大显示（蓝色）
+                                                startNode.Draw(
+                                                    mapView.mSrf, canvas, Color.BLUE, 8, mPaint
+                                                )
+                                            }
+                                            else -> {
+                                                // 未选中的起点，正常显示（绿色）
+                                                startNode.Draw(
+                                                    mapView.mSrf, canvas, Color.GREEN, 3, mPaint
+                                                )
+                                            }
                                         }
                                     }
 
                                     // 检查并绘制终点节点
                                     if (endNode != null) {
-                                        if (endNode == selectedMergeStartNode) {
-                                            // 选中的起点，放大显示（绿色）
-                                            endNode.Draw(
-                                                mapView.mSrf, canvas, Color.GREEN, 15, mPaint
-                                            )
-                                        } else if (endNode == selectedMergeEndNode) {
-                                            // 选中的终点，放大显示（蓝色）
-                                            endNode.Draw(
-                                                mapView.mSrf, canvas, Color.BLUE, 15, mPaint
-                                            )
-                                        } else {
-                                            // 未选中的终点，正常显示（蓝色）
-                                            endNode.Draw(
-                                                mapView.mSrf, canvas, Color.BLUE, 8, mPaint
-                                            )
+                                        when (endNode) {
+                                            selectedMergeStartNode -> {
+                                                // 选中的起点，放大显示（绿色）
+                                                endNode.Draw(
+                                                    mapView.mSrf, canvas, Color.GREEN, 8, mPaint
+                                                )
+                                            }
+                                            selectedMergeEndNode -> {
+                                                // 选中的终点，放大显示（蓝色）
+                                                endNode.Draw(
+                                                    mapView.mSrf, canvas, Color.BLUE, 8, mPaint
+                                                )
+                                            }
+                                            else -> {
+                                                // 未选中的终点，正常显示（蓝色）
+                                                endNode.Draw(
+                                                    mapView.mSrf, canvas, Color.BLUE, 3, mPaint
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -1032,9 +1040,9 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                 else -> {
                                     // 非编辑模式，正常绘制
                                     path.Draw(mapView.mSrf, canvas, mPaint)
-//                                    // 绘制路段编号
+                                    // 绘制路段编号
 //                                    path.DrawID(mapView.mSrf, canvas, mPaint)
-//                                    // 绘制节点（红色）
+                                    // 绘制节点（红色）
                                     startNode?.Draw(mapView.mSrf, canvas, Color.RED, 1, mPaint)
                                     endNode?.Draw(mapView.mSrf, canvas, Color.GRAY, 1, mPaint)
                                 }
@@ -1174,7 +1182,9 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
      * @param startNodeId 起点节点ID，如果为-1则创建新节点
      * @return 新创建的路径的终点节点ID，如果创建失败则返回-1
      */
-    fun createTeachPath(point2ds: Array<Point2d>, m_KeyPst: DefPosture, pathParam: Short, startNodeId: Int = -1): Int {
+    fun createTeachPath(
+        point2ds: Array<Point2d>, m_KeyPst: DefPosture, pathParam: Short, startNodeId: Int = -1
+    ): Int {
         val startPst: Posture = m_KeyPst.m_PstV.get(0)
         val endPst: Posture = m_KeyPst.m_PstV.get(3)
 
