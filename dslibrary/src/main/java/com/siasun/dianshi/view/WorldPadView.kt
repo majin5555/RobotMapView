@@ -225,7 +225,6 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
             val pathBase = cLayer.m_PathBase ?: return
 
             if (pathCreateStartNode == null) {
-                Log.d("handleCreatePathDownEvent", "9999")
                 // 首次点击，创建起点节点
                 val startNode = cLayer.CreateNode(Point2d(worldPoint.x, worldPoint.y)) ?: return
                 // 设置起点属性
@@ -244,10 +243,6 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                 endNode.m_uType = 0 // 0表示普通路径节点类型
                 endNode.m_uExtType = 0 // 扩展类型
                 endNode.m_fHeading = 0f // 航向角
-
-                // 创建带控制点的曲线路段
-                // 计算控制点位置
-                val controlPoint = calculateControlPoint(pathCreateStartNode!!, endNode)
 
                 // 使用CLayer.CreatePath方法创建曲线路段
                 val startPoint = Point2d(pathCreateStartNode!!.x, pathCreateStartNode!!.y)
@@ -782,10 +777,10 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                 // 记录调试信息
                                 val curveLength = path.m_Curve?.m_fTotalLen ?: 0f
                                 val pathLength = path.m_fSize
-                                Log.d(
-                                    "PathView2",
-                                    "路段${i + 1} - 曲线长度: $curveLength, 路径长度: $pathLength"
-                                )
+//                                Log.d(
+//                                    "PathView2",
+//                                    "路段${i + 1} - 曲线长度: $curveLength, 路径长度: $pathLength"
+//                                )
                             }
                         }
                     }
