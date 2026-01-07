@@ -226,7 +226,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
             val pathBase = cLayer.m_PathBase ?: return
 
             if (pathCreateStartNode == null) {
-                Log.d("handleCreatePathDownEvent","9999")
+                Log.d("handleCreatePathDownEvent", "9999")
                 // 首次点击，创建起点节点
                 val startNode = cLayer.CreateNode(Point2d(worldPoint.x, worldPoint.y)) ?: return
                 // 设置起点属性
@@ -239,7 +239,6 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
 
                 invalidate()
             } else {
-                Log.d("handleCreatePathDownEvent","8888")
                 // 第二次及以后点击，创建中间/终点节点和曲线路段
                 val endNode = cLayer.CreateNode(Point2d(worldPoint.x, worldPoint.y)) ?: return
                 // 设置中间节点属性（直到用户长按结束路径创建才标记为终点）
@@ -250,7 +249,6 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                 // 创建带控制点的曲线路段
                 // 计算控制点位置
                 val controlPoint = calculateControlPoint(pathCreateStartNode!!, endNode)
-                Log.d("handleCreatePathDownEvent", "controlPoint $controlPoint")
 
                 // 使用CLayer.CreatePath方法创建曲线路段
                 val startPoint = Point2d(pathCreateStartNode!!.x, pathCreateStartNode!!.y)
@@ -275,7 +273,33 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                 if (newPath != null) {
                     // 如果是GenericPath类型，可以设置控制点
                     if (newPath is GenericPath && newPath.m_Curve != null) {
-                        newPath.m_Curve.m_ptKey = arrayOf(controlPoint)
+                        // 计算两个控制点
+                        val controlPoint1 = calculateControlPoint(pathCreateStartNode!!, endNode)
+                        // 第二个控制点可以基于第一个控制点偏移，或者使用类似的计算方法
+                        // 这里使用起点和终点连线的垂直方向偏移来创建第二个控制点
+                        val dx = endNode.x - pathCreateStartNode!!.x
+                        val dy = endNode.y - pathCreateStartNode!!.y
+                        // 创建一个垂直于起点到终点连线的向量
+                        val perpDx = -dy
+                        val perpDy = dx
+                        // 归一化垂直向量
+                        val length = Math.sqrt((perpDx * perpDx + perpDy * perpDy).toDouble())
+                        val normalizedPerpDx = perpDx / length
+                        val normalizedPerpDy = perpDy / length
+                        // 设置第二个控制点在垂直方向偏移一定距离
+                        val offsetDistance = 0.2f
+                        val controlPoint2 = Point2d(
+                            (controlPoint1.x + normalizedPerpDx * offsetDistance).toFloat(),
+                            (controlPoint1.y + normalizedPerpDy * offsetDistance).toFloat()
+                        )
+
+                        // 设置4个控制点：起点、控制点1、控制点2、终点
+                        newPath.m_Curve.m_ptKey = arrayOf(
+                            Point2d(pathCreateStartNode!!.x, pathCreateStartNode!!.y),
+                            controlPoint1,
+                            controlPoint2,
+                            Point2d(endNode.x, endNode.y)
+                        )
                         newPath.m_Curve.m_nCountKeyPoints = 4
                     }
                     // 注意：不需要再次调用pathBase.AddPath(newPath)，因为CLayer.CreatePath内部已经添加了
@@ -1057,12 +1081,15 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                 }
 
                                 else -> {
+                                    mPaint.color = Color.BLACK
                                     // 非编辑模式，正常绘制
                                     path.Draw(mapView.mSrf, canvas, Color.BLACK, mPaint)
                                     // 绘制路段编号
                                     path.DrawID(mapView.mSrf, canvas, Color.BLACK, mPaint)
                                     // 绘制节点包括节点 和编号（开始红色、结束灰色）
+                                    mPaint.textSize = 3f //开始点文字
                                     startNode?.Draw(mapView.mSrf, canvas, Color.RED, 1, mPaint)
+                                    mPaint.textSize = 3f //结束点文字
                                     endNode?.Draw(mapView.mSrf, canvas, Color.GRAY, 2, mPaint)
                                 }
                             }
