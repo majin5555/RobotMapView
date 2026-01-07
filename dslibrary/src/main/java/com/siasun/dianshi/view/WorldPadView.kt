@@ -6,7 +6,6 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PointF
-import android.text.LoginFilter
 import android.util.Log
 import android.view.MotionEvent
 import com.siasun.dianshi.bean.Point2d
@@ -1036,32 +1035,37 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                         mapView.mSrf, canvas, Color.GRAY, 2, mPaint
                                     )
                                 }
-
+                                //路段合并
                                 MapView.WorkMode.MODE_PATH_MERGE -> {
                                     // 路线合并模式：正常绘制路段，放大显示选中的节点
                                     path.Draw(mapView.mSrf, canvas, Color.BLACK, mPaint)
-
+                                    // 绘制路段编号
+                                    path.DrawID(mapView.mSrf, canvas, Color.BLACK, mPaint)
                                     // 检查并绘制起点节点
                                     if (startNode != null) {
                                         when (startNode) {
                                             selectedMergeStartNode -> {
                                                 // 选中的起点，放大显示（绿色）
                                                 startNode.Draw(
-                                                    mapView.mSrf, canvas, Color.GREEN, 5, mPaint
+                                                    mapView.mSrf, canvas, Color.GREEN, 3, mPaint
                                                 )
                                             }
 
                                             selectedMergeEndNode -> {
                                                 // 选中的终点，放大显示（蓝色）
                                                 startNode.Draw(
-                                                    mapView.mSrf, canvas, Color.BLUE, 5, mPaint
+                                                    mapView.mSrf, canvas, Color.BLUE, 3, mPaint
                                                 )
                                             }
 
                                             else -> {
-                                                // 未选中的起点，正常显示（绿色）
+                                                // 未选中的起点，正常显示（红色）
                                                 startNode.Draw(
-                                                    mapView.mSrf, canvas, Color.GREEN, 3, mPaint
+                                                    mapView.mSrf,
+                                                    canvas,
+                                                    Color.RED,
+                                                    1,
+                                                    mPaint
                                                 )
                                             }
                                         }
@@ -1073,21 +1077,25 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                             selectedMergeStartNode -> {
                                                 // 选中的起点，放大显示（绿色）
                                                 endNode.Draw(
-                                                    mapView.mSrf, canvas, Color.GREEN, 5, mPaint
+                                                    mapView.mSrf, canvas, Color.GREEN, 3, mPaint
                                                 )
                                             }
 
                                             selectedMergeEndNode -> {
                                                 // 选中的终点，放大显示（蓝色）
                                                 endNode.Draw(
-                                                    mapView.mSrf, canvas, Color.BLUE, 5, mPaint
+                                                    mapView.mSrf, canvas, Color.BLUE, 3, mPaint
                                                 )
                                             }
 
                                             else -> {
-                                                // 未选中的终点，正常显示（蓝色）
+                                                // 未选中的终点，正常显示（灰色）
                                                 endNode.Draw(
-                                                    mapView.mSrf, canvas, Color.BLUE, 3, mPaint
+                                                    mapView.mSrf,
+                                                    canvas,
+                                                    Color.GRAY,
+                                                    2,
+                                                    mPaint
                                                 )
                                             }
                                         }

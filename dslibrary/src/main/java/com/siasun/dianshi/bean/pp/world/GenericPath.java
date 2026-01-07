@@ -883,12 +883,21 @@ public class GenericPath extends Path {
      */
     @Override
     public void DrawID(CoordinateConversion ScrnRef, Canvas Grp, int color, Paint paint) {
-        m_Curve.SetCurT(0.8f);
-        Point2d pntT = m_Curve.TrajFun();
-        PointF pnt1 = ScrnRef.worldToScreen(pntT.x, pntT.y);
-        String str = String.valueOf(m_uId);
+        // 获取起点和终点坐标
+        Point2d startPoint = m_Curve.m_ptKey[0];
+        Point2d endPoint = m_Curve.m_ptKey[3];
+
+        // 计算起点和终点的中点坐标
+        Point2d midPoint = new Point2d((startPoint.x + endPoint.x) / 2, (startPoint.y + endPoint.y) / 2);
+
+        // 将中点坐标转换为屏幕坐标
+        PointF pnt1 = ScrnRef.worldToScreen(midPoint.x, midPoint.y);
+
+        // 设置绘制样式和颜色
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(color);
-        Grp.drawText(str, pnt1.x, pnt1.y, paint);
+        paint.setColor(Color.BLUE);
+
+        // 在中点位置绘制路径ID
+        Grp.drawText(String.valueOf(m_uId), pnt1.x, pnt1.y - 2, paint);
     }
 }

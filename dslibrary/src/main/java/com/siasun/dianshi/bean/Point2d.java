@@ -180,7 +180,7 @@ public class Point2d implements Serializable {
     }
 
     /**
-     * 绘制控制器点
+     * 绘制点
      *
      * @param ScrnRef
      * @param canvas
@@ -191,6 +191,8 @@ public class Point2d implements Serializable {
     public void Draw(CoordinateConversion ScrnRef, Canvas canvas, int color, int nPointSize, Paint paint) {
         PointF pnt1 = ScrnRef.worldToScreen(x, y);
         paint.setColor(color);
+        // 设置绘制样式和颜色
+        paint.setStyle(Paint.Style.FILL);
         canvas.drawCircle(pnt1.x, pnt1.y, nPointSize, paint);
     }
 
