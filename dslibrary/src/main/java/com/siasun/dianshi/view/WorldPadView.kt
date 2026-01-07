@@ -775,8 +775,8 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                 path.ModifyParmByCurve()
 
                                 // 记录调试信息
-                                val curveLength = path.m_Curve?.m_fTotalLen ?: 0f
-                                val pathLength = path.m_fSize
+//                                val curveLength = path.m_Curve?.m_fTotalLen ?: 0f
+//                                val pathLength = path.m_fSize
 //                                Log.d(
 //                                    "PathView2",
 //                                    "路段${i + 1} - 曲线长度: $curveLength, 路径长度: $pathLength"
@@ -1056,11 +1056,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                             else -> {
                                                 // 未选中的起点，正常显示（红色）
                                                 startNode.Draw(
-                                                    mapView.mSrf,
-                                                    canvas,
-                                                    Color.RED,
-                                                    1,
-                                                    mPaint
+                                                    mapView.mSrf, canvas, Color.RED, 1, mPaint
                                                 )
                                             }
                                         }
@@ -1086,11 +1082,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                             else -> {
                                                 // 未选中的终点，正常显示（灰色）
                                                 endNode.Draw(
-                                                    mapView.mSrf,
-                                                    canvas,
-                                                    Color.GRAY,
-                                                    2,
-                                                    mPaint
+                                                    mapView.mSrf, canvas, Color.GRAY, 2, mPaint
                                                 )
                                             }
                                         }
