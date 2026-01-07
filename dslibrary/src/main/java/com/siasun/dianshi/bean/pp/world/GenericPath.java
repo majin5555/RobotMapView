@@ -844,12 +844,12 @@ public class GenericPath extends Path {
 
             // 重置路径，避免重复绘制
             mBezirPath.reset();
+            paint.setColor(color);
 
             // 检查起点和终点是否相同
             if (mStart.equals(mEnd)) {
                 // 起点和终点相同，绘制一个小圆点
                 float radius = 3f;
-                paint.setColor(color);
                 paint.setStyle(Paint.Style.FILL);
                 canvas.drawCircle(mStart.x, mStart.y, radius, paint);
             } else {

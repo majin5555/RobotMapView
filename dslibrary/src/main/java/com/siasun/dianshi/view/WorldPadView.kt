@@ -481,13 +481,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                 }
 
                 MotionEvent.ACTION_UP -> {
-                    // 检查是否是长按结束路径创建
-                    if (event.eventTime - event.downTime > 500) {
-                        // 长按超过500ms，结束路径创建
-                        pathCreateStartNode = null
-                        tempPath = null
-                        invalidate()
-                    }
+                    handleUpEvent(event)
                     return true
                 }
             }
@@ -517,21 +511,8 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                 }
 
                 MotionEvent.ACTION_UP -> {
-                    // 结束框选
-                    if (isBoxSelecting) {
-                        isBoxSelecting = false
-                        // 根据最终框选区域更新选中的路线
-                        updateBoxSelection()
-                        // 如果有选中的路线，执行删除操作
-                        if (selectedPathsForDeletion.isNotEmpty()) {
-                            deleteSelectedPaths()
-                        }
-                        // 清空框选区域
-                        boxSelectStartPoint = null
-                        boxSelectEndPoint = null
-                        invalidate()
-                        return true
-                    }
+                    handleUpEvent(event)
+                    return true
                 }
             }
             return true
@@ -541,7 +522,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 // 尝试选择路段或节点
-                handleDownEvent(screenPoint, worldPoint)
+                handleDownEvent(screenPoint)
                 return true
             }
 
@@ -554,15 +535,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
             }
 
             MotionEvent.ACTION_UP -> {
-                if (currentWorkMode == MapView.WorkMode.MODE_PATH_DELETE) {
-                    selectedPath?.let {
-                        deletePath(it)
-                    }
-                }
-                // 结束拖动
-                draggingNode = null
-                draggingControlPoint = null
-                dragStartPoint = null
+                handleUpEvent(event)
                 return true
             }
         }
@@ -572,7 +545,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
     /**
      * 处理按下事件，选择路段、节点或控制点
      */
-    private fun handleDownEvent(screenPoint: PointF, worldPoint: PointF) {
+    private fun handleDownEvent(screenPoint: PointF) {
         val mapView = mapViewRef.get() ?: return
         val cLayer = this.cLayer ?: return
 
@@ -710,7 +683,6 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                             } else if (currentWorkMode == MapView.WorkMode.MODE_PATH_DELETE) {
                                 // 删除模式下，点击路段直接删除
                                 selectedPath = path
-//                                deletePath(path)
                             } else {
                                 // 路径编辑模式下每次点击都触发回调
                                 selectedPath = path
@@ -857,6 +829,48 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                 e.printStackTrace()
             }
         }
+    }
+
+
+    /**
+     * 处理抬起事件
+     */
+    private fun handleUpEvent(event: MotionEvent) {
+        if (currentWorkMode == MapView.WorkMode.MODE_PATH_DELETE) {
+            selectedPath?.let {
+                deletePath(it)
+            }
+        } else if (currentWorkMode == MapView.WorkMode.MODE_PATH_DELETE_MULTIPLE) {
+
+            // 结束框选
+            if (isBoxSelecting) {
+                isBoxSelecting = false
+                // 根据最终框选区域更新选中的路线
+                updateBoxSelection()
+                // 如果有选中的路线，执行删除操作
+                if (selectedPathsForDeletion.isNotEmpty()) {
+                    deleteSelectedPaths()
+                }
+                // 清空框选区域
+                boxSelectStartPoint = null
+                boxSelectEndPoint = null
+                invalidate()
+            }
+        } else if (currentWorkMode == MapView.WorkMode.MODE_PATH_CREATE) {
+
+            // 检查是否是长按结束路径创建
+            if (event.eventTime - event.downTime > 500) {
+                // 长按超过500ms，结束路径创建
+                pathCreateStartNode = null
+                tempPath = null
+                invalidate()
+            }
+        }
+        // 结束拖动
+        draggingNode = null
+        draggingControlPoint = null
+        dragStartPoint = null
+
     }
 
     /**
@@ -1081,7 +1095,6 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                 }
 
                                 else -> {
-                                    mPaint.color = Color.BLACK
                                     // 非编辑模式，正常绘制
                                     path.Draw(mapView.mSrf, canvas, Color.BLACK, mPaint)
                                     // 绘制路段编号
@@ -1144,8 +1157,6 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                     canvas.concat(mMatrix)
                     // 绘制起点节点（红色圆点，大小为12）
                     pathCreateStartNode!!.Draw(mapView.mSrf, canvas, Color.RED, 2, mPaint)
-                    // 绘制节点编号
-//                    pathCreateStartNode!!.DrawID(mapView.mSrf, canvas, mPaint)
                     canvas.restore()
                 }
                 // 在创建路线模式下，绘制临时曲线路段
