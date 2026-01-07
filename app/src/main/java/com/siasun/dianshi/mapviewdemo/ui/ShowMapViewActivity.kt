@@ -238,7 +238,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 
     @RequiresApi(Build.VERSION_CODES.R)
     private fun initPath() {
-        showLoading("记载中")
+        showLoading("加载中")
         // 地图加载完成后，加载路径数据
         readPathsFromFile()
         // 设置路径属性编辑回调监听器

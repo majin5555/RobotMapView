@@ -861,11 +861,21 @@ public class GenericPath extends Path {
 
             // 重置路径，避免重复绘制
             mBezirPath.reset();
-            mBezirPath.moveTo(mStart.x, mStart.y);
-            mBezirPath.cubicTo(mControl1.x, mControl1.y, mControl2.x, mControl2.y, mEnd.x, mEnd.y);
-            paint.setStyle(Paint.Style.STROKE);
-            paint.setColor(color);
-            canvas.drawPath(mBezirPath, paint);
+
+            // 检查起点和终点是否相同
+            if (mStart.equals(mEnd)) {
+                // 起点和终点相同，绘制一个小圆点
+                float radius = 3f;
+                paint.setColor(color);
+                paint.setStyle(Paint.Style.FILL);
+                canvas.drawCircle(mStart.x, mStart.y, radius, paint);
+            } else {
+                // 正常绘制贝塞尔曲线
+                mBezirPath.moveTo(mStart.x, mStart.y);
+                mBezirPath.cubicTo(mControl1.x, mControl1.y, mControl2.x, mControl2.y, mEnd.x, mEnd.y);
+                paint.setStyle(Paint.Style.STROKE);
+                canvas.drawPath(mBezirPath, paint);
+            }
         }
     }
 

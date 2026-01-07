@@ -463,70 +463,70 @@ public class CLayer extends NodeBase {
      * @param pnt    新的位置点
      * @param NodeID 要修改的节点ID
      */
-    public void ModifyNodeAng(Point2d pnt, int NodeID) {
-        //如果方向有很多个，不允许移动节点
-        Angle[] Angles = new Angle[4];
-        int nHeadingAngleCount = GetNodeHeadingAngle(NodeID, Angles, 4);
-        if (nHeadingAngleCount > 1) {
-            //		return;
-        }
-        //得到和曲线起点相关联的曲线
-        Vector<Integer> vPathID = new Vector();
-        vPathID = GetPathIncludeNode(NodeID);
-        if (vPathID == null) return;
-        //如果包含的路径中含有直线，不允许移动
-        for (int i = 0; i < vPathID.size(); i++) {
-            Path pPathT = m_PathBase.m_pPathIdx[vPathID.get(i)].m_ptr;
-            if (pPathT.m_uType == 0) {
-                return;
-            }
-        }
-        //如果全部是曲线，为了保证相切性，所有的曲线控制点都需要相应的做旋转变换
-        Point2d ptS = new Point2d();
-        Node node = GetNode(NodeID);
-        if (node == null) {
-            return;
-        }
-        ptS.x = node.x;
-        ptS.y = node.y;
-        Angle angT = new Angle(0.0f);
-        //更新控制点的位置
-        for (int i = 0; i < vPathID.size(); i++) {
-            Angle angLen = new Angle(0.0f);
-            GenericPath pPathT = (GenericPath) (m_PathBase.m_pPathIdx[vPathID.get(i)].m_ptr);
-            if (pPathT.m_uStartNode == NodeID) {
-                float fTotalLen = (float) Math.sqrt((pPathT.m_Curve.m_ptKey[0].x - pPathT.m_Curve.m_ptKey[1].x) * (pPathT.m_Curve.m_ptKey[0].x - pPathT.m_Curve.m_ptKey[1].x) + (pPathT.m_Curve.m_ptKey[0].y - pPathT.m_Curve.m_ptKey[1].y) * (pPathT.m_Curve.m_ptKey[0].y - pPathT.m_Curve.m_ptKey[1].y));
-                Line ln1 = new Line(ptS, pnt);
-                angT.m_fRad = ln1.m_angSlant.m_fRad;
-//				if(pPathT.GetHeading(pNode) == pPath.GetHeading(pNode))
-//				{
-//					angLen.m_fRad = (float) (angT.m_fRad + Math.PI);
-//				}
-//				else
-                angLen.m_fRad = angT.m_fRad;
-                Line ln = new Line(ptS, angLen, fTotalLen);
-                pPathT.m_Curve.m_ptKey[1].x = ln.m_ptEnd.x;
-                pPathT.m_Curve.m_ptKey[1].y = ln.m_ptEnd.y;
-                pPathT.ModifyParmByCurve();
-            }
-            if (pPathT.m_uEndNode == NodeID) {
-                int nKeyCount = pPathT.m_Curve.m_nCountKeyPoints - 1;
-                float fTotalLen = (float) Math.sqrt((pPathT.m_Curve.m_ptKey[nKeyCount].x - pPathT.m_Curve.m_ptKey[nKeyCount - 1].x) * (pPathT.m_Curve.m_ptKey[nKeyCount].x - pPathT.m_Curve.m_ptKey[nKeyCount - 1].x) + (pPathT.m_Curve.m_ptKey[nKeyCount].y - pPathT.m_Curve.m_ptKey[nKeyCount - 1].y) * (pPathT.m_Curve.m_ptKey[nKeyCount].y - pPathT.m_Curve.m_ptKey[nKeyCount - 1].y));
-                Line ln1 = new Line(ptS, pnt);
-                angT.m_fRad = ln1.m_angSlant.m_fRad;
-//				if(pPathT.GetHeading(pNode) == pPath.GetHeading(pNode))
-//				{
-//					angLen.m_fRad = angT.m_fRad;
-//				}
-//				else
-                angLen.m_fRad = (float) (angT.m_fRad + Math.PI);
-                Line ln = new Line(ptS, angLen, fTotalLen);
-                pPathT.m_Curve.m_ptKey[nKeyCount - 1].x = ln.m_ptEnd.x;
-                pPathT.m_Curve.m_ptKey[nKeyCount - 1].y = ln.m_ptEnd.y;
-                pPathT.ModifyParmByCurve();
-            }
-        }
-    }
+//    public void ModifyNodeAng(Point2d pnt, int NodeID) {
+//        //如果方向有很多个，不允许移动节点
+//        Angle[] Angles = new Angle[4];
+//        int nHeadingAngleCount = GetNodeHeadingAngle(NodeID, Angles, 4);
+//        if (nHeadingAngleCount > 1) {
+//            //		return;
+//        }
+//        //得到和曲线起点相关联的曲线
+//        Vector<Integer> vPathID = new Vector();
+//        vPathID = GetPathIncludeNode(NodeID);
+//        if (vPathID == null) return;
+//        //如果包含的路径中含有直线，不允许移动
+//        for (int i = 0; i < vPathID.size(); i++) {
+//            Path pPathT = m_PathBase.m_pPathIdx[vPathID.get(i)].m_ptr;
+//            if (pPathT.m_uType == 0) {
+//                return;
+//            }
+//        }
+//        //如果全部是曲线，为了保证相切性，所有的曲线控制点都需要相应的做旋转变换
+//        Point2d ptS = new Point2d();
+//        Node node = GetNode(NodeID);
+//        if (node == null) {
+//            return;
+//        }
+//        ptS.x = node.x;
+//        ptS.y = node.y;
+//        Angle angT = new Angle(0.0f);
+//        //更新控制点的位置
+//        for (int i = 0; i < vPathID.size(); i++) {
+//            Angle angLen = new Angle(0.0f);
+//            GenericPath pPathT = (GenericPath) (m_PathBase.m_pPathIdx[vPathID.get(i)].m_ptr);
+//            if (pPathT.m_uStartNode == NodeID) {
+//                float fTotalLen = (float) Math.sqrt((pPathT.m_Curve.m_ptKey[0].x - pPathT.m_Curve.m_ptKey[1].x) * (pPathT.m_Curve.m_ptKey[0].x - pPathT.m_Curve.m_ptKey[1].x) + (pPathT.m_Curve.m_ptKey[0].y - pPathT.m_Curve.m_ptKey[1].y) * (pPathT.m_Curve.m_ptKey[0].y - pPathT.m_Curve.m_ptKey[1].y));
+//                Line ln1 = new Line(ptS, pnt);
+//                angT.m_fRad = ln1.m_angSlant.m_fRad;
+////				if(pPathT.GetHeading(pNode) == pPath.GetHeading(pNode))
+////				{
+////					angLen.m_fRad = (float) (angT.m_fRad + Math.PI);
+////				}
+////				else
+//                angLen.m_fRad = angT.m_fRad;
+//                Line ln = new Line(ptS, angLen, fTotalLen);
+//                pPathT.m_Curve.m_ptKey[1].x = ln.m_ptEnd.x;
+//                pPathT.m_Curve.m_ptKey[1].y = ln.m_ptEnd.y;
+//                pPathT.ModifyParmByCurve();
+//            }
+//            if (pPathT.m_uEndNode == NodeID) {
+//                int nKeyCount = pPathT.m_Curve.m_nCountKeyPoints - 1;
+//                float fTotalLen = (float) Math.sqrt((pPathT.m_Curve.m_ptKey[nKeyCount].x - pPathT.m_Curve.m_ptKey[nKeyCount - 1].x) * (pPathT.m_Curve.m_ptKey[nKeyCount].x - pPathT.m_Curve.m_ptKey[nKeyCount - 1].x) + (pPathT.m_Curve.m_ptKey[nKeyCount].y - pPathT.m_Curve.m_ptKey[nKeyCount - 1].y) * (pPathT.m_Curve.m_ptKey[nKeyCount].y - pPathT.m_Curve.m_ptKey[nKeyCount - 1].y));
+//                Line ln1 = new Line(ptS, pnt);
+//                angT.m_fRad = ln1.m_angSlant.m_fRad;
+////				if(pPathT.GetHeading(pNode) == pPath.GetHeading(pNode))
+////				{
+////					angLen.m_fRad = angT.m_fRad;
+////				}
+////				else
+//                angLen.m_fRad = (float) (angT.m_fRad + Math.PI);
+//                Line ln = new Line(ptS, angLen, fTotalLen);
+//                pPathT.m_Curve.m_ptKey[nKeyCount - 1].x = ln.m_ptEnd.x;
+//                pPathT.m_Curve.m_ptKey[nKeyCount - 1].y = ln.m_ptEnd.y;
+//                pPathT.ModifyParmByCurve();
+//            }
+//        }
+//    }
 
     /**
      * 修改指定节点的坐标
