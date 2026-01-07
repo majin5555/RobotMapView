@@ -101,7 +101,7 @@ public class Node extends Point2d {
             ch2 = dis.read();
             if ((ch1 | ch2) < 0) throw new EOFException();
             this.m_uType = (short) ((ch2 << 8) + (ch1 << 0));
-            Log.d("readWorld", "节点类型  m_uType " + this.m_uType);
+//            Log.d("readWorld", "节点类型  m_uType " + this.m_uType);
 
             ch1 = dis.read();
             ch2 = dis.read();
@@ -110,7 +110,7 @@ public class Node extends Point2d {
             if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             int tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
             this.x = Float.intBitsToFloat(tempI);
-            Log.d("readWorld", "this.x  m_uType " + this.x);
+//            Log.d("readWorld", "this.x  m_uType " + this.x);
 
             ch1 = dis.read();
             ch2 = dis.read();
@@ -119,7 +119,7 @@ public class Node extends Point2d {
             if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
             this.y = Float.intBitsToFloat(tempI);
-            Log.d("readWorld", "this.y  m_uType " + this.y);
+//            Log.d("readWorld", "this.y  m_uType " + this.y);
 
             ch1 = dis.read();
             ch2 = dis.read();

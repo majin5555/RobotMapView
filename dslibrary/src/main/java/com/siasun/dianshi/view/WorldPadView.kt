@@ -6,6 +6,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PointF
+import android.text.LoginFilter
 import android.util.Log
 import android.view.MotionEvent
 import com.siasun.dianshi.bean.Point2d
@@ -219,71 +220,78 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
      * 处理创建路线模式下的点击事件
      */
     private fun handleCreatePathDownEvent(worldPoint: PointF) {
-        val mapView = mapViewRef.get() ?: return
-        val cLayer = cLayer ?: return
-        val pathBase = cLayer.m_PathBase ?: return
+        try {
+            val mapView = mapViewRef.get() ?: return
+            val cLayer = cLayer ?: return
+            val pathBase = cLayer.m_PathBase ?: return
 
-        if (pathCreateStartNode == null) {
-            // 首次点击，创建起点节点
-            val startNode = cLayer.CreateNode(Point2d(worldPoint.x, worldPoint.y))
-            // 设置起点属性
-            startNode.m_uType = 1 // 1表示起点类型
-            startNode.m_uExtType = 1 // 扩展类型
-            startNode.m_fHeading = 0f // 航向角
-            pathCreateStartNode = startNode
-            // 保存临时路径用于绘制
-            tempPath = GenericPath()
+            if (pathCreateStartNode == null) {
+                Log.d("handleCreatePathDownEvent","9999")
+                // 首次点击，创建起点节点
+                val startNode = cLayer.CreateNode(Point2d(worldPoint.x, worldPoint.y)) ?: return
+                // 设置起点属性
+                startNode.m_uType = 1 // 1表示起点类型
+                startNode.m_uExtType = 1 // 扩展类型
+                startNode.m_fHeading = 0f // 航向角
+                pathCreateStartNode = startNode
+                // 保存临时路径用于绘制
+                tempPath = GenericPath()
 
-            invalidate()
-        } else {
-            // 第二次及以后点击，创建中间/终点节点和曲线路段
-            val endNode = cLayer.CreateNode(Point2d(worldPoint.x, worldPoint.y))
-            // 设置中间节点属性（直到用户长按结束路径创建才标记为终点）
-            endNode.m_uType = 0 // 0表示普通路径节点类型
-            endNode.m_uExtType = 0 // 扩展类型
-            endNode.m_fHeading = 0f // 航向角
+                invalidate()
+            } else {
+                Log.d("handleCreatePathDownEvent","8888")
+                // 第二次及以后点击，创建中间/终点节点和曲线路段
+                val endNode = cLayer.CreateNode(Point2d(worldPoint.x, worldPoint.y)) ?: return
+                // 设置中间节点属性（直到用户长按结束路径创建才标记为终点）
+                endNode.m_uType = 0 // 0表示普通路径节点类型
+                endNode.m_uExtType = 0 // 扩展类型
+                endNode.m_fHeading = 0f // 航向角
 
-            // 创建带控制点的曲线路段
-            // 计算控制点位置
-            val controlPoint = calculateControlPoint(pathCreateStartNode!!, endNode)
+                // 创建带控制点的曲线路段
+                // 计算控制点位置
+                val controlPoint = calculateControlPoint(pathCreateStartNode!!, endNode)
+                Log.d("handleCreatePathDownEvent", "controlPoint $controlPoint")
 
-            // 使用CLayer.CreatePath方法创建曲线路段
-            val startPoint = Point2d(pathCreateStartNode!!.x, pathCreateStartNode!!.y)
-            val endPoint = Point2d(endNode.x, endNode.y)
-            val speed = floatArrayOf(0.5f, 0.5f) // 默认速度
-            val guidFunction: Short = 0 // 默认引导功能类型
-            val controlPointDistance = 0.5f // 默认控制点距离
+                // 使用CLayer.CreatePath方法创建曲线路段
+                val startPoint = Point2d(pathCreateStartNode!!.x, pathCreateStartNode!!.y)
+                val endPoint = Point2d(endNode.x, endNode.y)
+                val speed = floatArrayOf(0.5f, 0.5f) // 默认速度
+                val guidFunction: Short = 0 // 默认引导功能类型
+                val controlPointDistance = 0.5f // 默认控制点距离
 
-            // 调用正确的CreatePath方法签名，创建曲线路径（类型10）
-            val newPath = cLayer.CreatePath(
-                startPoint,
-                endPoint,
-                pathCreateStartNode!!.m_uId,
-                endNode.m_uId,
-                10,
-                speed,
-                guidFunction,
-                controlPointDistance
-            )
+                // 调用正确的CreatePath方法签名，创建曲线路径（类型10）
+                val newPath = cLayer.CreatePath(
+                    startPoint,
+                    endPoint,
+                    pathCreateStartNode!!.m_uId,
+                    endNode.m_uId,
+                    10,
+                    speed,
+                    guidFunction,
+                    controlPointDistance
+                )
 
-            // 设置路径属性
-            if (newPath != null) {
-                // 如果是GenericPath类型，可以设置控制点
-                if (newPath is GenericPath && newPath.m_Curve != null) {
-                    newPath.m_Curve.m_ptKey = arrayOf(controlPoint)
-                    newPath.m_Curve.m_nCountKeyPoints = 1
+                // 设置路径属性
+                if (newPath != null) {
+                    // 如果是GenericPath类型，可以设置控制点
+                    if (newPath is GenericPath && newPath.m_Curve != null) {
+                        newPath.m_Curve.m_ptKey = arrayOf(controlPoint)
+                        newPath.m_Curve.m_nCountKeyPoints = 4
+                    }
+                    // 注意：不需要再次调用pathBase.AddPath(newPath)，因为CLayer.CreatePath内部已经添加了
                 }
-                // 注意：不需要再次调用pathBase.AddPath(newPath)，因为CLayer.CreatePath内部已经添加了
-            }
 
-            // 设置当前终点为下一段路径的起点
-            // 将上一段的终点节点类型从起点改为普通节点
-            pathCreateStartNode?.m_uType = 0
-            pathCreateStartNode?.m_uExtType = 0
-            pathCreateStartNode = endNode
-            // 清空临时路径，为下一段路径准备
-            tempPath = null
-            invalidate()
+                // 设置当前终点为下一段路径的起点
+                // 将上一段的终点节点类型从起点改为普通节点
+                pathCreateStartNode?.m_uType = 0
+                pathCreateStartNode?.m_uExtType = 0
+                pathCreateStartNode = endNode
+                // 清空临时路径，为下一段路径准备
+                tempPath = null
+                invalidate()
+            }
+        } catch (e: Exception) {
+            Log.e("WorldPadView", "Error in handleCreatePathDownEvent: ${e.message}", e)
         }
     }
 
@@ -1108,7 +1116,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                     canvas.save()
                     canvas.concat(mMatrix)
                     // 绘制起点节点（红色圆点，大小为12）
-                    pathCreateStartNode!!.Draw(mapView.mSrf, canvas, Color.RED, 8, mPaint)
+                    pathCreateStartNode!!.Draw(mapView.mSrf, canvas, Color.RED, 2, mPaint)
                     // 绘制节点编号
 //                    pathCreateStartNode!!.DrawID(mapView.mSrf, canvas, mPaint)
                     canvas.restore()

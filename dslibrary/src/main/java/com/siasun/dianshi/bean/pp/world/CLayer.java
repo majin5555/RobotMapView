@@ -295,6 +295,9 @@ public class CLayer extends NodeBase {
             createdPath = new GenericPath(nextPathId, startNode.m_uId, endNode.m_uId,
                     pstStart, pstEnd, controlPointDistance, controlPointDistance,
                     speed, guidFunction, (short) 0, (short) 0, (short) 3, m_PathBase.m_MyNode);
+
+//            GenericPath pPath = new GenericPath(nNextID, nStartNodeId, nEndNodeId, pstStart, pstEnd, pptCtrl, new float[2], (short) 0, (short) 0, (short) 0, (short) 3, m_PathBase.m_MyNode, pathParam);
+
         } else {
             // 不支持的路径类型
             return null;
@@ -319,47 +322,47 @@ public class CLayer extends NodeBase {
      * @param nEndNodeId   终点节点ID，-1表示创建新节点
      * @return 是否成功添加路径
      */
-    public boolean AddGenericPath(Posture pstStart, Posture pstEnd, float fLen1, float fLen2, int nStartNodeId, int nEndNodeId) {
-        Node pStartNode = new Node();
-        Node pEndNode = new Node();
-
-        if (nStartNodeId < 0) {
-            // �ڵ�ͼ�м����½ڵ�
-            pStartNode = AddNode(pstStart.GetPoint2dObject());
-            if (pStartNode == null) return false;
-        } else {
-            // ���ݽڵ��ȡ�ýڵ�ָ��
-            pStartNode = GetNode(nStartNodeId);
-
-            // ����ڵ㲻���ڣ�����false
-            if (pStartNode == null) return false;
-        }
-        nStartNodeId = pStartNode.m_uId;
-
-
-        // ����յ�ָ��δ�ṩ��˵���յ���½ڵ�
-        if (nEndNodeId < 0) {
-            // �ڵ�ͼ�м����½ڵ�
-            pEndNode = AddNode(pstEnd.GetPoint2dObject());
-            // ����ڵ㲻���ڣ�����false
-            if (pEndNode == null) return false;
-        } else {
-            // ���ݽڵ��ȡ�ýڵ�ָ��
-            pEndNode = GetNode(nEndNodeId);
-
-            // ����ڵ㲻���ڣ�����false
-            if (pEndNode == null) return false;
-        }
-        nEndNodeId = pEndNode.m_uId;
-
-        // �����·��
-        int nNextID = m_PathBase.NextID();
-
-        GenericPath pPath = new GenericPath(nNextID, nStartNodeId, nEndNodeId, pstStart, pstEnd, fLen1, fLen2, new float[2], (short) 0, (short) 0, (short) 0, (short) 3, m_PathBase.m_MyNode);
-
-
-        return m_PathBase.AddPath(pPath);
-    }
+//    public boolean AddGenericPath(Posture pstStart, Posture pstEnd, float fLen1, float fLen2, int nStartNodeId, int nEndNodeId) {
+//        Node pStartNode = new Node();
+//        Node pEndNode = new Node();
+//
+//        if (nStartNodeId < 0) {
+//            // �ڵ�ͼ�м����½ڵ�
+//            pStartNode = AddNode(pstStart.GetPoint2dObject());
+//            if (pStartNode == null) return false;
+//        } else {
+//            // ���ݽڵ��ȡ�ýڵ�ָ��
+//            pStartNode = GetNode(nStartNodeId);
+//
+//            // ����ڵ㲻���ڣ�����false
+//            if (pStartNode == null) return false;
+//        }
+//        nStartNodeId = pStartNode.m_uId;
+//
+//
+//        // ����յ�ָ��δ�ṩ��˵���յ���½ڵ�
+//        if (nEndNodeId < 0) {
+//            // �ڵ�ͼ�м����½ڵ�
+//            pEndNode = AddNode(pstEnd.GetPoint2dObject());
+//            // ����ڵ㲻���ڣ�����false
+//            if (pEndNode == null) return false;
+//        } else {
+//            // ���ݽڵ��ȡ�ýڵ�ָ��
+//            pEndNode = GetNode(nEndNodeId);
+//
+//            // ����ڵ㲻���ڣ�����false
+//            if (pEndNode == null) return false;
+//        }
+//        nEndNodeId = pEndNode.m_uId;
+//
+//        // �����·��
+//        int nNextID = m_PathBase.NextID();
+//
+//        GenericPath pPath = new GenericPath(nNextID, nStartNodeId, nEndNodeId, pstStart, pstEnd, fLen1, fLen2, new float[2], (short) 0, (short) 0, (short) 0, (short) 3, m_PathBase.m_MyNode);
+//
+//
+//        return m_PathBase.AddPath(pPath);
+//    }
 
     /**
      * PP示教生成曲线
@@ -747,99 +750,99 @@ public class CLayer extends NodeBase {
      *
      * @param NodeId 要删除的节点ID
      */
-    public void DeleteNode(int NodeId) {
-        Vector<Integer> vPathID = new Vector();
-        for (int i = 0; i < m_PathBase.m_uCount; i++) {
-            Path pPath = m_PathBase.m_pPathIdx[i].m_ptr;
-            if (pPath.m_uStartNode == NodeId || pPath.m_uEndNode == NodeId) vPathID.add(i);
-        }
-        int leftNode = -1;
-        int rightNode = -1;
-        // 取得与该节点所有相邻节点的编号
-        int[] pBuf = new int[4];
-        int nCount = GetAllNeighborNodes(NodeId, pBuf, (short) 4);
-        if (nCount == 1) leftNode = pBuf[0];
-        if (nCount > 1) {
-
-            Vector<Integer> NodeID = new Vector();
-            NodeID.add(NodeId);
-            NodeID.add(pBuf[0]);
-            Vector<Integer> vPath = GetPathByNodeId(NodeID);
-            if (vPath.size() < 0) return;
-            if (m_PathBase.m_pPathIdx[vPath.get(0)].m_ptr.m_uStartNode == pBuf[0]) {
-                leftNode = pBuf[0];
-                rightNode = pBuf[1];
-            } else {
-                leftNode = pBuf[1];
-                rightNode = pBuf[0];
-            }
-        }
-        //
-        //重新计算路径ID，只要包含在该任务中的路径需要删除
-        Vector<Integer> DeletePathID = new Vector();
-        for (int i = 0; i < vPathID.size(); i++) {
-            Path pPath = m_PathBase.m_pPathIdx[vPathID.get(i)].m_ptr;
-            //判断该节点是否为属于一条路径
-            if (leftNode == -1) {
-                if (pPath.m_uEndNode == rightNode || pPath.m_uStartNode == rightNode) {
-                    DeletePathID.add(vPathID.get(i));
-                }
-            } else if (rightNode == -1) {
-                if (pPath.m_uEndNode == leftNode || pPath.m_uStartNode == leftNode) {
-                    DeletePathID.add(vPathID.get(i));
-                }
-            } else {
-                if ((pPath.m_uEndNode == leftNode || pPath.m_uStartNode == leftNode) || (pPath.m_uEndNode == rightNode || pPath.m_uStartNode == rightNode)) {
-                    DeletePathID.add(vPathID.get(i));
-                }
-            }
-        }
-        //增加新线
-        if (leftNode != -1 && rightNode != -1) {
-            // 整个曲线已确定
-            Posture m_pstStart = new Posture();
-            Posture m_pstEnd = new Posture();
-            Bezier m_Bezier = new Bezier();
-            Node nodeS = new Node();
-            Node nodeE = new Node();
-            nodeS = GetNode(leftNode);
-            nodeE = GetNode(rightNode);
-            Angle[] Angles = new Angle[4];
-            int nHeadingAngleCount = GetNodeHeadingAngle(leftNode, Angles, 4);
-            //	if (nHeadingAngleCount == 1)
-            if (nHeadingAngleCount > 0) {
-                m_pstStart.Create(nodeS.GetPoint2dObject(), Angles[0]);
-            }
-
-            nCount = GetNodeHeadingAngle(rightNode, Angles, 4);
-            //	if (nCount == 1) {
-            if (nCount > 0) {
-                m_pstEnd.Create(nodeE.GetPoint2dObject(), Angles[0]);
-            }
-            boolean flag = m_Bezier.Create(m_pstStart, m_pstEnd, 0.95f);
-            m_Bezier.BezierOptic();
-            if (flag == true) {
-                float fDist1 = m_Bezier.m_ptKey[0].DistanceTo(m_Bezier.m_ptKey[1]);
-                float fDist2 = m_Bezier.m_ptKey[2].DistanceTo(m_Bezier.m_ptKey[3]);
-                AddGenericPath(m_pstStart, m_pstEnd, fDist1, fDist2, leftNode, rightNode);
-            } else {
-                //Toast.makeText();
-            }
-
-        }
-        //选择删除
-        int romoveID = -1;
-        for (int i = 0; i < DeletePathID.size(); i++) {
-            for (int j = i; j < DeletePathID.size(); j++) {
-                if (romoveID != -1 && DeletePathID.get(j) > romoveID) {
-                    DeletePathID.set(j, DeletePathID.get(j) - 1);
-                }
-            }
-            m_PathBase.RemovePath(DeletePathID.get(i));
-            romoveID = DeletePathID.get(i);
-        }
-        DeletePathID.clear();
-    }
+//    public void DeleteNode(int NodeId) {
+//        Vector<Integer> vPathID = new Vector();
+//        for (int i = 0; i < m_PathBase.m_uCount; i++) {
+//            Path pPath = m_PathBase.m_pPathIdx[i].m_ptr;
+//            if (pPath.m_uStartNode == NodeId || pPath.m_uEndNode == NodeId) vPathID.add(i);
+//        }
+//        int leftNode = -1;
+//        int rightNode = -1;
+//        // 取得与该节点所有相邻节点的编号
+//        int[] pBuf = new int[4];
+//        int nCount = GetAllNeighborNodes(NodeId, pBuf, (short) 4);
+//        if (nCount == 1) leftNode = pBuf[0];
+//        if (nCount > 1) {
+//
+//            Vector<Integer> NodeID = new Vector();
+//            NodeID.add(NodeId);
+//            NodeID.add(pBuf[0]);
+//            Vector<Integer> vPath = GetPathByNodeId(NodeID);
+//            if (vPath.size() < 0) return;
+//            if (m_PathBase.m_pPathIdx[vPath.get(0)].m_ptr.m_uStartNode == pBuf[0]) {
+//                leftNode = pBuf[0];
+//                rightNode = pBuf[1];
+//            } else {
+//                leftNode = pBuf[1];
+//                rightNode = pBuf[0];
+//            }
+//        }
+//        //
+//        //重新计算路径ID，只要包含在该任务中的路径需要删除
+//        Vector<Integer> DeletePathID = new Vector();
+//        for (int i = 0; i < vPathID.size(); i++) {
+//            Path pPath = m_PathBase.m_pPathIdx[vPathID.get(i)].m_ptr;
+//            //判断该节点是否为属于一条路径
+//            if (leftNode == -1) {
+//                if (pPath.m_uEndNode == rightNode || pPath.m_uStartNode == rightNode) {
+//                    DeletePathID.add(vPathID.get(i));
+//                }
+//            } else if (rightNode == -1) {
+//                if (pPath.m_uEndNode == leftNode || pPath.m_uStartNode == leftNode) {
+//                    DeletePathID.add(vPathID.get(i));
+//                }
+//            } else {
+//                if ((pPath.m_uEndNode == leftNode || pPath.m_uStartNode == leftNode) || (pPath.m_uEndNode == rightNode || pPath.m_uStartNode == rightNode)) {
+//                    DeletePathID.add(vPathID.get(i));
+//                }
+//            }
+//        }
+//        //增加新线
+//        if (leftNode != -1 && rightNode != -1) {
+//            // 整个曲线已确定
+//            Posture m_pstStart = new Posture();
+//            Posture m_pstEnd = new Posture();
+//            Bezier m_Bezier = new Bezier();
+//            Node nodeS = new Node();
+//            Node nodeE = new Node();
+//            nodeS = GetNode(leftNode);
+//            nodeE = GetNode(rightNode);
+//            Angle[] Angles = new Angle[4];
+//            int nHeadingAngleCount = GetNodeHeadingAngle(leftNode, Angles, 4);
+//            //	if (nHeadingAngleCount == 1)
+//            if (nHeadingAngleCount > 0) {
+//                m_pstStart.Create(nodeS.GetPoint2dObject(), Angles[0]);
+//            }
+//
+//            nCount = GetNodeHeadingAngle(rightNode, Angles, 4);
+//            //	if (nCount == 1) {
+//            if (nCount > 0) {
+//                m_pstEnd.Create(nodeE.GetPoint2dObject(), Angles[0]);
+//            }
+//            boolean flag = m_Bezier.Create(m_pstStart, m_pstEnd, 0.95f);
+//            m_Bezier.BezierOptic();
+//            if (flag == true) {
+//                float fDist1 = m_Bezier.m_ptKey[0].DistanceTo(m_Bezier.m_ptKey[1]);
+//                float fDist2 = m_Bezier.m_ptKey[2].DistanceTo(m_Bezier.m_ptKey[3]);
+//                AddGenericPath(m_pstStart, m_pstEnd, fDist1, fDist2, leftNode, rightNode);
+//            } else {
+//                //Toast.makeText();
+//            }
+//
+//        }
+//        //选择删除
+//        int romoveID = -1;
+//        for (int i = 0; i < DeletePathID.size(); i++) {
+//            for (int j = i; j < DeletePathID.size(); j++) {
+//                if (romoveID != -1 && DeletePathID.get(j) > romoveID) {
+//                    DeletePathID.set(j, DeletePathID.get(j) - 1);
+//                }
+//            }
+//            m_PathBase.RemovePath(DeletePathID.get(i));
+//            romoveID = DeletePathID.get(i);
+//        }
+//        DeletePathID.clear();
+//    }
 
 
     //由任务中的节点号得到路径序号
@@ -859,10 +862,10 @@ public class CLayer extends NodeBase {
         return pathId;
     }
 
-    public boolean ISInRect(int pathIndex, double minx, double miny, double maxx, double maxy) {
-        if (pathIndex > (m_PathBase.m_uCount - 1)) return false;
-        return m_PathBase.ISInRect(pathIndex, minx, miny, maxx, maxy);
-    }
+//    public boolean ISInRect(int pathIndex, double minx, double miny, double maxx, double maxy) {
+//        if (pathIndex > (m_PathBase.m_uCount - 1)) return false;
+//        return m_PathBase.ISInRect(pathIndex, minx, miny, maxx, maxy);
+//    }
 
     //返回删除的节点ID
     public Vector<Integer> DelPath(Vector<Integer> vPathID) {

@@ -237,19 +237,19 @@ public abstract class Path {
             int ch2 = dis.read();
             if ((ch1 | ch2) < 0) throw new EOFException();
             this.m_uId = ((ch2 << 8) + (ch1));  // 读取路径ID
-            Log.d("readWorld", "路径ID号，从1开始 m_uId" + m_uId);
+//            Log.d("readWorld", "路径ID号，从1开始 m_uId" + m_uId);
 
             ch1 = dis.read();
             ch2 = dis.read();
             if ((ch1 | ch2) < 0) throw new EOFException();
             this.m_uStartNode = ((ch2 << 8) + (ch1));  // 读取起始节点ID
-            Log.d("readWorld", "起始节点ID， m_uStartNode" + m_uStartNode);
+//            Log.d("readWorld", "起始节点ID， m_uStartNode" + m_uStartNode);
 
             ch1 = dis.read();
             ch2 = dis.read();
             if ((ch1 | ch2) < 0) throw new EOFException();
             this.m_uEndNode = ((ch2 << 8) + (ch1));  // 读取结束节点ID
-            Log.d("readWorld", "结束节点ID， m_uEndNode" + m_uEndNode);
+//            Log.d("readWorld", "结束节点ID， m_uEndNode" + m_uEndNode);
 
             ch1 = dis.read();
             ch2 = dis.read();
@@ -258,7 +258,7 @@ public abstract class Path {
             if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             int tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1));
             this.m_fVeloLimit[0] = Float.intBitsToFloat(tempI);  // 读取正向速度限制
-            Log.d("readWorld", "路径速度限制（[0]：正向速度，[1]：反向速度），     this.m_fVeloLimit[0]" + this.m_fVeloLimit[0]);
+//            Log.d("readWorld", "路径速度限制（[0]：正向速度，[1]：反向速度），     this.m_fVeloLimit[0]" + this.m_fVeloLimit[0]);
 
             ch1 = dis.read();
             ch2 = dis.read();
@@ -267,20 +267,20 @@ public abstract class Path {
             if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1));
             this.m_fVeloLimit[1] = Float.intBitsToFloat(tempI);  // 读取反向速度限制
-            Log.d("readWorld", "路径速度限制（[0]：正向速度，[1]：反向速度），     this.m_fVeloLimit[1]" + this.m_fVeloLimit[1]);
+//            Log.d("readWorld", "路径速度限制（[0]：正向速度，[1]：反向速度），     this.m_fVeloLimit[1]" + this.m_fVeloLimit[1]);
 
 //		#endif
             ch1 = dis.read();
             ch2 = dis.read();
             if ((ch1 | ch2) < 0) throw new EOFException();
             this.m_uGuideType = (short) ((ch2 << 8) + (ch1));  // 读取引导类型
-            Log.d("readWorld", "读取引导类型 m_uGuideType" + m_uGuideType);
+//            Log.d("readWorld", "读取引导类型 m_uGuideType" + m_uGuideType);
 
             ch1 = dis.read();
             ch2 = dis.read();
             if ((ch1 | ch2) < 0) throw new EOFException();
             this.m_uExtType = (short) ((ch2 << 8) + (ch1));  // 读取扩展类型
-            Log.d("readWorld", "扩展类型 m_uExtType" + m_uExtType);
+//            Log.d("readWorld", "扩展类型 m_uExtType" + m_uExtType);
 
 
             ch1 = dis.read();
@@ -290,31 +290,31 @@ public abstract class Path {
             if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1));
             this.m_fNavParam = Float.intBitsToFloat(tempI);  // 读取导航参数
-            Log.d("readWorld", "读取导航参数 m_fNavParam" + m_fNavParam);
+//            Log.d("readWorld", "读取导航参数 m_fNavParam" + m_fNavParam);
 
             ch1 = dis.read();
             ch2 = dis.read();
             if ((ch1 | ch2) < 0) throw new EOFException();
             m_LayerID = (short) ((ch2 << 8) + (ch1));  // 读取图层ID
-            Log.d("readWorld", "读取图层ID m_LayerID" + m_LayerID);
+//            Log.d("readWorld", "读取图层ID m_LayerID" + m_LayerID);
 
             ch1 = dis.read();
             ch2 = dis.read();
             if ((ch1 | ch2) < 0) throw new EOFException();
             m_uMoveHeading = (short) ((ch2 << 8) + (ch1));  // 读取行走方向
-            Log.d("readWorld", "读取行走方向 m_uMoveHeading" + m_uMoveHeading);
+//            Log.d("readWorld", "读取行走方向 m_uMoveHeading" + m_uMoveHeading);
 
             ch1 = dis.read();
             ch2 = dis.read();
             if ((ch1 | ch2) < 0) throw new EOFException();
             m_uCarrierType = (short) ((ch2 << 8) + (ch1));  // 读取车辆类型
-            Log.d("readWorld", "读取车辆类型 m_uCarrierType" + m_uCarrierType);
+//            Log.d("readWorld", "读取车辆类型 m_uCarrierType" + m_uCarrierType);
 
             ch1 = dis.read();
             ch2 = dis.read();
             if ((ch1 | ch2) < 0) throw new EOFException();
             m_uOnLine = (short) ((ch2 << 8) + (ch1 << 0));  // 读取上线状态
-            Log.d("readWorld", "读取上线状态 m_uOnLine" + m_uOnLine);
+//            Log.d("readWorld", "读取上线状态 m_uOnLine" + m_uOnLine);
 
             ch1 = dis.read();
             ch2 = dis.read();
@@ -323,7 +323,7 @@ public abstract class Path {
             if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
             tempI = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1));
             m_clr = tempI;  // 读取绘图颜色
-            Log.d("readWorld", "读取绘图颜色 m_clr" + m_clr);
+//            Log.d("readWorld", "读取绘图颜色 m_clr" + m_clr);
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();

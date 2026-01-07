@@ -250,7 +250,7 @@ public class GenericPath extends Path {
     public GenericPath() {
         m_pstStart = new Posture();
         m_pstEnd = new Posture();
-        m_nCountCtrlPoints = 0;
+        m_nCountCtrlPoints = 2;
         m_pptCtrl = null;
 
         m_fVelMax = 0.7f;
@@ -388,11 +388,8 @@ public class GenericPath extends Path {
      * @return 初始化是否成功
      */
     public boolean Init() {
-        // ��ʱΪ���йؼ������ռ䣬�Ա��������߶���
         Point2d[] pptKey = new Point2d[m_nCountCtrlPoints + 2];
-        if (pptKey == null) return false;
 
-        // ��һ�������һ���ؼ���ʵ������·���Ķ˽ڵ�
         pptKey[0] = new Point2d();
         pptKey[0].x = m_pstStart.x;
         pptKey[0].y = m_pstStart.y;
@@ -400,7 +397,6 @@ public class GenericPath extends Path {
         pptKey[m_nCountCtrlPoints + 1].x = m_pstEnd.x;
         pptKey[m_nCountCtrlPoints + 1].y = m_pstEnd.y;
 
-        // ���Ƴ���ʼ�ڵ㡢��ֹ�ڵ�֮��Ĺؼ���
         for (int i = 0; i < m_nCountCtrlPoints; i++) {
             if (pptKey[i + 1] == null) {
                 pptKey[i + 1] = new Point2d();
@@ -409,22 +405,9 @@ public class GenericPath extends Path {
             pptKey[i + 1].y = m_pptCtrl[i].y;
         }
 
-        // �������߶���
         m_Curve = new Bezier();
-
-//        for (int i = 0; i < pptKey.length; i++) {
-//            Log.d("scj", "GenericPath  Init: m_Bezier.m_ptKey" + "[" + i + "]  = " + pptKey[i]);
-//        }
         m_Curve.Create(m_nCountCtrlPoints + 2, pptKey);
 
-//        m_bCurvature = m_Curve.m_bCurvature;
-//        Log.d(TAG, "Init: m_bCurvature = " + m_bCurvature);
-
-        // �ͷ���ʱ�ռ�
-//	delete []pptKey;
-        pptKey = null;
-
-        // ��ʼ����㡢�յ㴦�ķ����
         m_angStartHeading = m_pstStart.GetAngle();
         m_angEndHeading = m_pstEnd.GetAngle();
         m_fSize = m_Curve.m_fTotalLen;
