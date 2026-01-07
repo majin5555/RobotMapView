@@ -73,7 +73,7 @@ public abstract class Path {
      * @param ScrnRef 坐标转换对象
      * @param Grp     画布对象
      */
-    abstract public void Draw(CoordinateConversion ScrnRef, Canvas Grp, Paint paint);
+    abstract public void Draw(CoordinateConversion ScrnRef, Canvas Grp, int color, Paint paint);
 
     /**
      * 抽象方法：绘制路径ID
@@ -81,7 +81,7 @@ public abstract class Path {
      * @param ScrnRef 坐标转换对象
      * @param Grp     画布对象
      */
-    abstract public void DrawID(CoordinateConversion ScrnRef, Canvas Grp, Paint paint);
+    abstract public void DrawID(CoordinateConversion ScrnRef, Canvas Grp, int color, Paint paint);
 
     /**
      * 抽象方法：获取节点在路径上的航向角

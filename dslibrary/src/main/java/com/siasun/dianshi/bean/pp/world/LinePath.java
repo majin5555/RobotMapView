@@ -112,7 +112,8 @@ public class LinePath extends Path {
 //
 //int nCount = (int)(fLen / dContour);
 //SweepingRegion.SetSize(nCount+2);   //������������������Ŀ
-////CTraj* pTraj = pPath->MakeTraj();
+
+    /// /CTraj* pTraj = pPath->MakeTraj();
 //CLineTraj* pTraj = (CLineTraj*)MakeTraj();//�����켣
 //
 //for (int i = 0; i <= nCount+1; i++)
@@ -287,7 +288,8 @@ public class LinePath extends Path {
 //			e.printStackTrace();
 //		}
 //
-////	if (uDir == NEGATIVE_HEADING)
+
+    /// /	if (uDir == NEGATIVE_HEADING)
 //		if (m_uPathHeading == 1) {
 //			short uTemp = m_uStartNode;
 //			m_uStartNode = m_uEndNode;
@@ -301,7 +303,6 @@ public class LinePath extends Path {
 //
 //		return true;
 //	}
-
     @Override
     public boolean Save(DataOutputStream dis) {
         short uDir = 0;            // Positive input/negative input
@@ -333,7 +334,7 @@ public class LinePath extends Path {
     }
 
     @Override
-    public void Draw(CoordinateConversion ScrnRef, Canvas Grp, Paint paint) {
+    public void Draw(CoordinateConversion ScrnRef, Canvas Grp, int color, Paint paint) {
         Point2d start = GetStartPnt();
         PointF pnt1 = ScrnRef.worldToScreen(start.x, start.y);
         Point2d end = GetEndPnt();
@@ -358,7 +359,7 @@ public class LinePath extends Path {
     }
 
     @Override
-    public void DrawID(CoordinateConversion scrnRef, Canvas Grp, Paint paint) {
+    public void DrawID(CoordinateConversion scrnRef, Canvas Grp, int color, Paint paint) {
         Point pnt1 = new Point();
 
         PointF start = scrnRef.worldToScreen(GetStartNode().GetPoint2dObject().x, GetStartNode().GetPoint2dObject().y);
@@ -370,7 +371,7 @@ public class LinePath extends Path {
         pnt1.y = pnt1.y / 2;
 
         String str = String.valueOf(m_uId);
-        paint.setColor(Color.BLUE);
+        paint.setColor(color);
         Grp.drawText(str, pnt1.x + 4 * scrnRef.scale, pnt1.y + 4 * scrnRef.scale, paint);
     }
 

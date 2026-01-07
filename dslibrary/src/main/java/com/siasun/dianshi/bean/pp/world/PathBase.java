@@ -292,12 +292,12 @@ public class PathBase {
     }
 
 
-    public void Draw(CoordinateConversion scrRef, Canvas Grp, Paint paint) {
-        for (short i = 0; i < m_uCount; i++) {
-            if (m_pPathIdx != null && m_pPathIdx[i].m_ptr != null)
-                m_pPathIdx[i].m_ptr.Draw(scrRef, Grp, paint);
-        }
-    }
+//    public void Draw(CoordinateConversion scrRef, Canvas Grp, Paint paint) {
+//        for (short i = 0; i < m_uCount; i++) {
+//            if (m_pPathIdx != null && m_pPathIdx[i].m_ptr != null)
+//                m_pPathIdx[i].m_ptr.Draw(scrRef, Grp, paint);
+//        }
+//    }
 
     /**
      * 绘制路线编号

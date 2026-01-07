@@ -852,7 +852,7 @@ public class GenericPath extends Path {
      */
     android.graphics.Path mBezirPath = new android.graphics.Path();
 
-    public void Draw(CoordinateConversion conversion, Canvas canvas, Paint paint) {
+    public void Draw(CoordinateConversion conversion, Canvas canvas, int color, Paint paint) {
         if (m_Curve != null && m_Curve.m_ptKey != null) {
             PointF mStart = conversion.worldToScreen(m_Curve.m_ptKey[0].x, m_Curve.m_ptKey[0].y);
             PointF mControl1 = conversion.worldToScreen(m_Curve.m_ptKey[1].x, m_Curve.m_ptKey[1].y);
@@ -861,22 +861,11 @@ public class GenericPath extends Path {
 
             // 重置路径，避免重复绘制
             mBezirPath.reset();
-            
-            // 检查起点和终点是否相同
-            if (mStart.equals(mEnd)) {
-                // 起点和终点相同，绘制一个小圆点
-                float radius = 3f;
-                paint.setColor(Color.BLACK);
-                paint.setStyle(Paint.Style.FILL);
-                canvas.drawCircle(mStart.x, mStart.y, radius, paint);
-            } else {
-                // 正常绘制贝塞尔曲线
-                mBezirPath.moveTo(mStart.x, mStart.y);
-                mBezirPath.cubicTo(mControl1.x, mControl1.y, mControl2.x, mControl2.y, mEnd.x, mEnd.y);
-                paint.setColor(Color.BLACK);
-                paint.setStyle(Paint.Style.STROKE);
-                canvas.drawPath(mBezirPath, paint);
-            }
+            mBezirPath.moveTo(mStart.x, mStart.y);
+            mBezirPath.cubicTo(mControl1.x, mControl1.y, mControl2.x, mControl2.y, mEnd.x, mEnd.y);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setColor(color);
+            canvas.drawPath(mBezirPath, paint);
         }
     }
 
@@ -900,13 +889,13 @@ public class GenericPath extends Path {
      * @param Grp     画布对象
      */
     @Override
-    public void DrawID(CoordinateConversion ScrnRef, Canvas Grp, Paint paint) {
+    public void DrawID(CoordinateConversion ScrnRef, Canvas Grp, int color, Paint paint) {
         m_Curve.SetCurT(0.8f);
         Point2d pntT = m_Curve.TrajFun();
         PointF pnt1 = ScrnRef.worldToScreen(pntT.x, pntT.y);
         String str = String.valueOf(m_uId);
-        paint.setColor(Color.BLUE);
         paint.setStyle(Paint.Style.FILL);
-        Grp.drawText(str, pnt1.x, pnt1.y , paint);
+        paint.setColor(color);
+        Grp.drawText(str, pnt1.x, pnt1.y, paint);
     }
 }

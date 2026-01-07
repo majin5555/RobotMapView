@@ -336,82 +336,64 @@ public class Node extends Point2d {
      * @param mPaint     画笔
      * @param type       1 开始节点 2结束节点
      */
-    public void Draw(CoordinateConversion conversion, Canvas canvas, Paint mPaint, Integer type) {
-        try {
-            PointF screenPoint = conversion.worldToScreen(GetPoint2dObject().x, GetPoint2dObject().y);
-            int canvasWidth = canvas.getWidth();
-            int canvasHeight = canvas.getHeight();
-
-            // 检查节点是否在屏幕范围内
-            if ((screenPoint.x < 0 || screenPoint.x > canvasWidth) && (screenPoint.y < 0 || screenPoint.y > canvasHeight))
-                return;
-
-            if (type == 1) {
-                // 绘制节点（点）
-                mPaint.setColor(Color.BLUE);
-            } else {
-                // 绘制节点（点）
-                mPaint.setColor(Color.RED);
-            }
-            mPaint.setStyle(Paint.Style.FILL);
-
-            if (type == 1) {
-                canvas.drawCircle(screenPoint.x, screenPoint.y, 5, mPaint);
-            } else {
-                canvas.drawCircle(screenPoint.x, screenPoint.y + 10, 5, mPaint);
-            }
-
-            // 绘制节点编号
-            mPaint.setTextSize(12f);
-            if (type == 1) {
-                canvas.drawText(String.valueOf(m_uId), screenPoint.x, screenPoint.y, mPaint);
-            } else {
-                canvas.drawText(String.valueOf(m_uId), screenPoint.x, screenPoint.y + 10, mPaint);
-            }
-
-
-        } catch (Exception ex) {
-            System.out.println(ex.toString());
-        }
-    }
+//    public void Draw(CoordinateConversion conversion, Canvas canvas, Paint mPaint, Integer type) {
+//        try {
+//            PointF screenPoint = conversion.worldToScreen(GetPoint2dObject().x, GetPoint2dObject().y);
+//            int canvasWidth = canvas.getWidth();
+//            int canvasHeight = canvas.getHeight();
+//
+//            // 检查节点是否在屏幕范围内
+//            if ((screenPoint.x < 0 || screenPoint.x > canvasWidth) && (screenPoint.y < 0 || screenPoint.y > canvasHeight))
+//                return;
+//
+//            if (type == 1) {
+//                // 绘制节点（点）
+//                mPaint.setColor(Color.BLUE);
+//            } else {
+//                // 绘制节点（点）
+//                mPaint.setColor(Color.RED);
+//            }
+//            mPaint.setStyle(Paint.Style.FILL);
+//
+//            if (type == 1) {
+//                canvas.drawCircle(screenPoint.x, screenPoint.y, 5, mPaint);
+//            } else {
+//                canvas.drawCircle(screenPoint.x, screenPoint.y + 10, 5, mPaint);
+//            }
+//
+//            // 绘制节点编号
+//            mPaint.setTextSize(12f);
+//            if (type == 1) {
+//                canvas.drawText(String.valueOf(m_uId), screenPoint.x, screenPoint.y, mPaint);
+//            } else {
+//                canvas.drawText(String.valueOf(m_uId), screenPoint.x, screenPoint.y + 10, mPaint);
+//            }
+//
+//
+//        } catch (Exception ex) {
+//            System.out.println(ex.toString());
+//        }
+//    }
 
     /**
      * 重写父类Point2d的Draw方法，添加节点编号绘制功能
      */
     @Override
     public void Draw(CoordinateConversion ScrnRef, Canvas canvas, int color, int nPointSize, Paint paint) {
+        paint.setColor(color);
         // 调用父类方法绘制节点
         super.Draw(ScrnRef, canvas, color, nPointSize, paint);
 
         try {
             PointF screenPoint = ScrnRef.worldToScreen(GetPoint2dObject().x, GetPoint2dObject().y);
-
-            // 保存当前画笔状态
-            Paint.Style originalStyle = paint.getStyle();
-            float originalTextSize = paint.getTextSize();
-            int originalColor = paint.getColor();
-
             // 设置文本绘制参数
-            paint.setStyle(Paint.Style.FILL);
-//            paint.setTextSize(14f);
-            paint.setColor(Color.BLACK);
-
+//            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(color);
             // 绘制节点编号，偏移量以避免覆盖节点
-            canvas.drawText(String.valueOf(m_uId), screenPoint.x + nPointSize, screenPoint.y + nPointSize + 2, paint);
+            canvas.drawText(String.valueOf(m_uId), screenPoint.x, screenPoint.y + 5, paint);
 
-            // 恢复画笔状态
-            paint.setStyle(originalStyle);
-//            paint.setTextSize(originalTextSize);
-            paint.setColor(originalColor);
         } catch (Exception ex) {
             System.out.println(ex.toString());
         }
     }
-
-//    /**
-//     * 兼容旧代码的DrawID方法，内部调用Draw方法
-//     */
-//    public void DrawID(CoordinateConversion conversion, Canvas canvas, Paint mPaint) {
-//        Draw(conversion, canvas, mPaint);
-//    }
 }

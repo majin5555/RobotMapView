@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.Color.alpha
 import android.graphics.Paint
 import android.graphics.PointF
 import android.util.Log
@@ -60,31 +59,14 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
 
     // 优化：使用伴生对象创建静态Paint实例，避免重复创建
     companion object {
-        // 编辑模式下的特殊画笔
-        private val mSelectedPaint: Paint by lazy {
+
+        private val mPaint: Paint by lazy {
             Paint().apply {
-                color = Color.GREEN
-                strokeWidth = 3f
+                color = Color.BLACK
                 isAntiAlias = true
-                style = Paint.Style.STROKE
-                alpha(90)
-            }
-        }
-        private val mRedPaint: Paint by lazy {
-            Paint().apply {
-                color = Color.RED
                 strokeWidth = 1f
-                isAntiAlias = true
-                style = Paint.Style.FILL
-                alpha(90)
+                textSize = 3f
             }
-        }
-        private val mPaint = Paint().apply {
-            isAntiAlias = true
-            style = Paint.Style.STROKE
-            color = Color.BLACK
-            textSize = 2f
-            alpha(90)
         }
     }
 
@@ -540,6 +522,11 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
             }
 
             MotionEvent.ACTION_UP -> {
+                if (currentWorkMode == MapView.WorkMode.MODE_PATH_DELETE) {
+                    selectedPath?.let {
+                        deletePath(it)
+                    }
+                }
                 // 结束拖动
                 draggingNode = null
                 draggingControlPoint = null
@@ -690,7 +677,8 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                 }
                             } else if (currentWorkMode == MapView.WorkMode.MODE_PATH_DELETE) {
                                 // 删除模式下，点击路段直接删除
-                                deletePath(path)
+                                selectedPath = path
+//                                deletePath(path)
                             } else {
                                 // 路径编辑模式下每次点击都触发回调
                                 selectedPath = path
@@ -911,39 +899,40 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                     // 编辑模式或节点属性编辑模式
                                     if (selectedPath == path) {
                                         // 绘制选中的路段
-                                        path.Draw(mapView.mSrf, canvas, mSelectedPaint)
+                                        path.Draw(mapView.mSrf, canvas, Color.GREEN, mPaint)
                                         // 绘制路段编号
-                                        path.DrawID(mapView.mSrf, canvas, mPaint)
+                                        path.DrawID(mapView.mSrf, canvas, Color.GREEN, mPaint)
 
                                         // 绘制控制点（仅对GenericPath有效）
                                         if (path is GenericPath && currentWorkMode == MapView.WorkMode.MODE_PATH_EDIT) {
                                             // 使用库函数绘制控制点，区分拖动状态
-                                            val ctrlColor =
-                                                if (draggingControlPoint != null) Color.RED else Color.GREEN
                                             path.DrawCtrlPoints(
-                                                mapView.mSrf, canvas, ctrlColor, 3, mPaint
+                                                mapView.mSrf,
+                                                canvas,
+                                                if (draggingControlPoint != null) Color.RED else Color.GREEN,
+                                                2,
+                                                mPaint
                                             )
                                         }
 
-                                        // 绘制开始节点（红色）
-                                        startNode?.Draw(mapView.mSrf, canvas, Color.RED, 5, mPaint)
-                                        // 绘制结束节点（红色）
-                                        endNode?.Draw(mapView.mSrf, canvas, Color.RED, 5, mPaint)
+                                        // 绘制节点包括节点 和编号（开始红色、结束灰色）
+                                        startNode?.Draw(
+                                            mapView.mSrf, canvas, Color.RED, 3, mPaint
+                                        )
+                                        endNode?.Draw(mapView.mSrf, canvas, Color.RED, 3, mPaint)
 
                                     } else {
                                         // 未选中的路段，正常绘制
-                                        path.Draw(mapView.mSrf, canvas, mPaint)
-                                        // 在节点属性编辑模式下，显示所有路段的起点和终点
-                                        if (currentWorkMode == MapView.WorkMode.MODE_PATH_NODE_ATTR_EDIT) {
-                                            // 绘制开始节点（绿色）
-                                            startNode?.Draw(
-                                                mapView.mSrf, canvas, Color.GREEN, 1, mPaint
-                                            )
-                                            // 绘制结束节点（蓝色）
-                                            endNode?.Draw(
-                                                mapView.mSrf, canvas, Color.BLUE, 1, mPaint
-                                            )
-                                        }
+                                        path.Draw(mapView.mSrf, canvas, Color.BLACK, mPaint)
+                                        // 绘制路段编号
+                                        path.DrawID(mapView.mSrf, canvas, Color.BLACK, mPaint)
+                                        // 绘制节点包括节点 和编号（开始红色、结束灰色）
+                                        startNode?.Draw(
+                                            mapView.mSrf, canvas, Color.RED, 1, mPaint
+                                        )
+                                        endNode?.Draw(
+                                            mapView.mSrf, canvas, Color.GRAY, 2, mPaint
+                                        )
                                     }
                                 }
 
@@ -952,49 +941,59 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                     path.Draw(
                                         mapView.mSrf,
                                         canvas,
-                                        if (selectedPath == path) mSelectedPaint else mPaint
+                                        if (selectedPath == path) Color.GREEN else Color.BLACK,
+                                        if (selectedPath == path) mPaint else mPaint
                                     )
                                     // 显示所有路段编号
-                                    path.DrawID(mapView.mSrf, canvas, mPaint)
+                                    path.DrawID(mapView.mSrf, canvas, Color.BLACK, mPaint)
                                 }
-
+                                //删除单条
                                 MapView.WorkMode.MODE_PATH_DELETE -> {
                                     // 删除模式：绘制所有路段，选中时显示红色高亮
                                     if (selectedPath == path) {
-                                        // 绘制选中的路段（红色高亮）
-//                                        val deletePaint = Paint(mPaint).apply {
-//                                            color = Color.RED
-//                                            strokeWidth = 3f
-//                                        }
-                                        path.Draw(mapView.mSrf, canvas, mRedPaint)
+                                        //绘制路线
+                                        path.Draw(mapView.mSrf, canvas, Color.RED, mPaint)
                                         // 绘制路段编号
-                                        path.DrawID(mapView.mSrf, canvas, mPaint)
+                                        path.DrawID(mapView.mSrf, canvas, Color.BLACK, mPaint)
 //                                        // 绘制节点（红色）
-                                        startNode?.Draw(mapView.mSrf, canvas, Color.RED, 5, mPaint)
-                                        endNode?.Draw(mapView.mSrf, canvas, Color.RED, 5, mPaint)
+                                        startNode?.Draw(
+                                            mapView.mSrf, canvas, Color.RED, 3, mPaint
+                                        )
+                                        endNode?.Draw(
+                                            mapView.mSrf, canvas, Color.GRAY, 3, mPaint
+                                        )
                                     } else {
                                         // 未选中的路段，正常绘制
-                                        path.Draw(mapView.mSrf, canvas, mPaint)
+                                        path.Draw(mapView.mSrf, canvas, Color.BLACK, mPaint)
                                         // 绘制路段编号
-                                        path.DrawID(mapView.mSrf, canvas, mPaint)
+                                        path.DrawID(mapView.mSrf, canvas, Color.BLACK, mPaint)
                                         // 显示所有节点
                                         startNode?.Draw(
-                                            mapView.mSrf, canvas, Color.GREEN, 3, mPaint
+                                            mapView.mSrf, canvas, Color.RED, 1, mPaint
                                         )
-//                                        endNode?.Draw(mapView.mSrf, canvas, Color.BLUE, 5, mPaint)
+                                        endNode?.Draw(
+                                            mapView.mSrf, canvas, Color.GRAY, 2, mPaint
+                                        )
                                     }
                                 }
-
+                                //删除多条
                                 MapView.WorkMode.MODE_PATH_DELETE_MULTIPLE -> {
                                     // 删除多条路线模式：先正常绘制所有路线
-                                    path.Draw(mapView.mSrf, canvas, mPaint)
+                                    path.Draw(mapView.mSrf, canvas, Color.BLACK, mPaint)
+                                    // 绘制路段编号
+                                    path.DrawID(mapView.mSrf, canvas, Color.BLACK, mPaint)
                                     // 显示所有节点
-                                    startNode?.Draw(mapView.mSrf, canvas, Color.GREEN, 3, mPaint)
+                                    startNode?.Draw(
+                                        mapView.mSrf, canvas, Color.RED, 1, mPaint
+                                    )
+                                    endNode?.Draw(
+                                        mapView.mSrf, canvas, Color.GRAY, 2, mPaint
+                                    )
                                 }
 
                                 MapView.WorkMode.MODE_PATH_MERGE -> {
                                     // 路线合并模式：正常绘制路段，放大显示选中的节点
-                                    path.Draw(mapView.mSrf, canvas, mPaint)
+                                    path.Draw(mapView.mSrf, canvas, Color.BLACK, mPaint)
 
                                     // 检查并绘制起点节点
                                     if (startNode != null) {
@@ -1051,12 +1050,12 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
 
                                 else -> {
                                     // 非编辑模式，正常绘制
-                                    path.Draw(mapView.mSrf, canvas, mPaint)
+                                    path.Draw(mapView.mSrf, canvas, Color.BLACK, mPaint)
                                     // 绘制路段编号
-//                                    path.DrawID(mapView.mSrf, canvas, mPaint)
-                                    // 绘制节点（红色）
+                                    path.DrawID(mapView.mSrf, canvas, Color.BLACK, mPaint)
+                                    // 绘制节点包括节点 和编号（开始红色、结束灰色）
                                     startNode?.Draw(mapView.mSrf, canvas, Color.RED, 1, mPaint)
-                                    endNode?.Draw(mapView.mSrf, canvas, Color.GRAY, 1, mPaint)
+                                    endNode?.Draw(mapView.mSrf, canvas, Color.GRAY, 2, mPaint)
                                 }
                             }
                         }
@@ -1071,7 +1070,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                     canvas.save()
                     canvas.concat(mMatrix)
                     for (path in selectedPathsForDeletion) {
-                        path.Draw(mapView.mSrf, canvas, mRedPaint)
+                        path.Draw(mapView.mSrf, canvas, Color.RED, mPaint)
                     }
                     canvas.restore()
 
@@ -1121,7 +1120,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                     canvas.save()
                     canvas.concat(mMatrix)
                     // 绘制临时曲线路段
-                    tempPath!!.Draw(mapView.mSrf, canvas, mRedPaint)
+                    tempPath!!.Draw(mapView.mSrf, canvas, Color.RED, mPaint)
                     canvas.restore()
                 }
             }

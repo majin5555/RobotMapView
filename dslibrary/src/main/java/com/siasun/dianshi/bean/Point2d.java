@@ -191,7 +191,6 @@ public class Point2d implements Serializable {
     public void Draw(CoordinateConversion ScrnRef, Canvas canvas, int color, int nPointSize, Paint paint) {
         PointF pnt1 = ScrnRef.worldToScreen(x, y);
         paint.setColor(color);
-        paint.setStyle(Paint.Style.FILL);
         canvas.drawCircle(pnt1.x, pnt1.y, nPointSize, paint);
     }
 
