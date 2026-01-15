@@ -142,7 +142,10 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      */
 
     init {
-        setBackgroundColor(Color.WHITE)
+        // 移除setBackgroundColor调用，让ShapeFrameLayout的shape_solidColor和shape_radius生效
+        // 设置clipChildren为true，确保子视图不会超出父视图的圆角区域
+        clipChildren = true
+        clipToPadding = true
         mOuterMatrix = Matrix()
         mGestureDetector = SlamGestureDetector(this, this)
         initView()
