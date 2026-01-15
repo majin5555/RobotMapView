@@ -47,6 +47,7 @@ import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.CopyOnWriteArrayList
 import androidx.core.content.withStyledAttributes
+import androidx.core.view.get
 import com.hjq.shape.layout.ShapeFrameLayout
 
 /**
@@ -711,6 +712,14 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     fun setElevators(list: MutableList<ElevatorPoint>?) {
         mElevatorView?.setElevators(list)
     }
+
+    /**
+     * 获取设置乘梯点
+     */
+    fun getElevators(): MutableList<ElevatorPoint>? {
+        return mElevatorView?.getElevators()
+    }
+
 
     /**
      * 设置清扫区域数据源

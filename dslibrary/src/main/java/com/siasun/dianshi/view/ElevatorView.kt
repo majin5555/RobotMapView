@@ -71,6 +71,13 @@ class ElevatorView(context: Context?, parent: WeakReference<MapView>) :
     }
 
     /**
+     * 获取乘梯点数据
+     */
+    fun getElevators(): MutableList<ElevatorPoint> {
+        return elevatorsList
+    }
+
+    /**
      * 清除一体机数据
      */
     private fun clearElevators() {
@@ -107,10 +114,10 @@ class ElevatorView(context: Context?, parent: WeakReference<MapView>) :
                 val screenPoint = mapView.worldToScreen(gate.x, gate.y)
                 // 将结果赋值给pointLocation对象
                 pointLocation.set(screenPoint.x, screenPoint.y)
-                
+
                 // 绘制乘梯点本体
                 drawCircle(canvas, pointLocation, BASE_RADIUS, mPaint)
-                
+
                 // 根据工作模式绘制外圈圆环
                 if (currentWorkMode == MapView.WorkMode.MODE_ELEVATOR_EDIT) {
                     // 编辑模式：绘制绿色圆环
@@ -129,7 +136,7 @@ class ElevatorView(context: Context?, parent: WeakReference<MapView>) :
                     // 恢复填充样式
                     mPaint.style = Paint.Style.FILL
                 }
-                
+
                 pointLocation.x += 10f
                 pointLocation.y += 10f
                 mPaint.color = Color.GRAY
@@ -142,10 +149,10 @@ class ElevatorView(context: Context?, parent: WeakReference<MapView>) :
                 val screenPoint = mapView.worldToScreen(pstPark.x, pstPark.y)
                 // 将结果赋值给pointLocation对象
                 pointLocation.set(screenPoint.x, screenPoint.y)
-                
+
                 // 绘制乘梯点本体
                 drawCircle(canvas, pointLocation, BASE_RADIUS, mPaint)
-                
+
                 // 根据工作模式绘制外圈圆环
                 if (currentWorkMode == MapView.WorkMode.MODE_ELEVATOR_EDIT) {
                     // 编辑模式：绘制绿色圆环
@@ -164,7 +171,7 @@ class ElevatorView(context: Context?, parent: WeakReference<MapView>) :
                     // 恢复填充样式
                     mPaint.style = Paint.Style.FILL
                 }
-                
+
                 pointLocation.x += 10f
                 pointLocation.y += 10f
                 mPaint.color = Color.GRAY
