@@ -10,6 +10,8 @@
         android:layout_height="match_parent"
         app:showArea="true"
         app:showChargeStation="true"
+        app:showUpLaserPointCloud="true"
+        app:showLowerLaserPointCloud="true"
         app:showElevator="true"
         app:showMapNameView="false"
         app:showMixArea="true"
