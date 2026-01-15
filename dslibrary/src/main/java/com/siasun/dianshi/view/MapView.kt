@@ -13,7 +13,6 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.ViewGroup
 import android.view.ViewTreeObserver.OnGlobalLayoutListener
-import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.annotation.RequiresApi
 import com.bumptech.glide.Glide
@@ -48,12 +47,13 @@ import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.CopyOnWriteArrayList
 import androidx.core.content.withStyledAttributes
+import com.hjq.shape.layout.ShapeFrameLayout
 
 /**
  * 地图画布
  * 将在此画布中绘制slam的png地图
  */
-class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(context, attrs),
+class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLayout(context, attrs),
     SlamGestureDetector.OnRPGestureListener {
 
     // 工作模式枚举
@@ -98,7 +98,6 @@ class MapView(context: Context, private val attrs: AttributeSet) : FrameLayout(c
     private var VIEW_HEIGHT = 0
 
     //视图高度
-    private val defaultBackGroundColor = 0xC0C0C0 //默认背景
     private var mMapScale = 1f //地图缩放级别
     private val mMaxMapScale = 5f //最大缩放级别
     private var mMinMapScale = 0.1f //最小缩放级别
