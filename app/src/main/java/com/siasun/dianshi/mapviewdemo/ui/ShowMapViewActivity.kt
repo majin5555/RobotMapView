@@ -65,7 +65,7 @@ import kotlin.random.Random
  */
 class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMapViewModel>() {
 
-    val mapId = 1
+    val mapId = 2
     var cleanAreas: MutableList<CleanAreaNew> = mutableListOf()
     var mSpArea: MutableList<SpArea> = mutableListOf()
     var mMixArea: MutableList<WorkAreasNew> = mutableListOf()
@@ -182,13 +182,13 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        iniVirtualWall()
 //        initRemoveNoise()
 //        initPostingArea()
-//        initCleanArea()
+        initCleanArea()
 //        initElevator()
 //        initPose()
 //        initMachineStation()
 //        initMixArea()
 //        initSpAreas()
-        initPath()
+//        initPath()
 
         mBinding.btnAddGloblePath.onClick {
 

@@ -1,5 +1,6 @@
 package com.siasun.dianshi.view
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.*
 import android.view.GestureDetector
@@ -13,6 +14,7 @@ import kotlin.math.sqrt
 /**
  * 清扫区域
  */
+@SuppressLint("ViewConstructor")
 class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
     SlamWareBaseView(context, parent), GestureDetector.OnGestureListener,
     GestureDetector.OnDoubleTapListener {
@@ -76,6 +78,14 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
 
         private val textPaint = Paint().apply {
             color = Color.BLACK
+            isAntiAlias = true
+        }
+        
+        // 填充区域的画笔 - 透明蓝色
+        private val fillPaint = Paint().apply {
+            style = Paint.Style.FILL
+            // 设置透明蓝色 (ARGB: 128表示半透明，0, 0, 255表示蓝色)
+            color = Color.argb(50, 0, 0, 255)
             isAntiAlias = true
         }
     }
@@ -570,6 +580,9 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
 
         // 闭合路径
         path.close()
+
+        // 绘制填充区域（透明蓝色）
+        canvas.drawPath(path, fillPaint)
 
         // 绘制多边形轮廓，选中的区域使用不同的画笔
         canvas.drawPath(path, if (isSelected) selectedAreaPaint else areaPaint)

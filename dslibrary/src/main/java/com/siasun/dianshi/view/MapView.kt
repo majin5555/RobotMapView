@@ -203,6 +203,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         //底图的View
         addView(mPngMapView, lp)
 
+        //清扫区域
+        addMapLayers(mPolygonEditView)
         //充电站
         addMapLayers(mHomeDockView)
         //乘梯点
@@ -217,16 +219,12 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         addMapLayers(mDownLaserScanView)
         //顶视路线
         addMapLayers(mTopViewPathView)
-        //机器人图标
-        addMapLayers(mRobotView)
         //显示虚拟墙
         addMapLayers(mWallView)
         //噪点擦除去
         addMapLayers(mRemoveNoiseView)
         //定位区域
         addMapLayers(mPostingAreasView)
-        //清扫区域
-        addMapLayers(mPolygonEditView)
         //特殊区域
         addMapLayers(mSpPolygonEditView)
         //混行区域
@@ -239,7 +237,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         addMapLayers(mWorkIngPathView)
         //地图名称
         addView(mMapNameView)
-
+        //机器人图标
+        addMapLayers(mRobotView)
         //修改LegendView的布局参数，使其显示在右上角（在地图名称下边）
         addView(
             mLegendView, LayoutParams(
