@@ -110,6 +110,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     private var mMapNameView: MapNameView? = null//图例
 
     var mWallView: VirtualWallView? = null//虚拟墙
+    var mCrossView: CrossDoorView? = null//过门
     var mHomeDockView: HomeDockView? = null//充电站
     var mElevatorView: ElevatorView? = null//乘梯点
     var mStationView: StationsView? = null//站点
@@ -182,6 +183,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
             LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         mPngMapView = PngMapView(context)
         mWallView = VirtualWallView(context, mMapView)
+        mCrossView = CrossDoorView(context, mMapView)
         mHomeDockView = HomeDockView(context, mMapView)
         mElevatorView = ElevatorView(context, mMapView)
         mStationView = StationsView(context, mMapView)
@@ -235,6 +237,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         addMapLayers(mWorldPadView)
         //显示工作路径
         addMapLayers(mWorkIngPathView)
+        addMapLayers(mCrossView)
         //地图名称
         addView(mMapNameView)
         //机器人图标
@@ -494,6 +497,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mRobotView = null
         mWorkIngPathView = null
         mMapNameView = null
+        mCrossView = null
 
         // 清理监听器
         mSingleTapListener = null
