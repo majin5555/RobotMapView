@@ -239,6 +239,14 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 
     //过门
     fun initCrossDoor() {
+        // 设置线点击事件监听器
+        mBinding.mapView.mCrossView?.setOnCrossDoorLineClickListener(object : com.siasun.dianshi.view.CrossDoorView.OnCrossDoorLineClickListener {
+            override fun onCrossDoorLineClick(crossDoor: com.siasun.dianshi.bean.CrossDoor) {
+                // 点击了过门线，弹框显示信息
+                showCrossDoorDialog(crossDoor)
+            }
+        })
+
         mBinding.btnAddCrossDoor.onClick {
             // 设置工作模式为添加过门模式
             mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CROSS_DOOR_ADD)
@@ -1228,5 +1236,28 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //                PathPlanningUtil.clearObjectPools() // 清理对象池
 //            }
 //        }
+    }
+
+    /**
+     * 显示过门信息对话框
+     */
+    private fun showCrossDoorDialog(crossDoor: com.siasun.dianshi.bean.CrossDoor) {
+        android.app.AlertDialog.Builder(this)
+            .setTitle("过门信息")
+            .setMessage(
+                "ID: ${crossDoor.id}\n"
+                        + "地图ID: ${crossDoor.map_id}\n"
+                        + "门编号: ${crossDoor.door_msg.door_sn}\n"
+                        + "类型: ${crossDoor.door_msg.type}\n"
+                        + "起点: (${String.format("%.2f", crossDoor.start_point.x)}, ${String.format("%.2f", crossDoor.start_point.y)})\n"
+                        + "终点: (${String.format("%.2f", crossDoor.end_point.x)}, ${String.format("%.2f", crossDoor.end_point.y)})"
+            )
+            .setPositiveButton("确定", null)
+            .setNegativeButton("删除") { _, _ ->
+                // 删除选中的过门
+                mBinding.mapView.mCrossView?.removeCrossDoor(crossDoor)
+                ToastUtils.showLong("已删除过门: ${crossDoor.door_msg.door_sn}")
+            }
+            .show()
     }
 }

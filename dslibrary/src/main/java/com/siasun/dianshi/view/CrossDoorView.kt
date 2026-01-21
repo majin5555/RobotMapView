@@ -44,6 +44,27 @@ class CrossDoorView(
         NONE, START_POINT, END_POINT
     }
 
+    /**
+     * 线点击事件监听器接口
+     */
+    interface OnCrossDoorLineClickListener {
+        /**
+         * 当点击过门线时调用
+         * @param crossDoor 被点击的过门
+         */
+        fun onCrossDoorLineClick(crossDoor: CrossDoor)
+    }
+
+    // 线点击事件监听器
+    private var onCrossDoorLineClickListener: OnCrossDoorLineClickListener? = null
+
+    /**
+     * 设置线点击事件监听器
+     */
+    fun setOnCrossDoorLineClickListener(listener: OnCrossDoorLineClickListener?) {
+        onCrossDoorLineClickListener = listener
+    }
+
     // 画笔定义
     private val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#0099FF")
@@ -203,9 +224,17 @@ class CrossDoorView(
                         postInvalidate()
                         return true
                     }
+
+                    // 检查是否点击了线（使用点到直线的距离公式）
+                    val distanceToLine = pointToLineDistance(x, y, startScreenPoint, endScreenPoint)
+                    if (distanceToLine <= dragThreshold) {
+                        // 点击了线，触发回调
+                        onCrossDoorLineClickListener?.onCrossDoorLineClick(crossDoor)
+                        return true
+                    }
                 }
 
-                // 没有点击到任何端点，取消选中
+                // 没有点击到任何端点或线，取消选中
                 selectedCrossDoor = null
                 selectedPointType = SelectedPointType.NONE
                 postInvalidate()
@@ -238,6 +267,26 @@ class CrossDoorView(
         }
 
         return true
+    }
+
+    /**
+     * 计算点到直线的距离
+     * @param x 点的x坐标
+     * @param y 点的y坐标
+     * @param startPoint 直线起点
+     * @param endPoint 直线终点
+     * @return 点到直线的距离
+     */
+    private fun pointToLineDistance(x: Float, y: Float, startPoint: PointF, endPoint: PointF): Float {
+        val dx = endPoint.x - startPoint.x
+        val dy = endPoint.y - startPoint.y
+        val denominator = Math.sqrt((dx * dx + dy * dy).toDouble()).toFloat()
+        if (denominator == 0f) {
+            // 起点和终点重合，返回点到起点的距离
+            return Math.sqrt(((x - startPoint.x) * (x - startPoint.x) + (y - startPoint.y) * (y - startPoint.y)).toDouble()).toFloat()
+        }
+        val numerator = Math.abs(dy * x - dx * y + endPoint.x * startPoint.y - endPoint.y * startPoint.x)
+        return numerator / denominator
     }
 
     /**
