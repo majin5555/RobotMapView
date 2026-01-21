@@ -36,6 +36,24 @@
             android:orientation="vertical">
 
             <Button
+                android:id="@+id/btn_add_cross_door"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="增加过门" />
+
+            <Button
+                android:id="@+id/btn_delete_cross_door"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="删除过门" />
+
+            <Button
+                android:id="@+id/btn_edit_cross_door"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="编辑过门" />
+
+            <Button
                 android:id="@+id/btn_add_teach_path"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

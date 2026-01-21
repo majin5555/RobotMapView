@@ -87,7 +87,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         MODE_PATH_CONVERT_TO_LINE, // 曲线转直线模式 //暂时没有
         MODE_PATH_NODE_ATTR_EDIT, // 节点属性编辑模式
         MODE_PATH_SEGMENT_ATTR_EDIT, // 路段属性编辑模式
-        MODE_PATH_CREATE // 创建路线模式
+        MODE_PATH_CREATE, // 创建路线模式
+        MODE_CROSS_DOOR_ADD // 添加过门模式
     }
 
     // 当前工作模式
@@ -531,6 +532,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mElevatorView?.setWorkMode(mode)
         mHomeDockView?.setWorkMode(mode)
         mWorldPadView?.setWorkMode(mode)
+        mCrossView?.setWorkMode(mode)
     }
 
     /**

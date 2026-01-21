@@ -182,13 +182,14 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        iniVirtualWall()
 //        initRemoveNoise()
 //        initPostingArea()
-        initCleanArea()
+//        initCleanArea()
 //        initElevator()
 //        initPose()
 //        initMachineStation()
 //        initMixArea()
 //        initSpAreas()
 //        initPath()
+        initCrossDoor()
 
         mBinding.btnAddGloblePath.onClick {
 
@@ -233,6 +234,31 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             } else {
                 ToastUtils.showLong("全局路径规划失败")
             }
+        }
+    }
+
+    //过门
+    fun initCrossDoor() {
+        mBinding.btnAddCrossDoor.onClick {
+            // 设置工作模式为添加过门模式
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CROSS_DOOR_ADD)
+            // 在屏幕中心创建一个新的过门
+            mBinding.mapView.mCrossView?.createCrossDoorAtCenter()
+            ToastUtils.showLong("已进入添加过门模式")
+        }
+
+        mBinding.btnDeleteCrossDoor.onClick {
+            // 清除当前正在创建的过门
+            mBinding.mapView.mCrossView?.clearCurrentCrossDoor()
+            // 切换回显示地图模式
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SHOW_MAP)
+            ToastUtils.showLong("已退出添加过门模式")
+        }
+        
+        mBinding.btnEditCrossDoor.onClick {
+            // 切换到编辑模式
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CROSS_DOOR_ADD)
+            ToastUtils.showLong("已进入编辑过门模式")
         }
     }
 
