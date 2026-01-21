@@ -267,8 +267,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 
         mBinding.btnEditCrossDoor.onClick {
             // 切换到编辑模式
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CROSS_DOOR_ADD)
-            ToastUtils.showLong("已进入编辑过门模式")
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CROSS_DOOR_EDIT)
+            ToastUtils.showLong("已进入编辑过门模式，可拖动端点修改位置")
         }
 
     }

@@ -6,6 +6,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PointF
+import android.view.MotionEvent
 import com.siasun.dianshi.bean.CrossDoor
 import com.siasun.dianshi.bean.DoorMsg
 import java.lang.ref.WeakReference
@@ -31,6 +32,18 @@ class CrossDoorView(
     // 过门列表
     private val crossDoorList = mutableListOf<CrossDoor>()
 
+    // 编辑状态
+    private var isEditing = false
+    private var selectedCrossDoor: CrossDoor? = null
+    private var selectedPointType = SelectedPointType.NONE
+    private var isDragging = false
+    private val dragThreshold = 30f // 点击检测阈值（像素）
+
+    // 选中点类型枚举
+    enum class SelectedPointType {
+        NONE, START_POINT, END_POINT
+    }
+
     // 画笔定义
     private val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#0099FF")
@@ -49,6 +62,11 @@ class CrossDoorView(
         color = Color.WHITE
         style = Paint.Style.STROKE
         strokeWidth = 2f
+    }
+
+    private val selectedPointPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#FFFF00")
+        style = Paint.Style.FILL
     }
 
     private val doorMsgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -76,12 +94,24 @@ class CrossDoorView(
             drawLine(canvas, startScreenPoint, endScreenPoint, linePaint)
 
             // 绘制起点端点
-            drawCircle(canvas, startScreenPoint, 8f, pointPaint)
-            drawCircle(canvas, startScreenPoint, 8f, pointStrokePaint)
+            if (isEditing && selectedCrossDoor == crossDoor && selectedPointType == SelectedPointType.START_POINT) {
+                // 选中的起点端点（黄色）
+                drawCircle(canvas, startScreenPoint, 10f, selectedPointPaint)
+                drawCircle(canvas, startScreenPoint, 10f, pointStrokePaint)
+            } else {
+                drawCircle(canvas, startScreenPoint, 8f, pointPaint)
+                drawCircle(canvas, startScreenPoint, 8f, pointStrokePaint)
+            }
 
             // 绘制终点端点
-            drawCircle(canvas, endScreenPoint, 8f, pointPaint)
-            drawCircle(canvas, endScreenPoint, 8f, pointStrokePaint)
+            if (isEditing && selectedCrossDoor == crossDoor && selectedPointType == SelectedPointType.END_POINT) {
+                // 选中的终点端点（黄色）
+                drawCircle(canvas, endScreenPoint, 10f, selectedPointPaint)
+                drawCircle(canvas, endScreenPoint, 10f, pointStrokePaint)
+            } else {
+                drawCircle(canvas, endScreenPoint, 8f, pointPaint)
+                drawCircle(canvas, endScreenPoint, 8f, pointStrokePaint)
+            }
 
             // 绘制过门信息
             val centerX = (startScreenPoint.x + endScreenPoint.x) / 2f
@@ -134,10 +164,89 @@ class CrossDoorView(
     }
 
     /**
+     * 处理触摸事件
+     */
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (!isEditing) {
+            return false
+        }
+
+        val mapView = parent.get() ?: return false
+        val x = event.x
+        val y = event.y
+
+        when (event.action) {
+            MotionEvent.ACTION_DOWN -> {
+                // 检查是否点击了某个过门的端点
+                for (crossDoor in crossDoorList) {
+                    val startScreenPoint = mapView.worldToScreen(crossDoor.start_point.x, crossDoor.start_point.y)
+                    val endScreenPoint = mapView.worldToScreen(crossDoor.end_point.x, crossDoor.end_point.y)
+
+                    // 检查是否点击了起点
+                    val dxStart = x - startScreenPoint.x
+                    val dyStart = y - startScreenPoint.y
+                    if (dxStart * dxStart + dyStart * dyStart <= dragThreshold * dragThreshold) {
+                        selectedCrossDoor = crossDoor
+                        selectedPointType = SelectedPointType.START_POINT
+                        isDragging = true
+                        postInvalidate()
+                        return true
+                    }
+
+                    // 检查是否点击了终点
+                    val dxEnd = x - endScreenPoint.x
+                    val dyEnd = y - endScreenPoint.y
+                    if (dxEnd * dxEnd + dyEnd * dyEnd <= dragThreshold * dragThreshold) {
+                        selectedCrossDoor = crossDoor
+                        selectedPointType = SelectedPointType.END_POINT
+                        isDragging = true
+                        postInvalidate()
+                        return true
+                    }
+                }
+
+                // 没有点击到任何端点，取消选中
+                selectedCrossDoor = null
+                selectedPointType = SelectedPointType.NONE
+                postInvalidate()
+            }
+
+            MotionEvent.ACTION_MOVE -> {
+                if (isDragging && selectedCrossDoor != null) {
+                    // 将屏幕坐标转换为世界坐标
+                    val worldPoint = mapView.screenToWorld(x, y)
+
+                    // 更新选中端点的坐标
+                    when (selectedPointType) {
+                        SelectedPointType.START_POINT -> {
+                            selectedCrossDoor!!.start_point = PointF(worldPoint.x, worldPoint.y)
+                        }
+                        SelectedPointType.END_POINT -> {
+                            selectedCrossDoor!!.end_point = PointF(worldPoint.x, worldPoint.y)
+                        }
+                        SelectedPointType.NONE -> {}
+                    }
+
+                    postInvalidate()
+                    return true
+                }
+            }
+
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                isDragging = false
+            }
+        }
+
+        return true
+    }
+
+    /**
      * 设置工作模式
      */
     fun setWorkMode(mode: MapView.WorkMode) {
         currentWorkMode = mode
+        // 当进入编辑过门模式时，启用编辑功能
+        isEditing = (mode == MapView.WorkMode.MODE_CROSS_DOOR_EDIT)
         postInvalidate()
     }
 

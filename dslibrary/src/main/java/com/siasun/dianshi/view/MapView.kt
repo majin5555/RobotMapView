@@ -88,7 +88,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         MODE_PATH_NODE_ATTR_EDIT, // 节点属性编辑模式
         MODE_PATH_SEGMENT_ATTR_EDIT, // 路段属性编辑模式
         MODE_PATH_CREATE, // 创建路线模式
-        MODE_CROSS_DOOR_ADD // 添加过门模式
+        MODE_CROSS_DOOR_ADD, // 添加过门模式
+        MODE_CROSS_DOOR_EDIT // 编辑过门模式
     }
 
     // 当前工作模式
