@@ -244,6 +244,16 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CROSS_DOOR_ADD)
             // 在屏幕中心创建一个新的过门
             mBinding.mapView.mCrossView?.createCrossDoorAtCenter()
+
+            val crossDoor = com.siasun.dianshi.bean.CrossDoor(
+                id = 1,
+                map_id = 2,
+                door_msg = com.siasun.dianshi.bean.DoorMsg(
+                    door_sn = "DOOR_001",
+                    type = "cross_door"
+                ),
+            )
+            mBinding.mapView.mCrossView?.addCrossDoor(crossDoor)
             ToastUtils.showLong("已进入添加过门模式")
         }
 
@@ -254,12 +264,13 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SHOW_MAP)
             ToastUtils.showLong("已退出添加过门模式")
         }
-        
+
         mBinding.btnEditCrossDoor.onClick {
             // 切换到编辑模式
             mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CROSS_DOOR_ADD)
             ToastUtils.showLong("已进入编辑过门模式")
         }
+
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
