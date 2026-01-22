@@ -184,26 +184,26 @@ public class LinePath extends Path {
     int PointHitTest(Point pnt, CoordinateConversion ScrnRef) {
         // 取得对应的世界点坐标
 //        Point2d pt = ScrnRef.GetWorldPoint(pnt);
-        PointF pt = ScrnRef.screenToWorld((float) pnt.x, (float) pnt.y);
-        Point2d ptStart = GetStartPnt();
-        Point2d ptEnd = GetEndPnt();
-
-        // 构造直线
-        Line ln = new Line(ptStart, ptEnd);
-
-        //float fLambda = 0.0F;
-        Point2d fLambda = new Point2d();
-        Point2d ptFoot = new Point2d();
-
-        // 计算点到此直线的最短距离
-        float fDist = ln.DistanceToPoint(false, new Point2d(pt.x, pt.y), fLambda, ptFoot);
-        if (fLambda.x >= 0 && fLambda.x <= 1) {
-            // 换算到屏幕窗口距离
-            int nDist = (int) (fDist * ScrnRef.scale);
-
-            // 如果屏幕窗口距离小于3，认为鼠标触碰到路径
-            if (nDist <= offset) return 0;               // 落入
-        }
+//        PointF pt = ScrnRef.screenToWorld((float) pnt.x, (float) pnt.y);
+//        Point2d ptStart = GetStartPnt();
+//        Point2d ptEnd = GetEndPnt();
+//
+//        // 构造直线
+//        Line ln = new Line(ptStart, ptEnd);
+//
+//        //float fLambda = 0.0F;
+//        Point2d fLambda = new Point2d();
+//        Point2d ptFoot = new Point2d();
+//
+//        // 计算点到此直线的最短距离
+//        float fDist = ln.DistanceToPoint(false, new Point2d(pt.x, pt.y), fLambda, ptFoot);
+//        if (fLambda.x >= 0 && fLambda.x <= 1) {
+//            // 换算到屏幕窗口距离
+//            int nDist = (int) (fDist * ScrnRef.scale);
+//
+//            // 如果屏幕窗口距离小于3，认为鼠标触碰到路径
+//            if (nDist <= offset) return 0;               // 落入
+//        }
         return -1;          // 落出
     }
 

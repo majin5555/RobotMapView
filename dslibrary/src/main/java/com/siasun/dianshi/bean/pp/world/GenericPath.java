@@ -282,37 +282,37 @@ public class GenericPath extends Path {
      */
     @Override
     int PointHitTest(Point pnt, CoordinateConversion ScrnRef) {
-        // 判断屏幕点是否落在某个关键点处
-        for (int i = 1; i < m_Curve.m_nCountKeyPoints - 1; i++) {
-//            Point pntKey = ScrnRef.GetWindowPoint(m_Curve.m_ptKey[i]);
-            PointF pntKey = ScrnRef.worldToScreen(m_Curve.m_ptKey[i].x, m_Curve.m_ptKey[i].y);
-            int offSet = 20;
-            Rect r = new Rect((int) (pntKey.x - nodeOffset), (int) (pntKey.y - nodeOffset), (int) (pntKey.x + nodeOffset), (int) (pntKey.y + nodeOffset)); // Construct an emtpy rectangle
-
-            if (pnt.x >= r.left && pnt.x <= (r.left + r.width()) && pnt.y < r.bottom && pnt.y >= (r.bottom - r.height()))
-                return i + 1;
-        }
-
-        // 下面判断屏幕点是否落在曲线上
-        Point2d ptClosest = new Point2d();
-//        Point2d pt = ScrnRef.GetWorldPoint(pnt);
-        PointF pt = ScrnRef.screenToWorld((float) pnt.x, (float) pnt.y);
-        float CurT = 0.0f;
-        // 计算此点在世界坐标系内到曲线的距离
-        if (m_Curve.GetClosestPoint(new Point2d(pt.x, pt.y), ptClosest, CurT)) {
-            // 计算点到曲线的最近距离
-//            float fDist = pt.DistanceTo(ptClosest);
-
-            float fDist = (float) Math.hypot(pt.x - ptClosest.x, pt.y - ptClosest.y);
-
-            // 换算到屏幕窗口距离
-            int nDist = (int) (fDist * ScrnRef.scale);
-            //2019.10.24
-            nDist = abs(nDist);
-            ///////////////////
-            // 如果屏幕窗口距离小于3，认为鼠标触碰到路径
-            if (nDist <= pathOffset) return 0;
-        }
+//        // 判断屏幕点是否落在某个关键点处
+//        for (int i = 1; i < m_Curve.m_nCountKeyPoints - 1; i++) {
+////            Point pntKey = ScrnRef.GetWindowPoint(m_Curve.m_ptKey[i]);
+//            PointF pntKey = ScrnRef.worldToScreen(m_Curve.m_ptKey[i].x, m_Curve.m_ptKey[i].y);
+//            int offSet = 20;
+//            Rect r = new Rect((int) (pntKey.x - nodeOffset), (int) (pntKey.y - nodeOffset), (int) (pntKey.x + nodeOffset), (int) (pntKey.y + nodeOffset)); // Construct an emtpy rectangle
+//
+//            if (pnt.x >= r.left && pnt.x <= (r.left + r.width()) && pnt.y < r.bottom && pnt.y >= (r.bottom - r.height()))
+//                return i + 1;
+//        }
+//
+//        // 下面判断屏幕点是否落在曲线上
+//        Point2d ptClosest = new Point2d();
+////        Point2d pt = ScrnRef.GetWorldPoint(pnt);
+//        PointF pt = ScrnRef.screenToWorld((float) pnt.x, (float) pnt.y);
+//        float CurT = 0.0f;
+//        // 计算此点在世界坐标系内到曲线的距离
+//        if (m_Curve.GetClosestPoint(new Point2d(pt.x, pt.y), ptClosest, CurT)) {
+//            // 计算点到曲线的最近距离
+////            float fDist = pt.DistanceTo(ptClosest);
+//
+//            float fDist = (float) Math.hypot(pt.x - ptClosest.x, pt.y - ptClosest.y);
+//
+//            // 换算到屏幕窗口距离
+//            int nDist = (int) (fDist * ScrnRef.scale);
+//            //2019.10.24
+//            nDist = abs(nDist);
+//            ///////////////////
+//            // 如果屏幕窗口距离小于3，认为鼠标触碰到路径
+//            if (nDist <= pathOffset) return 0;
+//        }
 
         return -1;
     }

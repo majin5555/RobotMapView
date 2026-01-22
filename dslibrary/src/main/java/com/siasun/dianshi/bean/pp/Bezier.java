@@ -680,21 +680,21 @@ public class Bezier {
     //
     // 画出控制点编号
     //
-    public void DrawCtrlID(int nKeyID, CoordinateConversion ScrnRef, Canvas Grp, Typeface pLogFont, int cr, int nWidth) {
-        if (nKeyID <= 0 || nKeyID >= m_nCountKeyPoints - 1)
-            return;
-
-        PointF pnt1 = ScrnRef.screenToWorld(m_ptKey[nKeyID].x, m_ptKey[nKeyID].y);
-        String str;
-        str = Integer.toString(nKeyID);
-
-        Paint paint = new Paint();
-        paint.setTypeface(pLogFont);
-        paint.setTextSize(25); //设置画笔字体的大小
-        Color clr = new Color();
-        paint.setColor(clr.rgb(0, 255, 255));
-        Grp.drawText(str, pnt1.x + 4, pnt1.y + 14, paint);
-    }
+//    public void DrawCtrlID(int nKeyID, CoordinateConversion ScrnRef, Canvas Grp, Typeface pLogFont, int cr, int nWidth) {
+//        if (nKeyID <= 0 || nKeyID >= m_nCountKeyPoints - 1)
+//            return;
+//
+//        PointF pnt1 = ScrnRef.screenToWorld(m_ptKey[nKeyID].x, m_ptKey[nKeyID].y);
+//        String str;
+//        str = Integer.toString(nKeyID);
+//
+//        Paint paint = new Paint();
+//        paint.setTypeface(pLogFont);
+//        paint.setTextSize(25); //设置画笔字体的大小
+//        Color clr = new Color();
+//        paint.setColor(clr.rgb(0, 255, 255));
+//        Grp.drawText(str, pnt1.x + 4, pnt1.y + 14, paint);
+//    }
 
     //
     // 临时得到采样点数据,后续删除

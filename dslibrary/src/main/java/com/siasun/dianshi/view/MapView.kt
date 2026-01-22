@@ -314,7 +314,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     }
 
     private fun singleTap(event: MotionEvent) {
-        mSingleTapListener?.onSingleTapListener(mSrf.screenToWorld(event.x, event.y))
+        mSingleTapListener?.onSingleTapListener(screenToWorld(event.x, event.y))
     }
 
     private fun setMatrix(matrix: Matrix) {
