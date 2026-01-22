@@ -34,6 +34,7 @@ class CrossDoorView(
 
     // 编辑状态
     private var isEditing = false
+    private var isDeleting = false
     private var selectedCrossDoor: CrossDoor? = null
     private var selectedPointType = SelectedPointType.NONE
     private var isDragging = false
@@ -55,14 +56,34 @@ class CrossDoorView(
         fun onCrossDoorLineClick(crossDoor: CrossDoor)
     }
 
+    /**
+     * 删除过门监听器接口
+     */
+    interface OnCrossDoorDeleteClickListener {
+        /**
+         * 当点击过门线进行删除时调用
+         * @param crossDoor 被点击的过门
+         */
+        fun onCrossDoorDeleteClick(crossDoor: CrossDoor)
+    }
+
     // 线点击事件监听器
     private var onCrossDoorLineClickListener: OnCrossDoorLineClickListener? = null
+    // 删除过门监听器
+    private var onCrossDoorDeleteClickListener: OnCrossDoorDeleteClickListener? = null
 
     /**
      * 设置线点击事件监听器
      */
     fun setOnCrossDoorLineClickListener(listener: OnCrossDoorLineClickListener?) {
         onCrossDoorLineClickListener = listener
+    }
+
+    /**
+     * 设置删除过门监听器
+     */
+    fun setOnCrossDoorDeleteClickListener(listener: OnCrossDoorDeleteClickListener?) {
+        onCrossDoorDeleteClickListener = listener
     }
 
     // 画笔定义
@@ -91,7 +112,7 @@ class CrossDoorView(
     }
 
     private val doorMsgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.WHITE
+        color = Color.parseColor("#0099FF")
         textSize = 14f
         isAntiAlias = true
     }
@@ -188,7 +209,8 @@ class CrossDoorView(
      * 处理触摸事件
      */
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (!isEditing) {
+        // 编辑模式或删除模式下都可以处理触摸事件
+        if (!isEditing && !isDeleting) {
             return false
         }
 
@@ -228,8 +250,12 @@ class CrossDoorView(
                     // 检查是否点击了线（使用点到直线的距离公式）
                     val distanceToLine = pointToLineDistance(x, y, startScreenPoint, endScreenPoint)
                     if (distanceToLine <= dragThreshold) {
-                        // 点击了线，触发回调
-                        onCrossDoorLineClickListener?.onCrossDoorLineClick(crossDoor)
+                        // 根据当前模式触发不同的回调
+                        if (isDeleting) {
+                            onCrossDoorDeleteClickListener?.onCrossDoorDeleteClick(crossDoor)
+                        } else {
+                            onCrossDoorLineClickListener?.onCrossDoorLineClick(crossDoor)
+                        }
                         return true
                     }
                 }
@@ -296,6 +322,8 @@ class CrossDoorView(
         currentWorkMode = mode
         // 当进入编辑过门模式时，启用编辑功能
         isEditing = (mode == MapView.WorkMode.MODE_CROSS_DOOR_EDIT)
+        // 当进入删除过门模式时，启用删除功能
+        isDeleting = (mode == MapView.WorkMode.MODE_CROSS_DOOR_DELETE)
         postInvalidate()
     }
 

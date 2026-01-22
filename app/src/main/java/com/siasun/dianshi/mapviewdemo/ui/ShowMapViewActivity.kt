@@ -247,6 +247,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             }
         })
 
+
         mBinding.btnAddCrossDoor.onClick {
             // 设置工作模式为添加过门模式
             mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CROSS_DOOR_ADD)
@@ -265,12 +266,17 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             ToastUtils.showLong("已进入添加过门模式")
         }
 
+        // 设置线点击事件监听器
+        mBinding.mapView.mCrossView?.setOnCrossDoorDeleteClickListener(object : com.siasun.dianshi.view.CrossDoorView.OnCrossDoorDeleteClickListener {
+            override fun onCrossDoorDeleteClick(crossDoor: com.siasun.dianshi.bean.CrossDoor) {
+                // 点击了过门线，弹框显示信息
+                showCrossDoorDialog(crossDoor)
+            }
+        })
         mBinding.btnDeleteCrossDoor.onClick {
-            // 清除当前正在创建的过门
-            mBinding.mapView.mCrossView?.clearCurrentCrossDoor()
-            // 切换回显示地图模式
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SHOW_MAP)
-            ToastUtils.showLong("已退出添加过门模式")
+            // 切换到删除模式
+            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CROSS_DOOR_DELETE)
+            ToastUtils.showLong("已进入删除过门模式，点击线段进行删除")
         }
 
         mBinding.btnEditCrossDoor.onClick {
