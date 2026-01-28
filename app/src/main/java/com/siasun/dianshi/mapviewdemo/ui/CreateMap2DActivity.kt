@@ -78,6 +78,7 @@ class CreateMap2DActivity :
             if (mBinding.mapView.mRotateAngle > 360) {
                 mBinding.mapView.mRotateAngle -= 360f
             }
+            mBinding.mapView.setRotate()
         }
 
         mBinding.btnN1.onClick {
@@ -85,6 +86,7 @@ class CreateMap2DActivity :
             if (mBinding.mapView.mRotateAngle < -360) {
                 mBinding.mapView.mRotateAngle += 360f
             }
+            mBinding.mapView.setRotate()
         }
 
         mBinding.btnS5.onClick {
@@ -92,6 +94,7 @@ class CreateMap2DActivity :
             if (mBinding.mapView.mRotateAngle > 360) {
                 mBinding.mapView.mRotateAngle -= 360f
             }
+            mBinding.mapView.setRotate()
         }
 
         mBinding.btnN5.onClick {
@@ -99,8 +102,8 @@ class CreateMap2DActivity :
             if (mBinding.mapView.mRotateAngle < -360) {
                 mBinding.mapView.mRotateAngle += 360f
             }
+            mBinding.mapView.setRotate()
         }
-
     }
 
     @RequiresApi(Build.VERSION_CODES.R)

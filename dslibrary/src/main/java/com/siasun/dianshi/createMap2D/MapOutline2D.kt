@@ -62,40 +62,33 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
 
     // 复用Matrix对象，避免在onDraw中重复创建
     private val mTempMatrix = Matrix()
-    
+
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         // 只有在绘制启用状态下才绘制点云
         if (isDrawingEnabled && keyFrames2d.isNotEmpty()) {
             val mapView = parent.get() ?: return
-            
+
             // 提前获取缩放比例，避免在循环中重复调用
             val scale = mapView.mSrf.scale
-            
-            canvas.save()
-            // 应用全局旋转（如果有）
-            if (mapView.mRotateAngle != 0f) {
-                canvas.rotate(-mapView.mRotateAngle)
-            }
-            
+
+
             // 使用forEach代替for-in循环，提高性能
             keyFrames2d.forEach { (_, mSubMapData) ->
                 val bitmap = mSubMapData.mBitmap ?: return@forEach
-                
+
                 // 使用worldToScreen方法将子图左上角的世界坐标转换为屏幕坐标
                 val screenLeftTop =
                     mapView.worldToScreen(mSubMapData.leftTop.x, mSubMapData.leftTop.y)
-                
+
                 // 复用Matrix对象，避免重复创建
                 mTempMatrix.reset()
                 mTempMatrix.postScale(scale, scale)
                 mTempMatrix.postTranslate(screenLeftTop.x, screenLeftTop.y)
-                
+
                 canvas.drawBitmap(bitmap, mTempMatrix, mPaint)
             }
-            
-            canvas.restore()
         }
     }
 
@@ -224,13 +217,13 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
         val height = metaData.height.toInt()
         val pixelSize = MapEditorConstants.MAP_PIXEL_SIZE
         val bmpDataSize = width * height * pixelSize
-        
+
         // 提前计算常量，避免在循环中重复计算
         val colorBlue = 0.toByte()
         val colorAlpha = (-0x10000 shr 24).toByte()
-        
+
         val bmpData = ByteArray(bmpDataSize)
-        
+
         // 使用普通for循环代替forEach，提高性能
         for (i in 0 until metaData.indexCount) {
             val index = metaData.intensitiesList[i] * pixelSize
