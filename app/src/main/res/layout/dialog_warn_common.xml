@@ -32,20 +32,20 @@
         tools:ignore="MissingConstraints">
 
         <!--Discard AppCompatButton-->
-        <com.hjq.shape.view.ShapeTextView
+        <Button
             android:id="@+id/btn_dismiss"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="100dp"
             android:layout_weight="1"
             android:gravity="center"
             android:text="取消"
             tools:ignore="MissingConstraints" />
 
         <!--Confirm AppCompatButton-->
-        <com.hjq.shape.view.ShapeTextView
+        <Button
             android:id="@+id/btn_sure"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="100dp"
             android:layout_weight="1"
             android:gravity="center"
             android:text="确定"

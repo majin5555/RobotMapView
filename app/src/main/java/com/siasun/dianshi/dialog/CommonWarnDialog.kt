@@ -7,6 +7,7 @@ import android.os.Build
 import android.view.LayoutInflater
 import android.view.View
 import android.view.Window
+import android.widget.Button
 import android.widget.TextView
 import androidx.annotation.RequiresApi
 import com.hjq.shape.view.ShapeTextView
@@ -23,8 +24,8 @@ class CommonWarnDialog(context: Context?, themeResId: Int) : Dialog(context!!, t
         private var dialog: CommonWarnDialog
         private lateinit var tvTitle: TextView
         private lateinit var tvMsg: TextView
-        private lateinit var btnSure: ShapeTextView
-        private lateinit var btnClo: ShapeTextView
+        private lateinit var btnSure: Button
+        private lateinit var btnClo: Button
         private var call: CommonWarnDialogListener? = null
 
         init {

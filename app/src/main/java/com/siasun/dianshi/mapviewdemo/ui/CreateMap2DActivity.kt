@@ -11,7 +11,6 @@ import com.siasun.dianshi.GlobalVariable.SEND_NAVI_HEART
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.controller.MainController
 import com.siasun.dianshi.createMap2D.CreateMapView2D
-import com.siasun.dianshi.createMap2D.CreateMapView2D1
 import com.siasun.dianshi.dialog.CommonWarnDialog
 import com.siasun.dianshi.framework.ext.onClick
 import com.siasun.dianshi.framework.log.LogUtil
@@ -35,6 +34,7 @@ class CreateMap2DActivity :
     private val mTimer = Timer()
 
     val mapID = 100
+
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
         MainController.init()
@@ -73,6 +73,34 @@ class CreateMap2DActivity :
         }
 
 
+        mBinding.btnS1.onClick {
+            --mBinding.mapView.mRotateAngle
+            if (mBinding.mapView.mRotateAngle > 360) {
+                mBinding.mapView.mRotateAngle -= 360f
+            }
+        }
+
+        mBinding.btnN1.onClick {
+            ++mBinding.mapView.mRotateAngle
+            if (mBinding.mapView.mRotateAngle < -360) {
+                mBinding.mapView.mRotateAngle += 360f
+            }
+        }
+
+        mBinding.btnS5.onClick {
+            mBinding.mapView.mRotateAngle -= 5f
+            if (mBinding.mapView.mRotateAngle > 360) {
+                mBinding.mapView.mRotateAngle -= 360f
+            }
+        }
+
+        mBinding.btnN5.onClick {
+            mBinding.mapView.mRotateAngle += 5f
+            if (mBinding.mapView.mRotateAngle < -360) {
+                mBinding.mapView.mRotateAngle += 360f
+            }
+        }
+
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
@@ -88,7 +116,7 @@ class CreateMap2DActivity :
         }
         //子图优化 回环检测
         LiveEventBus.get(KEY_OPT_POSE, laser_t::class.java).observe(this) {
-//            mBinding.mapView.updateOptPose2D(it, 1)
+            mBinding.mapView.updateOptPose2D(it, 1)
         }
         //接收创建地图中车体位置 导航->PAD
         LiveEventBus.get(KEY_UPDATE_POS, laser_t::class.java).observe(this) {
@@ -159,8 +187,8 @@ class CreateMap2DActivity :
 //                        LogUtil.i("弹框---是否旋转地图", null, TAG_NAV)
 //                        showRouteMapDialog()
 //                    } else {
-                        LogUtil.i("没有收到任何子图，直接询问是否保存地图", null, TAG_NAV)
-                        showSavaMapDialog()
+                    LogUtil.i("没有收到任何子图，直接询问是否保存地图", null, TAG_NAV)
+                    showSavaMapDialog()
 //                    }
                     mBinding.mapView.isStartRevSubMaps = false
                 }
@@ -201,22 +229,22 @@ class CreateMap2DActivity :
     @RequiresApi(Build.VERSION_CODES.R)
     private fun showSavaMapDialog() {
         CommonWarnDialog.Builder(this).setMsg("保存地图").setOnCommonWarnDialogListener(object :
-                CommonWarnDialog.Builder.CommonWarnDialogListener {
-                override fun confirm() {
-                    //开始保存地图
-                    MainController.saveEnvironment(1, mapId = mapID)
-                    SEND_NAVI_HEART = true
+            CommonWarnDialog.Builder.CommonWarnDialogListener {
+            override fun confirm() {
+                //开始保存地图
+                MainController.saveEnvironment(1, mapId = mapID)
+                SEND_NAVI_HEART = true
 //                    showLoading("保存地图中")
-                    LogUtil.i("确定要保存地图么...点击确定", null, TAG_NAV)
-                }
+                LogUtil.i("确定要保存地图么...点击确定", null, TAG_NAV)
+            }
 
-                override fun discard() {
-                    mBinding.mapView.isMapping = false
-                    MainController.saveEnvironment(2, mapId = mapID)
-                    SEND_NAVI_HEART = false
-                    LogUtil.i("确定要保存地图么...点击取消", null, TAG_NAV)
-                    finish()
-                }
-            }).create().show()
+            override fun discard() {
+                mBinding.mapView.isMapping = false
+                MainController.saveEnvironment(2, mapId = mapID)
+                SEND_NAVI_HEART = false
+                LogUtil.i("确定要保存地图么...点击取消", null, TAG_NAV)
+                finish()
+            }
+        }).create().show()
     }
 }

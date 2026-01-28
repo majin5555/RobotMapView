@@ -69,8 +69,9 @@ class RobotView2D(context: Context?, val parent: WeakReference<CreateMapView2D>)
                 // 1. 先平移到原点（以图标中心为锚点）
                 onRobotMatrix.postTranslate(offsetX, offsetY)
                 // 2. 然后应用旋转（以图标中心为轴心）
+                // 旋转方向调整
                 onRobotMatrix.postRotate(
-                    -pose[2].toFloat(),
+                    -Math.toDegrees(pose[2].toDouble()).toFloat(),
                     0f, 0f // 旋转轴心为图标中心
                 )
                 // 3. 最后平移到屏幕目标位置

@@ -14,6 +14,53 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
+    <!-- 旋转-->
+    <LinearLayout
+        android:id="@+id/ll_rotate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <Button
+            android:id="@+id/btn_s1"
+            android:layout_width="160dp"
+            android:layout_height="60dp"
+            android:gravity="center"
+            android:text="顺1" />
+
+        <Button
+            android:id="@+id/btn_n1"
+            android:layout_width="160dp"
+            android:layout_height="60dp"
+            android:gravity="center"
+            android:text="逆1" />
+
+
+        <Button
+            android:id="@+id/btn_s5"
+            android:layout_width="160dp"
+            android:layout_height="60dp"
+            android:gravity="center"
+            android:text="顺5" />
+
+        <Button
+            android:id="@+id/btn_n5"
+            android:layout_width="160dp"
+            android:layout_height="60dp"
+            android:gravity="center"
+            android:text="逆5" />
+
+        <Button
+            android:id="@+id/btn_save"
+            android:layout_width="160dp"
+            android:layout_height="60dp"
+            android:gravity="center"
+            android:text="保存" />
+
+    </LinearLayout>
+
     <TextView
         android:id="@+id/tvMapSteps"
         android:layout_width="wrap_content"
@@ -61,8 +108,8 @@
 
     <!--        <com.hjq.shape.view.ShapeTextView-->
     <!--            android:id="@+id/btn_s1"-->
-    <!--            android:layout_width="@dimen/dp_160"-->
-    <!--            android:layout_height="@dimen/dp_50"-->
+    <!--            android:layout_width="160dp"-->
+    <!--            android:layout_height="60dp"-->
     <!--            android:layout_marginTop="@dimen/dp_16"-->
     <!--            android:gravity="center"-->
     <!--            android:padding="@dimen/dp_8"-->
@@ -74,8 +121,8 @@
 
     <!--        <com.hjq.shape.view.ShapeTextView-->
     <!--            android:id="@+id/btn_n1"-->
-    <!--            android:layout_width="@dimen/dp_160"-->
-    <!--            android:layout_height="@dimen/dp_50"-->
+    <!--            android:layout_width="160dp"-->
+    <!--            android:layout_height="60dp"-->
     <!--            android:layout_marginTop="@dimen/dp_16"-->
     <!--            android:gravity="center"-->
     <!--            android:padding="@dimen/dp_8"-->
@@ -88,8 +135,8 @@
 
     <!--        <com.hjq.shape.view.ShapeTextView-->
     <!--            android:id="@+id/btn_s5"-->
-    <!--            android:layout_width="@dimen/dp_160"-->
-    <!--            android:layout_height="@dimen/dp_50"-->
+    <!--            android:layout_width="160dp"-->
+    <!--            android:layout_height="60dp"-->
     <!--            android:layout_marginTop="@dimen/dp_16"-->
     <!--            android:gravity="center"-->
     <!--            android:padding="@dimen/dp_8"-->
@@ -101,8 +148,8 @@
 
     <!--        <com.hjq.shape.view.ShapeTextView-->
     <!--            android:id="@+id/btn_n5"-->
-    <!--            android:layout_width="@dimen/dp_160"-->
-    <!--            android:layout_height="@dimen/dp_50"-->
+    <!--            android:layout_width="160dp"-->
+    <!--            android:layout_height="60dp"-->
     <!--            android:layout_marginTop="@dimen/dp_16"-->
     <!--            android:gravity="center"-->
     <!--            android:padding="@dimen/dp_8"-->
@@ -114,8 +161,8 @@
 
     <!--        <com.hjq.shape.view.ShapeTextView-->
     <!--            android:id="@+id/btn_save"-->
-    <!--            android:layout_width="@dimen/dp_160"-->
-    <!--            android:layout_height="@dimen/dp_50"-->
+    <!--            android:layout_width="160dp"-->
+    <!--            android:layout_height="60dp"-->
     <!--            android:layout_marginTop="@dimen/dp_16"-->
     <!--            android:gravity="center"-->
     <!--            android:padding="@dimen/dp_16"-->

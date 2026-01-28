@@ -35,6 +35,7 @@ import com.siasun.dianshi.bean.createMap2d.MapEditorConstants
 import com.siasun.dianshi.bean.createMap2d.SubMapData
 import com.siasun.dianshi.view.PngMapView
 import com.siasun.dianshi.view.SlamWareBaseView
+import org.apache.commons.math3.linear.Array2DRowRealMatrix
 import java.math.RoundingMode
 import java.nio.ByteBuffer
 import java.text.DecimalFormat
@@ -454,6 +455,10 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
         // 更新机器人位置（始终需要处理，不参与降采样）
         updateRobotPose(laserData.ranges[0], laserData.ranges[1], laserData.ranges[2])
         mUpLaserScanView?.updateUpLaserScan(laserData)
+        // 建图模式下，保持车体居中显示
+        if (currentWorkMode == WorkMode.MODE_CREATE_MAP) {
+            keepRobotCentered()
+        }
     }
 
 
@@ -482,6 +487,35 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
     private fun convertScientificToDecimal(value: Float): Float {
         df.setRoundingMode(RoundingMode.HALF_UP) // 设置四舍五入
         return df.format(value).toFloat()
+    }
+
+    /**
+     * 回环检测2D
+     * 输入数据 世界坐标系下的位姿态
+     */
+    fun updateOptPose2D(mLaserT: laser_t, type: Int) {
+        mMapOutline2D?.updateOptPose2D(mLaserT, type)
+    }
+
+    /**
+     * 保持车体居中显示
+     */
+    private fun keepRobotCentered() {
+        if (VIEW_WIDTH == 0 || VIEW_HEIGHT == 0) return
+
+        // 将机器人当前位置转换为屏幕坐标
+        val robotScreenPos = worldToScreen(robotPose[0], robotPose[1])
+
+        // 计算屏幕中心
+        val centerX = VIEW_WIDTH / 2f
+        val centerY = VIEW_HEIGHT / 2f
+
+        // 计算需要移动的距离
+        val dx = centerX - robotScreenPos.x
+        val dy = centerY - robotScreenPos.y
+
+        // 移动地图使机器人居中
+        setTransition(dx.toInt(), dy.toInt())
     }
 
     /**

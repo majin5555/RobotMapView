@@ -19,6 +19,10 @@ import java.nio.ByteBuffer
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.abs
 import androidx.core.graphics.createBitmap
+import org.apache.commons.math3.linear.Array2DRowRealMatrix
+import kotlin.math.cos
+import kotlin.math.min
+import kotlin.math.sin
 
 /**
  * 建图地图轮廓
@@ -62,16 +66,18 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
         // 只有在绘制启用状态下才绘制点云
         if (isDrawingEnabled && keyFrames2d.isNotEmpty()) {
             val mapView = parent.get() ?: return
-            // 计算屏幕中心
-            val centerX = width / 2f
-            val centerY = height / 2f
             synchronized(keyFrames2d) {
                 canvas.save()
+                // 应用全局旋转（如果有）
+                if (mapView.mRotateAngle != 0f) {
+                    canvas.rotate(-mapView.mRotateAngle)
+                }
                 // 直接绘制子图（使用统一的坐标转换方法）
                 for ((_, mSubMapData) in keyFrames2d.entries) {
                     val bitmap = mSubMapData.mBitmap ?: continue
                     // 使用worldToScreen方法将子图左上角的世界坐标转换为屏幕坐标
-                    val screenLeftTop = mapView.worldToScreen(mSubMapData.leftTop.x, mSubMapData.leftTop.y)
+                    val screenLeftTop =
+                        mapView.worldToScreen(mSubMapData.leftTop.x, mSubMapData.leftTop.y)
                     // 创建新矩阵
                     val matrix = Matrix().apply {
                         postScale(mapView.mSrf.scale, mapView.mSrf.scale)
@@ -276,6 +282,111 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
 //        Log.i(TAG,"右下 ${maxBottomRight}")
 //        Log.i(TAG,"整张地图的宽度 ${mSrf.mapData.mWidth}")
 //        Log.i(TAG,"整张地图的高度 ${mSrf.mapData.mHeight}")
+    }
+
+    /**
+     * 回环检测2D
+     * 输入数据 世界坐标系下的位姿态
+     */
+    fun updateOptPose2D(mLaserT: laser_t, type: Int) {
+//        LogUtil.w("回环检测2D  start")
+        val optPose = mLaserT.ranges
+//        LogUtil.w("回环检测optPose.size  ${optPose.size}")
+
+        val IDList: MutableList<Int> = mutableListOf()
+        //   按采样间隔遍历数据（步长为4*SAMPLE_INTERVAL，每个关键帧占4个Float）
+        for (i in optPose.indices step 4) {
+            val id = optPose[i].toInt()
+            IDList.add(id)
+//            LogUtil.w("回环检测id  $id")
+            val globalX = optPose[i + 1]
+//            LogUtil.w("回环检测globalX  $globalX")
+            val globalY = optPose[i + 2]
+//            LogUtil.w("回环检测globalY  $globalY")
+            val globalTheta = optPose[i + 3]
+//            LogUtil.w("回环检测globalT  $globalTheta")
+
+            //关键帧
+            // 获取关键帧数据（非空校验）
+            val subMapData = keyFrames2d[id] ?: continue
+
+//            LogUtil.d("第 $id 张子图  $subMapData")
+
+            // Extract local pose
+            val (localX, localY, localTheta) = Triple(
+                subMapData.optMaxTempX.toDouble(),
+                subMapData.optMaxTempY.toDouble(),
+                subMapData.originTheta.toDouble()
+            )
+
+            // Build global transformation matrix [cos(θg) -sin(θg) xg; sin(θg) cos(θg) yg; 0 0 1]
+            val globalMatrix = Array2DRowRealMatrix(
+                arrayOf(
+                    doubleArrayOf(
+                        cos(globalTheta).toDouble(),
+                        (-sin(globalTheta)).toDouble(),
+                        globalX.toDouble()
+                    ), doubleArrayOf(
+                        sin(globalTheta).toDouble(), cos(globalTheta).toDouble(), globalY.toDouble()
+                    ), doubleArrayOf(0.0, 0.0, 1.0)
+                )
+            )
+
+            // Build local transformation matrix [cos(θl) -sin(θl) xl; sin(θl) cos(θl) yl; 0 0 1]
+            val localMatrix = Array2DRowRealMatrix(
+                arrayOf(
+                    doubleArrayOf(cos(localTheta), -sin(localTheta), localX),
+                    doubleArrayOf(sin(localTheta), cos(localTheta), localY),
+                    doubleArrayOf(0.0, 0.0, 1.0)
+                )
+            )
+
+            // Compute final transformation: T_global * T_local
+            val resultMatrix = globalMatrix.multiply(localMatrix).data
+
+            // Update submap metadata with global origin and orientation
+            subMapData.originX = resultMatrix[0][2].toFloat()
+            subMapData.originY = resultMatrix[1][2].toFloat()
+            subMapData.originTheta = globalTheta
+        }
+
+        updateKeyFrame2d()
+        //扩展时
+        if (type == 1) {
+        } else {
+            //新建地图时
+            calBinding()
+        }
+//        LogUtil.w("回环检测2D  end")
+    }
+
+    private fun updateKeyFrame2d() {
+        val mapView = parent.get() ?: return
+
+        // 优化updateKeyFrame2d方法中的矩阵更新逻辑
+        for ((matrixKey, mSubMapData) in keyFrames2d.entries) {
+            val bitmap = mSubMapData.mBitmap ?: continue
+
+            // 计算屏幕坐标
+            val screenLeftTop =
+                mapView.mSrf.worldToScreen(mSubMapData.leftTop.x, mSubMapData.leftTop.y)
+            val screenRightBottom =
+                mapView.mSrf.worldToScreen(mSubMapData.rightBottom.x, mSubMapData.rightBottom.y)
+
+            // 计算目标尺寸
+            val targetWidth = screenRightBottom.x - screenLeftTop.x
+            val targetHeight = screenRightBottom.y - screenLeftTop.y
+
+            // 计算等比缩放
+            val originalWidth = bitmap.width.toFloat()
+            val originalHeight = bitmap.height.toFloat()
+            val scale = min(targetWidth / originalWidth, targetHeight / originalHeight)
+
+            // 创建新矩阵，包含缩放和平移
+            mSubMapData.matrix!!.reset()
+            mSubMapData.matrix!!.setScale(scale, scale)
+            mSubMapData.matrix!!.postTranslate(screenLeftTop.x, screenLeftTop.y)
+        }
     }
 
     /**
