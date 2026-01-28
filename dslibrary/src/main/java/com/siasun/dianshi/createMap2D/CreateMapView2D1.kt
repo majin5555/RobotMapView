@@ -831,7 +831,7 @@ class CreateMapView2D1 : SurfaceView, SurfaceHolder.Callback {
         }
 
 
-        // 计算整张地图的宽度和高度
+//        // 计算整张地图的宽度和高度
 //        mSrf.mapData.mWidth = abs((maxTopRight.x - minBotLeft.x) / 0.05f)
 //        mSrf.mapData.mHeight = abs((maxTopRight.y - minBotLeft.y) / 0.05f)
 

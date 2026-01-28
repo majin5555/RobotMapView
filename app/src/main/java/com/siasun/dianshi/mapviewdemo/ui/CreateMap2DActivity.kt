@@ -10,6 +10,7 @@ import com.ngu.lcmtypes.laser_t
 import com.siasun.dianshi.GlobalVariable.SEND_NAVI_HEART
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.controller.MainController
+import com.siasun.dianshi.createMap2D.CreateMapView2D
 import com.siasun.dianshi.createMap2D.CreateMapView2D1
 import com.siasun.dianshi.dialog.CommonWarnDialog
 import com.siasun.dianshi.framework.ext.onClick
@@ -34,6 +35,7 @@ class CreateMap2DActivity :
     private val mTimer = Timer()
 
     val mapID = 100
+    @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
         MainController.init()
 
@@ -54,7 +56,7 @@ class CreateMap2DActivity :
         //开始扫描
         mBinding.tvCreate.onClick {
             mBinding.mapView.isStartRevSubMaps = false
-            mBinding.mapView.setWorkMode(CreateMapView2D1.MODE_CREATE_MAP2D)
+            mBinding.mapView.setWorkMode(CreateMapView2D.WorkMode.MODE_CREATE_MAP)
             MainController.startCreateEnvironment()
             showLoading("开始扫描")
             ToastUtils.showShort("开始扫描")
@@ -86,7 +88,7 @@ class CreateMap2DActivity :
         }
         //子图优化 回环检测
         LiveEventBus.get(KEY_OPT_POSE, laser_t::class.java).observe(this) {
-            mBinding.mapView.updateOptPose2D(it, 1)
+//            mBinding.mapView.updateOptPose2D(it, 1)
         }
         //接收创建地图中车体位置 导航->PAD
         LiveEventBus.get(KEY_UPDATE_POS, laser_t::class.java).observe(this) {

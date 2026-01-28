@@ -36,7 +36,7 @@ class PngMapView : View {
     }
 
     private fun init() {
-        setBackgroundColor(Color.TRANSPARENT)
+        setBackgroundColor(Color.WHITE)
         setLayerType(LAYER_TYPE_SOFTWARE, null)
     }
 

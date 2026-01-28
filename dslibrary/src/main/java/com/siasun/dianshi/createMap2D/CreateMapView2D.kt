@@ -1,18 +1,15 @@
 package com.siasun.dianshi.createMap2D
 
-import VirtualWallNew
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.PointF
 import android.graphics.RectF
 import android.os.Build
 import android.util.AttributeSet
-import android.view.Gravity
+import android.util.Log
 import android.view.MotionEvent
-import android.view.ViewGroup
 import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import android.widget.ImageView
 import androidx.annotation.RequiresApi
@@ -23,22 +20,7 @@ import com.bumptech.glide.request.transition.Transition
 import com.ngu.lcmtypes.laser_t
 import com.ngu.lcmtypes.robot_control_t
 import com.siasun.dianshi.R
-import com.siasun.dianshi.bean.CleanAreaNew
-import com.siasun.dianshi.bean.CmsStation
-import com.siasun.dianshi.bean.ElevatorPoint
-import com.siasun.dianshi.bean.InitPose
-import com.siasun.dianshi.bean.MachineStation
 import com.siasun.dianshi.bean.MapData
-import com.siasun.dianshi.bean.MergedPoseItem
-import com.siasun.dianshi.bean.Point2d
-import com.siasun.dianshi.bean.PositingArea
-import com.siasun.dianshi.bean.SpArea
-import com.siasun.dianshi.bean.TeachPoint
-import com.siasun.dianshi.bean.WorkAreasNew
-import com.siasun.dianshi.bean.pp.DefPosture
-import com.siasun.dianshi.bean.pp.PathPlanResultBean
-import com.siasun.dianshi.bean.pp.Posture
-import com.siasun.dianshi.bean.pp.world.CLayer
 import com.siasun.dianshi.utils.CoordinateConversion
 import com.siasun.dianshi.utils.MathUtils
 import com.siasun.dianshi.utils.RadianUtil
@@ -48,30 +30,19 @@ import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.CopyOnWriteArrayList
 import androidx.core.content.withStyledAttributes
-import androidx.core.view.get
 import com.hjq.shape.layout.ShapeFrameLayout
-import com.siasun.dianshi.view.CrossDoorView
-import com.siasun.dianshi.view.DownLaserScanView
-import com.siasun.dianshi.view.ElevatorView
-import com.siasun.dianshi.view.HomeDockView
-import com.siasun.dianshi.view.LegendView
-import com.siasun.dianshi.view.MapNameView
-import com.siasun.dianshi.view.MixAreaView
-import com.siasun.dianshi.view.OnlinePoseView
-import com.siasun.dianshi.view.PathView
+import com.siasun.dianshi.bean.createMap2d.MapEditorConstants
+import com.siasun.dianshi.bean.createMap2d.SubMapData
 import com.siasun.dianshi.view.PngMapView
-import com.siasun.dianshi.view.PolygonEditView
-import com.siasun.dianshi.view.PostingAreasView
-import com.siasun.dianshi.view.RemoveNoiseView
-import com.siasun.dianshi.view.RobotView
 import com.siasun.dianshi.view.SlamWareBaseView
-import com.siasun.dianshi.view.SpPolygonEditView
-import com.siasun.dianshi.view.StationsView
-import com.siasun.dianshi.view.TopViewPathView
-import com.siasun.dianshi.view.UpLaserScanView
-import com.siasun.dianshi.view.VirtualWallView
-import com.siasun.dianshi.view.WorkIngPathView
-import com.siasun.dianshi.view.WorldPadView
+import java.math.RoundingMode
+import java.nio.ByteBuffer
+import java.text.DecimalFormat
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.set
+import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.sin
 
 /**
  * 地图画布
@@ -102,9 +73,17 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
     private var mMapView: WeakReference<CreateMapView2D> = WeakReference(this)
     private var mapLayers: MutableList<SlamWareBaseView<CreateMapView2D>> = CopyOnWriteArrayList()
     private var mPngMapView: PngMapView? = null //png地图
-    private var mUpLaserScanView: UpLaserScanView<CreateMapView2D>? = null//上激光点云
-    private var mCreateMapRobotView: RobotView<CreateMapView2D>? = null //机器人图标
+    private var mUpLaserScanView: UpLaserScanView2D? = null//上激光点云
+    private var mCreateMapRobotView: RobotView2D? = null //机器人图标
 
+
+    private val keyFrames2d = ConcurrentHashMap<Int, SubMapData>() //绘制地图的数据 建图时 2D
+    val robotPose = FloatArray(6) // [x, y, theta(rad),z roll pitch]
+    var isMapping = false//是否建图标志
+    var isRouteMap = false//是否可以旋转地图
+
+    //是否第一次接收到子图数据，如果没收到子图，直接跳过旋转环境
+    var isStartRevSubMaps = false
 
     /**
      * *************** 监听器   start ***********************
@@ -142,7 +121,8 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
     private fun initView() {
         val lp = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
         mPngMapView = PngMapView(context)
-        mUpLaserScanView = UpLaserScanView(context, mMapView)
+        mUpLaserScanView = UpLaserScanView2D(context, mMapView)
+        mCreateMapRobotView = RobotView2D(context, mMapView)
         //底图的View
         addView(mPngMapView, lp)
 
@@ -453,11 +433,228 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
     }
 
 
-    /**
-     * 设置上激光点云数据源
-     */
-    fun setUpLaserScan(laser: laser_t) = mUpLaserScanView?.updateUpLaserScan(laser)
 
+
+    /**
+     * 外部接口：更新子图数据 2D
+     */
+    fun parseSubMaps2D(mLaserT: laser_t, type: Int) {
+        synchronized(keyFrames2d) {
+            val subMapData = SubMapData()
+            //子图ID
+            subMapData.id = mLaserT.rad0.toInt()
+            Log.i("SLAMMapView2D", "子图 radID  子图索引 ${subMapData.id}")
+
+            //子图 x方向格子数量 子图宽度
+            subMapData.width = mLaserT.ranges[0]
+            Log.i(
+                "SLAMMapView2D", "子图 mLaserT.ranges[0] x方向格子数量 子图宽度 ${subMapData.width}"
+            )
+            //子图 y方向格子数量 子图高度
+            subMapData.height = mLaserT.ranges[1]
+            Log.i(
+                "SLAMMapView2D",
+                "子图 mLaserT.ranges[1] y方向格子数量 子图高度 ${subMapData.height}"
+            )
+
+            //新增读取子图右上角世界坐标
+            subMapData.originX = mLaserT.ranges[2]
+            Log.i(
+                "SLAMMapView2D",
+                "子图 mLaserT.ranges[2] 新增读取子图右上角世界坐标 originX ${subMapData.originX}"
+            )
+            subMapData.originY = mLaserT.ranges[3]
+            Log.i(
+                "SLAMMapView2D",
+                "子图 mLaserT.ranges[3] 新增读取子图右上角世界坐标 originY ${subMapData.originY}"
+            )
+            subMapData.originTheta = mLaserT.ranges[4]
+            Log.i(
+                "SLAMMapView2D",
+                "子图 mLaserT.ranges[4] 新增读取子图右上角世界坐标 originTheta ${subMapData.originTheta}"
+            )
+            subMapData.optMaxTempX = mLaserT.ranges[5]
+            Log.i("SLAMMapView2D", "子图 mLaserT.ranges[5] optMaxTempX  ${subMapData.optMaxTempX}")
+            subMapData.optMaxTempY = mLaserT.ranges[6]
+            Log.i("SLAMMapView2D", "子图 mLaserT.ranges[6] optMaxTempY  ${subMapData.optMaxTempY}")
+            subMapData.optMaxTempTheta = mLaserT.ranges[7]
+            Log.i(
+                "SLAMMapView2D",
+                "子图 mLaserT.ranges[7] optMaxTempXTheta   ${subMapData.optMaxTempTheta}"
+            )
+
+            // 各格子概率值
+            subMapData.indexCount = mLaserT.intensities.size
+            //所有概率点的集合
+            for (intensity in mLaserT.intensities) {
+                subMapData.intensitiesList.add(intensity.toInt())
+            }
+
+            //创建子图bitmap对象
+            buildSubMapTileLine(subMapData)
+
+            //右上角角物理坐标   (世界坐标系)
+            subMapData.rightTop.x = subMapData.originX
+            subMapData.rightTop.y = subMapData.originY
+
+            //右下角角物理坐标   (世界坐标系)
+            subMapData.rightBottom.x = subMapData.originX
+            subMapData.rightBottom.y = subMapData.originY - (subMapData.percent * subMapData.height)
+
+            //左上角物理坐标  (世界坐标系)
+            subMapData.leftTop.x = subMapData.rightTop.x - (subMapData.percent * subMapData.width)
+            subMapData.leftTop.y = subMapData.originY
+
+            //左下角坐标 (世界坐标系)
+            subMapData.leftBottom.x =
+                subMapData.rightTop.x - (subMapData.percent * subMapData.width)
+            subMapData.leftBottom.y = subMapData.originY - (subMapData.percent * subMapData.height)
+
+
+            //扩展时
+            if (type == 1) {
+
+            } else {
+                //新建地图时
+                calBinding()
+            }
+
+
+            val mTempMatrix = Matrix()
+            mTempMatrix.reset()
+            mTempMatrix.setScale(mSrf.scale, mSrf.scale)
+
+            // 计算子图在屏幕上的左上角坐标
+            val screenLeftTop = mSrf.worldToScreen(subMapData.leftTop.x, subMapData.leftTop.y)
+            mTempMatrix.postTranslate(screenLeftTop.x, screenLeftTop.y)
+            subMapData.matrix = mTempMatrix
+
+            keyFrames2d[subMapData.id] = subMapData
+
+            isRouteMap = true
+            isStartRevSubMaps = true
+
+            Log.e(
+                "SLAMMapView2D", "整张 地图的信息  keyFrames2d keyFrames2d.size ${keyFrames2d.size}"
+            )
+            Log.w("SLAMMapView2D", "整张 地图的信息  mSrf.mapData ${mSrf.mapData}")
+        }
+    }
+
+    /**
+     * 创建子图bitmap对象
+     */
+
+    private fun buildSubMapTileLine(metaData: SubMapData) {
+
+        val bmpData =
+            ByteArray((metaData.width * metaData.height * MapEditorConstants.MAP_PIXEL_SIZE).toInt())
+        for (i in 0 until metaData.indexCount) {
+            val index: Int = metaData.intensitiesList[i]
+            val color = 0
+            bmpData[index * MapEditorConstants.MAP_PIXEL_SIZE] = (color and 0x000000FF).toByte()
+            bmpData[index * MapEditorConstants.MAP_PIXEL_SIZE + 1] = (color and 0x000000FF).toByte()
+            bmpData[index * MapEditorConstants.MAP_PIXEL_SIZE + 2] = (color and 0x000000FF).toByte()
+            bmpData[index * MapEditorConstants.MAP_PIXEL_SIZE + 3] = (-0x10000 shr 24).toByte()
+        }
+
+        val bitmap = Bitmap.createBitmap(
+            (metaData.width).toInt(), (metaData.height).toInt(), Bitmap.Config.ARGB_8888
+        )
+
+        bitmap.copyPixelsFromBuffer(ByteBuffer.wrap(bmpData))
+        metaData.mBitmap = bitmap
+        Log.i("SLAMMapView2D", "子图ID ${metaData.id}  宽 ${bitmap.width} 高 ${bitmap.height}")
+    }
+
+    /**
+     * 1. 计算所有子图集合的右上角和左下角
+     * 2. 计算所有子图集合的长度和宽度
+     */
+    private var maxTopRight = PointF(-10.0f, -10.0f) // 右上
+    private var minBotLeft = PointF(10.0f, 10.0f) // 左下
+    private var minTopLeft = PointF(10.0f, 10.0f) // 左上 - 初始化为极大值
+    private var maxBottomRight = PointF(-10.0f, -10.0f) // 右下 - 初始化为极小值
+
+    /**
+     * 计算新建地图宽高
+     */
+    private fun calBinding() {
+
+        for (item in keyFrames2d) {
+            val subCreateMap = item.value
+
+            // 更新右上角坐标 - 取所有子图中的最大值
+            if (subCreateMap.originX > maxTopRight.x) {
+                maxTopRight.x = subCreateMap.originX
+            }
+
+            // 更新左下角坐标 - 取所有子图中的最小值
+            if (subCreateMap.leftBottom.x < minBotLeft.x) {
+                minBotLeft.x = subCreateMap.leftBottom.x
+            }
+
+            if (subCreateMap.leftBottom.y < minBotLeft.y) {
+                minBotLeft.y = subCreateMap.leftBottom.y
+            }
+
+            // 更新左上角坐标 - 取所有子图中的最小值
+            if (subCreateMap.leftTop.x < minTopLeft.x) {
+                minTopLeft.x = subCreateMap.leftTop.x
+            }
+
+            if (subCreateMap.leftTop.y > minTopLeft.y) {
+                minTopLeft.y = subCreateMap.leftTop.y
+            }
+
+            // 更新右下角坐标 - 取所有子图中的最大值
+            if (subCreateMap.rightBottom.x > maxBottomRight.x) {
+                maxBottomRight.x = subCreateMap.rightBottom.x
+            }
+
+            if (subCreateMap.rightBottom.y < maxBottomRight.y) {
+                maxBottomRight.y = subCreateMap.rightBottom.y
+            }
+        }
+
+
+        // 计算整张地图的宽度和高度
+        mSrf.mapData.width = abs((maxTopRight.x - minBotLeft.x) / 0.05f)
+        mSrf.mapData.height = abs((maxTopRight.y - minBotLeft.y) / 0.05f)
+
+//        Log.i("SLAMMapView2D","左上 ${minTopLeft}")
+//        Log.i("SLAMMapView2D","左下 ${minBotLeft}")
+//        Log.i("SLAMMapView2D","右上 ${maxTopRight}")
+//        Log.i("SLAMMapView2D","右下 ${maxBottomRight}")
+//        Log.i("SLAMMapView2D","整张地图的宽度 ${mSrf.mapData.mWidth}")
+//        Log.i("SLAMMapView2D","整张地图的高度 ${mSrf.mapData.mHeight}")
+    }
+
+
+    /**
+     * 外部接口 解析激光点云数据（建图模式） 2D
+     */
+    fun parseLaserData2D(laserData: laser_t) {
+        // 更新机器人位置（始终需要处理，不参与降采样）
+        updateRobotPose(laserData.ranges[0], laserData.ranges[1], laserData.ranges[2])
+        mUpLaserScanView?.updateUpLaserScan(laserData)
+    }
+
+
+    /**
+     * 更新机器人位置（弧度制）
+     */
+    private fun updateRobotPose(
+        x: Float, y: Float, theta: Float, z: Float = 0f, roll: Float = 0f, pitch: Float = 0f
+    ) {
+        // 使用辅助方法将可能是科学计数法的float值转换为正常的float值
+        robotPose[0] = convertScientificToDecimal(x)
+        robotPose[1] = convertScientificToDecimal(y)
+        robotPose[2] = convertScientificToDecimal(theta)
+        robotPose[3] = convertScientificToDecimal(z)
+        robotPose[4] = convertScientificToDecimal(roll)
+        robotPose[5] = convertScientificToDecimal(pitch)
+    }
 
     /**
      * 设置AGV 位姿 机器人图标的实时位置
@@ -468,6 +665,16 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
         mCreateMapRobotView?.setAgvData(dParams)
     }
 
+
+    /**
+     * 辅助方法：将科学计数法表示的float值转换为普通小数表示的float值
+     * 解决激光数据中theta值（laserData.ranges[2]）可能以科学计数法形式存在的问题
+     */
+    private val df = DecimalFormat("0.000") // 固定小数点后3位
+    private fun convertScientificToDecimal(value: Float): Float {
+        df.setRoundingMode(RoundingMode.HALF_UP) // 设置四舍五入
+        return df.format(value).toFloat()
+    }
 
     /**
      * 手指抬起监听 回调是世界坐标
