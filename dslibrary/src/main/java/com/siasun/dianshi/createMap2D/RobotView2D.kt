@@ -23,7 +23,7 @@ class RobotView2D(context: Context?, val parent: WeakReference<CreateMapView2D>)
 
     private var mPaint: Paint? = null
     private var robotPaint: Paint? = null
-    private var agvPose: DoubleArray? = null
+    private var agvPose: FloatArray? = null
     private val onRobotMatrix = Matrix()
 
     // 机器人相关
@@ -88,7 +88,7 @@ class RobotView2D(context: Context?, val parent: WeakReference<CreateMapView2D>)
     /**
      * 车体实时坐标
      */
-    fun setAgvData(array: DoubleArray) {
+    fun setAgvData(array: FloatArray) {
         agvPose = array
         postInvalidate()
     }

@@ -8,7 +8,6 @@ import android.graphics.Paint
 import android.graphics.PointF
 import android.util.Log
 import com.ngu.lcmtypes.laser_t
-import com.siasun.dianshi.view.MapView
 import com.siasun.dianshi.view.SlamWareBaseView
 import java.lang.ref.WeakReference
 import kotlin.math.cos
