@@ -76,6 +76,8 @@ class RobotView2D(context: Context?, val parent: WeakReference<CreateMapView2D>)
                 )
                 // 3. 最后平移到屏幕目标位置
                 onRobotMatrix.postTranslate(screenPos.x, screenPos.y)
+                // 4. 应用CreateMapView2D中的矩阵变换
+                onRobotMatrix.postConcat(mMatrix)
                 // 绘制机器人图标
                 robotPaint?.let {
                     canvas.drawBitmap(bitmap, onRobotMatrix, it)

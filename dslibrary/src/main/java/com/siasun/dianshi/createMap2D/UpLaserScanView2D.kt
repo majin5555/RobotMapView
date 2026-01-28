@@ -42,7 +42,6 @@ class UpLaserScanView2D(context: Context?, val parent: WeakReference<CreateMapVi
         if (isDrawingEnabled && cloudList.isNotEmpty()) {
             val mapView = parent.get() ?: return
 
-
             // 预分配数组大小
             val pointsArray = FloatArray(cloudList.size * 2)
             var index = 0
@@ -52,6 +51,9 @@ class UpLaserScanView2D(context: Context?, val parent: WeakReference<CreateMapVi
                 pointsArray[index++] = screenPoint.x
                 pointsArray[index++] = screenPoint.y
             }
+
+            // 应用CreateMapView2D中的矩阵变换
+            mMatrix.mapPoints(pointsArray)
 
             canvas.drawPoints(pointsArray, paint)
         }
