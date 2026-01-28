@@ -16,7 +16,7 @@ import kotlin.math.sin
  */
 @SuppressLint("ViewConstructor")
 class UpLaserScanView(context: Context?, val parent: WeakReference<MapView>) :
-    SlamWareBaseView(context, parent) {
+    SlamWareBaseView<MapView>(context, parent) {
     // 控制是否绘制
     private var isDrawingEnabled: Boolean = true
 

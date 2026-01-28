@@ -17,7 +17,7 @@ import kotlin.math.sqrt
  */
 @SuppressLint("ViewConstructor")
 class StationsView(context: Context?, var parent: WeakReference<MapView>) :
-    SlamWareBaseView(context, parent) {
+    SlamWareBaseView<MapView>(context, parent) {
     private var radius = 10f
 
     // 避让点 - 使用同步列表确保线程安全

@@ -21,7 +21,7 @@ import java.lang.ref.WeakReference
 @SuppressLint("ViewConstructor")
 class PathView @SuppressLint("ViewConstructor") constructor(
     context: Context?, parent: WeakReference<MapView>
-) : SlamWareBaseView(context, parent) {
+) : SlamWareBaseView<MapView>(context, parent) {
 
     // 优化：使用伴生对象创建静态Paint实例，避免重复创建
     companion object {

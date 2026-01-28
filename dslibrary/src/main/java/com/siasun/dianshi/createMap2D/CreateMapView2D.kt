@@ -78,8 +78,7 @@ import com.siasun.dianshi.view.WorldPadView
  * 将在此画布中绘制slam的png地图
  */
 class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
-    ShapeFrameLayout(context, attrs),
-    SlamGestureDetector.OnRPGestureListener {
+    ShapeFrameLayout(context, attrs), SlamGestureDetector.OnRPGestureListener {
 
     // 工作模式枚举
     enum class WorkMode {
@@ -101,10 +100,10 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
     private var mMinMapScale = 0.1f //最小缩放级别
 
     private var mMapView: WeakReference<CreateMapView2D> = WeakReference(this)
-    private var mapLayers: MutableList<SlamWareBaseView> = CopyOnWriteArrayList()
+    private var mapLayers: MutableList<SlamWareBaseView<CreateMapView2D>> = CopyOnWriteArrayList()
     private var mPngMapView: PngMapView? = null //png地图
-    private var mUpLaserScanView: UpLaserScanView? = null//上激光点云
-    private var mCreateMapRobotView : RobotView? = null //机器人图标
+    private var mUpLaserScanView: UpLaserScanView<CreateMapView2D>? = null//上激光点云
+    private var mCreateMapRobotView: RobotView<CreateMapView2D>? = null //机器人图标
 
 
     /**
@@ -135,15 +134,13 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
      */
     private fun setViewVisibility(attrs: AttributeSet?) {
         attrs?.let {
-            context.withStyledAttributes(it, R.styleable.MapView) {
-            }
+            context.withStyledAttributes(it, R.styleable.MapView) {}
         }
     }
 
 
     private fun initView() {
-        val lp =
-            LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+        val lp = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
         mPngMapView = PngMapView(context)
         mUpLaserScanView = UpLaserScanView(context, mMapView)
         //底图的View
@@ -360,7 +357,7 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
         }
     }
 
-    private fun addMapLayers(mapLayer: SlamWareBaseView?) {
+    private fun addMapLayers(mapLayer: SlamWareBaseView<CreateMapView2D>?) {
         if (mapLayer != null && !mapLayers.contains(mapLayer)) {
             mapLayers.add(mapLayer)
             addView(
@@ -381,7 +378,7 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
         // 清理视图引用
         mPngMapView = null
         mUpLaserScanView = null
-        mCreateMapRobotView  = null
+        mCreateMapRobotView = null
 
         // 清理监听器
         mSingleTapListener = null
@@ -448,7 +445,6 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
     }
 
 
-
     /***
      * 设置地图显示
      */
@@ -469,10 +465,10 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
     @SuppressLint("SuspiciousIndentation")
     fun setAgvPose(rt: robot_control_t) {
         val dParams = rt.dparams
-        mCreateMapRobotView ?.setAgvData(dParams)
+        mCreateMapRobotView?.setAgvData(dParams)
     }
 
- 
+
     /**
      * 手指抬起监听 回调是世界坐标
      */

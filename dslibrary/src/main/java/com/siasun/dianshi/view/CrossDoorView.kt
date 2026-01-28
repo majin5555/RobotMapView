@@ -18,7 +18,7 @@ import kotlin.random.Random
 @SuppressLint("ViewConstructor")
 class CrossDoorView(
     context: Context?, val parent: WeakReference<MapView>
-) : SlamWareBaseView(context, parent) {
+) : SlamWareBaseView<MapView>(context, parent) {
 
     // 当前工作模式
     private var currentWorkMode: MapView.WorkMode = MapView.WorkMode.MODE_SHOW_MAP

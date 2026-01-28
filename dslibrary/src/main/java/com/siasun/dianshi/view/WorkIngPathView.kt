@@ -17,7 +17,7 @@ import java.util.Collections
  */
 @SuppressLint("ViewConstructor")
 class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
-    SlamWareBaseView(context, parent) {
+    SlamWareBaseView<MapView>(context, parent) {
 
     // 机器人有任务 实时路径，限制最大长度防止内存溢出
     private val MAX_PATH_POINTS = 10000 // 可根据实际需求调整

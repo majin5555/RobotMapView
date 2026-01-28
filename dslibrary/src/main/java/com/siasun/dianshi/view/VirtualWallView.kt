@@ -22,7 +22,7 @@ import kotlin.math.sqrt
 @SuppressLint("ViewConstructor")
 class VirtualWallView(
     context: Context?, val parent: WeakReference<MapView>
-) : SlamWareBaseView(context, parent) {
+) : SlamWareBaseView<MapView>(context, parent) {
     private val LINE_WIDTH = 2f
     private var radius = 5f
 

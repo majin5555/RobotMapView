@@ -18,7 +18,7 @@ import java.lang.ref.WeakReference
  */
 @SuppressLint("ViewConstructor")
 class HomeDockView(context: Context?, parent: WeakReference<MapView>) :
-    SlamWareBaseView(context, parent) {
+    SlamWareBaseView<MapView>(context, parent) {
 
     /**
      * 充电站点击事件监听器接口

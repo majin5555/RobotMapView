@@ -23,7 +23,7 @@ import kotlin.math.sqrt
 @SuppressLint("ViewConstructor")
 class WorldPadView @SuppressLint("ViewConstructor") constructor(
     context: Context?, parent: WeakReference<MapView>
-) : SlamWareBaseView(context, parent) {
+) : SlamWareBaseView<MapView>(context, parent) {
     private var isDrawingEnabled: Boolean = true
     private var cLayer: CLayer? = null
     private var currentWorkMode: MapView.WorkMode = MapView.WorkMode.MODE_SHOW_MAP

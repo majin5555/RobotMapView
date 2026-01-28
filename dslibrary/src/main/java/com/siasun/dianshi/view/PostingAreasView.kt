@@ -20,7 +20,7 @@ import java.lang.ref.WeakReference
  * 支持定位区域的显示、创建、编辑和删除功能
  */
 class PostingAreasView(context: Context?, parent: WeakReference<MapView>) :
-    SlamWareBaseView(context, parent) {
+    SlamWareBaseView<MapView>(context, parent) {
 
     // 定位区域列表
     private val positingAreas: MutableList<PositingArea> = mutableListOf()

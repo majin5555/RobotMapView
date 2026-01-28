@@ -20,7 +20,7 @@ import java.lang.ref.WeakReference
  */
 @SuppressLint("ViewConstructor")
 class OnlinePoseView(context: Context?, parent: WeakReference<MapView>) :
-    SlamWareBaseView(context, parent) {
+    SlamWareBaseView<MapView>(context, parent) {
 
     companion object {
         // 线宽（像素）

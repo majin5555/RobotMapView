@@ -14,7 +14,7 @@ import kotlin.math.sqrt
  * 混行区域
  */
 class MixAreaView(context: Context?, val parent: WeakReference<MapView>) :
-    SlamWareBaseView(context, parent), GestureDetector.OnGestureListener,
+    SlamWareBaseView<MapView>(context, parent), GestureDetector.OnGestureListener,
     GestureDetector.OnDoubleTapListener {
 
     // 保存parent引用以便安全访问 - 使用非空WeakReference

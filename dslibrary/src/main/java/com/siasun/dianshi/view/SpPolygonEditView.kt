@@ -20,7 +20,7 @@ import java.lang.ref.WeakReference
  *      * 10-限制区
  */
 class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
-    SlamWareBaseView(context, parent), GestureDetector.OnGestureListener,
+    SlamWareBaseView<MapView>(context, parent), GestureDetector.OnGestureListener,
     GestureDetector.OnDoubleTapListener {
 
     // 保存parent引用以便安全访问

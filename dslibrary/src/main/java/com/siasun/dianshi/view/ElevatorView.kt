@@ -16,7 +16,7 @@ import java.lang.ref.WeakReference
  */
 @SuppressLint("ViewConstructor")
 class ElevatorView(context: Context?, parent: WeakReference<MapView>) :
-    SlamWareBaseView(context, parent) {
+    SlamWareBaseView<MapView>(context, parent) {
 
     // 乘梯点编辑监听器接口
     interface OnElevatorEditListener {

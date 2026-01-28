@@ -47,7 +47,6 @@ import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.CopyOnWriteArrayList
 import androidx.core.content.withStyledAttributes
-import androidx.core.view.get
 import com.hjq.shape.layout.ShapeFrameLayout
 
 /**
@@ -107,7 +106,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     private var mMinMapScale = 0.1f //最小缩放级别
 
     private var mMapView: WeakReference<MapView> = WeakReference(this)
-    private var mapLayers: MutableList<SlamWareBaseView> = CopyOnWriteArrayList()
+    private var mapLayers: MutableList<SlamWareBaseView<MapView>> = CopyOnWriteArrayList()
     private var mPngMapView: PngMapView? = null //png地图
     private var mLegendView: LegendView? = null//图例
     private var mMapNameView: MapNameView? = null//图例
@@ -462,7 +461,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         }
     }
 
-    private fun addMapLayers(mapLayer: SlamWareBaseView?) {
+    private fun addMapLayers(mapLayer: SlamWareBaseView<MapView>?) {
         if (mapLayer != null && !mapLayers.contains(mapLayer)) {
             mapLayers.add(mapLayer)
             addView(

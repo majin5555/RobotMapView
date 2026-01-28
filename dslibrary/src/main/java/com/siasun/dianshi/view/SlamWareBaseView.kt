@@ -11,9 +11,9 @@ import android.view.ViewGroup
 import com.siasun.dianshi.utils.RadianUtil
 import java.lang.ref.WeakReference
 
-abstract class SlamWareBaseView(context: Context?, parent: WeakReference<MapView>) :
+abstract class SlamWareBaseView<T>(context: Context?, parent: WeakReference<T>) :
     ViewGroup(context) {
-    var mParent: WeakReference<MapView>
+    var mParent: WeakReference<T>
     var scale: Float protected set
     var mRotation: Float//旋转角度
     var mMatrix: Matrix//矩阵

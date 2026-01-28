@@ -15,7 +15,7 @@ import java.lang.ref.WeakReference
  */
 @SuppressLint("ViewConstructor")
 class TopViewPathView(context: Context?, val parent: WeakReference<MapView>) :
-    SlamWareBaseView(context, parent) {
+    SlamWareBaseView<MapView>(context, parent) {
 
     // 基础线宽（像素）
     private val BASE_LINE_WIDTH = 1f

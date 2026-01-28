@@ -16,7 +16,7 @@ import java.lang.ref.WeakReference
  */
 @SuppressLint("ViewConstructor")
 class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
-    SlamWareBaseView(context, parent) {
+    SlamWareBaseView<MapView>(context, parent) {
 
     // 当前工作模式
     private var currentWorkMode = MapView.WorkMode.MODE_SHOW_MAP

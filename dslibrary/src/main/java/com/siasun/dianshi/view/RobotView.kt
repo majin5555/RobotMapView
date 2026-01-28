@@ -17,7 +17,7 @@ import java.lang.ref.WeakReference
  */
 @SuppressLint("ViewConstructor")
 class RobotView(context: Context?, val parent: WeakReference<MapView>) :
-    SlamWareBaseView(context, parent) {
+    SlamWareBaseView<MapView>(context, parent) {
 
     private var mPaint: Paint? = null
     private var robotPaint: Paint? = null
@@ -50,7 +50,8 @@ class RobotView(context: Context?, val parent: WeakReference<MapView>) :
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        val mapView = parent.get() ?: return
+        val mapView = parent.get() as? MapView ?: return
+
         agvPose?.let { pose ->
             robotBitmap?.let { bitmap ->
                 // 重置变换矩阵，避免变换累积导致的跳动
