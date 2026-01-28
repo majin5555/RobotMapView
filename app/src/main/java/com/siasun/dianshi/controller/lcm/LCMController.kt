@@ -64,6 +64,7 @@ import com.siasun.dianshi.mapviewdemo.KEY_CLEANING_LAYER
 import com.siasun.dianshi.mapviewdemo.KEY_CROSS_FLOOR_STAGE
 import com.siasun.dianshi.mapviewdemo.KEY_CURRENT_POINT_CLOUD
 import com.siasun.dianshi.mapviewdemo.KEY_FINISH_CLEAN_AREA_ID
+import com.siasun.dianshi.mapviewdemo.KEY_NAV_HEARTBEAT_STATE
 import com.siasun.dianshi.mapviewdemo.KEY_NEXT_CLEANING_AREA_ID
 import com.siasun.dianshi.mapviewdemo.KEY_POSITING_AREA_VALUE
 import com.siasun.dianshi.mapviewdemo.KEY_SCHEDULED_TASK_REMINDER
@@ -389,8 +390,10 @@ class LCMController : AbsController(), LCMSubscriber {
      * 导航结束建图后，是否保存地图 （1：保存地图；2：不保存地图 3 旋转并保存地图）
      *
      */
-    override fun mSaveEnvironment(cmdId: Byte, rotate: Float) = sendSaveEv(cmdId, rotate)
 
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun mSaveEnvironment(cmdId: Byte, rotate: Float, mapId: Int) =
+        sendSaveEv(cmdId, rotate, mapId)
     /**
      * pad->导航
      * pad请求地图恢复 （重置环境文件）
@@ -539,13 +542,22 @@ class LCMController : AbsController(), LCMSubscriber {
      *
      * @param cmdId  （1：保存地图；2：不保存地图 3 旋转并保存地图）
      */
-    @SuppressLint("NewApi")
-    private fun sendSaveEv(cmdId: Byte, rotate: Float = 0f) {
+    /**
+     * 多地图
+     * 保存环境文件
+     *
+     * @param cmdId  （1：保存地图；2：不保存地图 3 旋转并保存地图）
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun sendSaveEv(cmdId: Byte, rotate: Float = 0f, mapId: Int) {
         val mParam = ByteArray(1)
         mParam[0] = cmdId
         val dParams = doubleArrayOf(rotate.toDouble())
-        sendRobotControlNew(22, dParams, mParam, null, null, NAVI_SERVICE_COMMAND)
+        val sParam = arrayOfNulls<String>(1)
+        sParam[0] = "$mapId"
+        sendRobotControlNew(22, dParams, mParam, sParam, null, NAVI_SERVICE_COMMAND)
     }
+
 
     /**重置环境文件**/
     @SuppressLint("NewApi")
@@ -3109,12 +3121,12 @@ class LCMController : AbsController(), LCMSubscriber {
      * @since 2024/12/06
      */
     private fun receiveNaviHeartbeatState(rtNew: robot_control_t_new) {
-//    val iParams = rtNew.iparams
-//    if (iParams == null || iParams.isEmpty()) {
-//        LogUtil.i("接收导航心跳返回 iParams  null")
-//        return
-//    }
-//    LiveEventBus.get(KEY_NAV_HEARTBEAT_STATE, ByteArray::class.java).post(iParams)
+    val iParams = rtNew.iparams
+    if (iParams == null || iParams.isEmpty()) {
+        LogUtil.i("接收导航心跳返回 iParams  null")
+        return
+    }
+    LiveEventBus.get(KEY_NAV_HEARTBEAT_STATE, ByteArray::class.java).post(iParams)
     }
 
     /**

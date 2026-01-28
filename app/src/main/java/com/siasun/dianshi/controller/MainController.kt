@@ -1,6 +1,7 @@
 package com.siasun.dianshi.controller
 
 import android.graphics.PointF
+import com.siasun.dianshi.GlobalVariable.SEND_NAVI_HEART
 import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.PositingArea
 import com.siasun.dianshi.controller.lcm.LCMController
@@ -91,10 +92,10 @@ object MainController {
     /**
      * 开始建立地图
      */
-//    fun startCreateEnvironment() {
-//        SEND_NAVI_HEART = true
-//        myController.mMapStartCreate()
-//    }
+    fun startCreateEnvironment() {
+        SEND_NAVI_HEART = true
+        myController.mMapStartCreate()
+    }
 
     /**
      * 结束建立地图
@@ -143,10 +144,12 @@ object MainController {
     )
 
     /**
+     * 多地图
      *保存环境 1 保存 2 取消  3 旋转角度
      */
-    fun saveEnvironment(cmdId: Byte, rotate: Float = 0f) =
-        myController.mSaveEnvironment(cmdId, rotate)
+    fun saveEnvironment(cmdId: Byte, rotate: Float = 0f, mapId: Int = -1) {
+        myController.mSaveEnvironment(cmdId, rotate, mapId)
+    }
 
 
     /**

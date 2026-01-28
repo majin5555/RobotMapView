@@ -49,5 +49,7 @@ dependencies {
     api(libs.liveEventBus.core)
     api(libs.liveEventBus.gson)
     api(libs.glide.core)
+    api(libs.commons)
+
 //    api(libs.fastjson)
 }

@@ -10,7 +10,6 @@
     <uses-permission
         android:name="android.permission.SET_TIME"
         tools:ignore="ProtectedPermissions" />
-
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission
         android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS"
@@ -27,7 +26,9 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
-
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
     <uses-permission
         android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
@@ -36,9 +37,6 @@
         android:glEsVersion="0x00020000"
         android:required="true" />
 
-    <uses-permission
-        android:name="android.permission.PACKAGE_USAGE_STATS"
-        tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission
         android:name="android.permission.WRITE_SETTINGS"
@@ -47,7 +45,6 @@
     <uses-permission
         android:name="android.permission.INSTALL_PACKAGES"
         tools:ignore="ProtectedPermissions" />
-
     <uses-permission
         android:name="android.permission.WRITE_SECURE_SETTINGS"
         tools:ignore="ProtectedPermissions" />
@@ -69,25 +66,28 @@
         android:theme="@style/Theme.MapViewDemo"
         tools:targetApi="31">
         <activity
-            android:name=".ui.ShowMapViewActivity"
-            android:exported="true"
-            android:label="@string/app_name"
-            android:theme="@style/Theme.MapViewDemo">
+            android:name=".ui.CreateMap2DActivity"
+            android:exported="true">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
         </activity>
 
         <activity
-            android:name=".ui.VirtualWallViewActivity"
+            android:name=".ui.ShowMapViewActivity"
             android:exported="true"
-            android:label="@string/app_name">
-
+            android:label="@string/app_name"
+            android:theme="@style/Theme.MapViewDemo">
 
         </activity>
-
+        <activity
+            android:name=".ui.VirtualWallViewActivity"
+            android:exported="true"
+            android:label="@string/app_name" />
     </application>
 
 </manifest>

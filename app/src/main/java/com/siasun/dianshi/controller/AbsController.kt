@@ -21,7 +21,7 @@ abstract class AbsController {
     abstract fun mMapStartCreate()
     abstract fun mMapStopCreate()
     abstract fun mRecordDX(sta: Boolean)
-    abstract fun mSaveEnvironment(cmdId: Byte, rotate: Float = 0f)
+    abstract fun mSaveEnvironment(cmdId: Byte, rotate: Float = 0f, mapId: Int)
     abstract fun mSendNaviHeartBeat()
 
     //    abstract fun mSendTemplateLoc(templateRoot: TemplateRoot)

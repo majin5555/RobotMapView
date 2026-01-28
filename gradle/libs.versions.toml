@@ -60,6 +60,8 @@ shapeViewVersion = "9.6"
 shapeDrawableVersion = "3.3"
 brvahVersion = "4.1.4"
 xpopupVersion = "2.10.0"
+commonsVersion = "3.6.1"
+activity = "1.8.0"
 #fastjsonVersion = "1.2.78"
 
 
@@ -132,6 +134,7 @@ shapeView = { group = "com.github.getActivity", name = "ShapeView", version.ref 
 shapeDrawable = { group = "com.github.getActivity", name = "ShapeDrawable", version.ref = "shapeDrawableVersion" }
 brvah = { group = "io.github.cymchad", name = "BaseRecyclerViewAdapterHelper4", version.ref = "brvahVersion" }
 xpopup = { group = "com.github.li-xiaojun", name = "XPopup", version.ref = "xpopupVersion" }
+commons = { group = "org.apache.commons", name = "commons-math3", version.ref = "commonsVersion" }
 #fastjson = { group = "com.alibaba", name = "fastjson", version.ref = "fastjsonVersion" }
 
 
@@ -140,6 +143,7 @@ androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = 
 appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompatVersion" }
 androidx-fragment-ktx = { group = "androidx.fragment", name = "fragment-ktx", version.ref = "fragmentKtx" }
 androidx-databinding-runtime = { group = "androidx.databinding", name = "databinding-runtime", version.ref = "databindingRuntime" }
+androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 
 
 [plugins]

@@ -200,7 +200,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        iniVirtualWall()
 //        initRemoveNoise()
 //        initPostingArea()
-//        initCleanArea()
+        initCleanArea()
 //        initElevator()
 //        initPose()
 //        initMachineStation()
