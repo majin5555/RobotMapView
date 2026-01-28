@@ -22,7 +22,7 @@ class DrawGraphicsNew {
     private val drawMatrix = Matrix() // 复用矩阵对象提升性能
     private var mSrf = CoordinateConversion()//坐标转化工具类
 
-    private val mPaint = Paint().apply {
+    val mPaint = Paint().apply {
         isAntiAlias = true
         style = Paint.Style.FILL
         strokeWidth = 2f
@@ -45,7 +45,7 @@ class DrawGraphicsNew {
         strokeWidth = 5f
     }
 
-    private val redPaint = Paint().apply {
+    val redPaint = Paint().apply {
         color = Color.RED
         style = Paint.Style.FILL
         strokeWidth = 3f

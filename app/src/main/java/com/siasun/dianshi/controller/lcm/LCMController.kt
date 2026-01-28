@@ -63,15 +63,20 @@ import com.siasun.dianshi.mapviewdemo.KEY_CLEANING_ID
 import com.siasun.dianshi.mapviewdemo.KEY_CLEANING_LAYER
 import com.siasun.dianshi.mapviewdemo.KEY_CROSS_FLOOR_STAGE
 import com.siasun.dianshi.mapviewdemo.KEY_CURRENT_POINT_CLOUD
+import com.siasun.dianshi.mapviewdemo.KEY_EXTEND_LOAD_SUB_MAP
 import com.siasun.dianshi.mapviewdemo.KEY_FINISH_CLEAN_AREA_ID
 import com.siasun.dianshi.mapviewdemo.KEY_NAV_HEARTBEAT_STATE
+import com.siasun.dianshi.mapviewdemo.KEY_NAV_LOAD_SCAN_STATE_VALUE
 import com.siasun.dianshi.mapviewdemo.KEY_NEXT_CLEANING_AREA_ID
+import com.siasun.dianshi.mapviewdemo.KEY_OPT_POSE
 import com.siasun.dianshi.mapviewdemo.KEY_POSITING_AREA_VALUE
 import com.siasun.dianshi.mapviewdemo.KEY_SCHEDULED_TASK_REMINDER
 import com.siasun.dianshi.mapviewdemo.KEY_TASK_STATE
 import com.siasun.dianshi.mapviewdemo.KEY_TEACH_PATH
 import com.siasun.dianshi.mapviewdemo.KEY_TEACH_STATE
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_PLAN_PATH_RESULT
+import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_POS
+import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_SUB_MAPS
 import com.siasun.dianshi.mapviewdemo.NaviBody
 import com.siasun.dianshi.mapviewdemo.PP_VERSION
 import com.siasun.dianshi.mapviewdemo.RunningState.CURRENT_TASK_STATE
@@ -394,6 +399,7 @@ class LCMController : AbsController(), LCMSubscriber {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun mSaveEnvironment(cmdId: Byte, rotate: Float, mapId: Int) =
         sendSaveEv(cmdId, rotate, mapId)
+
     /**
      * pad->导航
      * pad请求地图恢复 （重置环境文件）
@@ -2684,14 +2690,14 @@ class LCMController : AbsController(), LCMSubscriber {
      */
     private var mCurrentTeachState: Int = -1
     private fun receiveTeachState(value: Int) {
-    if (mCurrentTeachState == value) return
-    else {
-        LogUtil.i(
-            "变化 接收士教状态:${value}  -->(1:开始士教 2:结束士教)", null, TAG_CAR_BODY
-        )
-        mCurrentTeachState = value
-        LiveEventBus.get(KEY_TEACH_STATE, Int::class.java).post(value)
-    }
+        if (mCurrentTeachState == value) return
+        else {
+            LogUtil.i(
+                "变化 接收士教状态:${value}  -->(1:开始士教 2:结束士教)", null, TAG_CAR_BODY
+            )
+            mCurrentTeachState = value
+            LiveEventBus.get(KEY_TEACH_STATE, Int::class.java).post(value)
+        }
     }
 
     /**
@@ -2914,17 +2920,17 @@ class LCMController : AbsController(), LCMSubscriber {
     private var mCurrentLoadScanValue: Int = -1
 
     private fun receiveLoadScanState(rtNew: robot_control_t_new) {
-//    val value = rtNew.iparams[0].toInt()
-//    if (mCurrentLoadScanValue == value) return
-//    else {
-//        LogUtil.i(
-//            "接收扫描新环境状态${value}  ->(0 成功 1不在等待建图状态 2 激光无数据 3系统错误 4打开顶视相机失败)",
-//            null,
-//            TAG_NAV
-//        )
-//        mCurrentLoadScanValue = value
-//        LiveEventBus.get(KEY_NAV_LOAD_SCAN_STATE_VALUE, Int::class.java).post(value)
-//    }
+        val value = rtNew.iparams[0].toInt()
+        if (mCurrentLoadScanValue == value) return
+        else {
+            LogUtil.i(
+                "接收扫描新环境状态${value}  ->(0 成功 1不在等待建图状态 2 激光无数据 3系统错误 4打开顶视相机失败)",
+                null,
+                TAG_NAV
+            )
+            mCurrentLoadScanValue = value
+            LiveEventBus.get(KEY_NAV_LOAD_SCAN_STATE_VALUE, Int::class.java).post(value)
+        }
     }
 
     /**
@@ -2956,7 +2962,7 @@ class LCMController : AbsController(), LCMSubscriber {
      */
 
     private fun receiveSubMap(laserT: laser_t) {
-//    LiveEventBus.get(KEY_UPDATE_SUB_MAPS, laser_t::class.java).post(laserT)
+        LiveEventBus.get(KEY_UPDATE_SUB_MAPS, laser_t::class.java).post(laserT)
     }
 
     /**
@@ -2965,7 +2971,7 @@ class LCMController : AbsController(), LCMSubscriber {
      * @since 2024/12/03
      */
     private fun receiveRobotPos(laserT: laser_t) {
-//    LiveEventBus.get(KEY_UPDATE_POS, laser_t::class.java).post(laserT)
+        LiveEventBus.get(KEY_UPDATE_POS, laser_t::class.java).post(laserT)
     }
 
 
@@ -3047,7 +3053,7 @@ class LCMController : AbsController(), LCMSubscriber {
      * @since 2024/12/05
      */
     private fun receiveOptSubMap(rt: laser_t) {
-//    LiveEventBus.get(KEY_OPT_POSE, laser_t::class.java).post(rt)
+        LiveEventBus.get(KEY_OPT_POSE, laser_t::class.java).post(rt)
     }
 
 
@@ -3106,12 +3112,12 @@ class LCMController : AbsController(), LCMSubscriber {
      * @since 2024/12/06
      */
     private fun receiveLoadExtendedMapDataResult(rtNew: robot_control_t_new) {
-//    val iParams = rtNew.iparams
-//    if (iParams == null || iParams.isEmpty()) {
-//        LogUtil.i("导航加载扩展地图data.pb文件结果 iParams  null")
-//        return
-//    }
-//    LiveEventBus.get(KEY_EXTEND_LOAD_SUB_MAP, ByteArray::class.java).post(iParams)
+        val iParams = rtNew.iparams
+        if (iParams == null || iParams.isEmpty()) {
+            LogUtil.i("导航加载扩展地图data.pb文件结果 iParams  null")
+            return
+        }
+        LiveEventBus.get(KEY_EXTEND_LOAD_SUB_MAP, ByteArray::class.java).post(iParams)
     }
 
     /**
@@ -3121,12 +3127,12 @@ class LCMController : AbsController(), LCMSubscriber {
      * @since 2024/12/06
      */
     private fun receiveNaviHeartbeatState(rtNew: robot_control_t_new) {
-    val iParams = rtNew.iparams
-    if (iParams == null || iParams.isEmpty()) {
-        LogUtil.i("接收导航心跳返回 iParams  null")
-        return
-    }
-    LiveEventBus.get(KEY_NAV_HEARTBEAT_STATE, ByteArray::class.java).post(iParams)
+        val iParams = rtNew.iparams
+        if (iParams == null || iParams.isEmpty()) {
+            LogUtil.i("接收导航心跳返回 iParams  null")
+            return
+        }
+        LiveEventBus.get(KEY_NAV_HEARTBEAT_STATE, ByteArray::class.java).post(iParams)
     }
 
     /**

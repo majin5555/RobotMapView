@@ -93,7 +93,7 @@ dependencies {
     }
     //SFTP start
     // https://mvnrepository.com/artifact/org.apache.sshd/sshd-sftp
-    api 'org.apache.sshd:sshd-sftp:2.0.0'
+//    api 'org.apache.sshd:sshd-sftp:2.0.0'
 
     // https://mvnrepository.com/artifact/com.jcraft/jsch
     api 'com.jcraft:jsch:0.1.55'
