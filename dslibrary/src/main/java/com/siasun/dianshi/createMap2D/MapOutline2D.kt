@@ -67,22 +67,15 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
             val centerY = height / 2f
             synchronized(keyFrames2d) {
                 canvas.save()
-                // 应用全局旋转（如果有）
-                if (mapView.mRotateAngle != 0f) {
-                    canvas.rotate(-mapView.mRotateAngle, centerX, centerY)
-                }
-                // 直接绘制子图（不进行坐标转换，相对于屏幕中心）
+                // 直接绘制子图（使用统一的坐标转换方法）
                 for ((_, mSubMapData) in keyFrames2d.entries) {
                     val bitmap = mSubMapData.mBitmap ?: continue
-                    // 计算子图相对于屏幕中心的位置
-                    val subMapOffsetX =
-                        centerX + (mSubMapData.leftTop.x - mapView.robotPose[0]) * mapView.mSrf.scale
-                    val subMapOffsetY =
-                        centerY + (mSubMapData.leftTop.y - mapView.robotPose[1]) * mapView.mSrf.scale
+                    // 使用worldToScreen方法将子图左上角的世界坐标转换为屏幕坐标
+                    val screenLeftTop = mapView.worldToScreen(mSubMapData.leftTop.x, mSubMapData.leftTop.y)
                     // 创建新矩阵
                     val matrix = Matrix().apply {
                         postScale(mapView.mSrf.scale, mapView.mSrf.scale)
-                        postTranslate(subMapOffsetX, subMapOffsetY)
+                        postTranslate(screenLeftTop.x, screenLeftTop.y)
                     }
                     canvas.drawBitmap(bitmap, matrix, mPaint)
                 }
