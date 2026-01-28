@@ -40,6 +40,10 @@ class UpLaserScanView2D(context: Context?, val parent: WeakReference<CreateMapVi
         // 只有在绘制启用状态下才绘制点云
         if (isDrawingEnabled && cloudList.isNotEmpty()) {
             val mapView = parent.get() ?: return
+            // 应用全局旋转（如果有）
+            if (mapView.mRotateAngle != 0f) {
+                canvas.rotate(-mapView.mRotateAngle)
+            }
 
             // 预分配数组大小
             val pointsArray = FloatArray(cloudList.size * 2)

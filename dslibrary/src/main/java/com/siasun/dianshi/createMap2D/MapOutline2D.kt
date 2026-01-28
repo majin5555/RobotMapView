@@ -60,32 +60,42 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
     }
 
 
+    // 复用Matrix对象，避免在onDraw中重复创建
+    private val mTempMatrix = Matrix()
+    
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         // 只有在绘制启用状态下才绘制点云
         if (isDrawingEnabled && keyFrames2d.isNotEmpty()) {
             val mapView = parent.get() ?: return
-            synchronized(keyFrames2d) {
-                canvas.save()
-                // 应用全局旋转（如果有）
-                if (mapView.mRotateAngle != 0f) {
-                    canvas.rotate(-mapView.mRotateAngle)
-                }
-                // 直接绘制子图（使用统一的坐标转换方法）
-                for ((_, mSubMapData) in keyFrames2d.entries) {
-                    val bitmap = mSubMapData.mBitmap ?: continue
-                    // 使用worldToScreen方法将子图左上角的世界坐标转换为屏幕坐标
-                    val screenLeftTop =
-                        mapView.worldToScreen(mSubMapData.leftTop.x, mSubMapData.leftTop.y)
-                    // 创建新矩阵
-                    val matrix = Matrix().apply {
-                        postScale(mapView.mSrf.scale, mapView.mSrf.scale)
-                        postTranslate(screenLeftTop.x, screenLeftTop.y)
-                    }
-                    canvas.drawBitmap(bitmap, matrix, mPaint)
-                }
+            
+            // 提前获取缩放比例，避免在循环中重复调用
+            val scale = mapView.mSrf.scale
+            
+            canvas.save()
+            // 应用全局旋转（如果有）
+            if (mapView.mRotateAngle != 0f) {
+                canvas.rotate(-mapView.mRotateAngle)
             }
+            
+            // 使用forEach代替for-in循环，提高性能
+            keyFrames2d.forEach { (_, mSubMapData) ->
+                val bitmap = mSubMapData.mBitmap ?: return@forEach
+                
+                // 使用worldToScreen方法将子图左上角的世界坐标转换为屏幕坐标
+                val screenLeftTop =
+                    mapView.worldToScreen(mSubMapData.leftTop.x, mSubMapData.leftTop.y)
+                
+                // 复用Matrix对象，避免重复创建
+                mTempMatrix.reset()
+                mTempMatrix.postScale(scale, scale)
+                mTempMatrix.postTranslate(screenLeftTop.x, screenLeftTop.y)
+                
+                canvas.drawBitmap(bitmap, mTempMatrix, mPaint)
+            }
+            
+            canvas.restore()
         }
     }
 
@@ -109,41 +119,41 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
             val subMapData = SubMapData()
             //子图ID
             subMapData.id = mLaserT.rad0.toInt()
-            Log.i(TAG, "子图 radID  子图索引 ${subMapData.id}")
+            Log.d(TAG, "子图 radID  子图索引 ${subMapData.id}")
 
             //子图 x方向格子数量 子图宽度
             subMapData.width = mLaserT.ranges[0]
-            Log.i(
+            Log.d(
                 TAG, "子图 mLaserT.ranges[0] x方向格子数量 子图宽度 ${subMapData.width}"
             )
             //子图 y方向格子数量 子图高度
             subMapData.height = mLaserT.ranges[1]
-            Log.i(
+            Log.d(
                 TAG, "子图 mLaserT.ranges[1] y方向格子数量 子图高度 ${subMapData.height}"
             )
 
             //新增读取子图右上角世界坐标
             subMapData.originX = mLaserT.ranges[2]
-            Log.i(
+            Log.d(
                 TAG,
                 "子图 mLaserT.ranges[2] 新增读取子图右上角世界坐标 originX ${subMapData.originX}"
             )
             subMapData.originY = mLaserT.ranges[3]
-            Log.i(
+            Log.d(
                 TAG,
                 "子图 mLaserT.ranges[3] 新增读取子图右上角世界坐标 originY ${subMapData.originY}"
             )
             subMapData.originTheta = mLaserT.ranges[4]
-            Log.i(
+            Log.d(
                 TAG,
                 "子图 mLaserT.ranges[4] 新增读取子图右上角世界坐标 originTheta ${subMapData.originTheta}"
             )
             subMapData.optMaxTempX = mLaserT.ranges[5]
-            Log.i(TAG, "子图 mLaserT.ranges[5] optMaxTempX  ${subMapData.optMaxTempX}")
+            Log.d(TAG, "子图 mLaserT.ranges[5] optMaxTempX  ${subMapData.optMaxTempX}")
             subMapData.optMaxTempY = mLaserT.ranges[6]
-            Log.i(TAG, "子图 mLaserT.ranges[6] optMaxTempY  ${subMapData.optMaxTempY}")
+            Log.d(TAG, "子图 mLaserT.ranges[6] optMaxTempY  ${subMapData.optMaxTempY}")
             subMapData.optMaxTempTheta = mLaserT.ranges[7]
-            Log.i(
+            Log.d(
                 TAG, "子图 mLaserT.ranges[7] optMaxTempXTheta   ${subMapData.optMaxTempTheta}"
             )
 
@@ -209,24 +219,30 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
     /**
      * 创建子图bitmap对象
      */
-
     private fun buildSubMapTileLine(metaData: SubMapData) {
-        val bmpData =
-            ByteArray((metaData.width * metaData.height * MapEditorConstants.MAP_PIXEL_SIZE).toInt())
+        val width = metaData.width.toInt()
+        val height = metaData.height.toInt()
+        val pixelSize = MapEditorConstants.MAP_PIXEL_SIZE
+        val bmpDataSize = width * height * pixelSize
+        
+        // 提前计算常量，避免在循环中重复计算
+        val colorBlue = 0.toByte()
+        val colorAlpha = (-0x10000 shr 24).toByte()
+        
+        val bmpData = ByteArray(bmpDataSize)
+        
+        // 使用普通for循环代替forEach，提高性能
         for (i in 0 until metaData.indexCount) {
-            val index: Int = metaData.intensitiesList[i]
-            val color = 0
-            bmpData[index * MapEditorConstants.MAP_PIXEL_SIZE] = (color and 0x000000FF).toByte()
-            bmpData[index * MapEditorConstants.MAP_PIXEL_SIZE + 1] = (color and 0x000000FF).toByte()
-            bmpData[index * MapEditorConstants.MAP_PIXEL_SIZE + 2] = (color and 0x000000FF).toByte()
-            bmpData[index * MapEditorConstants.MAP_PIXEL_SIZE + 3] = (-0x10000 shr 24).toByte()
+            val index = metaData.intensitiesList[i] * pixelSize
+            bmpData[index] = colorBlue
+            bmpData[index + 1] = colorBlue
+            bmpData[index + 2] = colorBlue
+            bmpData[index + 3] = colorAlpha
         }
 
-        val bitmap = createBitmap(metaData.width.toInt(), metaData.height.toInt())
-
+        val bitmap = createBitmap(width, height)
         bitmap.copyPixelsFromBuffer(ByteBuffer.wrap(bmpData))
         metaData.mBitmap = bitmap
-        Log.i(TAG, "子图ID ${metaData.id}  宽 ${bitmap.width} 高 ${bitmap.height}")
     }
 
 
@@ -276,12 +292,12 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
         mapView.mSrf.mapData.width = abs((maxTopRight.x - minBotLeft.x) / 0.05f)
         mapView.mSrf.mapData.height = abs((maxTopRight.y - minBotLeft.y) / 0.05f)
 
-//        Log.i(TAG,"左上 ${minTopLeft}")
-//        Log.i(TAG,"左下 ${minBotLeft}")
-//        Log.i(TAG,"右上 ${maxTopRight}")
-//        Log.i(TAG,"右下 ${maxBottomRight}")
-//        Log.i(TAG,"整张地图的宽度 ${mSrf.mapData.mWidth}")
-//        Log.i(TAG,"整张地图的高度 ${mSrf.mapData.mHeight}")
+//        Log.d(TAG,"左上 ${minTopLeft}")
+//        Log.d(TAG,"左下 ${minBotLeft}")
+//        Log.d(TAG,"右上 ${maxTopRight}")
+//        Log.d(TAG,"右下 ${maxBottomRight}")
+//        Log.d(TAG,"整张地图的宽度 ${mSrf.mapData.mWidth}")
+//        Log.d(TAG,"整张地图的高度 ${mSrf.mapData.mHeight}")
     }
 
     /**
