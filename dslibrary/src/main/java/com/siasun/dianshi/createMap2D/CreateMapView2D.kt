@@ -443,11 +443,14 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
     }
 
     /**
-     * 外部接口：更新子图数据 2D
+     * 外部接口：更新子图数据 （建图模式） 2D
      */
     fun parseSubMaps2D(mLaserT: laser_t, type: Int) {
         mMapOutline2D?.parseSubMaps2D(mLaserT, type)
-        setMatrixWithScale(mOuterMatrix, mMapScale)
+        // 建图模式下，保持车体居中显示
+        if (currentWorkMode == WorkMode.MODE_CREATE_MAP) {
+            keepRobotCentered()
+        }
     }
 
 
@@ -457,12 +460,7 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
     fun parseLaserData2D(laserData: laser_t) {
         // 更新机器人位置（始终需要处理，不参与降采样）
         updateRobotPose(laserData.ranges[0], laserData.ranges[1], laserData.ranges[2])
-        // 建图模式下，保持车体居中显示
-        if (currentWorkMode == WorkMode.MODE_CREATE_MAP) {
-            keepRobotCentered()
-        }
         mUpLaserScanView?.updateUpLaserScan(laserData)
-
     }
 
 
@@ -520,6 +518,7 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
 
         // 移动地图使机器人居中
         setTransition(dx.toInt(), dy.toInt())
+        Log.d("LogUtil", "移动地图使机器人居中")
     }
 
     /**
