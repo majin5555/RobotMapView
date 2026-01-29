@@ -31,6 +31,12 @@ abstract class SlamWareBaseView<T>(context: Context?, parent: WeakReference<T>) 
     }
 
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {}
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        canvas.save()
+        canvas.concat(mMatrix)
+    }
     open fun setMatrix(mMatrix: Matrix) {
         this.mMatrix = mMatrix
         postInvalidate()

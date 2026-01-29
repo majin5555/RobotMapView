@@ -20,7 +20,7 @@ import java.lang.ref.WeakReference
 class RobotView2D(context: Context?, val parent: WeakReference<CreateMapView2D>) :
     SlamWareBaseView<CreateMapView2D>(context, parent) {
 
-    var matrixRobot = Matrix()
+
     private var currentWorkMode = CreateMapView2D.WorkMode.MODE_SHOW_MAP
 
     // 机器人相关
@@ -46,29 +46,26 @@ class RobotView2D(context: Context?, val parent: WeakReference<CreateMapView2D>)
 
     }
 
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        val mapView = parent.get() ?: return
 
-        robotBitmap?.let { bitmap ->
-            canvas.drawBitmap(bitmap, matrixRobot, robotPaint)
-        }
+        val mapView = parent.get() ?: return
+        val bitmap = robotBitmap ?: return
+
+        val p = mapView.mSrf.worldToScreen(
+            mapView.robotPose[0],
+            mapView.robotPose[1]
+        )
+
+
+        canvas.translate(p.x, p.y)
+        canvas.rotate(-Math.toDegrees(mapView.robotPose[2].toDouble()).toFloat())
+        canvas.drawBitmap(bitmap, -bitmap.width / 2f, -bitmap.height / 2f, robotPaint)
+        canvas.restore()
     }
 
 
-    /**
-     * 车体实时坐标
-     */
-    fun setAgvData(array: FloatArray) {
-        val mapView = parent.get() ?: return
-
-        // 重置变换矩阵，避免变换累积导致的跳动
-        matrixRobot.reset()
-        val screenPos = mapView.worldToScreen(array[0], array[1])
-        matrixRobot.postRotate(-Math.toDegrees(array[2].toDouble()).toFloat(), 0f, 0f) // 旋转方向调整
-        matrixRobot.postTranslate(screenPos.x, screenPos.y)
-        postInvalidate()
-    }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
@@ -82,19 +79,11 @@ class RobotView2D(context: Context?, val parent: WeakReference<CreateMapView2D>)
 
     override fun setMatrixWithScale(matrix: Matrix, scale: Float) {
         super.setMatrixWithScale(matrix, scale)
-        val tempMatrix = Matrix()
-        tempMatrix.set(matrix)
-        // 应用相同的缩放比例
-        tempMatrix.postScale(scale, scale)
-        matrixRobot = tempMatrix
+
     }
 
     override fun setMatrixWithRotation(matrix: Matrix, rotation: Float) {
         super.setMatrixWithRotation(matrix, rotation)
-        val tempMatrix = Matrix()
-        tempMatrix.set(matrix)
-        // 应用相同的旋转角度
-        tempMatrix.postRotate(RadianUtil.toAngel(rotation))
-        matrixRobot = tempMatrix
+
     }
 }

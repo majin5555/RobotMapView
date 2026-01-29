@@ -24,7 +24,6 @@ class UpLaserScanView2D(context: Context?, val parent: WeakReference<CreateMapVi
     //激光点云
     private val cloudList: MutableList<PointF> = mutableListOf()
     private var currentWorkMode = CreateMapView2D.WorkMode.MODE_SHOW_MAP
-    var matrixPoint = Matrix()
 
     companion object {
         private val paint: Paint = Paint().apply {
@@ -89,23 +88,12 @@ class UpLaserScanView2D(context: Context?, val parent: WeakReference<CreateMapVi
         super.onDraw(canvas)
         if (cloudList.isNotEmpty()) {
             val mapView = parent.get() ?: return
-
-            // 预分配数组大小
-            val screenPoints = FloatArray(cloudList.size * 2)
-            var index = 0
-
-            for (point in cloudList) {
-                // 先转换世界坐标到地图像素坐标
-                val mapPixelPoint = mapView.mSrf.worldToScreen(point.x, point.y)
-                // 再使用矩阵转换地图像素坐标到屏幕坐标
-                val points = floatArrayOf(mapPixelPoint.x, mapPixelPoint.y)
-                matrixPoint.mapPoints(points)
-                screenPoints[index++] = points[0]
-                screenPoints[index++] = points[1]
+            cloudList.forEach {
+                val p = mapView.mSrf.worldToScreen(it.x, it.y)
+                canvas.drawPoint(p.x, p.y, paint)
             }
-
-            canvas.drawPoints(screenPoints, paint)
         }
+        canvas.restore()
     }
 
 
@@ -122,19 +110,9 @@ class UpLaserScanView2D(context: Context?, val parent: WeakReference<CreateMapVi
 
     override fun setMatrixWithScale(matrix: Matrix, scale: Float) {
         super.setMatrixWithScale(matrix, scale)
-        val tempMatrix = Matrix()
-        tempMatrix.set(matrix)
-        // 应用相同的缩放比例
-        tempMatrix.postScale(scale, scale)
-        matrixPoint = tempMatrix
     }
 
     override fun setMatrixWithRotation(matrix: Matrix, rotation: Float) {
         super.setMatrixWithRotation(matrix, rotation)
-        val tempMatrix = Matrix()
-        tempMatrix.set(matrix)
-        // 应用相同的旋转角度
-        tempMatrix.postRotate(RadianUtil.toAngel(rotation))
-        matrixPoint = tempMatrix
     }
 }

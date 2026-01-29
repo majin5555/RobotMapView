@@ -36,7 +36,6 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
     private var currentWorkMode = CreateMapView2D.WorkMode.MODE_SHOW_MAP
 
     // 控制是否绘制
-    private var isDrawingEnabled: Boolean = true
 
     private val keyFrames2d = ConcurrentHashMap<Int, SubMapData>() //绘制地图的数据 建图时 2D
 
@@ -72,31 +71,25 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
         }
     }
 
+
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         // 只有在绘制启用状态下才绘制点云
-        if (isDrawingEnabled && keyFrames2d.isNotEmpty()) {
+        if (keyFrames2d.isNotEmpty()) {
             val mapView = parent.get() ?: return
 
-            // 使用forEach代替for-in循环，提高性能
-            keyFrames2d.forEach { (_, mSubMapData) ->
-                val bitmap = mSubMapData.mBitmap ?: return@forEach
-                mSubMapData.matrix?.let {
-                    // 使用CreateMapView2D中的矩阵进行绘制
-                    canvas.drawBitmap(bitmap, it, mPaint)
-                }
+            keyFrames2d.values.forEach { subMap ->
+                val leftTop = mapView.mSrf.worldToScreen(
+                    subMap.leftTop.x, subMap.leftTop.y
+                )
+                canvas.drawBitmap(
+                    subMap.mBitmap!!, leftTop.x, leftTop.y, mPaint
+                )
             }
         }
-    }
+        canvas.restore()
 
-
-    /**
-     * 设置是否启用绘制
-     */
-    fun setDrawingEnabled(enabled: Boolean) {
-        this.isDrawingEnabled = enabled
-        postInvalidate()
     }
 
 

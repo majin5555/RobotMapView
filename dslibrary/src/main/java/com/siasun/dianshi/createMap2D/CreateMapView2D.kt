@@ -270,6 +270,12 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
         VIEW_HEIGHT = MeasureSpec.getSize(heightMeasureSpec)
     }
 
+    val outerMatrix: Matrix
+        get() = mOuterMatrix
+
+
+
+
     /**
      * 世界坐标转屏幕坐标
      */
@@ -458,7 +464,6 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
         robotPose[3] = convertScientificToDecimal(z)
         robotPose[4] = convertScientificToDecimal(roll)
         robotPose[5] = convertScientificToDecimal(pitch)
-        mCreateMapRobotView?.setAgvData(robotPose)
     }
 
 
