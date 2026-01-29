@@ -528,6 +528,9 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
         Log.d("LogUtil", "移动地图使机器人居中")
     }
 
+    fun resetExpandAreaView() = mExpandAreaView?.resetCreateState()
+
+
     /**
      * 手指抬起监听 回调是世界坐标
      */

@@ -46,7 +46,7 @@ class RobotView2D(context: Context?, val parent: WeakReference<CreateMapView2D>)
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-
+        canvas.save()
         val mapView = parent.get() ?: return
         val bitmap = robotBitmap ?: return
 

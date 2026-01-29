@@ -71,6 +71,7 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        canvas.save()
         // 只有在绘制启用状态下才绘制点云
         if (keyFrames2d.isNotEmpty()) {
             val mapView = parent.get() ?: return

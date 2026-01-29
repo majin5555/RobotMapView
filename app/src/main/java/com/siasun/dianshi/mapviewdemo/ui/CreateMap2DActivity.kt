@@ -49,14 +49,8 @@ class CreateMap2DActivity :
             ConstantBase.getFilePath(mapID, ConstantBase.PAD_MAP_NAME_PNG),
             ConstantBase.getFilePath(mapID, ConstantBase.PAD_MAP_NAME_YAML)
         )
-        
-        //设置区域创建完成监听器
-        mBinding.mapView.getExpandAreaView()?.setOnPositingAreaCreatedListener(object : ExpandAreaView.OnPositingAreaCreatedListener {
-            override fun onPositingAreaCreated(area: PositingArea) {
-                LogUtil.i("区域创建完成: ${area.id}")
-                ToastUtils.showShort("区域创建完成")
-            }
-        })
+
+
 
 
         mTimer.schedule(object : TimerTask() {
@@ -103,7 +97,7 @@ class CreateMap2DActivity :
 
         }
         mBinding.btnCleanArea.onClick {
-
+            mBinding.mapView.resetExpandAreaView()
         }
 
 

@@ -84,6 +84,7 @@ class UpLaserScanView2D(context: Context?, val parent: WeakReference<CreateMapVi
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        canvas.save()
         if (cloudList.isNotEmpty()) {
             val mapView = parent.get() ?: return
             cloudList.forEach {

@@ -6,15 +6,13 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
-import android.util.Log
 import android.view.MotionEvent
 import com.siasun.dianshi.bean.End
-import com.siasun.dianshi.bean.PositingArea
+import com.siasun.dianshi.bean.ExpandArea
 import com.siasun.dianshi.bean.Start
 import com.siasun.dianshi.createMap.map2D.CreateMapView2D
 import com.siasun.dianshi.view.SlamWareBaseView
 import java.lang.ref.WeakReference
-import kotlin.math.log
 import kotlin.math.max
 import kotlin.math.min
 
@@ -38,7 +36,7 @@ class ExpandAreaView(context: Context?, parent: WeakReference<CreateMapView2D>) 
     companion object {
         private val creatingRectPaint = Paint().apply {
             color = Color.YELLOW
-            style = Paint.Style.STROKE
+            style = Paint.Style.FILL
             strokeWidth = 3f
             alpha = 180 // 半透明
             isAntiAlias = true
@@ -50,7 +48,7 @@ class ExpandAreaView(context: Context?, parent: WeakReference<CreateMapView2D>) 
     private val tempRect = RectF()
 
     // 区域创建完成监听器
-    private var onPositingAreaCreatedListener: OnPositingAreaCreatedListener? = null
+    private var onExpandAreaCreatedListener: OnExpandAreaCreatedListener? = null
 
     /**
      * 设置工作模式
@@ -60,16 +58,12 @@ class ExpandAreaView(context: Context?, parent: WeakReference<CreateMapView2D>) 
 
         currentWorkMode = mode
 
-        // 如果退出扩展地图增加区域模式，重置创建状态
-        if (currentWorkMode != CreateMapView2D.WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
-            resetCreateState()
-        }
     }
 
     /**
      * 重置创建状态
      */
-    private fun resetCreateState() {
+    fun resetCreateState() {
         isCreating = false
         createStartPoint = null
         createEndPoint = null
@@ -79,15 +73,15 @@ class ExpandAreaView(context: Context?, parent: WeakReference<CreateMapView2D>) 
     /**
      * 设置区域创建完成监听器
      */
-    fun setOnPositingAreaCreatedListener(listener: OnPositingAreaCreatedListener) {
-        this.onPositingAreaCreatedListener = listener
+    fun setOnExpandAreaCreatedListener(listener: OnExpandAreaCreatedListener) {
+        this.onExpandAreaCreatedListener = listener
     }
 
     /**
      * 区域创建完成监听器接口
      */
-    interface OnPositingAreaCreatedListener {
-        fun onPositingAreaCreated(area: PositingArea)
+    interface OnExpandAreaCreatedListener {
+        fun onExpandAreaCreated(area: ExpandArea)
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -128,21 +122,12 @@ class ExpandAreaView(context: Context?, parent: WeakReference<CreateMapView2D>) 
 
             MotionEvent.ACTION_UP -> {
                 if (isCreating && createStartPoint != null && createEndPoint != null) {
-                    val newArea = PositingArea(
-                        id = System.currentTimeMillis(),
-                        0,
-                        0,
-                        0,
-                        0,
+                    val newArea = ExpandArea(
                         start = createStartPoint!!,
                         end = createEndPoint!!,
-                        false
                     )
 
-                    onPositingAreaCreatedListener?.onPositingAreaCreated(newArea)
-
-                    // 重置创建状态
-                    resetCreateState()
+                    onExpandAreaCreatedListener?.onExpandAreaCreated(newArea)
                     return true
                 }
             }
@@ -153,15 +138,14 @@ class ExpandAreaView(context: Context?, parent: WeakReference<CreateMapView2D>) 
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+
         val mapView = mParent.get() ?: return
 
-        // 只在扩展地图增加区域模式下绘制矩形
-        if (currentWorkMode != CreateMapView2D.WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
-            return
-        }
+        canvas.save()
+
 
         // 绘制正在创建的区域
-        if (isCreating && createStartPoint != null && createEndPoint != null) {
+        if (createStartPoint != null && createEndPoint != null) {
             val leftTop = mapView.worldToScreen(createStartPoint!!.x, createStartPoint!!.y)
             val rightBottom = mapView.worldToScreen(createEndPoint!!.x, createEndPoint!!.y)
 
@@ -172,6 +156,7 @@ class ExpandAreaView(context: Context?, parent: WeakReference<CreateMapView2D>) 
                 max(leftTop.y, rightBottom.y)
             )
             canvas.drawRect(tempRect, creatingRectPaint)
+            canvas.restore()
         }
     }
 
