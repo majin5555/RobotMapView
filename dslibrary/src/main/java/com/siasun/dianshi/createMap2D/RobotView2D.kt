@@ -77,13 +77,4 @@ class RobotView2D(context: Context?, val parent: WeakReference<CreateMapView2D>)
         }
     }
 
-    override fun setMatrixWithScale(matrix: Matrix, scale: Float) {
-        super.setMatrixWithScale(matrix, scale)
-
-    }
-
-    override fun setMatrixWithRotation(matrix: Matrix, rotation: Float) {
-        super.setMatrixWithRotation(matrix, rotation)
-
-    }
 }

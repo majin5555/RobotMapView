@@ -51,9 +51,9 @@ class SubMapData {
     //图片
     var mBitmap: Bitmap? = null
 
-    var matrix: Matrix? = null
+    //    var matrix: Matrix? = null
     override fun toString(): String {
-        return "SubMapData(id=$id, percent=$percent, width=$width, height=$height, originX=$originX, originY=$originY, originTheta=$originTheta, leftTop=$leftTop, leftBottom=$leftBottom, rightBottom=$rightBottom, rightTop=$rightTop, optMaxTempX=$optMaxTempX, optMaxTempY=$optMaxTempY, optMaxTempXTheta=$optMaxTempTheta, indexCount=$indexCount, intensitiesList=$intensitiesList, mBitmap=$mBitmap, matrix=$matrix)"
+        return "SubMapData(id=$id, percent=$percent, width=$width, height=$height, originX=$originX, originY=$originY, originTheta=$originTheta, leftTop=$leftTop, leftBottom=$leftBottom, rightBottom=$rightBottom, rightTop=$rightTop, optMaxTempX=$optMaxTempX, optMaxTempY=$optMaxTempY, optMaxTempXTheta=$optMaxTempTheta, indexCount=$indexCount, intensitiesList=$intensitiesList, mBitmap=$mBitmap )"
     }
 
 }

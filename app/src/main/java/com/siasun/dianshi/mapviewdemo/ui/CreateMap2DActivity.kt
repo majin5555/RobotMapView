@@ -19,9 +19,11 @@ import com.siasun.dianshi.mapviewdemo.KEY_NAV_HEARTBEAT_STATE
 import com.siasun.dianshi.mapviewdemo.KEY_OPT_POSE
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_POS
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_SUB_MAPS
+import com.siasun.dianshi.mapviewdemo.R
 import com.siasun.dianshi.mapviewdemo.TAG_NAV
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityCreateMap2DactivityBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.CreateMap2DViewModel
+import com.siasun.dianshi.utils.RadianUtil
 import java.util.Timer
 import java.util.TimerTask
 
@@ -73,37 +75,6 @@ class CreateMap2DActivity :
         }
 
 
-        mBinding.btnS1.onClick {
-            --mBinding.mapView.mRotateAngle
-            if (mBinding.mapView.mRotateAngle > 360) {
-                mBinding.mapView.mRotateAngle -= 360f
-            }
-//            mBinding.mapView.setRotate()
-        }
-
-        mBinding.btnN1.onClick {
-            ++mBinding.mapView.mRotateAngle
-            if (mBinding.mapView.mRotateAngle < -360) {
-                mBinding.mapView.mRotateAngle += 360f
-            }
-//            mBinding.mapView.setRotate()
-        }
-
-        mBinding.btnS5.onClick {
-            mBinding.mapView.mRotateAngle -= 5f
-            if (mBinding.mapView.mRotateAngle > 360) {
-                mBinding.mapView.mRotateAngle -= 360f
-            }
-//            mBinding.mapView.setRotate()
-        }
-
-        mBinding.btnN5.onClick {
-            mBinding.mapView.mRotateAngle += 5f
-            if (mBinding.mapView.mRotateAngle < -360) {
-                mBinding.mapView.mRotateAngle += 360f
-            }
-//            mBinding.mapView.setRotate()
-        }
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
@@ -188,9 +159,9 @@ class CreateMap2DActivity :
 
 //                    if (mBinding.mapView.isRouteMap) {
 //                        LogUtil.i("弹框---是否旋转地图", null, TAG_NAV)
-//                        showRouteMapDialog()
+//                    showRouteMapDialog()
 //                    } else {
-                    LogUtil.i("没有收到任何子图，直接询问是否保存地图", null, TAG_NAV)
+//                    LogUtil.i("没有收到任何子图，直接询问是否保存地图", null, TAG_NAV)
                     showSavaMapDialog()
 //                    }
                     mBinding.mapView.isStartRevSubMaps = false
@@ -211,17 +182,15 @@ class CreateMap2DActivity :
      */
     @RequiresApi(Build.VERSION_CODES.R)
     private fun showRouteMapDialog() {
-//        CommonWarnDialog.Builder(this).setMsg(R.string.warm_18)
-//            .setOnCommonWarnDialogListener(object :
+//        CommonWarnDialog.Builder(this).setMsg("手动旋转地图").setOnCommonWarnDialogListener(object :
 //                CommonWarnDialog.Builder.CommonWarnDialogListener {
 //                @RequiresApi(Build.VERSION_CODES.R)
 //                override fun discard() {
-//                    mBinding.llRotate.gone()
 //                    showSavaMapDialog()
 //                }
 //
 //                override fun confirm() {
-//                    mBinding.llRotate.visible()
+//                    showSavaMapDialog()
 //                }
 //            }).create().show()
     }
@@ -234,8 +203,11 @@ class CreateMap2DActivity :
         CommonWarnDialog.Builder(this).setMsg("保存地图").setOnCommonWarnDialogListener(object :
             CommonWarnDialog.Builder.CommonWarnDialogListener {
             override fun confirm() {
+                LogUtil.i("mBinding.mapView.mMapRotate ${ RadianUtil.toRadians(mBinding.mapView.mMapRotate)}")
                 //开始保存地图
-                MainController.saveEnvironment(1, mapId = mapID)
+                MainController.saveEnvironment(
+                    1, rotate = RadianUtil.toRadians(mBinding.mapView.mMapRotate), mapId = mapID
+                )
                 SEND_NAVI_HEART = true
 //                    showLoading("保存地图中")
                 LogUtil.i("确定要保存地图么...点击确定", null, TAG_NAV)

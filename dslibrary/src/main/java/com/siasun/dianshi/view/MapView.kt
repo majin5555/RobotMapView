@@ -4,7 +4,6 @@ import VirtualWallNew
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.PointF
 import android.graphics.RectF
@@ -258,6 +257,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     }
 
 
+    @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         val point = screenToWorld(event.x, event.y)
         mMapNameView?.setScreen(point)
@@ -272,7 +272,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         }
 
         // 非特殊模式，由手势检测器处理事件
-        return mGestureDetector!!.onTouchEvent(event)
+        return mGestureDetector!!.onTouchEvent(event,this)
     }
 
     override fun onMapTap(event: MotionEvent) {

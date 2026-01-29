@@ -76,8 +76,6 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
 
     val robotPose = FloatArray(6) // [x, y, theta(rad),z roll pitch]
 
-    //旋转角度
-    var mRotateAngle = 0f
     var isMapping = false//是否建图标志
     var isRouteMap = false//是否可以旋转地图
 
@@ -137,9 +135,10 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
     }
 
 
+    @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         // 非特殊模式，由手势检测器处理事件
-        return mGestureDetector!!.onTouchEvent(event)
+        return mGestureDetector!!.onTouchEvent(event,this)
     }
 
     override fun onMapTap(event: MotionEvent) {
@@ -158,8 +157,10 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
         setRotation(factor, center.x.toInt(), center.y.toInt())
     }
 
+    var mMapRotate = 0.0f
     private fun setRotation(factor: Float, cx: Int, cy: Int) {
-        mOuterMatrix.postRotate(RadianUtil.toAngel(factor), cx.toFloat(), cy.toFloat())
+        mMapRotate = RadianUtil.toAngel(factor)
+        mOuterMatrix.postRotate(mMapRotate, cx.toFloat(), cy.toFloat())
         setMatrixWithRotation(mOuterMatrix, factor)
     }
 
@@ -272,8 +273,6 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
 
     val outerMatrix: Matrix
         get() = mOuterMatrix
-
-
 
 
     /**

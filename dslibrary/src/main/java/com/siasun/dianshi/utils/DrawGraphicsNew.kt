@@ -144,17 +144,17 @@ class DrawGraphicsNew {
 
     /**
      * 绘制2D子图
-     */
-    fun drawKeyFrames2d(keyFrames2d: ConcurrentHashMap<Int, SubMapData>) {
-        for ((matrixKey, mSubMapData) in keyFrames2d.entries) {
-            // 快速检查无效数据
-            val bitmap = mSubMapData.mBitmap ?: continue
-            // 绘制子图
-            mCanvas.drawBitmap(
-                bitmap, mSubMapData.matrix!!, mPaint
-            )
-        }
-    }
+      */
+//    fun drawKeyFrames2d(keyFrames2d: ConcurrentHashMap<Int, SubMapData>) {
+//        for ((matrixKey, mSubMapData) in keyFrames2d.entries) {
+//            // 快速检查无效数据
+//            val bitmap = mSubMapData.mBitmap ?: continue
+//            // 绘制子图
+//            mCanvas.drawBitmap(
+//                bitmap, mSubMapData.matrix!!, mPaint
+//            )
+//        }
+//    }
 
     /**
      * 绘制子图的边框、中心点和ID信息 测试专用

@@ -177,17 +177,16 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
                 calBinding()
             }
 
-
-            val mTempMatrix = Matrix()
-            mTempMatrix.reset()
-            mTempMatrix.setScale(mapView.mSrf.scale, mapView.mSrf.scale)
-
-            // 计算子图在屏幕上的左上角坐标
-            val screenLeftTop = mapView.worldToScreen(subMapData.leftTop.x, subMapData.leftTop.y)
-            mTempMatrix.postTranslate(screenLeftTop.x, screenLeftTop.y)
-            subMapData.matrix = mTempMatrix
-
-            keyFrames2d[subMapData.id] = subMapData
+//
+//            val mTempMatrix = Matrix()
+//            mTempMatrix.reset()
+//            mTempMatrix.setScale(mapView.mSrf.scale, mapView.mSrf.scale)
+//
+//            // 计算子图在屏幕上的左上角坐标
+//            val screenLeftTop = mapView.worldToScreen(subMapData.leftTop.x, subMapData.leftTop.y)
+//            mTempMatrix.postTranslate(screenLeftTop.x, screenLeftTop.y)
+//            subMapData.matrix = mTempMatrix
+//            mTempMatrix.reset()
 
             mapView.isRouteMap = true
             mapView.isStartRevSubMaps = true
@@ -371,37 +370,5 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
         keyFrames2d.clear()
         // 清理父引用
         parent.clear()
-    }
-
-    override fun setMatrixWithScale(matrix: Matrix, scale: Float) {
-        super.setMatrixWithScale(matrix, scale)
-
-        // 更新所有子图矩阵的缩放
-        keyFrames2d.forEach { (_, subMapData) ->
-            subMapData.matrix?.let {
-                val tempMatrix = Matrix()
-                tempMatrix.set(matrix)
-                // 应用相同的缩放比例
-                tempMatrix.postScale(scale, scale)
-                subMapData.matrix = tempMatrix
-            }
-        }
-        postInvalidate()
-    }
-
-    override fun setMatrixWithRotation(matrix: Matrix, rotation: Float) {
-        super.setMatrixWithRotation(matrix, rotation)
-
-        // 更新所有子图矩阵的旋转
-        keyFrames2d.forEach { (_, subMapData) ->
-            subMapData.matrix?.let {
-                val tempMatrix = Matrix()
-                tempMatrix.set(matrix)
-                // 应用相同的旋转角度
-                tempMatrix.postRotate(RadianUtil.toAngel(rotation))
-                subMapData.matrix = tempMatrix
-            }
-        }
-        postInvalidate()
     }
 }

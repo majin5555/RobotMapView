@@ -4,11 +4,9 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.PointF
 import com.ngu.lcmtypes.laser_t
-import com.siasun.dianshi.utils.RadianUtil
 import com.siasun.dianshi.view.SlamWareBaseView
 import java.lang.ref.WeakReference
 import kotlin.math.cos
@@ -106,13 +104,5 @@ class UpLaserScanView2D(context: Context?, val parent: WeakReference<CreateMapVi
         cloudList.clear()
         // 清理父引用
         parent.clear()
-    }
-
-    override fun setMatrixWithScale(matrix: Matrix, scale: Float) {
-        super.setMatrixWithScale(matrix, scale)
-    }
-
-    override fun setMatrixWithRotation(matrix: Matrix, rotation: Float) {
-        super.setMatrixWithRotation(matrix, rotation)
     }
 }

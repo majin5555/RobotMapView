@@ -5,6 +5,8 @@ import android.os.SystemClock;
 import android.view.MotionEvent;
 import android.view.View;
 
+import com.siasun.dianshi.createMap2D.UpLaserScanView2D;
+
 /**
  * 手势监听
  */
@@ -75,7 +77,7 @@ public class SlamGestureDetector {
         prevSecondaryPosition = new PointF(0f, 0f);
     }
 
-    public boolean onTouchEvent(MotionEvent event) {
+    public boolean onTouchEvent(MotionEvent event, View view) {
         touchMode = getTouchMode(MotionEvent.obtain(event));
 
         switch (event.getAction() & MotionEvent.ACTION_MASK) {
@@ -107,11 +109,14 @@ public class SlamGestureDetector {
                     PointF center = new PointF(centerX, centerY);
                     mListener.onMapPinch(scale, center);
 
-                    // 旋转地图 暂时屏闭
+                    // 旋转地图
                     PointF na = getNormalized(currPrimaryPosition, currSecondaryPosition);
                     PointF nb = getNormalized(prevPrimaryPosition, prevSecondaryPosition);
                     float rotate = (float) (Math.atan2(na.y, na.x) - Math.atan2(nb.y, nb.x));
-                    mListener.onMapRotate(rotate, center);
+                    if (view instanceof UpLaserScanView2D) {
+                        mListener.onMapRotate(rotate, center);
+                    }
+
                 }
                 break;
             case MotionEvent.ACTION_POINTER_UP:
