@@ -6,7 +6,7 @@
 
 
     <!--显示地图的View-->
-    <com.siasun.dianshi.createMap2D.CreateMapView2D
+    <com.siasun.dianshi.createMap.map2D.CreateMapView2D
         android:id="@+id/map_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -24,40 +24,18 @@
         app:layout_constraintStart_toStartOf="parent">
 
         <Button
-            android:id="@+id/btn_s1"
+            android:id="@+id/btn_setting_area"
             android:layout_width="160dp"
             android:layout_height="60dp"
             android:gravity="center"
-            android:text="顺1" />
+            android:text="设置区域" />
 
         <Button
-            android:id="@+id/btn_n1"
+            android:id="@+id/btn_clean_area"
             android:layout_width="160dp"
             android:layout_height="60dp"
             android:gravity="center"
-            android:text="逆1" />
-
-
-        <Button
-            android:id="@+id/btn_s5"
-            android:layout_width="160dp"
-            android:layout_height="60dp"
-            android:gravity="center"
-            android:text="顺5" />
-
-        <Button
-            android:id="@+id/btn_n5"
-            android:layout_width="160dp"
-            android:layout_height="60dp"
-            android:gravity="center"
-            android:text="逆5" />
-
-        <Button
-            android:id="@+id/btn_save"
-            android:layout_width="160dp"
-            android:layout_height="60dp"
-            android:gravity="center"
-            android:text="保存" />
+            android:text="清除区域" />
 
     </LinearLayout>
 

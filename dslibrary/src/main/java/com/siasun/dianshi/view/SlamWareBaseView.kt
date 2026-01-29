@@ -13,11 +13,12 @@ import java.lang.ref.WeakReference
 
 abstract class SlamWareBaseView<T>(context: Context?, parent: WeakReference<T>) :
     ViewGroup(context) {
+
     var mParent: WeakReference<T>
     var scale: Float protected set
     var mRotation: Float//旋转角度
     var mMatrix: Matrix//矩阵
-    
+
     // 复用的Path对象，避免频繁创建
     private val reusablePath = Path()
 

@@ -1,15 +1,12 @@
-package com.siasun.dianshi.createMap2D
+package com.siasun.dianshi.createMap.map2D
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
-import android.graphics.Matrix
 import android.graphics.Paint
-import android.util.Log
 import com.siasun.dianshi.R
-import com.siasun.dianshi.utils.RadianUtil
 import com.siasun.dianshi.view.SlamWareBaseView
 import java.lang.ref.WeakReference
 

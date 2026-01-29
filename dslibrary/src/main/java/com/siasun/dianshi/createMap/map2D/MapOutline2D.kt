@@ -1,16 +1,14 @@
-package com.siasun.dianshi.createMap2D
+package com.siasun.dianshi.createMap.map2D
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.PointF
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
 import android.util.Log
-import android.view.MotionEvent
 import com.ngu.lcmtypes.laser_t
 import com.siasun.dianshi.bean.createMap2d.MapEditorConstants
 import com.siasun.dianshi.bean.createMap2d.SubMapData
@@ -22,9 +20,8 @@ import kotlin.math.abs
 import androidx.core.graphics.createBitmap
 import org.apache.commons.math3.linear.Array2DRowRealMatrix
 import kotlin.math.cos
-import kotlin.math.min
 import kotlin.math.sin
-import com.siasun.dianshi.utils.RadianUtil
+import kotlin.collections.iterator
 
 /**
  * 建图地图轮廓
@@ -35,9 +32,8 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
     private val TAG = this::class.java.simpleName
     private var currentWorkMode = CreateMapView2D.WorkMode.MODE_SHOW_MAP
 
-    // 控制是否绘制
-
-    private val keyFrames2d = ConcurrentHashMap<Int, SubMapData>() //绘制地图的数据 建图时 2D
+    //绘制地图的数据 建图时 2D
+    private val keyFrames2d = ConcurrentHashMap<Int, SubMapData>()
 
     /**
      * 1. 计算所有子图集合的右上角和左下角

@@ -5,7 +5,10 @@ import android.os.SystemClock;
 import android.view.MotionEvent;
 import android.view.View;
 
-import com.siasun.dianshi.createMap2D.UpLaserScanView2D;
+import com.siasun.dianshi.createMap.ExpandAreaView;
+import com.siasun.dianshi.createMap.map2D.CreateMapView2D;
+import com.siasun.dianshi.createMap.map2D.UpLaserScanView2D;
+
 
 /**
  * 手势监听
@@ -113,7 +116,7 @@ public class SlamGestureDetector {
                     PointF na = getNormalized(currPrimaryPosition, currSecondaryPosition);
                     PointF nb = getNormalized(prevPrimaryPosition, prevSecondaryPosition);
                     float rotate = (float) (Math.atan2(na.y, na.x) - Math.atan2(nb.y, nb.x));
-                    if (view instanceof UpLaserScanView2D) {
+                    if (view instanceof CreateMapView2D) {
                         mListener.onMapRotate(rotate, center);
                     }
 

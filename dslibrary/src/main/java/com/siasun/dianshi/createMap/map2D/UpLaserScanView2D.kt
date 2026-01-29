@@ -1,4 +1,4 @@
-package com.siasun.dianshi.createMap2D
+package com.siasun.dianshi.createMap.map2D
 
 import android.annotation.SuppressLint
 import android.content.Context

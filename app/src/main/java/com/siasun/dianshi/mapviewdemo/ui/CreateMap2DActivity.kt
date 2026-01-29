@@ -7,10 +7,13 @@ import androidx.annotation.RequiresApi
 import com.blankj.utilcode.util.ToastUtils
 import com.jeremyliao.liveeventbus.LiveEventBus
 import com.ngu.lcmtypes.laser_t
+import com.siasun.dianshi.ConstantBase
 import com.siasun.dianshi.GlobalVariable.SEND_NAVI_HEART
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.controller.MainController
-import com.siasun.dianshi.createMap2D.CreateMapView2D
+import com.siasun.dianshi.bean.PositingArea
+import com.siasun.dianshi.createMap.ExpandAreaView
+import com.siasun.dianshi.createMap.map2D.CreateMapView2D
 import com.siasun.dianshi.dialog.CommonWarnDialog
 import com.siasun.dianshi.framework.ext.onClick
 import com.siasun.dianshi.framework.log.LogUtil
@@ -19,7 +22,6 @@ import com.siasun.dianshi.mapviewdemo.KEY_NAV_HEARTBEAT_STATE
 import com.siasun.dianshi.mapviewdemo.KEY_OPT_POSE
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_POS
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_SUB_MAPS
-import com.siasun.dianshi.mapviewdemo.R
 import com.siasun.dianshi.mapviewdemo.TAG_NAV
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityCreateMap2DactivityBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.CreateMap2DViewModel
@@ -35,11 +37,27 @@ class CreateMap2DActivity :
     //建图心跳定时器
     private val mTimer = Timer()
 
-    val mapID = 100
+    val mapID = 1
 
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
         MainController.init()
+
+        exetendMap()
+        //加载地图
+        mBinding.mapView.loadMap(
+            ConstantBase.getFilePath(mapID, ConstantBase.PAD_MAP_NAME_PNG),
+            ConstantBase.getFilePath(mapID, ConstantBase.PAD_MAP_NAME_YAML)
+        )
+        
+        //设置区域创建完成监听器
+        mBinding.mapView.getExpandAreaView()?.setOnPositingAreaCreatedListener(object : ExpandAreaView.OnPositingAreaCreatedListener {
+            override fun onPositingAreaCreated(area: PositingArea) {
+                LogUtil.i("区域创建完成: ${area.id}")
+                ToastUtils.showShort("区域创建完成")
+            }
+        })
+
 
         mTimer.schedule(object : TimerTask() {
             override fun run() {
@@ -48,6 +66,7 @@ class CreateMap2DActivity :
                 }
             }
         }, 0, 500)
+
 
         //保存
         mBinding.tvSave.onClick {
@@ -72,6 +91,19 @@ class CreateMap2DActivity :
             MainController.stopCreateEnvironment()
             LogUtil.i("停止扫描")
             ToastUtils.showShort("停止扫描")
+        }
+
+
+    }
+
+    private fun exetendMap() {
+        mBinding.btnSettingArea.onClick {
+            //扩展地图
+            mBinding.mapView.setWorkMode(CreateMapView2D.WorkMode.MODE_EXTEND_MAP_ADD_REGION)
+
+        }
+        mBinding.btnCleanArea.onClick {
+
         }
 
 
@@ -203,7 +235,7 @@ class CreateMap2DActivity :
         CommonWarnDialog.Builder(this).setMsg("保存地图").setOnCommonWarnDialogListener(object :
             CommonWarnDialog.Builder.CommonWarnDialogListener {
             override fun confirm() {
-                LogUtil.i("mBinding.mapView.mMapRotate ${ RadianUtil.toRadians(mBinding.mapView.mMapRotate)}")
+                LogUtil.i("mBinding.mapView.mMapRotate ${RadianUtil.toRadians(mBinding.mapView.mMapRotate)}")
                 //开始保存地图
                 MainController.saveEnvironment(
                     1, rotate = RadianUtil.toRadians(mBinding.mapView.mMapRotate), mapId = mapID

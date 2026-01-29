@@ -1,4 +1,4 @@
-package com.siasun.dianshi.createMap2D
+package com.siasun.dianshi.createMap.map2D
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -18,7 +18,6 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
 import com.ngu.lcmtypes.laser_t
-import com.ngu.lcmtypes.robot_control_t
 import com.siasun.dianshi.R
 import com.siasun.dianshi.bean.MapData
 import com.siasun.dianshi.utils.CoordinateConversion
@@ -31,18 +30,15 @@ import java.lang.ref.WeakReference
 import java.util.concurrent.CopyOnWriteArrayList
 import androidx.core.content.withStyledAttributes
 import com.hjq.shape.layout.ShapeFrameLayout
-import com.siasun.dianshi.bean.createMap2d.MapEditorConstants
-import com.siasun.dianshi.bean.createMap2d.SubMapData
+import com.siasun.dianshi.createMap.ExpandAreaView
 import com.siasun.dianshi.view.PngMapView
 import com.siasun.dianshi.view.SlamWareBaseView
-import org.apache.commons.math3.linear.Array2DRowRealMatrix
 import java.math.RoundingMode
-import java.nio.ByteBuffer
 import java.text.DecimalFormat
 
 /**
  * 地图画布
- * 将在此画布中绘制slam的png地图
+ * 2D 建图View
  */
 class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
     ShapeFrameLayout(context, attrs), SlamGestureDetector.OnRPGestureListener {
@@ -50,7 +46,9 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
     // 工作模式枚举
     enum class WorkMode {
         MODE_SHOW_MAP,         // 移动地图模式
-        MODE_CREATE_MAP,         // 创建地图模式
+        MODE_CREATE_MAP,       // 创建地图模式
+        MODE_EXTEND_MAP,       // 扩展地图模式
+        MODE_EXTEND_MAP_ADD_REGION, // 扩展地图增加区域模式
     }
 
     // 当前工作模式
@@ -69,12 +67,12 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
     private var mMapView: WeakReference<CreateMapView2D> = WeakReference(this)
     private var mapLayers: MutableList<SlamWareBaseView<CreateMapView2D>> = CopyOnWriteArrayList()
     private var mPngMapView: PngMapView? = null //png地图
-    private var mMapOutline2D: MapOutline2D? = null //png地图
+    private var mMapOutline2D: MapOutline2D? = null //地图轮廓
+    private var mExpandAreaView: ExpandAreaView? = null //地图更新区域
     private var mUpLaserScanView: UpLaserScanView2D? = null//上激光点云
     private var mCreateMapRobotView: RobotView2D? = null //机器人图标
 
-
-    val robotPose = FloatArray(6) // [x, y, theta(rad),z roll pitch]
+    val robotPose = FloatArray(3) // [x, y, theta(rad)
 
     var isMapping = false//是否建图标志
     var isRouteMap = false//是否可以旋转地图
@@ -121,9 +119,12 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
         mUpLaserScanView = UpLaserScanView2D(context, mMapView)
         mMapOutline2D = MapOutline2D(context, mMapView)
         mCreateMapRobotView = RobotView2D(context, mMapView)
+        mExpandAreaView = ExpandAreaView(context, mMapView)
         //底图的View
         addView(mPngMapView, lp)
 
+        //扩展区域
+        addMapLayers(mExpandAreaView)
         //地图轮廓
         addMapLayers(mMapOutline2D)
         //上激光点云
@@ -137,8 +138,14 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (currentWorkMode == WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+            super.onTouchEvent(event)
+            // 返回true表示事件已处理，禁止手势检测器处理，从而禁止底图拖动
+            return true
+        }
+
         // 非特殊模式，由手势检测器处理事件
-        return mGestureDetector!!.onTouchEvent(event,this)
+        return mGestureDetector!!.onTouchEvent(event, this)
     }
 
     override fun onMapTap(event: MotionEvent) {
@@ -150,7 +157,10 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
     }
 
     override fun onMapMove(distanceX: Int, distanceY: Int) {
-        setTransition(distanceX, distanceY)
+        // 在扩展地图增加区域模式下禁止滑动
+        if (currentWorkMode != WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+            setTransition(distanceX, distanceY)
+        }
     }
 
     override fun onMapRotate(factor: Float, center: PointF) {
@@ -166,7 +176,16 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
 
     private fun setTransition(dx: Int, dy: Int) {
         mOuterMatrix.postTranslate(dx.toFloat(), dy.toFloat())
-        setMatrix(mOuterMatrix)
+        if (currentWorkMode == WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+            // 在扩展地图增加区域模式下，只更新子图层的矩阵，不更新 png 地图
+            for (mapLayer in mapLayers) {
+                mapLayer.setMatrix(mOuterMatrix)
+            }
+            postInvalidate()
+        } else {
+            // 其他模式下正常更新所有图层
+            setMatrix(mOuterMatrix)
+        }
     }
 
     private fun setScale(factor: Float, cx: Float, cy: Float) {
@@ -185,7 +204,9 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
     }
 
     private fun setMatrix(matrix: Matrix) {
-        mPngMapView?.setMatrix(matrix)
+        if (currentWorkMode != WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+            mPngMapView?.setMatrix(matrix)
+        }
         for (mapLayer in mapLayers) {
             mapLayer.setMatrix(matrix)
         }
@@ -195,7 +216,9 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
     private fun setMatrixWithScale(matrix: Matrix, scale: Float) {
         mOuterMatrix = matrix
         mMapScale = scale
-        mPngMapView?.setMatrix(matrix)
+        if (currentWorkMode != WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+            mPngMapView?.setMatrix(matrix)
+        }
         for (mapLayer in mapLayers) {
             mapLayer.setMatrixWithScale(matrix, scale)
         }
@@ -213,7 +236,9 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
 
     private fun setMatrixWithRotation(matrix: Matrix, rotation: Float) {
         mOuterMatrix = matrix
-        mPngMapView?.setMatrix(matrix)
+        if (currentWorkMode != WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+            mPngMapView?.setMatrix(matrix)
+        }
         for (mapLayer in mapLayers) {
             mapLayer.setMatrixWithRotation(matrix, rotation)
         }
@@ -377,6 +402,9 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
     fun setWorkMode(mode: WorkMode) {
         currentWorkMode = mode
         mMapOutline2D?.setWorkMode(mode)
+        mUpLaserScanView?.setWorkMode(mode)
+        mCreateMapRobotView?.setWorkMode(mode)
+        mExpandAreaView?.setWorkMode(mode)
     }
 
     /**
@@ -421,12 +449,6 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
         setCentred()
     }
 
-    /***
-     * 设置地图显示
-     */
-    fun setSlamMapViewShow(visibility: Int) {
-        mPngMapView!!.visibility = visibility
-    }
 
     /**
      * 外部接口：更新子图数据 （建图模式） 2D
@@ -434,7 +456,7 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
     fun parseSubMaps2D(mLaserT: laser_t, type: Int) {
         mMapOutline2D?.parseSubMaps2D(mLaserT, type)
         // 建图模式下，保持车体居中显示
-        if (currentWorkMode == WorkMode.MODE_CREATE_MAP) {
+        if (currentWorkMode == WorkMode.MODE_CREATE_MAP || currentWorkMode == WorkMode.MODE_EXTEND_MAP) {
             keepRobotCentered()
         }
     }
@@ -511,6 +533,13 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
      */
     fun setSingleTapListener(listener: ISingleTapListener?) {
         mSingleTapListener = listener
+    }
+
+    /**
+     * 获取扩展区域视图实例
+     */
+    fun getExpandAreaView(): ExpandAreaView? {
+        return mExpandAreaView
     }
 
     interface ISingleTapListener {

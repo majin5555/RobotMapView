@@ -68,7 +68,6 @@
         <activity
             android:name=".ui.CreateMap2DActivity"
             android:exported="true">
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
