@@ -410,11 +410,13 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
 
     override fun setMatrixWithScale(matrix: Matrix, scale: Float) {
         super.setMatrixWithScale(matrix, scale)
+        Log.i("SLAMMapView2D", "MapOutline2D:")
         updateKeyFrame2d()
     }
 
     override fun setMatrixWithRotation(matrix: Matrix, rotation: Float) {
         super.setMatrixWithRotation(matrix, rotation)
+        Log.i("SLAMMapView2D", "MapOutline2D:")
         updateKeyFrame2d()
     }
 }

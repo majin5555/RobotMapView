@@ -5,14 +5,10 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.Paint
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffXfermode
 import android.util.Log
 import com.siasun.dianshi.R
-import com.siasun.dianshi.view.MapView
 import com.siasun.dianshi.view.SlamWareBaseView
 import java.lang.ref.WeakReference
 
@@ -25,6 +21,7 @@ class RobotView2D(context: Context?, val parent: WeakReference<CreateMapView2D>)
 
     private var agvPose: FloatArray? = null
     val matrixRobot = Matrix()
+    private var currentWorkMode = CreateMapView2D.WorkMode.MODE_SHOW_MAP
 
     // 机器人相关
     private val robotBitmap: Bitmap? by lazy {
@@ -39,6 +36,15 @@ class RobotView2D(context: Context?, val parent: WeakReference<CreateMapView2D>)
         }
     }
 
+    /**
+     * 设置工作模式
+     */
+    fun setWorkMode(mode: CreateMapView2D.WorkMode) {
+        if (currentWorkMode == mode) return // 避免重复设置
+
+        currentWorkMode = mode
+
+    }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
@@ -80,9 +86,15 @@ class RobotView2D(context: Context?, val parent: WeakReference<CreateMapView2D>)
 
     override fun setMatrixWithScale(matrix: Matrix, scale: Float) {
         super.setMatrixWithScale(matrix, scale)
+        matrixRobot.postConcat(matrix)
+        Log.i("SLAMMapView2D", "RobotView2D:")
+
     }
 
     override fun setMatrixWithRotation(matrix: Matrix, rotation: Float) {
         super.setMatrixWithRotation(matrix, rotation)
+        matrixRobot.postConcat(matrix)
+        Log.i("SLAMMapView2D", "RobotView2D:")
+
     }
 }

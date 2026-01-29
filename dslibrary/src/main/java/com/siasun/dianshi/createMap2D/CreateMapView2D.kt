@@ -424,17 +424,6 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
         setCentred()
     }
 
-    /**
-     * 旋转地图
-     */
-    fun setRotate() {
-        // 应用全局旋转（如果有），围绕屏幕中心旋转
-        if (mRotateAngle != 0f) {
-            mOuterMatrix.preRotate(-mRotateAngle)
-        }
-        postInvalidate()
-    }
-
     /***
      * 设置地图显示
      */
