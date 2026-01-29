@@ -133,41 +133,72 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
      * 在地图中心创建一个矩形清扫区域
      */
     fun createRectangularAreaAtCenter(newArea: CleanAreaNew) {
-        // 获取MapView实例
-        val mapView = mapViewRef.get() ?: return
+//        // 获取MapView实例
+//        val mapView = mapViewRef.get() ?: return
+//
+//        // 计算地图中心位置
+//        val centerX = mapView.viewWidth / 2f
+//        val centerY = mapView.viewHeight / 2f
+//
+//        // 将屏幕中心坐标转换为世界坐标
+//        val worldCenter = mapView.screenToWorld(centerX, centerY)
+//
+//        // 创建矩形的四个顶点（100x100的矩形，中心在地图中心）
+//        val rectSize = 20f
+//        val halfSize = rectSize / 2f
+//
+//        val topLeft = PointNew(worldCenter.x - halfSize, worldCenter.y - halfSize)
+//        val topRight = PointNew(worldCenter.x + halfSize, worldCenter.y - halfSize)
+//        val bottomRight = PointNew(worldCenter.x + halfSize, worldCenter.y + halfSize)
+//        val bottomLeft = PointNew(worldCenter.x - halfSize, worldCenter.y + halfSize)
+//
+//        // 添加顶点到区域
+//        newArea.m_VertexPnt.add(topLeft)
+//        newArea.m_VertexPnt.add(topRight)
+//        newArea.m_VertexPnt.add(bottomRight)
+//        newArea.m_VertexPnt.add(bottomLeft)
+//
+//        // 将新区域添加到列表
+//        list.add(newArea)
+//
+//        // 选中新创建的区域
+//        selectedArea = newArea
+//
+//        // 通知监听器选中区域变化
+//        onCleanAreaEditListener?.onSelectedAreaChanged(selectedArea)
+//
+//        // 通知监听器创建了新区域
+//        onCleanAreaEditListener?.onAreaCreated(newArea)
+//
+//        invalidate()
 
-        // 计算地图中心位置
+        val mapView = mapViewRef.get() ?: return
         val centerX = mapView.viewWidth / 2f
         val centerY = mapView.viewHeight / 2f
 
-        // 将屏幕中心坐标转换为世界坐标
-        val worldCenter = mapView.screenToWorld(centerX, centerY)
+        val sizePx = 100f
+        val halfSize = sizePx / 2f
 
-        // 创建矩形的四个顶点（100x100的矩形，中心在地图中心）
-        val rectSize = 20f
-        val halfSize = rectSize / 2f
 
-        val topLeft = PointNew(worldCenter.x - halfSize, worldCenter.y - halfSize)
-        val topRight = PointNew(worldCenter.x + halfSize, worldCenter.y - halfSize)
-        val bottomRight = PointNew(worldCenter.x + halfSize, worldCenter.y + halfSize)
-        val bottomLeft = PointNew(worldCenter.x - halfSize, worldCenter.y + halfSize)
+        val topLeft =  mapView.screenToWorld(centerX - halfSize,centerY - halfSize)
+        val topRight = mapView.screenToWorld(centerX + halfSize, centerY - halfSize)
+        val bottomRight = mapView.screenToWorld(centerX + halfSize, centerY + halfSize)
+        val bottomLeft = mapView.screenToWorld(centerX - halfSize, centerY + halfSize)
 
-        // 添加顶点到区域
-        newArea.m_VertexPnt.add(topLeft)
-        newArea.m_VertexPnt.add(topRight)
-        newArea.m_VertexPnt.add(bottomRight)
-        newArea.m_VertexPnt.add(bottomLeft)
 
-        // 将新区域添加到列表
+        newArea.m_VertexPnt.apply {
+            clear()
+            add(PointNew(topLeft.x,topLeft.y))
+            add(PointNew(topRight.x,topRight.y))
+            add(PointNew(bottomRight.x,bottomRight.y))
+            add(PointNew(bottomLeft.x,bottomLeft.y))
+
+        }
+
         list.add(newArea)
-
-        // 选中新创建的区域
         selectedArea = newArea
 
-        // 通知监听器选中区域变化
         onCleanAreaEditListener?.onSelectedAreaChanged(selectedArea)
-
-        // 通知监听器创建了新区域
         onCleanAreaEditListener?.onAreaCreated(newArea)
 
         invalidate()
