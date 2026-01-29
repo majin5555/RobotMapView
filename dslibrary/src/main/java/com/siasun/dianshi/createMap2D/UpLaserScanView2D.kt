@@ -74,13 +74,13 @@ class UpLaserScanView2D(context: Context?, val parent: WeakReference<CreateMapVi
             val laserY = laserData.ranges[index + 1]
 
             // 坐标变换（仅计算有效点）
-            val cosT = cos(laserData.ranges[2])
-            val sinT = sin(laserData.ranges[2])
-            val laserXNew = laserX * cosT - laserY * sinT + laserData.ranges[0]
-            val laserYNew = laserX * sinT + laserY * cosT + laserData.ranges[1]
+            val cosT = cos(mapView.robotPose[2])
+            val sinT = sin(mapView.robotPose[2])
+            val laserXNew = laserX * cosT - laserY * sinT + mapView.robotPose[0]
+            val laserYNew = laserX * sinT + laserY * cosT + mapView.robotPose[1]
             cloudList.add(PointF(laserXNew, laserYNew))
         }
-        Log.i("SLAMMapView2D", "有效点数 ${cloudList.size}")
+//        Log.i("SLAMMapView2D", "有效点数 ${cloudList.size}")
 
         postInvalidate()
     }
