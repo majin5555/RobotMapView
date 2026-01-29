@@ -367,32 +367,6 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
 //        LogUtil.w("回环检测2D  end")
     }
 
-    @SuppressLint("ClickableViewAccessibility")
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        // 只有在擦除噪点模式下才响应触摸事件
-        if (currentWorkMode != CreateMapView2D.WorkMode.MODE_CREATE_MAP) {
-            return false
-        }
-
-        when (event.action) {
-            MotionEvent.ACTION_DOWN -> {
-//                handleActionDown(event)
-                return true
-            }
-
-            MotionEvent.ACTION_MOVE -> {
-                updateKeyFrame2d()
-                return true
-            }
-
-            MotionEvent.ACTION_UP -> {
-//                handleActionUp(event)
-                return true
-            }
-        }
-        return super.onTouchEvent(event)
-    }
-
     /**
      * 更新子图数据源
      */
@@ -432,5 +406,15 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
         keyFrames2d.clear()
         // 清理父引用
         parent.clear()
+    }
+
+    override fun setMatrixWithScale(matrix: Matrix, scale: Float) {
+        super.setMatrixWithScale(matrix, scale)
+        updateKeyFrame2d()
+    }
+
+    override fun setMatrixWithRotation(matrix: Matrix, rotation: Float) {
+        super.setMatrixWithRotation(matrix, rotation)
+        updateKeyFrame2d()
     }
 }

@@ -442,12 +442,12 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
         mPngMapView!!.visibility = visibility
     }
 
-
     /**
      * 外部接口：更新子图数据 2D
      */
     fun parseSubMaps2D(mLaserT: laser_t, type: Int) {
         mMapOutline2D?.parseSubMaps2D(mLaserT, type)
+        setMatrixWithScale(mOuterMatrix, mMapScale)
     }
 
 
