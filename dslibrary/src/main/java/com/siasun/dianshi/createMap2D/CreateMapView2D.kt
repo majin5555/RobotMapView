@@ -138,14 +138,6 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
 
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        // 如果是擦除噪点模式、创建定位区域模式、编辑定位区域模式、删除定位区域模式、编辑清扫区域模式或创建清扫区域模式，或者路径编辑模式，或者创建路径模式
-        if (currentWorkMode == WorkMode.MODE_CREATE_MAP) {
-            // 先调用父类的onTouchEvent让事件传递给子视图
-            super.onTouchEvent(event)
-            // 返回true表示事件已处理，禁止手势检测器处理，从而禁止底图拖动
-            return true
-        }
-
         // 非特殊模式，由手势检测器处理事件
         return mGestureDetector!!.onTouchEvent(event)
     }

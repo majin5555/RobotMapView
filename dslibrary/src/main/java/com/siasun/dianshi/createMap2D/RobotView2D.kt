@@ -9,6 +9,7 @@ import android.graphics.Matrix
 import android.graphics.Paint
 import android.util.Log
 import com.siasun.dianshi.R
+import com.siasun.dianshi.utils.RadianUtil
 import com.siasun.dianshi.view.SlamWareBaseView
 import java.lang.ref.WeakReference
 
@@ -19,8 +20,7 @@ import java.lang.ref.WeakReference
 class RobotView2D(context: Context?, val parent: WeakReference<CreateMapView2D>) :
     SlamWareBaseView<CreateMapView2D>(context, parent) {
 
-    private var agvPose: FloatArray? = null
-    val matrixRobot = Matrix()
+    var matrixRobot = Matrix()
     private var currentWorkMode = CreateMapView2D.WorkMode.MODE_SHOW_MAP
 
     // 机器人相关
@@ -50,16 +50,8 @@ class RobotView2D(context: Context?, val parent: WeakReference<CreateMapView2D>)
         super.onDraw(canvas)
         val mapView = parent.get() ?: return
 
-        agvPose?.let { pose ->
-            robotBitmap?.let { bitmap ->
-                // 重置变换矩阵，避免变换累积导致的跳动
-                matrixRobot.reset()
-                val screenPos = mapView.worldToScreen(pose[0], pose[1])
-                matrixRobot.postTranslate(-bitmap.width / 2f, -bitmap.height / 2f) // 以中心为锚点
-                matrixRobot.postRotate(-Math.toDegrees(pose[2].toDouble()).toFloat(),0f,0f) // 旋转方向调整
-                matrixRobot.postTranslate(screenPos.x, screenPos.y)
-                canvas.drawBitmap(bitmap, matrixRobot, robotPaint)
-            }
+        robotBitmap?.let { bitmap ->
+            canvas.drawBitmap(bitmap, matrixRobot, robotPaint)
         }
     }
 
@@ -68,7 +60,13 @@ class RobotView2D(context: Context?, val parent: WeakReference<CreateMapView2D>)
      * 车体实时坐标
      */
     fun setAgvData(array: FloatArray) {
-        agvPose = array
+        val mapView = parent.get() ?: return
+
+        // 重置变换矩阵，避免变换累积导致的跳动
+        matrixRobot.reset()
+        val screenPos = mapView.worldToScreen(array[0], array[1])
+        matrixRobot.postRotate(-Math.toDegrees(array[2].toDouble()).toFloat(), 0f, 0f) // 旋转方向调整
+        matrixRobot.postTranslate(screenPos.x, screenPos.y)
         postInvalidate()
     }
 
@@ -80,21 +78,23 @@ class RobotView2D(context: Context?, val parent: WeakReference<CreateMapView2D>)
                 bitmap.recycle()
             }
         }
-        // 清理其他资源
-        agvPose = null
     }
 
     override fun setMatrixWithScale(matrix: Matrix, scale: Float) {
         super.setMatrixWithScale(matrix, scale)
-        matrixRobot.postConcat(matrix)
-        Log.i("SLAMMapView2D", "RobotView2D:")
-
+        val tempMatrix = Matrix()
+        tempMatrix.set(matrix)
+        // 应用相同的缩放比例
+        tempMatrix.postScale(scale, scale)
+        matrixRobot = tempMatrix
     }
 
     override fun setMatrixWithRotation(matrix: Matrix, rotation: Float) {
         super.setMatrixWithRotation(matrix, rotation)
-        matrixRobot.postConcat(matrix)
-        Log.i("SLAMMapView2D", "RobotView2D:")
-
+        val tempMatrix = Matrix()
+        tempMatrix.set(matrix)
+        // 应用相同的旋转角度
+        tempMatrix.postRotate(RadianUtil.toAngel(rotation))
+        matrixRobot = tempMatrix
     }
 }

@@ -7,8 +7,8 @@ import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.PointF
-import android.util.Log
 import com.ngu.lcmtypes.laser_t
+import com.siasun.dianshi.utils.RadianUtil
 import com.siasun.dianshi.view.SlamWareBaseView
 import java.lang.ref.WeakReference
 import kotlin.math.cos
@@ -24,6 +24,7 @@ class UpLaserScanView2D(context: Context?, val parent: WeakReference<CreateMapVi
     //激光点云
     private val cloudList: MutableList<PointF> = mutableListOf()
     private var currentWorkMode = CreateMapView2D.WorkMode.MODE_SHOW_MAP
+    var matrixPoint = Matrix()
 
     companion object {
         private val paint: Paint = Paint().apply {
@@ -41,27 +42,6 @@ class UpLaserScanView2D(context: Context?, val parent: WeakReference<CreateMapVi
 
         currentWorkMode = mode
 
-    }
-
-    @SuppressLint("DrawAllocation")
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
-        if (cloudList.isNotEmpty()) {
-            val mapView = parent.get() ?: return
-
-            // 预分配数组大小
-            val pointsArray = FloatArray(cloudList.size * 2)
-            var index = 0
-
-
-            for (point in cloudList) {
-                val screenPoint = mapView.worldToScreen(point.x, point.y)
-                pointsArray[index++] = screenPoint.x
-                pointsArray[index++] = screenPoint.y
-            }
-
-            canvas.drawPoints(pointsArray,  paint)
-        }
     }
 
     /**
@@ -104,6 +84,31 @@ class UpLaserScanView2D(context: Context?, val parent: WeakReference<CreateMapVi
     }
 
 
+    @SuppressLint("DrawAllocation")
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        if (cloudList.isNotEmpty()) {
+            val mapView = parent.get() ?: return
+
+            // 预分配数组大小
+            val screenPoints = FloatArray(cloudList.size * 2)
+            var index = 0
+
+            for (point in cloudList) {
+                // 先转换世界坐标到地图像素坐标
+                val mapPixelPoint = mapView.mSrf.worldToScreen(point.x, point.y)
+                // 再使用矩阵转换地图像素坐标到屏幕坐标
+                val points = floatArrayOf(mapPixelPoint.x, mapPixelPoint.y)
+                matrixPoint.mapPoints(points)
+                screenPoints[index++] = points[0]
+                screenPoints[index++] = points[1]
+            }
+
+            canvas.drawPoints(screenPoints, paint)
+        }
+    }
+
+
     /**
      * 清理资源，防止内存泄漏
      */
@@ -114,13 +119,22 @@ class UpLaserScanView2D(context: Context?, val parent: WeakReference<CreateMapVi
         // 清理父引用
         parent.clear()
     }
+
     override fun setMatrixWithScale(matrix: Matrix, scale: Float) {
         super.setMatrixWithScale(matrix, scale)
-        Log.i("SLAMMapView2D", "UpLaserScanView2D:")
+        val tempMatrix = Matrix()
+        tempMatrix.set(matrix)
+        // 应用相同的缩放比例
+        tempMatrix.postScale(scale, scale)
+        matrixPoint = tempMatrix
     }
 
     override fun setMatrixWithRotation(matrix: Matrix, rotation: Float) {
         super.setMatrixWithRotation(matrix, rotation)
-        Log.i("SLAMMapView2D", "UpLaserScanView2D:")
+        val tempMatrix = Matrix()
+        tempMatrix.set(matrix)
+        // 应用相同的旋转角度
+        tempMatrix.postRotate(RadianUtil.toAngel(rotation))
+        matrixPoint = tempMatrix
     }
 }

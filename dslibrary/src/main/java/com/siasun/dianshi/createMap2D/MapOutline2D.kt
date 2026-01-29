@@ -24,6 +24,7 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
+import com.siasun.dianshi.utils.RadianUtil
 
 /**
  * 建图地图轮廓
@@ -357,7 +358,7 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
             subMapData.originTheta = globalTheta
         }
 
-        updateKeyFrame2d()
+//        updateKeyFrame2d()
         //扩展时
         if (type == 1) {
         } else {
@@ -367,35 +368,6 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
 //        LogUtil.w("回环检测2D  end")
     }
 
-    /**
-     * 更新子图数据源
-     */
-    private fun updateKeyFrame2d() {
-        val mapView = parent.get() ?: return
-
-        // 优化updateKeyFrame2d方法中的矩阵更新逻辑
-        for ((_, mSubMapData) in keyFrames2d.entries) {
-            val bitmap = mSubMapData.mBitmap ?: continue
-
-            // 计算屏幕坐标
-            val screenLeftTop = mapView.worldToScreen(mSubMapData.leftTop.x, mSubMapData.leftTop.y)
-            val screenRightBottom = mapView.worldToScreen(mSubMapData.rightBottom.x, mSubMapData.rightBottom.y)
-
-            // 计算目标尺寸
-            val targetWidth = screenRightBottom.x - screenLeftTop.x
-            val targetHeight = screenRightBottom.y - screenLeftTop.y
-
-            // 计算等比缩放
-            val originalWidth = bitmap.width.toFloat()
-            val originalHeight = bitmap.height.toFloat()
-            val scale = min(targetWidth / originalWidth, targetHeight / originalHeight)
-
-            // 创建新矩阵，包含缩放和平移
-            mSubMapData.matrix!!.reset()
-            mSubMapData.matrix!!.setScale(scale, scale)
-            mSubMapData.matrix!!.postTranslate(screenLeftTop.x, screenLeftTop.y)
-        }
-    }
 
     /**
      * 清理资源，防止内存泄漏
@@ -410,13 +382,33 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
 
     override fun setMatrixWithScale(matrix: Matrix, scale: Float) {
         super.setMatrixWithScale(matrix, scale)
-        Log.i("SLAMMapView2D", "MapOutline2D:")
-        updateKeyFrame2d()
+
+        // 更新所有子图矩阵的缩放
+        keyFrames2d.forEach { (_, subMapData) ->
+            subMapData.matrix?.let {
+                val tempMatrix = Matrix()
+                tempMatrix.set(matrix)
+                // 应用相同的缩放比例
+                tempMatrix.postScale(scale, scale)
+                subMapData.matrix = tempMatrix
+            }
+        }
+        postInvalidate()
     }
 
     override fun setMatrixWithRotation(matrix: Matrix, rotation: Float) {
         super.setMatrixWithRotation(matrix, rotation)
-        Log.i("SLAMMapView2D", "MapOutline2D:")
-        updateKeyFrame2d()
+
+        // 更新所有子图矩阵的旋转
+        keyFrames2d.forEach { (_, subMapData) ->
+            subMapData.matrix?.let {
+                val tempMatrix = Matrix()
+                tempMatrix.set(matrix)
+                // 应用相同的旋转角度
+                tempMatrix.postRotate(RadianUtil.toAngel(rotation))
+                subMapData.matrix = tempMatrix
+            }
+        }
+        postInvalidate()
     }
 }
