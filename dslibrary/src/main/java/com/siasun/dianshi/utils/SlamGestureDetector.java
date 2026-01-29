@@ -108,10 +108,10 @@ public class SlamGestureDetector {
                     mListener.onMapPinch(scale, center);
 
 //                    // 旋转地图 暂时屏闭
-//                    PointF na = getNormalized(currPrimaryPosition, currSecondaryPosition);
-//                    PointF nb = getNormalized(prevPrimaryPosition, prevSecondaryPosition);
-//                    float rotate = (float) (Math.atan2(na.y, na.x) - Math.atan2(nb.y, nb.x));
-//                    mListener.onMapRotate(rotate, center);
+                    PointF na = getNormalized(currPrimaryPosition, currSecondaryPosition);
+                    PointF nb = getNormalized(prevPrimaryPosition, prevSecondaryPosition);
+                    float rotate = (float) (Math.atan2(na.y, na.x) - Math.atan2(nb.y, nb.x));
+                    mListener.onMapRotate(rotate, center);
                 }
                 break;
             case MotionEvent.ACTION_POINTER_UP:
