@@ -12,7 +12,6 @@ import com.siasun.dianshi.view.SlamWareBaseView
 import java.lang.ref.WeakReference
 import kotlin.math.cos
 import kotlin.math.sin
-import androidx.core.graphics.withRotation
 
 /**
  * 建图上激光点云
@@ -20,11 +19,9 @@ import androidx.core.graphics.withRotation
 @SuppressLint("ViewConstructor")
 class UpLaserScanView2D(context: Context?, val parent: WeakReference<CreateMapView2D>) :
     SlamWareBaseView<CreateMapView2D>(context, parent) {
-    // 控制是否绘制
-    private var isDrawingEnabled: Boolean = true
 
     //激光点云
-    private val cloudList = ArrayList<PointF>()
+    private val cloudList: MutableList<PointF> = mutableListOf()
 
     companion object {
         private val paint: Paint = Paint().apply {
@@ -34,28 +31,17 @@ class UpLaserScanView2D(context: Context?, val parent: WeakReference<CreateMapVi
         }
     }
 
-
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        // 只有在绘制启用状态下才绘制点云
-        if (isDrawingEnabled && cloudList.isNotEmpty()) {
+        if (cloudList.isNotEmpty()) {
             val mapView = parent.get() ?: return
-
-            // 预分配数组大小
-            val pointsArray = FloatArray(cloudList.size * 2)
-            var index = 0
-
-            for (point in cloudList) {
-                val screenPoint = mapView.worldToScreen(point.x, point.y)
-                pointsArray[index++] = screenPoint.x
-                pointsArray[index++] = screenPoint.y
-            }
-
-            // 应用CreateMapView2D中的矩阵变换
-            mMatrix.mapPoints(pointsArray)
-
-            canvas.drawPoints(pointsArray, paint)
+            canvas.drawPoints(
+                cloudList.flatMap { point ->
+                    val worldToScreen = mapView.worldToScreen(point.x, point.y)
+                    listOf(worldToScreen.x, worldToScreen.y)
+                }.toFloatArray(), paint
+            )
         }
     }
 
@@ -98,13 +84,6 @@ class UpLaserScanView2D(context: Context?, val parent: WeakReference<CreateMapVi
         postInvalidate()
     }
 
-    /**
-     * 设置是否启用绘制
-     */
-    fun setDrawingEnabled(enabled: Boolean) {
-        this.isDrawingEnabled = enabled
-        postInvalidate()
-    }
 
     /**
      * 清理资源，防止内存泄漏
