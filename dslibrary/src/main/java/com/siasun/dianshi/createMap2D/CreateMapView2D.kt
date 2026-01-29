@@ -39,11 +39,6 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix
 import java.math.RoundingMode
 import java.nio.ByteBuffer
 import java.text.DecimalFormat
-import java.util.concurrent.ConcurrentHashMap
-import kotlin.collections.set
-import kotlin.math.abs
-import kotlin.math.cos
-import kotlin.math.sin
 
 /**
  * 地图画布
@@ -143,16 +138,13 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
 
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        val point = screenToWorld(event.x, event.y)
-
-//        // 如果是擦除噪点模式、创建定位区域模式、编辑定位区域模式、删除定位区域模式、编辑清扫区域模式或创建清扫区域模式，或者路径编辑模式，或者创建路径模式
-//        if (currentWorkMode == WorkMode.MODE_REMOVE_NOISE || currentWorkMode == WorkMode.MODE_POSITING_AREA_ADD || currentWorkMode == WorkMode.MODE_POSITING_AREA_EDIT || currentWorkMode == WorkMode.MODE_POSITING_AREA_DELETE || currentWorkMode == WorkMode.MODE_CLEAN_AREA_EDIT || currentWorkMode == WorkMode.MODE_CLEAN_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_EDIT || currentWorkMode == WorkMode.MODE_PATH_EDIT || currentWorkMode == WorkMode.MODE_PATH_CREATE) {
-//            // 让事件传递给子视图（如RemoveNoiseView、PostingAreasView或PathView）处理
-//            // 先调用父类的onTouchEvent让事件传递给子视图
-//            super.onTouchEvent(event)
-//            // 返回true表示事件已处理，禁止手势检测器处理，从而禁止底图拖动
-//            return true
-//        }
+        // 如果是擦除噪点模式、创建定位区域模式、编辑定位区域模式、删除定位区域模式、编辑清扫区域模式或创建清扫区域模式，或者路径编辑模式，或者创建路径模式
+        if (currentWorkMode == WorkMode.MODE_CREATE_MAP) {
+            // 先调用父类的onTouchEvent让事件传递给子视图
+            super.onTouchEvent(event)
+            // 返回true表示事件已处理，禁止手势检测器处理，从而禁止底图拖动
+            return true
+        }
 
         // 非特殊模式，由手势检测器处理事件
         return mGestureDetector!!.onTouchEvent(event)
@@ -387,6 +379,7 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
      */
     fun setWorkMode(mode: WorkMode) {
         currentWorkMode = mode
+        mMapOutline2D?.setWorkMode(mode)
     }
 
     /**
@@ -464,11 +457,12 @@ class CreateMapView2D(context: Context, private val attrs: AttributeSet) :
     fun parseLaserData2D(laserData: laser_t) {
         // 更新机器人位置（始终需要处理，不参与降采样）
         updateRobotPose(laserData.ranges[0], laserData.ranges[1], laserData.ranges[2])
-        mUpLaserScanView?.updateUpLaserScan(laserData)
         // 建图模式下，保持车体居中显示
         if (currentWorkMode == WorkMode.MODE_CREATE_MAP) {
             keepRobotCentered()
         }
+        mUpLaserScanView?.updateUpLaserScan(laserData)
+
     }
 
 

@@ -10,6 +10,7 @@ import android.graphics.PointF
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
 import android.util.Log
+import android.view.MotionEvent
 import com.ngu.lcmtypes.laser_t
 import com.siasun.dianshi.bean.createMap2d.MapEditorConstants
 import com.siasun.dianshi.bean.createMap2d.SubMapData
@@ -31,6 +32,7 @@ import kotlin.math.sin
 class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>) :
     SlamWareBaseView<CreateMapView2D>(context, parent) {
     private val TAG = this::class.java.simpleName
+    private var currentWorkMode = CreateMapView2D.WorkMode.MODE_SHOW_MAP
 
     // 控制是否绘制
     private var isDrawingEnabled: Boolean = true
@@ -47,6 +49,16 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
     private var maxBottomRight = PointF(-10.0f, -10.0f) // 右下 - 初始化为极小值
 
 
+    /**
+     * 设置工作模式
+     */
+    fun setWorkMode(mode: CreateMapView2D.WorkMode) {
+        if (currentWorkMode == mode) return // 避免重复设置
+
+        currentWorkMode = mode
+
+    }
+
     companion object {
         val mPaint = Paint().apply {
             isAntiAlias = true
@@ -59,10 +71,6 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
         }
     }
 
-
-    // 复用Matrix对象，避免在onDraw中重复创建
-    private val mTempMatrix = Matrix()
-
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
@@ -73,9 +81,10 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
             // 使用forEach代替for-in循环，提高性能
             keyFrames2d.forEach { (_, mSubMapData) ->
                 val bitmap = mSubMapData.mBitmap ?: return@forEach
-
-                // 使用CreateMapView2D中的矩阵进行绘制
-                canvas.drawBitmap(bitmap, mMatrix, mPaint)
+                mSubMapData.matrix?.let {
+                    // 使用CreateMapView2D中的矩阵进行绘制
+                    canvas.drawBitmap(bitmap, it, mPaint)
+                }
             }
         }
     }
@@ -286,6 +295,7 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
      * 输入数据 世界坐标系下的位姿态
      */
     fun updateOptPose2D(mLaserT: laser_t, type: Int) {
+
 //        LogUtil.w("回环检测2D  start")
         val optPose = mLaserT.ranges
 //        LogUtil.w("回环检测optPose.size  ${optPose.size}")
@@ -357,18 +367,45 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
 //        LogUtil.w("回环检测2D  end")
     }
 
+    @SuppressLint("ClickableViewAccessibility")
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        // 只有在擦除噪点模式下才响应触摸事件
+        if (currentWorkMode != CreateMapView2D.WorkMode.MODE_CREATE_MAP) {
+            return false
+        }
+
+        when (event.action) {
+            MotionEvent.ACTION_DOWN -> {
+//                handleActionDown(event)
+                return true
+            }
+
+            MotionEvent.ACTION_MOVE -> {
+                updateKeyFrame2d()
+                return true
+            }
+
+            MotionEvent.ACTION_UP -> {
+//                handleActionUp(event)
+                return true
+            }
+        }
+        return super.onTouchEvent(event)
+    }
+
+    /**
+     * 更新子图数据源
+     */
     private fun updateKeyFrame2d() {
         val mapView = parent.get() ?: return
 
         // 优化updateKeyFrame2d方法中的矩阵更新逻辑
-        for ((matrixKey, mSubMapData) in keyFrames2d.entries) {
+        for ((_, mSubMapData) in keyFrames2d.entries) {
             val bitmap = mSubMapData.mBitmap ?: continue
 
             // 计算屏幕坐标
-            val screenLeftTop =
-                mapView.mSrf.worldToScreen(mSubMapData.leftTop.x, mSubMapData.leftTop.y)
-            val screenRightBottom =
-                mapView.mSrf.worldToScreen(mSubMapData.rightBottom.x, mSubMapData.rightBottom.y)
+            val screenLeftTop = mapView.worldToScreen(mSubMapData.leftTop.x, mSubMapData.leftTop.y)
+            val screenRightBottom = mapView.worldToScreen(mSubMapData.rightBottom.x, mSubMapData.rightBottom.y)
 
             // 计算目标尺寸
             val targetWidth = screenRightBottom.x - screenLeftTop.x
