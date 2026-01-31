@@ -1,4 +1,4 @@
-package com.siasun.dianshi.view.createMap.map2D
+package com.siasun.dianshi.view.createMap.map3D
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -41,11 +41,10 @@ import java.text.DecimalFormat
 
 /**
  * 地图画布
- * 2D 建图View
+ * 3D 建图View
  */
-class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(context, attrs),
+class CreateMapView3D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(context, attrs),
     SlamGestureDetector.OnRPGestureListener, MapViewInterface {
-
 
     // 当前工作模式
     private var currentWorkMode = CreateMapWorkMode.MODE_SHOW_MAP
@@ -60,13 +59,14 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
     private val mMaxMapScale = 5f //最大缩放级别
     private var mMinMapScale = 0.1f //最小缩放级别
 
-    private var mMapView: WeakReference<CreateMapView2D> = WeakReference(this)
-    private var mapLayers: MutableList<SlamWareBaseView<CreateMapView2D>> = CopyOnWriteArrayList()
+    private var mMapView: WeakReference<CreateMapView3D> = WeakReference(this)
+    private var mapLayers: MutableList<SlamWareBaseView<CreateMapView3D>> = CopyOnWriteArrayList()
     private var mPngMapView: PngMapView? = null //png地图
-    private var mMapOutline2D: MapOutline2D? = null //地图轮廓
-    private var mExpandAreaView: ExpandAreaView<CreateMapView2D>? = null //地图更新区域
-    private var mUpLaserScanView: UpLaserScanView2D? = null//上激光点云
-    private var mCreateMapRobotView: RobotViewCreateMap<CreateMapView2D>? = null //机器人图标
+    private var mMapOutline3D: MapOutline3D? = null //地图轮廓
+    private var mUpLaserScanView: UpLaserScanView3D? = null//上激光点云
+    private var mCreateMapRobotView: RobotViewCreateMap<CreateMapView3D>? = null //机器人图标
+    private var mExpandAreaView: ExpandAreaView<CreateMapView3D>? = null //地图更新区域
+
 
     var isMapping = false//是否建图标志
     var isRouteMap = false//是否可以旋转地图
@@ -110,8 +110,8 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
     private fun initView() {
         val lp = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
         mPngMapView = PngMapView(context)
-        mUpLaserScanView = UpLaserScanView2D(context, mMapView)
-        mMapOutline2D = MapOutline2D(context, mMapView)
+        mUpLaserScanView = UpLaserScanView3D(context, mMapView)
+        mMapOutline3D = MapOutline3D(context, mMapView)
         mCreateMapRobotView = RobotViewCreateMap(context, mMapView)
         mExpandAreaView = ExpandAreaView(context, mMapView)
         //底图的View
@@ -120,7 +120,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
         //扩展区域
         addMapLayers(mExpandAreaView)
         //地图轮廓
-        addMapLayers(mMapOutline2D)
+        addMapLayers(mMapOutline3D)
         //上激光点云
         addMapLayers(mUpLaserScanView)
         //机器人图标
@@ -352,7 +352,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
         }
     }
 
-    private fun addMapLayers(mapLayer: SlamWareBaseView<CreateMapView2D>?) {
+    private fun addMapLayers(mapLayer: SlamWareBaseView<CreateMapView3D>?) {
         if (mapLayer != null && !mapLayers.contains(mapLayer)) {
             mapLayers.add(mapLayer)
             addView(
@@ -395,7 +395,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
      */
     fun setWorkMode(mode: CreateMapWorkMode) {
         currentWorkMode = mode
-        mMapOutline2D?.setWorkMode(mode)
+        mMapOutline3D?.setWorkMode(mode)
         mUpLaserScanView?.setWorkMode(mode)
         mCreateMapRobotView?.setWorkMode(mode)
         mExpandAreaView?.setWorkMode(mode)
@@ -448,7 +448,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
      * 外部接口：更新子图数据 （建图模式） 2D
      */
     fun parseSubMaps2D(mLaserT: laser_t, type: Int) {
-        mMapOutline2D?.parseSubMaps2D(mLaserT, type)
+        mMapOutline3D?.parseSubMaps2D(mLaserT, type)
         // 建图模式下，保持车体居中显示
         if (currentWorkMode == CreateMapWorkMode.MODE_CREATE_MAP || currentWorkMode == CreateMapWorkMode.MODE_EXTEND_MAP) {
             keepRobotCentered()
@@ -497,7 +497,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
      * 输入数据 世界坐标系下的位姿态
      */
     fun updateOptPose2D(mLaserT: laser_t, type: Int) {
-        mMapOutline2D?.updateOptPose2D(mLaserT, type)
+        mMapOutline3D?.updateOptPose2D(mLaserT, type)
     }
 
     /**
@@ -535,7 +535,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
     /**
      * 获取扩展区域视图实例
      */
-    fun getExpandAreaView(): ExpandAreaView<CreateMapView2D>? {
+    fun getExpandAreaView(): ExpandAreaView<CreateMapView3D>? {
         return mExpandAreaView
     }
 

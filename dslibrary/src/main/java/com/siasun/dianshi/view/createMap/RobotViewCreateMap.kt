@@ -1,4 +1,4 @@
-package com.siasun.dianshi.view.createMap.map2D
+package com.siasun.dianshi.view.createMap
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -14,11 +14,10 @@ import java.lang.ref.WeakReference
  * 建图 机器人图标 实时位置
  */
 @SuppressLint("ViewConstructor")
-class RobotView2D(context: Context?, val parent: WeakReference<CreateMapView2D>) :
-    SlamWareBaseView<CreateMapView2D>(context, parent) {
+class RobotViewCreateMap<T : MapViewInterface>(context: Context?, val parent: WeakReference<T>) :
+    SlamWareBaseView<T>(context, parent) {
 
-
-    private var currentWorkMode = CreateMapView2D.WorkMode.MODE_SHOW_MAP
+    private var currentWorkMode = CreateMapWorkMode.MODE_SHOW_MAP
 
     // 机器人相关
     private val robotBitmap: Bitmap? by lazy {
@@ -36,7 +35,7 @@ class RobotView2D(context: Context?, val parent: WeakReference<CreateMapView2D>)
     /**
      * 设置工作模式
      */
-    fun setWorkMode(mode: CreateMapView2D.WorkMode) {
+    fun setWorkMode(mode: CreateMapWorkMode) {
         if (currentWorkMode == mode) return // 避免重复设置
 
         currentWorkMode = mode
@@ -50,7 +49,7 @@ class RobotView2D(context: Context?, val parent: WeakReference<CreateMapView2D>)
         val mapView = parent.get() ?: return
         val bitmap = robotBitmap ?: return
 
-        val p = mapView.mSrf.worldToScreen(
+        val p = mapView.worldToScreen(
             mapView.robotPose[0],
             mapView.robotPose[1]
         )
@@ -61,7 +60,6 @@ class RobotView2D(context: Context?, val parent: WeakReference<CreateMapView2D>)
         canvas.drawBitmap(bitmap, -bitmap.width / 2f, -bitmap.height / 2f, robotPaint)
         canvas.restore()
     }
-
 
 
     override fun onDetachedFromWindow() {

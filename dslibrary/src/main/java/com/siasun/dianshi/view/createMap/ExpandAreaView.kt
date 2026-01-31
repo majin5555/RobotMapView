@@ -10,7 +10,6 @@ import android.view.MotionEvent
 import com.siasun.dianshi.bean.End
 import com.siasun.dianshi.bean.ExpandArea
 import com.siasun.dianshi.bean.Start
-import com.siasun.dianshi.view.createMap.map2D.CreateMapView2D
 import com.siasun.dianshi.view.SlamWareBaseView
 import java.lang.ref.WeakReference
 import kotlin.math.max
@@ -21,9 +20,9 @@ import kotlin.math.min
  * 支持拖拽生成矩形功能
  */
 @SuppressLint("ViewConstructor")
-class ExpandAreaView(context: Context?, parent: WeakReference<CreateMapView2D>) :
-    SlamWareBaseView<CreateMapView2D>(context, parent) {
-    private var currentWorkMode = CreateMapView2D.WorkMode.MODE_SHOW_MAP
+class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakReference<T>) :
+    SlamWareBaseView<T>(context, parent) {
+    private var currentWorkMode = CreateMapWorkMode.MODE_SHOW_MAP
 
 
     // 创建过程状态
@@ -53,7 +52,7 @@ class ExpandAreaView(context: Context?, parent: WeakReference<CreateMapView2D>) 
     /**
      * 设置工作模式
      */
-    fun setWorkMode(mode: CreateMapView2D.WorkMode) {
+    fun setWorkMode(mode: CreateMapWorkMode) {
         if (currentWorkMode == mode) return // 避免重复设置
 
         currentWorkMode = mode
@@ -87,7 +86,7 @@ class ExpandAreaView(context: Context?, parent: WeakReference<CreateMapView2D>) 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         // 只在扩展地图增加区域模式下响应触摸事件
-        if (currentWorkMode != CreateMapView2D.WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+        if (currentWorkMode != CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION) {
             return false
         }
 
@@ -98,11 +97,11 @@ class ExpandAreaView(context: Context?, parent: WeakReference<CreateMapView2D>) 
     /**
      * 处理创建模式的触摸事件
      */
-    private fun handleCreateModeTouch(event: MotionEvent, mapView: CreateMapView2D): Boolean {
+    private fun handleCreateModeTouch(event: MotionEvent, mapView: T): Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 // 只有在 MODE_EXTEND_MAP_ADD_REGION 模式下，并且当前没有正在创建的区域时，才能开始新的绘制
-                if (currentWorkMode == CreateMapView2D.WorkMode.MODE_EXTEND_MAP_ADD_REGION && !isCreating) {
+                if (currentWorkMode == CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION && !isCreating) {
                     val worldPoint = mapView.screenToWorld(event.x, event.y)
 
                     // 开始创建新区域
@@ -126,8 +125,8 @@ class ExpandAreaView(context: Context?, parent: WeakReference<CreateMapView2D>) 
             MotionEvent.ACTION_UP -> {
                 if (isCreating && createStartPoint != null && createEndPoint != null) {
                     val newArea = ExpandArea(
-                        start = createStartPoint!!,
-                        end = createEndPoint!!,
+                        start = mapView.screenToWorld(createStartPoint!!.x, createStartPoint!!.y),
+                        end = mapView.screenToWorld(createEndPoint!!.x, createEndPoint!!.y)
                     )
 
                     onExpandAreaCreatedListener?.onExpandAreaCreated(newArea)
@@ -161,7 +160,7 @@ class ExpandAreaView(context: Context?, parent: WeakReference<CreateMapView2D>) 
             )
             canvas.drawRect(tempRect, creatingRectPaint)
         }
-        
+
         canvas.restore()
     }
 

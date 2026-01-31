@@ -1,4 +1,4 @@
-package com.siasun.dianshi.view.createMap.map2D
+package com.siasun.dianshi.view.createMap.map3D
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -28,10 +28,10 @@ import kotlin.collections.iterator
  * 建图地图轮廓
  */
 @SuppressLint("ViewConstructor")
-class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>) :
-    SlamWareBaseView<CreateMapView2D>(context, parent) {
+class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>) :
+    SlamWareBaseView<CreateMapView3D>(context, parent) {
     private val TAG = this::class.java.simpleName
-    private var currentCreateMapWorkMode = CreateMapWorkMode.MODE_SHOW_MAP
+    private var currentWorkMode = CreateMapWorkMode.MODE_SHOW_MAP
 
     //绘制地图的数据 建图时 2D
     private val keyFrames2d = ConcurrentHashMap<Int, SubMapData>()
@@ -50,9 +50,9 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
      * 设置工作模式
      */
     fun setWorkMode(mode: CreateMapWorkMode) {
-        if (currentCreateMapWorkMode == mode) return // 避免重复设置
+        if (currentWorkMode == mode) return // 避免重复设置
 
-        currentCreateMapWorkMode = mode
+        currentWorkMode = mode
 
     }
 

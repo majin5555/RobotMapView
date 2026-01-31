@@ -1,4 +1,4 @@
-package com.siasun.dianshi.view.createMap.map2D
+package com.siasun.dianshi.view.createMap.map3D
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -17,8 +17,8 @@ import kotlin.math.sin
  * 建图上激光点云
  */
 @SuppressLint("ViewConstructor")
-class UpLaserScanView2D(context: Context?, val parent: WeakReference<CreateMapView2D>) :
-    SlamWareBaseView<CreateMapView2D>(context, parent) {
+class UpLaserScanView3D(context: Context?, val parent: WeakReference<CreateMapView3D>) :
+    SlamWareBaseView<CreateMapView3D>(context, parent) {
 
     //激光点云
     private val cloudList: MutableList<PointF> = mutableListOf()

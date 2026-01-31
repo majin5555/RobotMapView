@@ -13,6 +13,7 @@ import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.bean.ExpandArea
 import com.siasun.dianshi.controller.MainController
 import com.siasun.dianshi.view.createMap.ExpandAreaView.OnExpandAreaCreatedListener
+import com.siasun.dianshi.view.createMap.map2D.CreateMapView2D
 import com.siasun.dianshi.dialog.CommonWarnDialog
 import com.siasun.dianshi.framework.ext.onClick
 import com.siasun.dianshi.framework.log.LogUtil
@@ -22,18 +23,18 @@ import com.siasun.dianshi.mapviewdemo.KEY_OPT_POSE
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_POS
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_SUB_MAPS
 import com.siasun.dianshi.mapviewdemo.TAG_NAV
-import com.siasun.dianshi.mapviewdemo.databinding.ActivityCreateMap2dDactivityBinding
-import com.siasun.dianshi.mapviewdemo.viewmodel.CreateMap2DViewModel
+import com.siasun.dianshi.mapviewdemo.databinding.ActivityCreateMap3dDactivityBinding
+import com.siasun.dianshi.mapviewdemo.viewmodel.CreateMap3DViewModel
 import com.siasun.dianshi.utils.RadianUtil
 import com.siasun.dianshi.view.createMap.CreateMapWorkMode
 import java.util.Timer
 import java.util.TimerTask
 
 /**
- * 创建2D地图
+ * 创建3D地图
  */
-class CreateMap2DActivity :
-    BaseMvvmActivity<ActivityCreateMap2dDactivityBinding, CreateMap2DViewModel>() {
+class CreateMap3DActivity :
+    BaseMvvmActivity<ActivityCreateMap3dDactivityBinding, CreateMap3DViewModel>() {
     //建图心跳定时器
     private val mTimer = Timer()
 
@@ -65,7 +66,6 @@ class CreateMap2DActivity :
         //保存
         mBinding.tvSave.onClick {
             showSavaMapDialog()
-
         }
 
         //开始扫描
@@ -86,8 +86,6 @@ class CreateMap2DActivity :
             LogUtil.i("停止扫描")
             ToastUtils.showShort("停止扫描")
         }
-
-
     }
 
     private fun exetendMap() {
@@ -104,7 +102,7 @@ class CreateMap2DActivity :
             .setOnExpandAreaCreatedListener(object : OnExpandAreaCreatedListener {
                 override fun onExpandAreaCreated(area: ExpandArea) {
                     mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_EXTEND_MAP)
-                    LogUtil.i("扩展地图 ${area}")
+                    LogUtil.i("扩展地图 ${area}", null, TAG_NAV)
                 }
             })
     }
