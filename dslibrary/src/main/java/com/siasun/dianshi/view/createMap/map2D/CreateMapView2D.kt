@@ -1,4 +1,4 @@
-package com.siasun.dianshi.createMap.map2D
+package com.siasun.dianshi.view.createMap.map2D
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -30,7 +30,7 @@ import java.lang.ref.WeakReference
 import java.util.concurrent.CopyOnWriteArrayList
 import androidx.core.content.withStyledAttributes
 import com.hjq.shape.layout.ShapeFrameLayout
-import com.siasun.dianshi.createMap.ExpandAreaView
+import com.siasun.dianshi.view.createMap.ExpandAreaView
 import com.siasun.dianshi.view.PngMapView
 import com.siasun.dianshi.view.SlamWareBaseView
 import java.math.RoundingMode

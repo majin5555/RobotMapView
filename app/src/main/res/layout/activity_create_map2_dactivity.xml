@@ -6,7 +6,7 @@
 
 
     <!--显示地图的View-->
-    <com.siasun.dianshi.createMap.map2D.CreateMapView2D
+    <com.siasun.dianshi.view.createMap.map2D.CreateMapView2D
         android:id="@+id/map_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

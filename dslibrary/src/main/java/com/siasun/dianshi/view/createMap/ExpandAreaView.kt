@@ -1,4 +1,4 @@
-package com.siasun.dianshi.createMap
+package com.siasun.dianshi.view.createMap
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -10,14 +10,14 @@ import android.view.MotionEvent
 import com.siasun.dianshi.bean.End
 import com.siasun.dianshi.bean.ExpandArea
 import com.siasun.dianshi.bean.Start
-import com.siasun.dianshi.createMap.map2D.CreateMapView2D
+import com.siasun.dianshi.view.createMap.map2D.CreateMapView2D
 import com.siasun.dianshi.view.SlamWareBaseView
 import java.lang.ref.WeakReference
 import kotlin.math.max
 import kotlin.math.min
 
 /**
- * 扩展地图的View
+ * 扩展地图的View 支持2D、3D
  * 支持拖拽生成矩形功能
  */
 @SuppressLint("ViewConstructor")

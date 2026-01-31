@@ -12,10 +12,8 @@ import com.siasun.dianshi.GlobalVariable.SEND_NAVI_HEART
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.bean.ExpandArea
 import com.siasun.dianshi.controller.MainController
-import com.siasun.dianshi.bean.PositingArea
-import com.siasun.dianshi.createMap.ExpandAreaView
-import com.siasun.dianshi.createMap.ExpandAreaView.OnExpandAreaCreatedListener
-import com.siasun.dianshi.createMap.map2D.CreateMapView2D
+import com.siasun.dianshi.view.createMap.ExpandAreaView.OnExpandAreaCreatedListener
+import com.siasun.dianshi.view.createMap.map2D.CreateMapView2D
 import com.siasun.dianshi.dialog.CommonWarnDialog
 import com.siasun.dianshi.framework.ext.onClick
 import com.siasun.dianshi.framework.log.LogUtil

@@ -5,9 +5,7 @@ import android.os.SystemClock;
 import android.view.MotionEvent;
 import android.view.View;
 
-import com.siasun.dianshi.createMap.ExpandAreaView;
-import com.siasun.dianshi.createMap.map2D.CreateMapView2D;
-import com.siasun.dianshi.createMap.map2D.UpLaserScanView2D;
+import com.siasun.dianshi.view.createMap.map2D.CreateMapView2D;
 
 
 /**
