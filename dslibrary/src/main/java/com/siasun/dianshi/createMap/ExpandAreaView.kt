@@ -101,14 +101,17 @@ class ExpandAreaView(context: Context?, parent: WeakReference<CreateMapView2D>) 
     private fun handleCreateModeTouch(event: MotionEvent, mapView: CreateMapView2D): Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-                val worldPoint = mapView.screenToWorld(event.x, event.y)
+                // 只有在 MODE_EXTEND_MAP_ADD_REGION 模式下，并且当前没有正在创建的区域时，才能开始新的绘制
+                if (currentWorkMode == CreateMapView2D.WorkMode.MODE_EXTEND_MAP_ADD_REGION && !isCreating) {
+                    val worldPoint = mapView.screenToWorld(event.x, event.y)
 
-                // 开始创建新区域
-                isCreating = true
-                createStartPoint = Start(worldPoint.x, worldPoint.y)
-                createEndPoint = End(worldPoint.x, worldPoint.y)
-                postInvalidate()
-                return true
+                    // 开始创建新区域
+                    isCreating = true
+                    createStartPoint = Start(worldPoint.x, worldPoint.y)
+                    createEndPoint = End(worldPoint.x, worldPoint.y)
+                    postInvalidate()
+                    return true
+                }
             }
 
             MotionEvent.ACTION_MOVE -> {
@@ -128,6 +131,7 @@ class ExpandAreaView(context: Context?, parent: WeakReference<CreateMapView2D>) 
                     )
 
                     onExpandAreaCreatedListener?.onExpandAreaCreated(newArea)
+                    // 移除 resetCreateState() 调用，需要手动清除才能再次绘制
                     return true
                 }
             }
@@ -156,8 +160,9 @@ class ExpandAreaView(context: Context?, parent: WeakReference<CreateMapView2D>) 
                 max(leftTop.y, rightBottom.y)
             )
             canvas.drawRect(tempRect, creatingRectPaint)
-            canvas.restore()
         }
+        
+        canvas.restore()
     }
 
 }
