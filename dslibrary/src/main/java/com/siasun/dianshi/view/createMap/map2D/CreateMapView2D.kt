@@ -120,7 +120,6 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
         mExpandAreaView = ExpandAreaView(context, mMapView)
         //底图的View
         addView(mPngMapView, lp)
-
         //扩展区域
         addMapLayers(mExpandAreaView)
         //地图轮廓
@@ -445,7 +444,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
      */
     fun parseSubMaps2D(mLaserT: laser_t, type: Int) {
         // 建图模式下，保持车体居中显示
-        if (currentWorkMode == CreateMapWorkMode.MODE_CREATE_MAP || currentWorkMode == CreateMapWorkMode.MODE_EXTEND_MAP) {
+        if (currentWorkMode == CreateMapWorkMode.MODE_CREATE_MAP) {
             keepRobotCentered()
         }
         mMapOutline2D?.parseSubMaps2D(mLaserT, type)

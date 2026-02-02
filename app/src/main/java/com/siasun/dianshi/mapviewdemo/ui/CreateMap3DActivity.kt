@@ -54,7 +54,7 @@ class CreateMap3DActivity :
     override fun initView(savedInstanceState: Bundle?) {
         MainController.init()
 
-        exetendMap()
+        exePantMap()
         //加载地图
         mBinding.mapView.loadMap(
             ConstantBase.getFilePath(mapID, ConstantBase.PAD_MAP_NAME_PNG),
@@ -95,7 +95,7 @@ class CreateMap3DActivity :
         }
     }
 
-    private fun exetendMap() {
+    private fun exePantMap() {
         mBinding.btnSettingArea.onClick {
             //扩展地图
             mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION)
@@ -108,7 +108,7 @@ class CreateMap3DActivity :
         mBinding.mapView.getExpandAreaView()!!
             .setOnExpandAreaCreatedListener(object : OnExpandAreaCreatedListener {
                 override fun onExpandAreaCreated(area: ExpandArea) {
-                    mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_EXTEND_MAP)
+                    mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_CREATE_MAP)
                     LogUtil.i("扩展地图 ${area}", null, TAG_NAV)
                 }
             })

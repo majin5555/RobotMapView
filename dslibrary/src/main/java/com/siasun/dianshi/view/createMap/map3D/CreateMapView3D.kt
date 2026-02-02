@@ -464,7 +464,7 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
         // 更新机器人位置（始终需要处理，不参与降采样）
         updateRobotPose(laserData.ranges[0], laserData.ranges[1], laserData.ranges[2])
         //保持居中
-        if (currentWorkMode == CreateMapWorkMode.MODE_CREATE_MAP || currentWorkMode == CreateMapWorkMode.MODE_EXTEND_MAP) {
+        if (currentWorkMode == CreateMapWorkMode.MODE_CREATE_MAP) {
             keepRobotCentered()
         }
         // 动态计算采样间隔（根据数据量和缩放比例）

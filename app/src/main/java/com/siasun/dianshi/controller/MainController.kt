@@ -3,6 +3,7 @@ package com.siasun.dianshi.controller
 import android.graphics.PointF
 import com.siasun.dianshi.GlobalVariable.SEND_NAVI_HEART
 import com.siasun.dianshi.bean.CleanAreaNew
+import com.siasun.dianshi.bean.ExpandArea
 import com.siasun.dianshi.bean.PartialUpdateArea
 import com.siasun.dianshi.bean.PositingArea
 import com.siasun.dianshi.controller.lcm.LCMController
@@ -401,7 +402,7 @@ object MainController {
      * Pad—>导航
      * 开始局部更新
      */
-    fun sendStartPartialUpdate(mList: MutableList<PartialUpdateArea>, mapID: Int = 0) {
+    fun sendStartPartialUpdate(mList: MutableList<ExpandArea>, mapID: Int = 0) {
         SEND_NAVI_HEART = true
         myController.mSendStartPartialUpdate(mList, mapID)
     }

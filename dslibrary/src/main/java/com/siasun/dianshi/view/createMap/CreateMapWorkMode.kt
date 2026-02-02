@@ -5,6 +5,5 @@ package com.siasun.dianshi.view.createMap
 enum class CreateMapWorkMode {
     MODE_SHOW_MAP,         // 移动地图模式
     MODE_CREATE_MAP,       // 创建地图模式
-    MODE_EXTEND_MAP,       // 扩展地图模式
     MODE_EXTEND_MAP_ADD_REGION, // 扩展地图增加区域模式
 }

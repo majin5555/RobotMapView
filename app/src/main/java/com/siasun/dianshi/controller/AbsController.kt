@@ -2,6 +2,7 @@ package com.siasun.dianshi.controller
 
 import android.graphics.PointF
 import com.siasun.dianshi.bean.CleanAreaNew
+import com.siasun.dianshi.bean.ExpandArea
 import com.siasun.dianshi.bean.PartialUpdateArea
 import com.siasun.dianshi.bean.PositingArea
 
@@ -80,7 +81,7 @@ abstract class AbsController {
     abstract fun mSendPositingArea(mapID: Int, mList: MutableList<PositingArea>)
     abstract fun mSendGetPositingArea(mapID: Int)
 
-    abstract fun mSendStartPartialUpdate(mList: MutableList<PartialUpdateArea>, mapID: Int)
+    abstract fun mSendStartPartialUpdate(mList: MutableList<ExpandArea>, mapID: Int)
     abstract fun forceOnline(mapID: Int)
     abstract fun mSendStopWritePdf(cmd: Int)
     abstract fun mSendRecordLPDX(isRecord: Boolean)

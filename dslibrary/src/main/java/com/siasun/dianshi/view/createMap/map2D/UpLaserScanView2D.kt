@@ -27,7 +27,7 @@ class UpLaserScanView2D(context: Context?, val parent: WeakReference<CreateMapVi
     companion object {
         private val paint: Paint = Paint().apply {
             color = Color.RED
-            strokeWidth = 2f
+            strokeWidth = 3f
             style = Paint.Style.FILL
         }
     }

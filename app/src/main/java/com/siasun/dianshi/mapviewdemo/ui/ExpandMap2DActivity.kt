@@ -41,7 +41,7 @@ class ExpandMap2DActivity :
 
     val mapID = 1
 
-    val list: MutableList<PartialUpdateArea> = mutableListOf()
+    val list: MutableList<ExpandArea> = mutableListOf()
 
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
@@ -77,19 +77,15 @@ class ExpandMap2DActivity :
 
 
         //扩展地图
-        exetendMap()
-
+        expandMap()
     }
 
     /**
      * 地图更新（绘制区域）
      * 地图扩展（不绘制）
      */
-    private fun exetendMap() {
+    private fun expandMap() {
         mBinding.tvExpend.onClick {
-
-            mBinding.mapView.invalidate()
-
             mBinding.mapView.isStartRevSubMaps = false
             mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_CREATE_MAP)
             MainController.sendStartPartialUpdate(list, mapID)
@@ -106,13 +102,15 @@ class ExpandMap2DActivity :
         mBinding.mapView.getExpandAreaView()!!
             .setOnExpandAreaCreatedListener(object : OnExpandAreaCreatedListener {
                 override fun onExpandAreaCreated(area: ExpandArea) {
-                    mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_EXTEND_MAP)
+                    list.add(area)
+                    mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_CREATE_MAP)
                     LogUtil.i("扩展地图 ${area}")
                 }
             })
 
         //扩展地图 重制区域
         mBinding.btnCleanArea.onClick {
+            list.clear()
             mBinding.mapView.resetExpandAreaView()
         }
     }
@@ -126,11 +124,11 @@ class ExpandMap2DActivity :
         }
         //接收子图数据
         LiveEventBus.get(KEY_UPDATE_SUB_MAPS, laser_t::class.java).observe(this) {
-            mBinding.mapView.parseSubMaps2D(it, 2)
+            mBinding.mapView.parseSubMaps2D(it, 1)
         }
         //子图优化 回环检测
         LiveEventBus.get(KEY_OPT_POSE, laser_t::class.java).observe(this) {
-            mBinding.mapView.updateOptPose2D(it, 2)
+            mBinding.mapView.updateOptPose2D(it, 1)
         }
         //接收创建地图中车体位置 导航->PAD
         LiveEventBus.get(KEY_UPDATE_POS, laser_t::class.java).observe(this) {

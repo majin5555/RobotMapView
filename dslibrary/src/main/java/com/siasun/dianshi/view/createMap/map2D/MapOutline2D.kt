@@ -152,12 +152,8 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
 
 
         //扩展时
-//        if (type == 1) {
-//
-//        } else {
-        //新建地图时
-        calBinding()
-//        }
+        calBinding(type)
+
 
 //
 //            val mTempMatrix = Matrix()
@@ -211,7 +207,7 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
     /**
      * 计算新建地图宽高
      */
-    private fun calBinding() {
+    private fun calBinding(type: Int = 0) {
         val mapView = parent.get() ?: return
 
         for (item in keyFrames2d) {
@@ -251,8 +247,22 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
         }
 
         // 计算整张地图的宽度和高度
-        mapView.mSrf.mapData.width = abs((maxTopRight.x - minBotLeft.x) / 0.05f)
-        mapView.mSrf.mapData.height = abs((maxTopRight.y - minBotLeft.y) / 0.05f)
+        val width = abs((maxTopRight.x - minBotLeft.x) / 0.05f)
+        val height = abs((maxTopRight.y - minBotLeft.y) / 0.05f)
+
+        if (type == 1) {
+            // 扩展地图时，如果子图的宽高大于底图的宽高，则使用子图的宽高
+            if (width > mapView.mSrf.mapData.width) {
+                mapView.mSrf.mapData.width = width
+            }
+            if (height > mapView.mSrf.mapData.height) {
+                mapView.mSrf.mapData.height = height
+            }
+        } else {
+            // 新建地图时，直接使用计算出的宽高
+            mapView.mSrf.mapData.width = width
+            mapView.mSrf.mapData.height = height
+        }
 
 //        Log.d(TAG, "左上 ${minTopLeft}")
 //        Log.d(TAG, "左下 ${minBotLeft}")
@@ -330,12 +340,9 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
         }
 
 //        updateKeyFrame2d()
-        //扩展时
-        if (type == 1) {
-        } else {
-            //新建地图时
-            calBinding()
-        }
+
+        calBinding(type)
+
 //        LogUtil.w("回环检测2D  end")
     }
 
