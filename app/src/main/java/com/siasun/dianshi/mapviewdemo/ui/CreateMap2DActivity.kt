@@ -126,7 +126,7 @@ class CreateMap2DActivity :
         }
         //接收创建地图中车体位置 导航->PAD
         LiveEventBus.get(KEY_UPDATE_POS, laser_t::class.java).observe(this) {
-            mBinding.mapView.parseLaserData2D(it)
+            mBinding.mapView.parseLaserData(it)
             if (it.rad0 > 0f) {
                 mBinding.tvMapSteps.text = "建图步数 ${it.rad0}"
             }
@@ -153,7 +153,6 @@ class CreateMap2DActivity :
                     mViewModel.downPngYaml(CREATE_MAP, 1)
 
                     //从建图模式到定位模式 后恢复地图不可旋转
-                    mBinding.mapView.isRouteMap = false
                     SEND_NAVI_HEART = false
 
                 }

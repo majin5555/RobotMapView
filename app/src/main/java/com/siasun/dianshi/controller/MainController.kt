@@ -471,6 +471,45 @@ object MainController {
 
 
     /**
+     * 请求导航添加人工约束节点
+     */
+    fun send3DConstraintNode() = MainController.myController.mSend3DConstraintNode()
+
+    /**
+     * 请求导航匹配节点
+     */
+    fun send3DMatchingNode(nodeID: Int) = MainController.myController.mSend3DMatchingNode(nodeID)
+
+    /**
+     * 请求导航读取配置参数
+     */
+    fun send3DReadConfig() = MainController.myController.mSend3DReadConfig()
+
+    /**
+     * 修改配置参数
+     */
+    fun send3DEditConfig(array: DoubleArray) = MainController.myController.mSend3DEditConfig(array)
+
+
+    /**
+     * pad向导航申请反光板地图
+     */
+    fun reflectorMapData(layerId: Int) = MainController.myController.mReflectorMapDate(layerId)
+
+    /**
+     * pad向导航发送显示高反光物体
+     */
+    fun sendReflectorAreaPoint(start: PointF, end: PointF, mapId: Int) =
+        MainController.myController.mSendReflectorAreaPoint(start, end, mapId)
+
+    /**
+     * pad向导航发送生成反光板地图
+     */
+    fun sendCreateReflectorMap(dParams: DoubleArray, mapId: Int) =
+        MainController.myController.mSendCreateReflectorMap(dParams, mapId)
+
+
+    /**
      * 相机标定 （name 0-4 代表0 1 2 3 4 号相机） 5 代表全部相机
      */
     fun sendCameraCalibration(name: String) = myController.cameraCalibration(name)

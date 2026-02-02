@@ -186,7 +186,6 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
 //            subMapData.matrix = mTempMatrix
 //            mTempMatrix.reset()
 
-            mapView.isRouteMap = true
             mapView.isStartRevSubMaps = true
 
             Log.e(

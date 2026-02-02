@@ -44,6 +44,7 @@ import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.UPDATE_POS
 import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.UPDATE_SUBMAPS
 import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.CmsPadInteraction_
+import com.siasun.dianshi.bean.ConstraintNode
 import com.siasun.dianshi.bean.PlanPathResult
 import com.siasun.dianshi.bean.PositingArea
 import com.siasun.dianshi.bean.TeachPoint
@@ -57,19 +58,27 @@ import com.siasun.dianshi.mapviewdemo.CLEAN_PATH_PLAN
 import com.siasun.dianshi.mapviewdemo.CarBody
 import com.siasun.dianshi.mapviewdemo.CmsBody
 import com.siasun.dianshi.mapviewdemo.GLOBAL_PATH_PLAN
+import com.siasun.dianshi.mapviewdemo.KET_CREATE_REFLECT_MAP_RESULT
+import com.siasun.dianshi.mapviewdemo.KET_MAP_UNDERGO_SIGNIFICANT_CHANGES_RESULT
 import com.siasun.dianshi.mapviewdemo.KEY_AGV_COORDINATE
 import com.siasun.dianshi.mapviewdemo.KEY_BOTTOM_CURRENT_POINT_CLOUD
 import com.siasun.dianshi.mapviewdemo.KEY_CLEANING_ID
 import com.siasun.dianshi.mapviewdemo.KEY_CLEANING_LAYER
+import com.siasun.dianshi.mapviewdemo.KEY_CONFIGURATION_PARAMETERS
+import com.siasun.dianshi.mapviewdemo.KEY_CONFIGURATION_PARAMETERS_RESULT
+import com.siasun.dianshi.mapviewdemo.KEY_CONSTRAINT_CONSTRAINT_NODE_RESULT
+import com.siasun.dianshi.mapviewdemo.KEY_CONSTRAINT_NODE
 import com.siasun.dianshi.mapviewdemo.KEY_CROSS_FLOOR_STAGE
 import com.siasun.dianshi.mapviewdemo.KEY_CURRENT_POINT_CLOUD
 import com.siasun.dianshi.mapviewdemo.KEY_EXTEND_LOAD_SUB_MAP
 import com.siasun.dianshi.mapviewdemo.KEY_FINISH_CLEAN_AREA_ID
+import com.siasun.dianshi.mapviewdemo.KEY_HIGHLIGHT_RESULT
 import com.siasun.dianshi.mapviewdemo.KEY_NAV_HEARTBEAT_STATE
 import com.siasun.dianshi.mapviewdemo.KEY_NAV_LOAD_SCAN_STATE_VALUE
 import com.siasun.dianshi.mapviewdemo.KEY_NEXT_CLEANING_AREA_ID
 import com.siasun.dianshi.mapviewdemo.KEY_OPT_POSE
 import com.siasun.dianshi.mapviewdemo.KEY_POSITING_AREA_VALUE
+import com.siasun.dianshi.mapviewdemo.KEY_REFLECT_MAP_RESULT
 import com.siasun.dianshi.mapviewdemo.KEY_SCHEDULED_TASK_REMINDER
 import com.siasun.dianshi.mapviewdemo.KEY_TASK_STATE
 import com.siasun.dianshi.mapviewdemo.KEY_TEACH_PATH
@@ -91,7 +100,9 @@ import lcm.lcm.LCM
 import lcm.lcm.LCMDataInputStream
 import lcm.lcm.LCMSubscriber
 import java.util.Timer
+import kotlin.collections.get
 import kotlin.concurrent.schedule
+import kotlin.text.toInt
 
 
 /**
@@ -219,6 +230,37 @@ class LCMController : AbsController(), LCMSubscriber {
                         NaviBody.NAVI_UI_COMMAND_LOAD_SCAN_STATE.value -> receiveLoadScanState(rtNew)
                         NaviBody.NAVI_UI_COMMAND_FINISH_WRITE_SLAM.value -> receiveFinishWriteSlam()
                         NaviBody.NAVI_UI_COMMAND_POSITING_AREA.value -> receivePositingArea(rtNew)
+                        NaviBody.NAVI_UI_COMMAND_CONSTRAINT_NODE.value -> receiveConstraintNode(
+                            rtNew
+                        )
+
+                        NaviBody.NAVI_UI_COMMAND_CONSTRAINT_CONSTRAINT_NODE_RESULT.value -> receiveConstraintConstraintNodeResult(
+                            rtNew
+                        )
+
+                        NaviBody.NAVI_UI_COMMAND_CONFIGURATION_PARAMETERS.value -> receiveConfigurationParameters(
+                            rtNew
+                        )
+
+                        NaviBody.NAVI_UI_COMMAND_CONFIGURATION_PARAMETERS_RESULT.value -> receiveConfigurationParametersResult(
+                            rtNew
+                        )
+
+                        NaviBody.NAVI_UI_COMMAND_REFLECTOR_MAP_DATA_RESULT.value -> receiveReflectMapResult(
+                            rtNew
+                        )
+
+                        NaviBody.NAVI_UI_COMMAND_HIGHLIGHT_POINT_RESULT.value -> receiveHighlightResult(
+                            rtNew
+                        )
+
+                        NaviBody.NAVI_UI_COMMAND_CREATE_REFLECTOR_MAP_RESULT.value -> receiveCreateReflectorMapResult(
+                            rtNew
+                        )
+
+                        NaviBody.NAVI_UI_COMMAND_MAP_UNDERGO_SIGNIFICANT_CHANGES.value -> receiveMapUndergoSignificantChanges(
+                            rtNew
+                        )
                     }
                 }
                 //导航->pad 接受点云数据
@@ -1157,6 +1199,81 @@ class LCMController : AbsController(), LCMSubscriber {
         pet.name = "camhub"
         mULCMHelper.sendLcmMsg(PERCEPTION_ASK_CAMHUB_COMMAND, pet)
 //        LogUtil.d("pad->pet 检测相机USB是否合理", null, TAG_PET)
+    }
+
+
+    /**
+     * 添加人工约束节点 (3D)
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun mSend3DConstraintNode() {
+        sendRobotControlNew(42, null, null, null, null, NAVI_SERVICE_COMMAND)
+    }
+
+    /**
+     * 匹配节点 (3D)
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun mSend3DMatchingNode(nodeID: Int) {
+        val iParams = ByteArray(1)
+        iParams[0] = nodeID.toByte()
+        sendRobotControlNew(43, null, iParams, null, null, NAVI_SERVICE_COMMAND)
+    }
+
+    /**
+     * 读取配置参数
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun mSend3DReadConfig() {
+        sendRobotControlNew(44, null, null, null, null, NAVI_SERVICE_COMMAND)
+    }
+
+    /**
+     * 修改配置参数
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun mSend3DEditConfig(array: DoubleArray) {
+        sendRobotControlNew(45, array, null, null, null, NAVI_SERVICE_COMMAND)
+    }
+
+    /**
+     * pad向导向发送反光板地图数据
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun mReflectorMapDate(layerId: Int) {
+        val iParams = ByteArray(1)
+        iParams[0] = 1
+        val sParams = arrayOfNulls<String>(1)
+        sParams[0] = layerId.toString()
+        sendRobotControlNew(46, null, iParams, sParams, null, NAVI_SERVICE_COMMAND)
+    }
+
+    /**
+     * pad向导航发送显示高反光物体
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun mSendReflectorAreaPoint(
+        start: PointF,
+        end: PointF,
+        mapId: Int
+    ) = sendReflectAreaPoint(start, end, mapId = mapId)
+
+    /**
+     * pad向导航发送生成反光板地图
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun mSendCreateReflectorMap(dParams: DoubleArray, mapId: Int) =
+        sendCreateReflectorMap(dParams, mapId = mapId)
+
+    /**
+     * pad向导航发送3d更新地图
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun mSend3DUpdateMap(
+        dParams: DoubleArray,
+        mapId: Int
+    ) {
+        send3DUpdateMap(dParams, mapId = mapId)
     }
 
     /**
@@ -2877,6 +2994,223 @@ class LCMController : AbsController(), LCMSubscriber {
         LogUtil.i("变化 接收导航定位区域${value}", null, TAG_NAV)
     }
 
+    /**
+     * @description  接收建图中导航约束节点
+     *
+     * @value
+     * @since 2024/11/27
+     */
+    var constraintNodeID = -1
+    private fun receiveConstraintNode(rtNew: robot_control_t_new) {
+        if (rtNew.sparams.isEmpty()) {
+            LogUtil.i("接收导航约束节点数据 sParams null")
+            return
+        }
+        if (rtNew.dparams.isEmpty()) {
+            LogUtil.i("接收导航约束节点数据 dParams null")
+            return
+        }
+        LogUtil.w("接收导航约束节点数据 ${rtNew.sparams[0].toInt()}")
+        if (constraintNodeID == rtNew.sparams[0].toInt()) {
+            return
+        } else {
+            constraintNodeID = rtNew.sparams[0].toInt()
+            val constraintNode = ConstraintNode(
+                rtNew.sparams[0].toInt(), rtNew.dparams[0], rtNew.dparams[1], rtNew.dparams[2]
+            )
+            LiveEventBus.get(KEY_CONSTRAINT_NODE, /* type = */ ConstraintNode::class.java)
+                .post(constraintNode)
+            LogUtil.i("变化 接收建图中导航约束节点${constraintNode}", null, TAG_NAV)
+        }
+    }
+
+
+    /**
+     * @description  接收约束节点匹配结果
+     *
+     * @value
+     * @since 2025/9/26
+     */
+    var constraintConstraintNodeResultID = -1
+    private fun receiveConstraintConstraintNodeResult(rtNew: robot_control_t_new) {
+        LogUtil.d("接收约束节点匹配结果 ${rtNew.bparams[0].toInt()}")
+
+        if (rtNew.iparams.isEmpty()) {
+            LogUtil.i("接收约束节点匹配结果 iparams null")
+            return
+        }
+        if (rtNew.bparams.isEmpty()) {
+            LogUtil.i("接收约束节点匹配结果 bparams null")
+            return
+        }
+
+        if (constraintConstraintNodeResultID == rtNew.bparams[0].toInt()) {
+            return
+        } else {
+            constraintConstraintNodeResultID = rtNew.bparams[0].toInt()
+            LiveEventBus.get(KEY_CONSTRAINT_CONSTRAINT_NODE_RESULT, Int::class.java)
+                .post(rtNew.iparams[0].toInt())
+            LogUtil.i("变化 接收约束节点匹配结果 ${rtNew.iparams[0].toInt()}", null, TAG_NAV)
+        }
+    }
+
+    /**
+     * @description  接收配置参数
+     *
+     * @value
+     * @since 2025/9/26
+     */
+
+    var configurationParametersID = -1
+    private fun receiveConfigurationParameters(rtNew: robot_control_t_new) {
+        LogUtil.d("接收配置参数 ${rtNew.bparams[0].toInt()}")
+
+        if (rtNew.dparams.isEmpty()) {
+            LogUtil.i("接收配置参数 dParams null")
+            return
+        }
+        if (rtNew.bparams.isEmpty()) {
+            LogUtil.i("接收配置参数 bparams null")
+            return
+        }
+
+        if (configurationParametersID == rtNew.bparams[0].toInt()) {
+            return
+        } else {
+            configurationParametersID = rtNew.bparams[0].toInt()
+            LiveEventBus.get(KEY_CONFIGURATION_PARAMETERS, DoubleArray::class.java)
+                .post(rtNew.dparams)
+            LogUtil.i("变化 接收配置参数 ${rtNew.dparams}", null, TAG_NAV)
+        }
+    }
+
+    /**
+     * @description  接收修改配置参数结果  0成功  1是失败
+     *
+     * @value
+     * @since 2025/9/26
+     */
+    var configurationParametersResultID = -1
+    private fun receiveConfigurationParametersResult(rtNew: robot_control_t_new) {
+        LogUtil.d("接收修改配置参数结果 ${rtNew.bparams[0].toInt()}")
+        if (rtNew.iparams.isEmpty()) {
+            LogUtil.i("接收修改配置参数结果 iParams null")
+            return
+        }
+        if (rtNew.bparams.isEmpty()) {
+            LogUtil.i("接收修改配置参数结果 bparams null")
+            return
+        }
+
+        if (configurationParametersResultID == rtNew.bparams[0].toInt()) {
+            return
+        } else {
+            configurationParametersResultID = rtNew.bparams[0].toInt()
+
+            LiveEventBus.get(KEY_CONFIGURATION_PARAMETERS_RESULT, Int::class.java)
+                .post(rtNew.iparams[0].toInt())
+            LogUtil.i("变化 接收修改配置参数结果 ${rtNew.iparams[0].toInt()}", null, TAG_NAV)
+        }
+    }
+
+
+    /**
+     * 导航向pad发送反光板地图数据
+     */
+    private fun receiveReflectMapResult(rtNew: robot_control_t_new) {
+        LogUtil.i("导航向pad发反光板地图数据 $rtNew", null, TAG_NAV)
+        LiveEventBus.get(KEY_REFLECT_MAP_RESULT, DoubleArray::class.java).post(rtNew.dparams)
+    }
+
+
+    /**
+     * 导航向pad返送高亮物体坐标
+     */
+
+    private fun receiveHighlightResult(rtNew: robot_control_t_new) {
+        LogUtil.i("导航向pad发送高亮物体 $rtNew", null, TAG_NAV)
+        LiveEventBus.get(KEY_HIGHLIGHT_RESULT, DoubleArray::class.java).post(rtNew.dparams)
+
+    }
+
+    /**
+     * 导航向pad发送生成发光板地图
+     */
+    private fun receiveCreateReflectorMapResult(rtNew: robot_control_t_new) {
+        LogUtil.i("导航向pad发送创建3d反光板 $rtNew", null, TAG_NAV)
+        LiveEventBus.get(KET_CREATE_REFLECT_MAP_RESULT, Int::class.java)
+            .post(rtNew.iparams[0].toInt())
+    }
+
+    private fun receiveMapUndergoSignificantChanges(rtNew: robot_control_t_new) {
+        LogUtil.i("导航向pad 更新/扩展地图后地图发生较大变化 $rtNew", null, TAG_NAV)
+        LiveEventBus.get(KET_MAP_UNDERGO_SIGNIFICANT_CHANGES_RESULT, Int::class.java)
+            .post(rtNew.iparams[0].toInt())
+    }
+
+
+    /**
+     * pad向导航申请显示高反光物体
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun sendReflectAreaPoint(start: PointF, end: PointF, count: Int = 1, mapId: Int) {
+
+        val minX: Float = start.x.coerceAtMost(end.x)
+        val minY: Float = start.y.coerceAtMost(end.y)
+        val maxX: Float = start.x.coerceAtLeast(end.x)
+        val maxY: Float = start.y.coerceAtLeast(end.y)
+
+        val iParams = ByteArray(1)
+        iParams[0] = count.toByte()
+
+        val sParams = arrayOfNulls<String>(1)
+        sParams[0] = "$mapId"
+
+        val dParams = DoubleArray(5)
+        dParams[0] = minX.toDouble()
+        dParams[1] = maxY.toDouble()
+
+        dParams[2] = maxX.toDouble()
+        dParams[3] = minY.toDouble()
+        dParams[4] = 0.0
+
+        sendRobotControlNew(47, dParams, iParams, sParams, null, NAVI_SERVICE_COMMAND)
+    }
+
+    /**
+     * pad向导航申请生成反光板地图
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun sendCreateReflectorMap(
+        dParams: DoubleArray,
+        count: Int = 1,
+        mapId: Int
+    ) {
+
+        val iParams = ByteArray(1)
+        iParams[0] = count.toByte()
+
+        val sParams = arrayOfNulls<String>(1)
+        sParams[0] = "$mapId"
+
+        sendRobotControlNew(48, dParams, iParams, sParams, null, NAVI_SERVICE_COMMAND)
+    }
+
+
+    /**
+     * pad导航发送3d更新地图
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun send3DUpdateMap(dParams: DoubleArray, count: Int = 1, mapId: Int) {
+
+        val iParams = ByteArray(1)
+        iParams[0] = count.toByte()
+
+        val sParams = arrayOfNulls<String>(1)
+        sParams[0] = "$mapId"
+
+        sendRobotControlNew(38, dParams, iParams, sParams, null, NAVI_SERVICE_COMMAND)
+    }
 
     /**
      * @description  导航写完定位区域数据

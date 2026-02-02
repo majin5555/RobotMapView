@@ -101,4 +101,28 @@ abstract class AbsController {
     abstract fun cameraCalibration(name: String)
     abstract fun askCamFirmware()
     abstract fun sendCameraUSBReasonable()
+
+    //请求导航添加人工约束节点
+    abstract fun mSend3DConstraintNode()
+
+    //请求导航匹配节点
+    abstract fun mSend3DMatchingNode(nodeID: Int)
+
+    //请求导航读取配置参数
+    abstract fun mSend3DReadConfig()
+
+    //修改配置参数
+    abstract fun mSend3DEditConfig(array: DoubleArray)
+
+    //pad向导航申请反光板地图数据
+    abstract fun mReflectorMapDate(layerId: Int)
+
+    //pad向导航发送显示高反光物体
+    abstract fun mSendReflectorAreaPoint(start: PointF, end: PointF, mapId: Int)
+
+    //pad向导航发送生成反光板地图
+    abstract fun mSendCreateReflectorMap(dParams: DoubleArray, mapId: Int)
+
+    //pad向导航发送更新地图
+    abstract fun mSend3DUpdateMap(dParams: DoubleArray,mapId: Int)
 }

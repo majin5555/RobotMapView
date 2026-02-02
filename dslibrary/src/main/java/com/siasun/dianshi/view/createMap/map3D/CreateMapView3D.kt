@@ -32,12 +32,16 @@ import java.lang.ref.WeakReference
 import java.util.concurrent.CopyOnWriteArrayList
 import androidx.core.content.withStyledAttributes
 import com.hjq.shape.layout.ShapeFrameLayout
+import com.siasun.dianshi.bean.ConstraintNode
+import com.siasun.dianshi.bean.KeyframePoint
 import com.siasun.dianshi.view.createMap.ExpandAreaView
 import com.siasun.dianshi.view.PngMapView
 import com.siasun.dianshi.view.SlamWareBaseView
 import com.siasun.dianshi.view.createMap.RobotViewCreateMap
 import java.math.RoundingMode
 import java.text.DecimalFormat
+import kotlin.math.cos
+import kotlin.math.sin
 
 /**
  * 地图画布
@@ -45,6 +49,8 @@ import java.text.DecimalFormat
  */
 class CreateMapView3D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(context, attrs),
     SlamGestureDetector.OnRPGestureListener, MapViewInterface {
+
+    private val TAG = "CreateMapView3D"
 
     // 当前工作模式
     private var currentWorkMode = CreateMapWorkMode.MODE_SHOW_MAP
@@ -64,12 +70,12 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
     private var mPngMapView: PngMapView? = null //png地图
     private var mMapOutline3D: MapOutline3D? = null //地图轮廓
     private var mUpLaserScanView: UpLaserScanView3D? = null//上激光点云
+    var mConstrainNodes: ConstrainNodes? = null//人工约束节点
     private var mCreateMapRobotView: RobotViewCreateMap<CreateMapView3D>? = null //机器人图标
     private var mExpandAreaView: ExpandAreaView<CreateMapView3D>? = null //地图更新区域
 
 
     var isMapping = false//是否建图标志
-    var isRouteMap = false//是否可以旋转地图
 
     //是否第一次接收到子图数据，如果没收到子图，直接跳过旋转环境
     var isStartRevSubMaps = false
@@ -111,6 +117,7 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
         val lp = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
         mPngMapView = PngMapView(context)
         mUpLaserScanView = UpLaserScanView3D(context, mMapView)
+        mConstrainNodes = ConstrainNodes(context, mMapView)
         mMapOutline3D = MapOutline3D(context, mMapView)
         mCreateMapRobotView = RobotViewCreateMap(context, mMapView)
         mExpandAreaView = ExpandAreaView(context, mMapView)
@@ -121,6 +128,8 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
         addMapLayers(mExpandAreaView)
         //地图轮廓
         addMapLayers(mMapOutline3D)
+        //人工约束节点
+        addMapLayers(mConstrainNodes)
         //上激光点云
         addMapLayers(mUpLaserScanView)
         //机器人图标
@@ -443,28 +452,68 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
         setCentred()
     }
 
-
     /**
-     * 外部接口：更新子图数据 （建图模式） 2D
+     * 外部接口 解析激光点云数据（建图模式） 3D
      */
-    fun parseSubMaps2D(mLaserT: laser_t, type: Int) {
-        mMapOutline3D?.parseSubMaps2D(mLaserT, type)
-        // 建图模式下，保持车体居中显示
+    fun parseLaserData(laserData: laser_t) {
+
+        if (laserData.ranges.size <= 6) return // 最少包含机器人位置数据
+
+        // 更新机器人位置（始终需要处理，不参与降采样）
+        updateRobotPose(laserData.ranges[0], laserData.ranges[1], laserData.ranges[2])
+        //保持居中
         if (currentWorkMode == CreateMapWorkMode.MODE_CREATE_MAP || currentWorkMode == CreateMapWorkMode.MODE_EXTEND_MAP) {
             keepRobotCentered()
         }
+        // 动态计算采样间隔（根据数据量和缩放比例）
+        val totalPoints = (laserData.ranges.size - 6) / 3 // 总激光点数（排除机器人位置）
+        val baseSampleInterval = when {
+            totalPoints > 600 -> 10  // 数据量极大时，间隔10
+            totalPoints > 400 -> 5  // 数据量较大时，间隔5
+            else -> 2  // 数据量较小时，间隔2
+        }
+        val dynamicSampleInterval =
+            maxOf(baseSampleInterval, (1f / mSrf.scale).toInt()) // 缩放越小，间隔越大
+
+        // 解析地图元数据（关键帧或非关键帧均需要）
+        mSrf.mapData.height = laserData.intensities[0]
+        mSrf.mapData.width = laserData.intensities[1]
+        mSrf.mapData.originX = laserData.intensities[2]
+        mSrf.mapData.originY = laserData.intensities[3]
+        mSrf.mapData.resolution = laserData.intensities[4]
+        Log.i(TAG, "parseLaserData  mSrf.mapData ${mSrf.mapData}")
+
+        val rad0 = laserData.rad0.toInt()
+        var keyPoints: MutableList<KeyframePoint>? = null
+        if (rad0 != -1) {
+            keyPoints = mutableListOf()
+        }
+
+        // 遍历激光点，按采样间隔降采样
+        for (i in 0 until totalPoints step dynamicSampleInterval) {
+            val index = 6 + i * 6 // 跳过机器人位置数据（前6个元素）
+            if (index + 2 >= laserData.ranges.size) break // 越界保护
+
+            val laserX = laserData.ranges[index]
+            val laserY = laserData.ranges[index + 1]
+
+            // 坐标变换（仅计算有效点）
+            val cosT = cos(robotPose[2])
+            val sinT = sin(robotPose[2])
+            val laserXNew = laserX * cosT - laserY * sinT + robotPose[0]
+            val laserYNew = laserX * sinT + laserY * cosT + robotPose[1]
+
+            mUpLaserScanView?.updateUpLaserScan(laserXNew, laserYNew)
+
+            // 仅在关键帧时收集完整点云数据
+            keyPoints?.add(KeyframePoint(laserX, laserY, laserXNew, laserYNew))
+        }
+
+        // 处理关键帧数据（非关键帧时不执行）
+        if (rad0 != -1) {
+            mMapOutline3D?.addKeyFrames(laserData, keyPoints, robotPose)
+        }
     }
-
-
-    /**
-     * 外部接口 解析激光点云数据（建图模式） 2D
-     */
-    fun parseLaserData2D(laserData: laser_t) {
-        // 更新机器人位置（始终需要处理，不参与降采样）
-        updateRobotPose(laserData.ranges[0], laserData.ranges[1], laserData.ranges[2])
-        mUpLaserScanView?.updateUpLaserScan(laserData)
-    }
-
 
     /**
      * 更新机器人位置（弧度制）
@@ -483,6 +532,20 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
 
 
     /**
+     * 外部接口：更新关键帧数据 nav做回环检测 3D
+     */
+    fun parseOptPose(laserData: laser_t) = mMapOutline3D?.parseOptPose(laserData)
+
+    /**
+     * 外部接口：添加人工约束节点数据 3D
+     */
+
+    fun addConstraintNodes(constraintNode: ConstraintNode) {
+        mConstrainNodes?.addConstraintNodes(constraintNode)
+    }
+
+
+    /**
      * 辅助方法：将科学计数法表示的float值转换为普通小数表示的float值
      * 解决激光数据中theta值（laserData.ranges[2]）可能以科学计数法形式存在的问题
      */
@@ -490,14 +553,6 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
     private fun convertScientificToDecimal(value: Float): Float {
         df.setRoundingMode(RoundingMode.HALF_UP) // 设置四舍五入
         return df.format(value).toFloat()
-    }
-
-    /**
-     * 回环检测2D
-     * 输入数据 世界坐标系下的位姿态
-     */
-    fun updateOptPose2D(mLaserT: laser_t, type: Int) {
-        mMapOutline3D?.updateOptPose2D(mLaserT, type)
     }
 
     /**

@@ -1,25 +1,18 @@
 package com.siasun.dianshi.mapviewdemo
 
 /**
- * @Author: CheFuX1n9
- * @Date: 2024/4/19 16:48
+ * @Author: MJ
+ * @Date: 2026/1/31
  * @Description: LCM相关常量管理类
  */
 
 /**
  * -------------------Pad To Server Command Id Start--------------------
  */
-// 获取全部版本号
-const val GET_ALL_VERSION: Byte = 1
 
-// 获取OTA升级信息
-const val GET_OTA_UPDATE: Byte = 9
 
 // Server发送心跳
 const val SERVER_HEART: Byte = 11
-
-// 重新生成PM.png
-const val REGENERATE_PNG: Byte = 10
 
 /**
  * -------------------Server To Pad Command Id End----------------------
@@ -74,6 +67,19 @@ enum class NaviBody(val value: Int) {
     NAVI_UI_COMMAND_LOAD_SCAN_STATE(65),//扫描新环境状态
     NAVI_UI_COMMAND_FINISH_WRITE_SLAM(66),//导航写完slam区域通知pad
     NAVI_UI_COMMAND_POSITING_AREA(67),//接收区域定位数据
+    NAVI_UI_COMMAND_CONSTRAINT_NODE(69),//接收约束节点数据
+    NAVI_UI_COMMAND_CONSTRAINT_CONSTRAINT_NODE_RESULT(70),//接收约束节点匹配结果
+    NAVI_UI_COMMAND_CONFIGURATION_PARAMETERS(71),//接收配置参数
+    NAVI_UI_COMMAND_CONFIGURATION_PARAMETERS_RESULT(72),//配置参数结果
+
+    NAVI_UI_COMMAND_REFLECTOR_MAP_DATA_RESULT(74),//导航向pad发送反光板地图数据
+
+    NAVI_UI_COMMAND_HIGHLIGHT_POINT_RESULT(75),//导航向pad发送高亮物体坐标
+
+    NAVI_UI_COMMAND_CREATE_REFLECTOR_MAP_RESULT(76),//导航向pad发送生成反光板地图
+
+    NAVI_UI_COMMAND_MAP_UNDERGO_SIGNIFICANT_CHANGES(77), //导航向pad发送 更新/拓展地图后发生较大变化
+
 }
 
 /**
@@ -318,6 +324,23 @@ const val KEY_JUMP_MNG_ELEVATOR: String = "key_jump_mng_elevator"
 const val KEY_NEXT_CLEANING_AREA_ID = "key_next_cleaning_area_id"
 const val KEY_CLEANING_LAYER = "key_cleaning_layer"
 
+const val KEY_CONSTRAINT_NODE = "key_constraint_node"
+const val KEY_CONSTRAINT_CONSTRAINT_NODE_RESULT = "key_constraint_constraint_node_result"
+const val KEY_CONFIGURATION_PARAMETERS = "key_configuration_parameters"
+const val KEY_CONFIGURATION_PARAMETERS_RESULT = "key_configuration_parameters_result"
+
+//导航返回反光板地图数据
+const val KEY_REFLECT_MAP_RESULT = "key_reflect_map_result"
+
+//导航返回高亮物体
+const val KEY_HIGHLIGHT_RESULT = "key_highlight_result"
+
+//导航返回生成反光板地图
+const val KET_CREATE_REFLECT_MAP_RESULT = "ket_create_reflect_map_result"
+
+//导航返回 更新/扩展地图后地图发生较大变化
+const val KET_MAP_UNDERGO_SIGNIFICANT_CHANGES_RESULT = "ket_map_undergo_significant_changes_result"
+
 /**
  * ------------------LCM常量 End----------------
  */
@@ -327,82 +350,12 @@ object RunningState {
 }
 
 /**
- *  本地任务 所有任务状态
- */
-enum class PadTaskState {
-    START_TASK, RESTART_TASK, PAUSE_TASK, STOP_TASK
-}
-
-/**
- * pad 当前本地任务状态
- */
-object PadRunningTaskState {
-    var PAD_CURRENT_TASK_STATE: PadTaskState = PadTaskState.STOP_TASK
-}
-
-
-/**
- * 路径管理 区域管理
- */
-enum class MenuState {
-    PATH_MANAGEMENT, AREA_MANAGEMENT
-}
-
-object PadMenuClick {
-    var PAD_CLICK_MENU: MenuState = MenuState.PATH_MANAGEMENT
-}
-
-/**
  * 下载地图  1环境预览  2 扫描新环境 3 环境扩展 4 去除噪点
  */
 const val PREVIEW_MAP = 1
 const val CREATE_MAP = 2
 const val EXTEND_MAP = 3
 const val REMOVE_NOISE_MAP = 4
-
-
-/**
- * 充电换水状态
- */
-
-const val CHARGE_WATER_STATE1 = 1//车体申请一体机中
-const val CHARGE_WATER_STATE2 = 2//申请成功,车体等待接收到红外对射信号
-const val CHARGE_WATER_STATE3 = 3//对射接收成功,等待推杆伸咄
-const val CHARGE_WATER_STATE4 = 4//推杆伸出到位,加排水进行中
-const val CHARGE_WATER_STATE5 = 5//车体重新对接一体机进行中
-const val CHARGE_WATER_STATE6 = 6//车体换水完成
-const val CHARGE_WATER_STATE7 = 7//车体处于只充电状态
-const val CHARGE_WATER_STATE8 = 8//车体处于加排水出现超的时
-
-
-//普通用户默认密码
-const val REGULAR_USER_PASSWORD = "111111"
-
-//高级用户默认密码
-const val ADVANCED_USER_PASSWORD = "123456"
-
-
-//普通任务
-const val NORMAL_TASK = 1
-
-//定时任务
-const val TIMER_TASK = 2
-
-
-//屏幕保护空闲时间
-const val SCREEN_SAVER_FREE_TIME = 90
-
-//下发任务 屏幕延时时间
-const val SCREEN_SAVER_DELAY_TIME = 0
-
-
-//自动清扫页面->任务列表页面
-const val REQ_TASKLIST: Int = 1002
-const val RES_TASKLIST: Int = 1003
-
-//手动清扫>手动清扫详情
-const val REQ_CLEAN_MANUAL: Int = 1004
-const val RES_CLEAN_MANUAL: Int = 1005
 
 
 // 全局路径规划
@@ -420,52 +373,4 @@ var PATH_MODE = 0
 var PATH_LINE = 0
 var PATH_BEZIER = 1
 
-var CLEAN_MODE_DEFAULT = 1 //自动模式清扫模式默认值（标准清扫）
-
-
-//清扫模式常量
-//标准
-const val STANDARD_CLEAN = "standard_clean"
-
-//重压
-const val HEAVY_PRESSURE = "heavy_pressure"
-
-//吸污
-const val SEWAGE_SUCTION = "sewage_suction"
-
-//干扫
-const val DRY_SCANNING = "dry_scanning"
-
-//走行
-const val WALK = "walk"
-
-//尘推
-const val DUST_PILE = "dust_pile"
-
-//标准
-const val CLEAN_STANDARD = 1
-
-//重压
-const val CLEAN_HEAVY_PRESSURE = 2
-
-//吸污水
-const val CLEAN_SUCK_SEWAGE = 3
-
-//干扫
-const val CLEAN_DRY_DUST = 4
-
-//行走
-const val CLEAN_MOVE = 5
-
-//尘推
-const val CLEAN_DUST_MOP = 6
-
-//单地图放1层
-const val SINGLE_MAP_ID = 1
-
-//路径管理
-const val MNG_PATH = 1
-
-//区域管理
-const val MNG_AREA = 2
 

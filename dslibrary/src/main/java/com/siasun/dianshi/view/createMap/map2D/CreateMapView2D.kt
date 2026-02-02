@@ -69,7 +69,6 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
     private var mCreateMapRobotView: RobotViewCreateMap<CreateMapView2D>? = null //机器人图标
 
     var isMapping = false//是否建图标志
-    var isRouteMap = false//是否可以旋转地图
 
     //是否第一次接收到子图数据，如果没收到子图，直接跳过旋转环境
     var isStartRevSubMaps = false
@@ -459,7 +458,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
     /**
      * 外部接口 解析激光点云数据（建图模式） 2D
      */
-    fun parseLaserData2D(laserData: laser_t) {
+    fun parseLaserData(laserData: laser_t) {
         // 更新机器人位置（始终需要处理，不参与降采样）
         updateRobotPose(laserData.ranges[0], laserData.ranges[1], laserData.ranges[2])
         mUpLaserScanView?.updateUpLaserScan(laserData)
