@@ -45,6 +45,7 @@ import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.UPDATE_SUBMAPS
 import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.CmsPadInteraction_
 import com.siasun.dianshi.bean.ConstraintNode
+import com.siasun.dianshi.bean.PartialUpdateArea
 import com.siasun.dianshi.bean.PlanPathResult
 import com.siasun.dianshi.bean.PositingArea
 import com.siasun.dianshi.bean.TeachPoint
@@ -102,6 +103,7 @@ import lcm.lcm.LCMSubscriber
 import java.util.Timer
 import kotlin.collections.get
 import kotlin.concurrent.schedule
+import kotlin.text.toDouble
 import kotlin.text.toInt
 
 
@@ -515,8 +517,41 @@ class LCMController : AbsController(), LCMSubscriber {
     /**
      * pad->导航 开始局部更新
      */
-//    override fun mSendStartPartialUpdate(mList: MutableList<PartialUpdateArea>, mapID: Int) =
-//        sendStartPartialUpdate(mList, mapID)
+    override fun mSendStartPartialUpdate(mList: MutableList<PartialUpdateArea>, mapID: Int) =
+        sendStartPartialUpdate(mList, mapID)
+
+
+
+    /**
+     * pad->导航 开始地图更新
+     */
+    @SuppressLint("NewApi")
+    private fun sendStartPartialUpdate(mList: MutableList<PartialUpdateArea>, mapID: Int) {
+        val rt = robot_control_t_new()
+        rt.commandid = 38
+
+        if (mList.size > 0) {
+            rt.niparams = 1
+            val mIparams = ByteArray(mList.size)
+            mIparams[0] = (mList.size).toByte()
+
+            val mDparams = DoubleArray((4 * mList.size))
+            mList.forEachIndexed { index, list ->
+                mDparams[index * 4] = list.start.x.toDouble()
+                mDparams[index * 4 + 1] = list.start.y.toDouble()
+                mDparams[index * 4 + 2] = list.end.x.toDouble()
+                mDparams[index * 4 + 3] = list.end.y.toDouble()
+            }
+
+            rt.iparams = mIparams
+            rt.ndparams = (4 * mList.size)
+            rt.dparams = mDparams
+        }
+        rt.nsparams = 1
+        rt.sparams = arrayOf("$mapID")
+        LogUtil.i("pad->导航 发送开始地图更新 ${mList}")
+        mULCMHelper.sendLcmMsg(NAVI_SERVICE_COMMAND, rt)
+    }
 
     /**
      * pad->导航 强制上线

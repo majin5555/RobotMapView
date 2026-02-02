@@ -72,6 +72,26 @@
             app:layout_constraintEnd_toEndOf="parent" />
 
 
+        <Button
+            android:id="@+id/tv_expend"
+            android:layout_width="180dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="扩展地图"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+
+        <Button
+            android:id="@+id/tv_expend_jvbu"
+            android:layout_width="180dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="局部更新"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+
     </LinearLayout>
 
 

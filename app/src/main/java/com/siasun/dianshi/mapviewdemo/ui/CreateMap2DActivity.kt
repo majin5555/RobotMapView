@@ -11,6 +11,7 @@ import com.siasun.dianshi.ConstantBase
 import com.siasun.dianshi.GlobalVariable.SEND_NAVI_HEART
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.bean.ExpandArea
+import com.siasun.dianshi.bean.PartialUpdateArea
 import com.siasun.dianshi.controller.MainController
 import com.siasun.dianshi.view.createMap.ExpandAreaView.OnExpandAreaCreatedListener
 import com.siasun.dianshi.dialog.CommonWarnDialog
@@ -38,6 +39,8 @@ class CreateMap2DActivity :
     private val mTimer = Timer()
 
     val mapID = 1
+
+    val list: MutableList<PartialUpdateArea> = mutableListOf()
 
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
@@ -68,6 +71,8 @@ class CreateMap2DActivity :
         }
 
 
+
+
         //停止扫描
         mBinding.tvStop.onClick {
             //结束建图指令
@@ -76,8 +81,13 @@ class CreateMap2DActivity :
             ToastUtils.showShort("停止扫描")
         }
 
+        //加载地图
+        mBinding.mapView.loadMap(
+            ConstantBase.getFilePath(mapID, ConstantBase.PAD_MAP_NAME_PNG),
+            ConstantBase.getFilePath(mapID, ConstantBase.PAD_MAP_NAME_YAML)
+        )
         //扩展地图
-//      exetendMap()
+        exetendMap()
 
     }
 
@@ -86,11 +96,18 @@ class CreateMap2DActivity :
      * 地图扩展（不绘制）
      */
     private fun exetendMap() {
-        //加载地图
-        mBinding.mapView.loadMap(
-            ConstantBase.getFilePath(mapID, ConstantBase.PAD_MAP_NAME_PNG),
-            ConstantBase.getFilePath(mapID, ConstantBase.PAD_MAP_NAME_YAML)
-        )
+        //开始扫描
+        mBinding.tvExpend.onClick {
+
+            mBinding.mapView.invalidate()
+
+            mBinding.mapView.isStartRevSubMaps = false
+            mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_CREATE_MAP)
+            MainController.sendStartPartialUpdate(list, mapID)
+            showLoading("开始扩展")
+            ToastUtils.showShort("开始扩展")
+            LogUtil.i("开始扩展", null, TAG_NAV)
+        }
 
         //扩展地图 添加区域
         mBinding.btnSettingArea.onClick {
@@ -133,7 +150,6 @@ class CreateMap2DActivity :
                 mBinding.tvMapSteps.text = "建图步数 ${it.rad0}"
             }
         }
-
     }
 
     @SuppressLint("SuspiciousIndentation")
@@ -217,10 +233,12 @@ class CreateMap2DActivity :
         CommonWarnDialog.Builder(this).setMsg("保存地图").setOnCommonWarnDialogListener(object :
             CommonWarnDialog.Builder.CommonWarnDialogListener {
             override fun confirm() {
-                LogUtil.i("mBinding.mapView.mMapRotate ${RadianUtil.toRadians(mBinding.mapView.mMapRotate)}")
+                LogUtil.i("mBinding.mapView.mMapRotateRadians ${mBinding.mapView.mMapRotateRadians}")
                 //开始保存地图
                 MainController.saveEnvironment(
-                    1, rotate = RadianUtil.toRadians(mBinding.mapView.mMapRotate), mapId = mapID
+                    1,
+                    rotate = RadianUtil.toRadians(mBinding.mapView.mMapRotateRadians),
+                    mapId = mapID
                 )
                 SEND_NAVI_HEART = true
 //                    showLoading("保存地图中")
