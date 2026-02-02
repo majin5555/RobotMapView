@@ -73,12 +73,11 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         canvas.save()
-        // 只有在绘制启用状态下才绘制点云
         if (keyFrames2d.isNotEmpty()) {
             val mapView = parent.get() ?: return
 
             keyFrames2d.values.forEach { subMap ->
-                val leftTop = mapView.mSrf.worldToScreen(
+                val leftTop = mapView.worldToScreen(
                     subMap.leftTop.x, subMap.leftTop.y
                 )
                 canvas.drawBitmap(
@@ -95,85 +94,81 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
      * 外部接口：更新子图数据 2D
      */
     fun parseSubMaps2D(mLaserT: laser_t, type: Int) {
-        synchronized(keyFrames2d) {
-            val mapView = parent.get() ?: return
+        val mapView = parent.get() ?: return
 
-            val subMapData = SubMapData()
-            //子图ID
-            subMapData.id = mLaserT.rad0.toInt()
-            Log.d(TAG, "子图 radID  子图索引 ${subMapData.id}")
+        val subMapData = SubMapData()
+        //子图ID
+        subMapData.id = mLaserT.rad0.toInt()
+//        Log.d(TAG, "子图 radID  子图索引 ${subMapData.id}")
+//
+//        //子图 x方向格子数量 子图宽度
+//        subMapData.width = mLaserT.ranges[0]
+//        Log.d(
+//            TAG, "子图 mLaserT.ranges[0] x方向格子数量 子图宽度 ${subMapData.width}"
+//        )
+//        //子图 y方向格子数量 子图高度
+//        subMapData.height = mLaserT.ranges[1]
+//        Log.d(
+//            TAG, "子图 mLaserT.ranges[1] y方向格子数量 子图高度 ${subMapData.height}"
+//        )
+//
+//        //新增读取子图右上角世界坐标
+//        subMapData.originX = mLaserT.ranges[2]
+//        Log.d(
+//            TAG, "子图 mLaserT.ranges[2] 新增读取子图右上角世界坐标 originX ${subMapData.originX}"
+//        )
+//        subMapData.originY = mLaserT.ranges[3]
+//        Log.d(
+//            TAG, "子图 mLaserT.ranges[3] 新增读取子图右上角世界坐标 originY ${subMapData.originY}"
+//        )
+//        subMapData.originTheta = mLaserT.ranges[4]
+//        Log.d(
+//            TAG,
+//            "子图 mLaserT.ranges[4] 新增读取子图右上角世界坐标 originTheta ${subMapData.originTheta}"
+//        )
+//        subMapData.optMaxTempX = mLaserT.ranges[5]
+//        Log.d(TAG, "子图 mLaserT.ranges[5] optMaxTempX  ${subMapData.optMaxTempX}")
+//        subMapData.optMaxTempY = mLaserT.ranges[6]
+//        Log.d(TAG, "子图 mLaserT.ranges[6] optMaxTempY  ${subMapData.optMaxTempY}")
+//        subMapData.optMaxTempTheta = mLaserT.ranges[7]
+//        Log.d(
+//            TAG, "子图 mLaserT.ranges[7] optMaxTempXTheta   ${subMapData.optMaxTempTheta}"
+//        )
 
-            //子图 x方向格子数量 子图宽度
-            subMapData.width = mLaserT.ranges[0]
-            Log.d(
-                TAG, "子图 mLaserT.ranges[0] x方向格子数量 子图宽度 ${subMapData.width}"
-            )
-            //子图 y方向格子数量 子图高度
-            subMapData.height = mLaserT.ranges[1]
-            Log.d(
-                TAG, "子图 mLaserT.ranges[1] y方向格子数量 子图高度 ${subMapData.height}"
-            )
+        // 各格子概率值
+        subMapData.indexCount = mLaserT.intensities.size
+        //所有概率点的集合
+        for (intensity in mLaserT.intensities) {
+            subMapData.intensitiesList.add(intensity.toInt())
+        }
 
-            //新增读取子图右上角世界坐标
-            subMapData.originX = mLaserT.ranges[2]
-            Log.d(
-                TAG,
-                "子图 mLaserT.ranges[2] 新增读取子图右上角世界坐标 originX ${subMapData.originX}"
-            )
-            subMapData.originY = mLaserT.ranges[3]
-            Log.d(
-                TAG,
-                "子图 mLaserT.ranges[3] 新增读取子图右上角世界坐标 originY ${subMapData.originY}"
-            )
-            subMapData.originTheta = mLaserT.ranges[4]
-            Log.d(
-                TAG,
-                "子图 mLaserT.ranges[4] 新增读取子图右上角世界坐标 originTheta ${subMapData.originTheta}"
-            )
-            subMapData.optMaxTempX = mLaserT.ranges[5]
-            Log.d(TAG, "子图 mLaserT.ranges[5] optMaxTempX  ${subMapData.optMaxTempX}")
-            subMapData.optMaxTempY = mLaserT.ranges[6]
-            Log.d(TAG, "子图 mLaserT.ranges[6] optMaxTempY  ${subMapData.optMaxTempY}")
-            subMapData.optMaxTempTheta = mLaserT.ranges[7]
-            Log.d(
-                TAG, "子图 mLaserT.ranges[7] optMaxTempXTheta   ${subMapData.optMaxTempTheta}"
-            )
+        //创建子图bitmap对象
+        buildSubMapTileLine(subMapData)
 
-            // 各格子概率值
-            subMapData.indexCount = mLaserT.intensities.size
-            //所有概率点的集合
-            for (intensity in mLaserT.intensities) {
-                subMapData.intensitiesList.add(intensity.toInt())
-            }
+        //右上角角物理坐标   (世界坐标系)
+        subMapData.rightTop.x = subMapData.originX
+        subMapData.rightTop.y = subMapData.originY
 
-            //创建子图bitmap对象
-            buildSubMapTileLine(subMapData)
+        //右下角角物理坐标   (世界坐标系)
+        subMapData.rightBottom.x = subMapData.originX
+        subMapData.rightBottom.y = subMapData.originY - (subMapData.percent * subMapData.height)
 
-            //右上角角物理坐标   (世界坐标系)
-            subMapData.rightTop.x = subMapData.originX
-            subMapData.rightTop.y = subMapData.originY
+        //左上角物理坐标  (世界坐标系)
+        subMapData.leftTop.x = subMapData.rightTop.x - (subMapData.percent * subMapData.width)
+        subMapData.leftTop.y = subMapData.originY
 
-            //右下角角物理坐标   (世界坐标系)
-            subMapData.rightBottom.x = subMapData.originX
-            subMapData.rightBottom.y = subMapData.originY - (subMapData.percent * subMapData.height)
-
-            //左上角物理坐标  (世界坐标系)
-            subMapData.leftTop.x = subMapData.rightTop.x - (subMapData.percent * subMapData.width)
-            subMapData.leftTop.y = subMapData.originY
-
-            //左下角坐标 (世界坐标系)
-            subMapData.leftBottom.x =
-                subMapData.rightTop.x - (subMapData.percent * subMapData.width)
-            subMapData.leftBottom.y = subMapData.originY - (subMapData.percent * subMapData.height)
+        //左下角坐标 (世界坐标系)
+        subMapData.leftBottom.x = subMapData.rightTop.x - (subMapData.percent * subMapData.width)
+        subMapData.leftBottom.y = subMapData.originY - (subMapData.percent * subMapData.height)
 
 
-            //扩展时
-            if (type == 1) {
-
-            } else {
-                //新建地图时
-                calBinding()
-            }
+        //扩展时
+//        if (type == 1) {
+//
+//        } else {
+        //新建地图时
+        calBinding()
+//        }
 
 //
 //            val mTempMatrix = Matrix()
@@ -185,14 +180,12 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
 //            mTempMatrix.postTranslate(screenLeftTop.x, screenLeftTop.y)
 //            subMapData.matrix = mTempMatrix
 //            mTempMatrix.reset()
+        //存储子图数据
+        keyFrames2d[subMapData.id] = subMapData
+        mapView.isStartRevSubMaps = true
 
-            mapView.isStartRevSubMaps = true
-
-            Log.e(
-                TAG, "整张 地图的信息  keyFrames2d keyFrames2d.size ${keyFrames2d.size}"
-            )
-            Log.w(TAG, "整张 地图的信息  mSrf.mapData ${mapView.mSrf.mapData}")
-        }
+        Log.e(TAG, "整张 地图的信息  keyFrames2d keyFrames2d.size ${keyFrames2d.size}")
+        Log.w(TAG, "整张 地图的信息  mSrf.mapData ${mapView.mSrf.mapData}")
         postInvalidate()
     }
 
@@ -272,12 +265,12 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
         mapView.mSrf.mapData.width = abs((maxTopRight.x - minBotLeft.x) / 0.05f)
         mapView.mSrf.mapData.height = abs((maxTopRight.y - minBotLeft.y) / 0.05f)
 
-//        Log.d(TAG,"左上 ${minTopLeft}")
-//        Log.d(TAG,"左下 ${minBotLeft}")
-//        Log.d(TAG,"右上 ${maxTopRight}")
-//        Log.d(TAG,"右下 ${maxBottomRight}")
-//        Log.d(TAG,"整张地图的宽度 ${mSrf.mapData.mWidth}")
-//        Log.d(TAG,"整张地图的高度 ${mSrf.mapData.mHeight}")
+        Log.d(TAG, "左上 ${minTopLeft}")
+        Log.d(TAG, "左下 ${minBotLeft}")
+        Log.d(TAG, "右上 ${maxTopRight}")
+        Log.d(TAG, "右下 ${maxBottomRight}")
+        Log.d(TAG, "整张地图的宽度 ${mapView.mSrf.mapData.width}")
+        Log.d(TAG, "整张地图的高度 ${mapView.mSrf.mapData.height}")
     }
 
     /**

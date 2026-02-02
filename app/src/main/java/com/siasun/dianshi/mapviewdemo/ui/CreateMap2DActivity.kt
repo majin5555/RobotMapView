@@ -43,16 +43,6 @@ class CreateMap2DActivity :
     override fun initView(savedInstanceState: Bundle?) {
         MainController.init()
 
-        exetendMap()
-        //加载地图
-        mBinding.mapView.loadMap(
-            ConstantBase.getFilePath(mapID, ConstantBase.PAD_MAP_NAME_PNG),
-            ConstantBase.getFilePath(mapID, ConstantBase.PAD_MAP_NAME_YAML)
-        )
-
-
-
-
         mTimer.schedule(object : TimerTask() {
             override fun run() {
                 if (SEND_NAVI_HEART) {
@@ -65,7 +55,6 @@ class CreateMap2DActivity :
         //保存
         mBinding.tvSave.onClick {
             showSavaMapDialog()
-
         }
 
         //开始扫描
@@ -87,19 +76,27 @@ class CreateMap2DActivity :
             ToastUtils.showShort("停止扫描")
         }
 
+        //扩展地图
+//      exetendMap()
 
     }
 
+    /**
+     * 地图更新（绘制区域）
+     * 地图扩展（不绘制）
+     */
     private fun exetendMap() {
+        //加载地图
+        mBinding.mapView.loadMap(
+            ConstantBase.getFilePath(mapID, ConstantBase.PAD_MAP_NAME_PNG),
+            ConstantBase.getFilePath(mapID, ConstantBase.PAD_MAP_NAME_YAML)
+        )
+
+        //扩展地图 添加区域
         mBinding.btnSettingArea.onClick {
-            //扩展地图
             mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION)
-
         }
-        mBinding.btnCleanArea.onClick {
-            mBinding.mapView.resetExpandAreaView()
-        }
-
+        //添加区域监听 获取添加区域的世界坐标
         mBinding.mapView.getExpandAreaView()!!
             .setOnExpandAreaCreatedListener(object : OnExpandAreaCreatedListener {
                 override fun onExpandAreaCreated(area: ExpandArea) {
@@ -107,6 +104,11 @@ class CreateMap2DActivity :
                     LogUtil.i("扩展地图 ${area}")
                 }
             })
+
+        //扩展地图 重制区域
+        mBinding.btnCleanArea.onClick {
+            mBinding.mapView.resetExpandAreaView()
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
@@ -118,11 +120,11 @@ class CreateMap2DActivity :
         }
         //接收子图数据
         LiveEventBus.get(KEY_UPDATE_SUB_MAPS, laser_t::class.java).observe(this) {
-            mBinding.mapView.parseSubMaps2D(it, 1)
+            mBinding.mapView.parseSubMaps2D(it, 2)
         }
         //子图优化 回环检测
         LiveEventBus.get(KEY_OPT_POSE, laser_t::class.java).observe(this) {
-            mBinding.mapView.updateOptPose2D(it, 1)
+            mBinding.mapView.updateOptPose2D(it, 2)
         }
         //接收创建地图中车体位置 导航->PAD
         LiveEventBus.get(KEY_UPDATE_POS, laser_t::class.java).observe(this) {
@@ -205,25 +207,6 @@ class CreateMap2DActivity :
             else -> {}
         }
 
-    }
-
-
-    /**
-     * 弹出是否旋转地图弹框
-     */
-    @RequiresApi(Build.VERSION_CODES.R)
-    private fun showRouteMapDialog() {
-//        CommonWarnDialog.Builder(this).setMsg("手动旋转地图").setOnCommonWarnDialogListener(object :
-//                CommonWarnDialog.Builder.CommonWarnDialogListener {
-//                @RequiresApi(Build.VERSION_CODES.R)
-//                override fun discard() {
-//                    showSavaMapDialog()
-//                }
-//
-//                override fun confirm() {
-//                    showSavaMapDialog()
-//                }
-//            }).create().show()
     }
 
     /**

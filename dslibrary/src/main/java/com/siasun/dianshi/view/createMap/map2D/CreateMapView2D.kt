@@ -68,6 +68,9 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
     private var mUpLaserScanView: UpLaserScanView2D? = null//上激光点云
     private var mCreateMapRobotView: RobotViewCreateMap<CreateMapView2D>? = null //机器人图标
 
+    // 机器人位姿 [x, y, theta(rad), z, roll, pitch]
+    override val robotPose = FloatArray(6)
+
     var isMapping = false//是否建图标志
 
     //是否第一次接收到子图数据，如果没收到子图，直接跳过旋转环境
@@ -445,13 +448,16 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
 
     /**
      * 外部接口：更新子图数据 （建图模式） 2D
+     * type 扩展1
+     * type 新建2
      */
     fun parseSubMaps2D(mLaserT: laser_t, type: Int) {
-        mMapOutline2D?.parseSubMaps2D(mLaserT, type)
         // 建图模式下，保持车体居中显示
         if (currentWorkMode == CreateMapWorkMode.MODE_CREATE_MAP || currentWorkMode == CreateMapWorkMode.MODE_EXTEND_MAP) {
             keepRobotCentered()
         }
+        mMapOutline2D?.parseSubMaps2D(mLaserT, type)
+
     }
 
 
@@ -518,7 +524,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
 
         // 移动地图使机器人居中
         setTransition(dx.toInt(), dy.toInt())
-        Log.d("LogUtil", "移动地图使机器人居中")
+//        Log.d("LogUtil", "移动地图使机器人居中")
     }
 
     fun resetExpandAreaView() = mExpandAreaView?.resetCreateState()

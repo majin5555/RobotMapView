@@ -25,5 +25,4 @@ interface MapViewInterface {
      * 机器人位姿 [x, y, theta(rad)，z roll pitch]
      */
     val robotPose: FloatArray
-        get() = FloatArray(6)
 }

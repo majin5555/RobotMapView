@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.util.Log
 import com.siasun.dianshi.R
 import com.siasun.dianshi.view.SlamWareBaseView
 import java.lang.ref.WeakReference
@@ -53,7 +54,6 @@ class RobotViewCreateMap<T : MapViewInterface>(context: Context?, val parent: We
             mapView.robotPose[0],
             mapView.robotPose[1]
         )
-
 
         canvas.translate(p.x, p.y)
         canvas.rotate(-Math.toDegrees(mapView.robotPose[2].toDouble()).toFloat())

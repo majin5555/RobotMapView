@@ -57,7 +57,7 @@ class UpLaserScanView3D(context: Context?, val parent: WeakReference<CreateMapVi
         if (cloudList.isNotEmpty()) {
             val mapView = parent.get() ?: return
             cloudList.forEach {
-                val p = mapView.mSrf.worldToScreen(it.x, it.y)
+                val p = mapView.worldToScreen(it.x, it.y)
                 canvas.drawPoint(p.x, p.y, paint)
             }
         }

@@ -74,6 +74,8 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
     private var mCreateMapRobotView: RobotViewCreateMap<CreateMapView3D>? = null //机器人图标
     private var mExpandAreaView: ExpandAreaView<CreateMapView3D>? = null //地图更新区域
 
+    // 机器人位姿 [x, y, theta(rad), z, roll, pitch]
+    override val robotPose = FloatArray(6)
 
     var isMapping = false//是否建图标志
 
