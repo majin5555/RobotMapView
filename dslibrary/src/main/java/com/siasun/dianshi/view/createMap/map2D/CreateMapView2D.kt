@@ -57,6 +57,8 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
 
     //视图高度
     var mMapScale = 1f //地图缩放级别
+    var mMapRotate = 0.0f//旋转角度
+    var mMapRotateRadians = 0.0f//旋转弧度
     private val mMaxMapScale = 5f //最大缩放级别
     private var mMinMapScale = 0.1f //最小缩放级别
 
@@ -163,8 +165,8 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
         setRotation(factor, center.x.toInt(), center.y.toInt())
     }
 
-    var mMapRotate = 0.0f
     private fun setRotation(factor: Float, cx: Int, cy: Int) {
+        mMapRotateRadians = RadianUtil.toRadians(factor)
         mMapRotate = RadianUtil.toAngel(factor)
         mOuterMatrix.postRotate(mMapRotate, cx.toFloat(), cy.toFloat())
         setMatrixWithRotation(mOuterMatrix, factor)
@@ -172,16 +174,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
 
     private fun setTransition(dx: Int, dy: Int) {
         mOuterMatrix.postTranslate(dx.toFloat(), dy.toFloat())
-        if (currentWorkMode == CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION) {
-            // 在扩展地图增加区域模式下，只更新子图层的矩阵，不更新 png 地图
-            for (mapLayer in mapLayers) {
-                mapLayer.setMatrix(mOuterMatrix)
-            }
-            postInvalidate()
-        } else {
-            // 其他模式下正常更新所有图层
-            setMatrix(mOuterMatrix)
-        }
+        setMatrix(mOuterMatrix)
     }
 
     private fun setScale(factor: Float, cx: Float, cy: Float) {
