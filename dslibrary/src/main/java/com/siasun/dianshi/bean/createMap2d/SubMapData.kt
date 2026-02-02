@@ -1,14 +1,13 @@
 package com.siasun.dianshi.bean.createMap2d
 
 import android.graphics.Bitmap
-import android.graphics.Matrix
 import android.graphics.PointF
 
 /**
  * 子图数据
  */
 class SubMapData {
-    //子图ID
+    //子图ID 子图索引
     var id = 0
 
     //分辨率

@@ -94,46 +94,24 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
         val subMapData = SubMapData()
         //子图ID
         subMapData.id = mLaserT.rad0.toInt()
-//        Log.d(TAG, "子图 radID  子图索引 ${subMapData.id}")
-
         //子图 x方向格子数量 子图宽度
         subMapData.width = mLaserT.ranges[0]
-//        Log.d(TAG, "子图 mLaserT.ranges[0] x方向格子数量 子图宽度 ${subMapData.width}")
         //子图 y方向格子数量 子图高度
         subMapData.height = mLaserT.ranges[1]
-//        Log.d(
-//            TAG, "子图 mLaserT.ranges[1] y方向格子数量 子图高度 ${subMapData.height}"
-//        )
 
         //新增读取子图右上角世界坐标
         subMapData.originX = mLaserT.ranges[2]
-//        Log.d(
-//            TAG, "子图 mLaserT.ranges[2] 新增读取子图右上角世界坐标 originX ${subMapData.originX}"
-//        )
         subMapData.originY = mLaserT.ranges[3]
-//        Log.d(
-//            TAG, "子图 mLaserT.ranges[3] 新增读取子图右上角世界坐标 originY ${subMapData.originY}"
-//        )
         subMapData.originTheta = mLaserT.ranges[4]
-//        Log.d(
-//            TAG,
-//            "子图 mLaserT.ranges[4] 新增读取子图右上角世界坐标 originTheta ${subMapData.originTheta}"
-//        )
+
         subMapData.optMaxTempX = mLaserT.ranges[5]
-//        Log.d(TAG, "子图 mLaserT.ranges[5] optMaxTempX  ${subMapData.optMaxTempX}")
         subMapData.optMaxTempY = mLaserT.ranges[6]
-//        Log.d(TAG, "子图 mLaserT.ranges[6] optMaxTempY  ${subMapData.optMaxTempY}")
         subMapData.optMaxTempTheta = mLaserT.ranges[7]
-//        Log.d(
-//            TAG, "子图 mLaserT.ranges[7] optMaxTempXTheta   ${subMapData.optMaxTempTheta}"
-//        )
 
         // 各格子概率值
         subMapData.indexCount = mLaserT.intensities.size
         //所有概率点的集合
-        for (intensity in mLaserT.intensities) {
-            subMapData.intensitiesList.add(intensity.toInt())
-        }
+        for (intensity in mLaserT.intensities) subMapData.intensitiesList.add(intensity.toInt())
 
         //创建子图bitmap对象
         buildSubMapTileLine(subMapData)
@@ -150,21 +128,8 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
         subMapData.leftTop.x = subMapData.rightTop.x - (subMapData.percent * subMapData.width)
         subMapData.leftTop.y = subMapData.originY
 
-
-        //扩展时
         calBinding(type)
 
-
-//
-//            val mTempMatrix = Matrix()
-//            mTempMatrix.reset()
-//            mTempMatrix.setScale(mapView.mSrf.scale, mapView.mSrf.scale)
-//
-//            // 计算子图在屏幕上的左上角坐标
-//            val screenLeftTop = mapView.worldToScreen(subMapData.leftTop.x, subMapData.leftTop.y)
-//            mTempMatrix.postTranslate(screenLeftTop.x, screenLeftTop.y)
-//            subMapData.matrix = mTempMatrix
-//            mTempMatrix.reset()
         //存储子图数据
         keyFrames2d[subMapData.id] = subMapData
         mapView.isStartRevSubMaps = true
@@ -177,15 +142,15 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
     /**
      * 创建子图bitmap对象
      */
+    // 提前计算常量，避免在循环中重复计算
+    val colorBlue = 0.toByte()
+    val colorAlpha = (-0x10000 shr 24).toByte()
+
     private fun buildSubMapTileLine(metaData: SubMapData) {
         val width = metaData.width.toInt()
         val height = metaData.height.toInt()
         val pixelSize = MapEditorConstants.MAP_PIXEL_SIZE
         val bmpDataSize = width * height * pixelSize
-
-        // 提前计算常量，避免在循环中重复计算
-        val colorBlue = 0.toByte()
-        val colorAlpha = (-0x10000 shr 24).toByte()
 
         val bmpData = ByteArray(bmpDataSize)
 
@@ -207,7 +172,7 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
     /**
      * 计算新建地图宽高
      */
-    private fun calBinding(type: Int = 0) {
+    private fun calBinding(type: Int) {
         val mapView = parent.get() ?: return
 
         for (item in keyFrames2d) {
@@ -263,11 +228,6 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
             mapView.mSrf.mapData.width = width
             mapView.mSrf.mapData.height = height
         }
-
-//        Log.d(TAG, "左上 ${minTopLeft}")
-//        Log.d(TAG, "左下 ${minBotLeft}")
-//        Log.d(TAG, "右上 ${maxTopRight}")
-//        Log.d(TAG, "右下 ${maxBottomRight}")
         Log.d(TAG, "整张地图的宽度 ${mapView.mSrf.mapData.width}")
         Log.d(TAG, "整张地图的高度 ${mapView.mSrf.mapData.height}")
     }
@@ -277,8 +237,7 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
      * 输入数据 世界坐标系下的位姿态
      */
     fun updateOptPose2D(mLaserT: laser_t, type: Int) {
-
-//        LogUtil.w("回环检测2D  start")
+        Log.w(TAG, "回环检测2D  start")
         val optPose = mLaserT.ranges
 //        LogUtil.w("回环检测optPose.size  ${optPose.size}")
 
@@ -339,11 +298,9 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
             subMapData.originTheta = globalTheta
         }
 
-//        updateKeyFrame2d()
 
         calBinding(type)
-
-//        LogUtil.w("回环检测2D  end")
+        Log.w(TAG, "回环检测2D  end")
     }
 
 
