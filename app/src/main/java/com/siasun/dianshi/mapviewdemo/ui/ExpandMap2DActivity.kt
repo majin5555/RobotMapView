@@ -11,7 +11,6 @@ import com.siasun.dianshi.ConstantBase
 import com.siasun.dianshi.GlobalVariable.SEND_NAVI_HEART
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.bean.ExpandArea
-import com.siasun.dianshi.bean.PartialUpdateArea
 import com.siasun.dianshi.controller.MainController
 import com.siasun.dianshi.view.createMap.ExpandAreaView.OnExpandAreaCreatedListener
 import com.siasun.dianshi.dialog.CommonWarnDialog
@@ -23,7 +22,6 @@ import com.siasun.dianshi.mapviewdemo.KEY_OPT_POSE
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_POS
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_SUB_MAPS
 import com.siasun.dianshi.mapviewdemo.TAG_NAV
-import com.siasun.dianshi.mapviewdemo.databinding.ActivityCreateMap2dDactivityBinding
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityExpandMap2dDactivityBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.CreateMap2DViewModel
 import com.siasun.dianshi.utils.RadianUtil
@@ -103,8 +101,7 @@ class ExpandMap2DActivity :
             .setOnExpandAreaCreatedListener(object : OnExpandAreaCreatedListener {
                 override fun onExpandAreaCreated(area: ExpandArea) {
                     list.add(area)
-                    mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_CREATE_MAP)
-                    LogUtil.i("扩展地图 ${area}")
+                    LogUtil.i("扩展地图 $area")
                 }
             })
 
@@ -115,6 +112,7 @@ class ExpandMap2DActivity :
         }
     }
 
+    @SuppressLint("SetTextI18n")
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initData() {
         super.initData()

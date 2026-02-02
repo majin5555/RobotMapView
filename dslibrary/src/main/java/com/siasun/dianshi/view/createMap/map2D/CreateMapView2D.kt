@@ -57,7 +57,6 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
 
     //视图高度
     var mMapScale = 1f //地图缩放级别
-    var mMapRotate = 0.0f//旋转角度
     var mMapRotateRadians = 0.0f//旋转弧度
     private val mMaxMapScale = 5f //最大缩放级别
     private var mMinMapScale = 0.1f //最小缩放级别
@@ -166,8 +165,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
 
     private fun setRotation(factor: Float, cx: Int, cy: Int) {
         mMapRotateRadians = RadianUtil.toRadians(factor)
-        mMapRotate = RadianUtil.toAngel(factor)
-        mOuterMatrix.postRotate(mMapRotate, cx.toFloat(), cy.toFloat())
+        mOuterMatrix.postRotate(RadianUtil.toAngel(factor), cx.toFloat(), cy.toFloat())
         setMatrixWithRotation(mOuterMatrix, factor)
     }
 
@@ -492,9 +490,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
      * 回环检测2D
      * 输入数据 世界坐标系下的位姿态
      */
-    fun updateOptPose2D(mLaserT: laser_t, type: Int) {
-        mMapOutline2D?.updateOptPose2D(mLaserT, type)
-    }
+    fun updateOptPose2D(mLaserT: laser_t, type: Int) = mMapOutline2D?.updateOptPose2D(mLaserT, type)
 
     /**
      * 保持车体居中显示

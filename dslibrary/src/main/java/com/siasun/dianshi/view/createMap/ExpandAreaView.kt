@@ -158,6 +158,10 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
                 max(leftTop.x, rightBottom.x),
                 max(leftTop.y, rightBottom.y)
             )
+
+            // 应用地图的旋转
+            canvas.rotate(mRotation, (leftTop.x + rightBottom.x) / 2, (leftTop.y + rightBottom.y) / 2)
+            
             canvas.drawRect(tempRect, creatingRectPaint)
         }
 

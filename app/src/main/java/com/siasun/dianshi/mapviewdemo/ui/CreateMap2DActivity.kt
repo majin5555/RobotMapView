@@ -83,6 +83,7 @@ class CreateMap2DActivity :
         }
     }
 
+    @SuppressLint("SetTextI18n")
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initData() {
         super.initData()
