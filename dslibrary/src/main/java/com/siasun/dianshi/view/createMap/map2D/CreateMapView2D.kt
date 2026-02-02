@@ -53,10 +53,10 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
     var mSrf = CoordinateConversion()//坐标转化工具类
     private var mOuterMatrix = Matrix()
     private var VIEW_WIDTH = 0 //视图宽度
-    private var VIEW_HEIGHT = 0
+    private var VIEW_HEIGHT = 0//视图高度
 
     //视图高度
-    private var mMapScale = 1f //地图缩放级别
+    var mMapScale = 1f //地图缩放级别
     private val mMaxMapScale = 5f //最大缩放级别
     private var mMinMapScale = 0.1f //最小缩放级别
 
@@ -295,16 +295,6 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
     val outerMatrix: Matrix
         get() = mOuterMatrix
 
-
-    /**
-     * 世界坐标转屏幕坐标
-     */
-    override fun worldToScreen(x: Float, y: Float): PointF {
-        synchronized(mSrf.mapData) {
-            return mapPixelCoordinateToMapWidthCoordinateF(mSrf.worldToScreen(x, y))
-        }
-    }
-
     /**
      * 获取视图宽度
      */
@@ -318,6 +308,22 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
         get() = VIEW_HEIGHT
 
     /**
+     * 世界坐标转屏幕坐标
+     */
+    override fun worldToScreen(x: Float, y: Float): PointF {
+        synchronized(mSrf.mapData) {
+            return mapPixelCoordinateToMapWidthCoordinateF(mSrf.worldToScreen(x, y))
+        }
+    }
+
+    private fun mapPixelCoordinateToMapWidthCoordinateF(mapPixelPointF: PointF): PointF {
+        val m = mOuterMatrix
+        val points = floatArrayOf(mapPixelPointF.x, mapPixelPointF.y)
+        m.mapPoints(points)
+        return PointF(points[0], points[1])
+    }
+
+    /**
      * 屏幕坐标转世界坐标
      */
     override fun screenToWorld(x: Float, y: Float): PointF {
@@ -327,13 +333,6 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
             // 然后使用坐标转换工具将地图像素坐标转换为世界坐标
             return mSrf.screenToWorld(mapPixelPoint.x, mapPixelPoint.y)
         }
-    }
-
-    private fun mapPixelCoordinateToMapWidthCoordinateF(mapPixelPointF: PointF): PointF {
-        val m = mOuterMatrix
-        val points = floatArrayOf(mapPixelPointF.x, mapPixelPointF.y)
-        m.mapPoints(points)
-        return PointF(points[0], points[1])
     }
 
     private fun widgetCoordinateToMapPixelCoordinate(screenPointF: PointF): PointF {
