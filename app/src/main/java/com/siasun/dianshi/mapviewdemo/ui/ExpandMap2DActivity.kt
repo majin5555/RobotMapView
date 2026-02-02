@@ -6,23 +6,25 @@ import android.os.Bundle
 import androidx.annotation.RequiresApi
 import com.blankj.utilcode.util.ToastUtils
 import com.jeremyliao.liveeventbus.LiveEventBus
-import com.jxd.jxd_core.intent.startActivity
 import com.ngu.lcmtypes.laser_t
+import com.siasun.dianshi.ConstantBase
 import com.siasun.dianshi.GlobalVariable.SEND_NAVI_HEART
 import com.siasun.dianshi.base.BaseMvvmActivity
-import com.siasun.dianshi.bean.UpdateMapBean
+import com.siasun.dianshi.bean.ExpandArea
+import com.siasun.dianshi.bean.PartialUpdateArea
 import com.siasun.dianshi.controller.MainController
+import com.siasun.dianshi.view.createMap.ExpandAreaView.OnExpandAreaCreatedListener
 import com.siasun.dianshi.dialog.CommonWarnDialog
 import com.siasun.dianshi.framework.ext.onClick
 import com.siasun.dianshi.framework.log.LogUtil
 import com.siasun.dianshi.mapviewdemo.CREATE_MAP
 import com.siasun.dianshi.mapviewdemo.KEY_NAV_HEARTBEAT_STATE
 import com.siasun.dianshi.mapviewdemo.KEY_OPT_POSE
-import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_MAP
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_POS
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_SUB_MAPS
 import com.siasun.dianshi.mapviewdemo.TAG_NAV
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityCreateMap2dDactivityBinding
+import com.siasun.dianshi.mapviewdemo.databinding.ActivityExpandMap2dDactivityBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.CreateMap2DViewModel
 import com.siasun.dianshi.utils.RadianUtil
 import com.siasun.dianshi.view.createMap.CreateMapWorkMode
@@ -30,15 +32,16 @@ import java.util.Timer
 import java.util.TimerTask
 
 /**
- * 创建2D地图
+ * 扩展2D地图
  */
-class CreateMap2DActivity :
-    BaseMvvmActivity<ActivityCreateMap2dDactivityBinding, CreateMap2DViewModel>() {
+class ExpandMap2DActivity :
+    BaseMvvmActivity<ActivityExpandMap2dDactivityBinding, CreateMap2DViewModel>() {
     //建图心跳定时器
     private val mTimer = Timer()
 
     val mapID = 1
 
+    val list: MutableList<PartialUpdateArea> = mutableListOf()
 
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
@@ -52,20 +55,15 @@ class CreateMap2DActivity :
             }
         }, 0, 500)
 
+        //加载地图
+        mBinding.mapView.loadMap(
+            ConstantBase.getFilePath(mapID, ConstantBase.PAD_MAP_NAME_PNG),
+            ConstantBase.getFilePath(mapID, ConstantBase.PAD_MAP_NAME_YAML)
+        )
 
         //保存
         mBinding.tvSave.onClick {
             showSavaMapDialog()
-        }
-
-        //开始扫描
-        mBinding.tvCreate.onClick {
-            mBinding.mapView.isStartRevSubMaps = false
-            mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_CREATE_MAP)
-            MainController.startCreateEnvironment()
-            showLoading("开始扫描")
-            ToastUtils.showShort("开始扫描")
-            LogUtil.i("开始扫描", null, TAG_NAV)
         }
 
 
@@ -77,9 +75,45 @@ class CreateMap2DActivity :
             ToastUtils.showShort("停止扫描")
         }
 
-        //停止扫描
+
+        //扩展地图
+        exetendMap()
+
+    }
+
+    /**
+     * 地图更新（绘制区域）
+     * 地图扩展（不绘制）
+     */
+    private fun exetendMap() {
         mBinding.tvExpend.onClick {
-            startActivity<ExpandMap2DActivity>()
+
+            mBinding.mapView.invalidate()
+
+            mBinding.mapView.isStartRevSubMaps = false
+            mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_CREATE_MAP)
+            MainController.sendStartPartialUpdate(list, mapID)
+            showLoading("开始扩展")
+            ToastUtils.showShort("开始扩展")
+            LogUtil.i("开始扩展", null, TAG_NAV)
+        }
+
+        //扩展地图 添加区域
+        mBinding.btnSettingArea.onClick {
+            mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION)
+        }
+        //添加区域监听 获取添加区域的世界坐标
+        mBinding.mapView.getExpandAreaView()!!
+            .setOnExpandAreaCreatedListener(object : OnExpandAreaCreatedListener {
+                override fun onExpandAreaCreated(area: ExpandArea) {
+                    mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_EXTEND_MAP)
+                    LogUtil.i("扩展地图 ${area}")
+                }
+            })
+
+        //扩展地图 重制区域
+        mBinding.btnCleanArea.onClick {
+            mBinding.mapView.resetExpandAreaView()
         }
     }
 
@@ -105,11 +139,6 @@ class CreateMap2DActivity :
                 mBinding.tvMapSteps.text = "建图步数 ${it.rad0}"
             }
         }
-
-        //下载地图结果
-        LiveEventBus.get(KEY_UPDATE_MAP, UpdateMapBean::class.java).observe(this) {
-            startActivity<ExpandMap2DActivity>()
-        }
     }
 
     @SuppressLint("SuspiciousIndentation")
@@ -128,7 +157,7 @@ class CreateMap2DActivity :
                         "此时导航从其他模式切换到定位，说明导航已经建图、优化、保存完成", null, TAG_NAV
                     )
 
-                    mViewModel.downPngYaml(CREATE_MAP, mapID)
+                    mViewModel.downPngYaml(CREATE_MAP, 1)
 
                     //从建图模式到定位模式 后恢复地图不可旋转
                     SEND_NAVI_HEART = false

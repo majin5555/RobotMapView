@@ -21,7 +21,7 @@ class CreateMap2DViewModel : BaseViewModel() {
     /**
      * 下载地图
      */
-    fun downPngYaml(type: Int, mapId: Int) {
+    fun downPngYaml(type: Int, mapId: Int,) {
 
         viewModelScope.launch(Dispatchers.IO) {
 
@@ -51,6 +51,8 @@ class CreateMap2DViewModel : BaseViewModel() {
                     //通知页面更新地图
                     LiveEventBus.get(KEY_UPDATE_MAP, UpdateMapBean::class.java)
                         .post(UpdateMapBean(true, type))
+
+
                     LogUtil.i("PM.yaml  && PM.png 下载成功")
                 }
             }

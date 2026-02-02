@@ -62,14 +62,6 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/tv_create" />
 
-        <Button
-            android:id="@+id/tv_create"
-            android:layout_width="180dp"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="扫描新环境"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
 
 
         <Button
@@ -77,11 +69,19 @@
             android:layout_width="180dp"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:text="扩展地图测试"
+            android:text="扩展地图"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
 
+        <Button
+            android:id="@+id/tv_expend_jvbu"
+            android:layout_width="180dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="局部更新"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
 
     </LinearLayout>
