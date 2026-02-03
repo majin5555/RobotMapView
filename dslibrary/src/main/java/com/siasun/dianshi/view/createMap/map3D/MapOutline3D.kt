@@ -27,7 +27,7 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
     private var currentWorkMode = CreateMapWorkMode.MODE_SHOW_MAP
 
     //3D建图关键帧
-    private val keyFrames = ConcurrentHashMap<Int, KeyFrame>()
+    private val keyFrames3D = ConcurrentHashMap<Int, KeyFrame>()
 
     /**
      * 设置工作模式
@@ -50,6 +50,7 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
             color = Color.GREEN
             style = Paint.Style.FILL
             strokeWidth = 5f
+            strokeCap = Paint.Cap.ROUND
         }
     }
 
@@ -57,21 +58,16 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-
         canvas.save()
-        // 只有在绘制启用状态下才绘制点云
-        if (keyFrames.isNotEmpty()) {
-            val mapView = parent.get() ?: return
-
-            keyFrames.values.forEach { frame ->
+        val mapView = parent.get() ?: return
+        if (keyFrames3D.isNotEmpty()) {
+            keyFrames3D.values.forEach { frame ->
                 val robotScreen = mapView.worldToScreen(frame.robotPos[0], frame.robotPos[1])
                 // 绘制关键帧位置
                 canvas.drawPoint(robotScreen.x, robotScreen.y, greenPaint)
 
                 frame.points?.let { points ->
                     val contour = points.map { mapView.worldToScreen(it.x, it.y) }
-//                    Log.d(TAG, "contour  ${contour}")
-
                     // 创建用于绘制点的FloatArray
                     val pointArray = FloatArray(contour.size * 2)
                     contour.forEachIndexed { index, point ->
@@ -84,7 +80,6 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
             }
         }
         canvas.restore()
-
     }
 
 
@@ -94,8 +89,8 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
     fun addKeyFrames(laserData: laser_t, keyPoints: MutableList<KeyframePoint>?) {
         val mapView = parent.get() ?: return
         val rad0 = laserData.rad0.toInt()
-
-        if (!keyFrames.containsKey(rad0)) {
+        if (rad0 != -1) {
+            if (!keyFrames3D.containsKey(rad0)) {
 //            Log.i(TAG, "关键帧 ID $rad0")
 //            Log.i(TAG, "关键帧 x ${robotPose[0]}")
 //            Log.i(TAG, "关键帧 y ${robotPose[1]}")
@@ -103,21 +98,22 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
 //            Log.i(TAG, "关键帧 z ${robotPose[3]}")
 //            Log.i(TAG, "关键帧 roll ${robotPose[4]}")
 //            Log.i(TAG, "关键帧 pitch ${robotPose[5]}")
-
-            //关键帧第一帧 要单独显示
-            if (rad0 == 0) {
-                mapView.mConstrainNodes?.addConstraintNodes(
-                    ConstraintNode(
-                        rad0,
-                        mapView.robotPose[0].toDouble(),
-                        mapView.robotPose[1].toDouble(),
-                        mapView.robotPose[2].toDouble()
+                //关键帧第一帧 要单独显示
+                if (rad0 == 0) {
+                    mapView.mConstrainNodes?.addConstraintNodes(
+                        ConstraintNode(
+                            rad0,
+                            mapView.robotPose[0].toDouble(),
+                            mapView.robotPose[1].toDouble(),
+                            mapView.robotPose[2].toDouble()
+                        )
                     )
-                )
-            }
+                }
 
-            keyFrames[rad0] = KeyFrame(keyPoints, mapView.robotPose)
-            mapView.isStartRevSubMaps = true
+                keyFrames3D[rad0] = KeyFrame(keyPoints, mapView.robotPose.clone())
+                Log.d(TAG, "关键帧 ${keyFrames3D}")
+                mapView.isStartRevSubMaps = true
+            }
         }
     }
 
@@ -141,7 +137,7 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
             val radT: Float = laserData.ranges[i + 3]
 
             // 获取关键帧数据（非空校验）
-            val keyFrame = keyFrames[rad0] ?: continue
+            val keyFrame = keyFrames3D[rad0] ?: continue
 
             // 更新机器人位置（原子操作，避免中间状态）
             keyFrame.robotPos[0] = radX
@@ -172,7 +168,7 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         // 清理点云数据
-        keyFrames.clear()
+        keyFrames3D.clear()
         // 清理父引用
         parent.clear()
     }

@@ -5,7 +5,6 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.util.Log
 import com.siasun.dianshi.bean.ConstraintNode
 import com.siasun.dianshi.view.SlamWareBaseView
 import java.lang.ref.WeakReference

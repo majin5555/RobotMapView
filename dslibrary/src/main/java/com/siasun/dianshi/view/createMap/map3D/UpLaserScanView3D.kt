@@ -88,11 +88,8 @@ class UpLaserScanView3D(context: Context?, val parent: WeakReference<CreateMapVi
             // 仅在关键帧时收集完整点云数据
             keyPoints?.add(KeyframePoint(laserX, laserY, laserXNew, laserYNew))
         }
-
-        // 处理关键帧数据（非关键帧时不执行）
-        if (laserData.rad0.toInt() != -1) {
-            mapView.mMapOutline3D?.addKeyFrames(laserData, keyPoints )
-        }
+        //添加地图轮廓关键帧
+        mapView.mMapOutline3D?.addKeyFrames(laserData, keyPoints)
         postInvalidate()
     }
 
