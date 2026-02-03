@@ -79,6 +79,10 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
     var isStartRevSubMaps = false
 
     /**
+     * 旋转弧度
+     */
+    var rotationRadians = 0f
+    /**
      * *************** 监听器   start ***********************
      */
 
@@ -168,11 +172,10 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
         setRotation(factor, center.x.toInt(), center.y.toInt())
     }
 
-    var mMapRotate = 0.0f
     private fun setRotation(factor: Float, cx: Int, cy: Int) {
-        mMapRotate = RadianUtil.toAngel(factor)
-        mOuterMatrix.postRotate(mMapRotate, cx.toFloat(), cy.toFloat())
+        mOuterMatrix.postRotate(RadianUtil.toAngel(factor), cx.toFloat(), cy.toFloat())
         setMatrixWithRotation(mOuterMatrix, factor)
+        rotationRadians = RadianUtil.toRadians(mMapOutline3D!!.mRotation)
     }
 
     private fun setTransition(dx: Int, dy: Int) {

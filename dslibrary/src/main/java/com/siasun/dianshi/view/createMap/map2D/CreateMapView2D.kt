@@ -234,9 +234,6 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
             mapLayer.setMatrixWithRotation(matrix, rotation)
         }
         rotationRadians = RadianUtil.toRadians(mMapOutline2D!!.mRotation)
-        Log.d("setMatrixWithRotation", "角度 .  ${mMapOutline2D!!.mRotation}")
-        Log.d("setMatrixWithRotation", "弧度999 .  ${mMapOutline2D!!.mRotation / 180 * Math.PI}")
-        Log.d("setMatrixWithRotation", "弧度 .  $rotationRadians")
     }
 
     fun setCentred() {

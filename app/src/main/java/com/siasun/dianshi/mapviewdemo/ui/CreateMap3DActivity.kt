@@ -12,6 +12,7 @@ import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.bean.ConstraintNode
 import com.siasun.dianshi.bean.UpdateMapBean
 import com.siasun.dianshi.controller.MainController
+import com.siasun.dianshi.dialog.CommonEditDialog
 import com.siasun.dianshi.dialog.CommonWarnDialog
 import com.siasun.dianshi.framework.ext.onClick
 import com.siasun.dianshi.framework.log.LogUtil
@@ -71,7 +72,23 @@ class CreateMap3DActivity :
             ToastUtils.showShort("开始扫描")
             LogUtil.i("开始扫描", null, TAG_NAV)
         }
-
+        //添加节点
+        mBinding.btnAddNode.onClick {
+            MainController.send3DConstraintNode()
+        }
+        //匹配节点
+        mBinding.btnMatchNode.onClick {
+            CommonEditDialog.Builder(this).setOnCommonEditDialogListener(object :
+                CommonEditDialog.Builder.CommonEditDialogListener {
+                override fun confirm(str: String) {
+                    MainController.send3DMatchingNode(str.toInt())
+                }
+            }).setTitle("请输入约束节点ID").create().show()
+        }
+        //修改配资
+        mBinding.btnMatchNode.onClick {
+            MainController.send3DReadConfig()
+        }
 
         //停止扫描
         mBinding.tvStop.onClick {
@@ -128,6 +145,8 @@ class CreateMap3DActivity :
 
         //接收配置参数
         LiveEventBus.get<DoubleArray>(KEY_CONFIGURATION_PARAMETERS).observe(this) {
+            LogUtil.w("接收配置参数 ${it}", null, TAG_NAV)
+
 //            val list: MutableList<ConfigParam> = mutableListOf()
 //            for (d in it) {
 //                list.add(ConfigParam("", d))
@@ -217,13 +236,7 @@ class CreateMap3DActivity :
                 if (mBinding.mapView.isStartRevSubMaps) {
                     SEND_NAVI_HEART = false
 
-//                    if (mBinding.mapView.isRouteMap) {
-//                        LogUtil.i("弹框---是否旋转地图", null, TAG_NAV)
-//                        showRouteMapDialog()
-//                    } else {
-//                        LogUtil.i("没有收到任何子图，直接询问是否保存地图", null, TAG_NAV)
                     showSavaMapDialog()
-//                    }
 
                     mBinding.mapView.isStartRevSubMaps = false
 
@@ -244,10 +257,10 @@ class CreateMap3DActivity :
         CommonWarnDialog.Builder(this).setMsg("保存地图").setOnCommonWarnDialogListener(object :
             CommonWarnDialog.Builder.CommonWarnDialogListener {
             override fun confirm() {
-                LogUtil.i("mBinding.mapView.mMapRotate ${RadianUtil.toRadians(mBinding.mapView.mMapRotate)}")
-                //开始保存地图
+                LogUtil.i("mBinding.mapView.mMapRotate ${mBinding.mapView.rotationRadians}")
+                //开始保存地图 mBinding.mapView.rotationRadians就是弧度
                 MainController.saveEnvironment(
-                    1, rotate = RadianUtil.toRadians(mBinding.mapView.mMapRotate), mapId = mapID
+                    1, rotate = mBinding.mapView.rotationRadians, mapId = mapID
                 )
                 SEND_NAVI_HEART = true
 //                    showLoading("保存地图中")

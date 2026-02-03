@@ -4,7 +4,6 @@ import android.graphics.PointF
 import com.siasun.dianshi.GlobalVariable.SEND_NAVI_HEART
 import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.ExpandArea
-import com.siasun.dianshi.bean.PartialUpdateArea
 import com.siasun.dianshi.bean.PositingArea
 import com.siasun.dianshi.controller.lcm.LCMController
 
@@ -475,40 +474,40 @@ object MainController {
     /**
      * 请求导航添加人工约束节点
      */
-    fun send3DConstraintNode() = MainController.myController.mSend3DConstraintNode()
+    fun send3DConstraintNode() = myController.mSend3DConstraintNode()
 
     /**
      * 请求导航匹配节点
      */
-    fun send3DMatchingNode(nodeID: Int) = MainController.myController.mSend3DMatchingNode(nodeID)
+    fun send3DMatchingNode(nodeID: Int) = myController.mSend3DMatchingNode(nodeID)
 
     /**
      * 请求导航读取配置参数
      */
-    fun send3DReadConfig() = MainController.myController.mSend3DReadConfig()
+    fun send3DReadConfig() = myController.mSend3DReadConfig()
 
     /**
      * 修改配置参数
      */
-    fun send3DEditConfig(array: DoubleArray) = MainController.myController.mSend3DEditConfig(array)
+    fun send3DEditConfig(array: DoubleArray) = myController.mSend3DEditConfig(array)
 
 
     /**
      * pad向导航申请反光板地图
      */
-    fun reflectorMapData(layerId: Int) = MainController.myController.mReflectorMapDate(layerId)
+    fun reflectorMapData(layerId: Int) = myController.mReflectorMapDate(layerId)
 
     /**
      * pad向导航发送显示高反光物体
      */
     fun sendReflectorAreaPoint(start: PointF, end: PointF, mapId: Int) =
-        MainController.myController.mSendReflectorAreaPoint(start, end, mapId)
+        myController.mSendReflectorAreaPoint(start, end, mapId)
 
     /**
      * pad向导航发送生成反光板地图
      */
     fun sendCreateReflectorMap(dParams: DoubleArray, mapId: Int) =
-        MainController.myController.mSendCreateReflectorMap(dParams, mapId)
+        myController.mSendCreateReflectorMap(dParams, mapId)
 
 
     /**

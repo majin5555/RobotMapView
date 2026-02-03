@@ -111,7 +111,6 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
                 }
 
                 keyFrames3D[rad0] = KeyFrame(keyPoints, mapView.robotPose.clone())
-                Log.d(TAG, "关键帧 ${keyFrames3D}")
                 mapView.isStartRevSubMaps = true
             }
         }
@@ -159,7 +158,7 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
 
             processedCount++
         }
-        Log.d(TAG, "更新关键帧数据：处理 $processedCount 个关键帧")
+//        Log.d(TAG, "更新关键帧数据：处理 $processedCount 个关键帧")
     }
 
     /**
