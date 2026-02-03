@@ -27,6 +27,7 @@ import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_POS
 import com.siasun.dianshi.mapviewdemo.TAG_NAV
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityCreateMap3dDactivityBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.CreateMap3DViewModel
+import com.siasun.dianshi.network.constant.KEY_NEY_IP
 import com.siasun.dianshi.utils.RadianUtil
 import com.siasun.dianshi.view.createMap.CreateMapWorkMode
 import com.tencent.mmkv.MMKV
@@ -46,7 +47,7 @@ class CreateMap3DActivity :
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
         MainController.init()
-        MMKV.defaultMMKV().encode("KEY_NEY_IP", "192.168.1.198");
+        MMKV.defaultMMKV().encode(KEY_NEY_IP, "192.168.1.198");
         mTimer.schedule(object : TimerTask() {
             override fun run() {
                 if (SEND_NAVI_HEART) {

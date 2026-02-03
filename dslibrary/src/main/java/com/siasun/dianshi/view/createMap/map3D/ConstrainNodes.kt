@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.util.Log
 import com.siasun.dianshi.bean.ConstraintNode
 import com.siasun.dianshi.view.SlamWareBaseView
 import java.lang.ref.WeakReference
@@ -48,15 +49,16 @@ class ConstrainNodes(context: Context?, val parent: WeakReference<CreateMapView3
         super.onDraw(canvas)
         val mapView = parent.get() ?: return
         canvas.save()
-        if (keyConstraintNodes.isNotEmpty()) {
-            keyConstraintNodes.forEach { point ->
-                val screenPos = mapView.worldToScreen(point.x.toFloat(), point.y.toFloat())
-                canvas.drawPoint(screenPos.x, screenPos.y, constraintNodePaint)
-                //绘制上线点名称
-                canvas.drawText(
-                    "${point.id}", (screenPos.x + 15), (screenPos.y + 15), constraintNodePaint
-                )
-            }
+        keyConstraintNodes.forEach { point ->
+            val screenPos = mapView.worldToScreen(point.x.toFloat(), point.y.toFloat())
+            canvas.drawPoint(screenPos.x, screenPos.y, constraintNodePaint)
+            //绘制上线点名称
+            canvas.drawText(
+                "${point.id}",
+                (screenPos.x + 15),
+                (screenPos.y + 15),
+                constraintNodePaint
+            )
         }
         canvas.restore()
     }

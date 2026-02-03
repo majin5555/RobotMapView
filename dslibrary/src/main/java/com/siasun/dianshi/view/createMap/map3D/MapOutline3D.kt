@@ -91,9 +91,7 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
     /***
      * 添加关键帧
      */
-    fun addKeyFrames(
-        laserData: laser_t, keyPoints: MutableList<KeyframePoint>?, robotPose: FloatArray
-    ) {
+    fun addKeyFrames(laserData: laser_t, keyPoints: MutableList<KeyframePoint>?) {
         val mapView = parent.get() ?: return
         val rad0 = laserData.rad0.toInt()
 
@@ -111,14 +109,14 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
                 mapView.mConstrainNodes?.addConstraintNodes(
                     ConstraintNode(
                         rad0,
-                        robotPose[0].toDouble(),
-                        robotPose[1].toDouble(),
-                        robotPose[2].toDouble()
+                        mapView.robotPose[0].toDouble(),
+                        mapView.robotPose[1].toDouble(),
+                        mapView.robotPose[2].toDouble()
                     )
                 )
             }
 
-            keyFrames[rad0] = KeyFrame(keyPoints, robotPose)
+            keyFrames[rad0] = KeyFrame(keyPoints, mapView.robotPose)
             mapView.isStartRevSubMaps = true
         }
     }
