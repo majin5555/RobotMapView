@@ -88,7 +88,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         MODE_PATH_CREATE, // 创建路线模式
         MODE_CROSS_DOOR_ADD, // 添加过门模式
         MODE_CROSS_DOOR_EDIT, // 编辑过门模式
-        MODE_CROSS_DOOR_DELETE // 删除过门模式
+        MODE_CROSS_DOOR_DELETE,// 删除过门模式
+        MODE_DRAG_POSITION // 拖拽定位模式
     }
 
     // 当前工作模式
@@ -128,6 +129,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     var mPathView: PathView? = null//路线PP 接收PP返回的路线
     var mRobotView: RobotView? = null //机器人图标
     var mWorkIngPathView: WorkIngPathView? = null //机器人工作路径
+    var mDragPositioningView: DragPositioningView? = null //拖拽定位view
 
     /**
      * *************** 监听器   start ***********************
@@ -203,6 +205,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mMixAreaView = MixAreaView(context, mMapView)
         mPathView = PathView(context, mMapView)
         mWorldPadView = WorldPadView(context, mMapView)
+        mDragPositioningView = DragPositioningView(context, mMapView)
         //底图的View
         addView(mPngMapView, lp)
 
@@ -220,6 +223,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         addMapLayers(mUpLaserScanView)
         //下激光点云
         addMapLayers(mDownLaserScanView)
+        //拖拽定位
+        addMapLayers(mDragPositioningView)
         //顶视路线
         addMapLayers(mTopViewPathView)
         //显示虚拟墙
@@ -263,7 +268,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mMapNameView?.setScreen(point)
 
         // 如果是擦除噪点模式、创建定位区域模式、编辑定位区域模式、删除定位区域模式、编辑清扫区域模式或创建清扫区域模式，或者路径编辑模式，或者创建路径模式
-        if (currentWorkMode == WorkMode.MODE_REMOVE_NOISE || currentWorkMode == WorkMode.MODE_POSITING_AREA_ADD || currentWorkMode == WorkMode.MODE_POSITING_AREA_EDIT || currentWorkMode == WorkMode.MODE_POSITING_AREA_DELETE || currentWorkMode == WorkMode.MODE_CLEAN_AREA_EDIT || currentWorkMode == WorkMode.MODE_CLEAN_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_EDIT || currentWorkMode == WorkMode.MODE_PATH_EDIT || currentWorkMode == WorkMode.MODE_PATH_CREATE) {
+        if (currentWorkMode == WorkMode.MODE_REMOVE_NOISE || currentWorkMode == WorkMode.MODE_POSITING_AREA_ADD || currentWorkMode == WorkMode.MODE_POSITING_AREA_EDIT || currentWorkMode == WorkMode.MODE_POSITING_AREA_DELETE || currentWorkMode == WorkMode.MODE_CLEAN_AREA_EDIT || currentWorkMode == WorkMode.MODE_CLEAN_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_EDIT || currentWorkMode == WorkMode.MODE_PATH_EDIT || currentWorkMode == WorkMode.MODE_PATH_CREATE || currentWorkMode == WorkMode.MODE_DRAG_POSITION) {
             // 让事件传递给子视图（如RemoveNoiseView、PostingAreasView或PathView）处理
             // 先调用父类的onTouchEvent让事件传递给子视图
             super.onTouchEvent(event)
@@ -272,7 +277,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         }
 
         // 非特殊模式，由手势检测器处理事件
-        return mGestureDetector!!.onTouchEvent(event,this)
+        return mGestureDetector!!.onTouchEvent(event, this)
     }
 
     override fun onMapTap(event: MotionEvent) {
@@ -500,6 +505,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mWorkIngPathView = null
         mMapNameView = null
         mCrossView = null
+        mDragPositioningView = null
 
         // 清理监听器
         mSingleTapListener = null
@@ -534,6 +540,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mHomeDockView?.setWorkMode(mode)
         mWorldPadView?.setWorkMode(mode)
         mCrossView?.setWorkMode(mode)
+        mDragPositioningView?.setWorkMode(mode)
     }
 
     /**
@@ -639,6 +646,15 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      */
     fun setDownLaserScan(laser: laser_t) = mDownLaserScanView?.updateDownLaserScan(laser)
 
+    /**
+     * 设置拖拽定位数据（上激光点云数据源）
+     */
+    fun setDragPositionData(laser: laser_t) = mDragPositioningView?.updateUpLaserScan(laser)
+
+    /**
+     * 获取拖拽定位车体数据y
+     */
+    fun getDragRobotPose() = mDragPositioningView?.dragRobotPose
 
     /**
      * 设置AGV 位姿 机器人图标的实时位置

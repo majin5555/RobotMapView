@@ -10,6 +10,7 @@ import androidx.annotation.RequiresApi
 import androidx.lifecycle.lifecycleScope
 import com.blankj.utilcode.util.ToastUtils
 import com.jeremyliao.liveeventbus.LiveEventBus
+import com.jxd.jxd_core.intent.startActivity
 import com.ngu.lcmtypes.laser_t
 import com.ngu.lcmtypes.robot_control_t
 import com.siasun.dianshi.AreaType
@@ -19,8 +20,10 @@ import com.siasun.dianshi.ConstantBase.getFolderPath
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.CmsStation
+import com.siasun.dianshi.bean.DragLocationBean
 import com.siasun.dianshi.bean.PlanPathResult
 import com.siasun.dianshi.bean.PositingArea
+import com.siasun.dianshi.bean.RC.RCData
 import com.siasun.dianshi.bean.SpArea
 import com.siasun.dianshi.bean.TeachPoint
 import com.siasun.dianshi.bean.WorkAreasNew
@@ -34,6 +37,7 @@ import com.siasun.dianshi.mapviewdemo.CLEAN_PATH_PLAN
 import com.siasun.dianshi.mapviewdemo.KEY_AGV_COORDINATE
 import com.siasun.dianshi.mapviewdemo.KEY_BOTTOM_CURRENT_POINT_CLOUD
 import com.siasun.dianshi.mapviewdemo.KEY_CURRENT_POINT_CLOUD
+import com.siasun.dianshi.mapviewdemo.KEY_LOCATION_DRAG
 import com.siasun.dianshi.mapviewdemo.KEY_POSITING_AREA_VALUE
 import com.siasun.dianshi.mapviewdemo.KEY_TEACH_PATH
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_PLAN_PATH_RESULT
@@ -64,7 +68,8 @@ import kotlin.random.Random
  * 显示地图
  */
 class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMapViewModel>() {
-    private var upRCData: laser_t = laser_t()
+    private val mDragBean = DragLocationBean()
+
 
     val mapId = 1
     var cleanAreas: MutableList<CleanAreaNew> = mutableListOf()
@@ -78,23 +83,28 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
         MainController.init()
+        //加载地图
+        mBinding.mapView.loadMap(
+            ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_PNG),
+            ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_YAML)
+        )
 
-        //点击屏幕回调
-        mBinding.mapView.setSingleTapListener(object : MapView.ISingleTapListener {
-            override fun onSingleTapListener(point: PointF) {
-                LogUtil.i("点击屏幕回调  ${point}")
-                //上激光
-                upRCData.ranges[0] = point.x
-                upRCData.ranges[1] = point.y
-
-                LogUtil.i("点击屏幕回调x  ${upRCData.ranges[0]}")
-                LogUtil.i("点击屏幕回调y ${upRCData.ranges[1]}")
-                LogUtil.i("点击屏幕回调t ${upRCData.ranges[2]}")
-
-                mBinding.mapView.setUpLaserScan(upRCData)
-
-            }
-        })
+//        //点击屏幕回调
+//        mBinding.mapView.setSingleTapListener(object : MapView.ISingleTapListener {
+//            override fun onSingleTapListener(point: PointF) {
+//                LogUtil.i("点击屏幕回调  ${point}")
+//                //上激光
+////                upRCData.ranges[0] = point.x
+////                upRCData.ranges[1] = point.y
+//
+////                LogUtil.i("点击屏幕回调x  ${upRCData.ranges[0]}")
+////                LogUtil.i("点击屏幕回调y ${upRCData.ranges[1]}")
+////                LogUtil.i("点击屏幕回调t ${upRCData.ranges[2]}")
+//
+//                mBinding.mapView.setDragPositionData( )
+//
+//            }
+//        })
 
 //        mBinding.btnAddTeachPath.onClick {
 ////            val json2 ="{\"dparams\":[],\"fparams\":[],\"iparams\":[],\"lparams\":[],\"m_cPathTypeBuffer\":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],\"m_fCleanPathPlanStartPosBuffer\":[5.286,-0.009,3.1620728E35],\"m_fElementBuffer\":[8.376,5.269,9.052838,5.276127,9.735463,5.2419443,10.411838,5.279603,10.411838,5.279603,11.088211,5.317261,11.764164,5.343837,12.4395485,5.339864,12.4395485,5.339864,13.114933,5.3358903,13.787697,5.330263,14.461338,5.339382,14.461338,5.339382,15.134979,5.348501,15.809291,5.366262,16.481258,5.3805075,16.481258,5.3805075,17.153227,5.3947535,17.818878,5.3949447,18.491167,5.405807,18.491167,5.405807,19.163456,5.41667,19.841251,5.4500256,20.514572,5.4430795,20.514572,5.4430795,21.187893,5.436134,21.859995,5.450444,22.53188,5.478367,22.53188,5.478367,23.203764,5.50629,23.874968,5.52005,24.54712,5.5205603,24.54712,5.5205603,25.219269,5.5210705,25.896204,5.5235777,26.566658,5.5316567,26.566658,5.5316567,27.23711,5.5397353,27.900465,5.5099506,28.569067,5.535492,28.569067,5.535492,29.23767,5.5610332,29.90712,5.573303,30.576048,5.5988555,30.576048,5.5988555,31.244978,5.624408,31.92055,5.6250944,32.58731,5.6274443,32.58731,5.6274443,33.254074,5.629794,33.932755,5.6713533,34.590187,5.7026925,34.590187,5.7026925,35.247623,5.7340317,35.97141,5.725162,36.60018,5.712918,36.60018,5.712918,37.22895,5.7006736,38.060036,5.80508,38.579395,5.697625,38.579395,5.697625,39.09876,5.590171,40.298515,4.9978185,40.135834,5.7645416,40.135834,5.7645416,39.973152,6.5312643,38.8615,6.000282,38.28926,6.0468855,38.28926,6.0468855,37.71702,6.0934896,36.933033,5.9447503,36.288216,6.0254703,36.288216,6.0254703,35.643402,6.1061897,34.932304,6.1068234,34.268562,6.1110964,34.268562,6.1110964,33.60482,6.115369,32.935272,6.070629,32.266857,6.0729227,32.266857,6.0729227,31.598442,6.075217,30.922983,6.023684,30.251406,6.0120735,30.251406,6.0120735,29.57983,6.000463,28.901402,5.9902906,28.230501,5.9949327,28.230501,5.9949327,27.559603,5.9995747,26.8966,5.9766574,26.227045,5.956712,26.227045,5.956712,25.557487,5.936766,24.887749,5.9238753,24.216196,5.9126396,24.216196,5.9126396,23.544641,5.9014034,22.86917,5.9206457,22.196436,5.9072685,22.196436,5.9072685,21.5237,5.8938913,20.853062,5.8676333,20.180191,5.836571,20.180191,5.836571,19.50732,5.8055086,18.831089,5.8047986,18.156143,5.8069053,18.156143,5.8069053,17.4812,5.8090115,16.797672,5.795639,16.125566,5.7655244,16.125566,5.7655244,15.45346,5.7354097,14.779823,5.747781,14.112914,5.748028,14.112914,5.748028,13.446005,5.748275,12.761993,5.762222,12.10686,5.721673,12.10686,5.721673,11.451726,5.6811237,10.729786,5.7729936,10.111622,5.6605406,10.111622,5.6605406,9.493459,5.548088,8.590731,6.1170473,8.256349,5.34853,8.256349,5.34853,7.921966,4.5800123,9.137574,4.603643,9.712716,4.739748,9.712716,4.739748,10.287858,4.875853,11.058854,4.736226,11.70582,4.780468,11.70582,4.780468,12.352785,4.8247104,13.063596,4.822666,13.730262,4.8259797,13.730262,4.8259797,14.396928,4.829293,15.074096,4.878851,15.742485,4.884395,15.742485,4.884395,16.410873,4.8899393,17.075933,4.86804,17.74618,4.8900313,17.74618,4.8900313,18.416426,4.9120226,19.09241,4.9338465,19.765797,4.935681,19.765797,4.935681,20.439186,4.937515,21.122297,4.9309053,21.793554,4.9674473,21.793554,4.9674473,22.464813,5.003989,23.128086,4.9752026,23.797413,5.0012817,23.797413,5.0012817,24.466742,5.0273604,25.133162,5.009925,25.8043,5.040123,25.8043,5.040123,26.475441,5.070321,27.153925,5.0701838,27.826101,5.068209,27.826101,5.068209,28.498278,5.0662346,29.158777,5.0819592,29.831415,5.106915,29.831415,5.106915,30.504053,5.1318707,31.153864,5.1297526,31.838196,5.131048,31.838196,5.131048,32.522526,5.1323442,33.143555,5.185711,33.866016,5.186148,33.866016,5.186148,34.588478,5.186585,35.04707,5.2434597,35.955185,5.2176957,35.955185,5.2176957,36.8633,5.1919312,38.310753,5.312164,39.338,5.286],\"m_fGloalPathPlanGoalPosBuffer\":[1.3759809E-38,0.0,0.0],\"m_fGloalPathPlanStartPosBuffer\":[0.4,1.5755796E-38,0.0],\"m_fRegionPointsBuffer\":[],\"m_iAddLaser\":0,\"m_iCleanPathPanType\":0,\"m_iElementSum\":376,\"m_iGloalPathPlanType\":0,\"m_iPathPlanPublicId\":11,\"m_iPathPlanPublicSubId\":0,\"m_iPathPlanRegionChoose\":54,\"m_iPathPlanType\":3,\"m_iPathSum\":47,\"m_iPlanResult\":1,\"m_iPlanResultMode\":0,\"m_iRegionNumber\":1109219869,\"m_iRegionPoints\":0,\"m_strAdditionInfo\":\"1.0.1.193\",\"m_strFrom\":\"PathPlan\",\"m_strTo\":\"pad\",\"m_uLayerNumber\":12846,\"ndparams\":0,\"nfparams\":0,\"niparams\":0,\"nlparams\":0,\"sparams\":\"\",\"utime\":0}"
@@ -134,6 +144,10 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             } else {
                 ToastUtils.showLong("保存试教失败")
             }
+        }
+        //拖拽定位
+        mBinding.btnDragPositing.onClick {
+            startActivity<DragPositionViewActivity>(KEY_LOCATION_DRAG to mDragBean)
         }
 
         //保存
@@ -200,7 +214,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        iniVirtualWall()
 //        initRemoveNoise()
 //        initPostingArea()
-        initCleanArea()
+//        initCleanArea()
 //        initElevator()
 //        initPose()
 //        initMachineStation()
@@ -1141,12 +1155,15 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     override fun initData() {
         super.initData()
         MainController.sendGetPositingAreas(mapId)
+        val rcData = RCData()
 
         //上激光点云
         LiveEventBus.get<laser_t>(KEY_CURRENT_POINT_CLOUD).observe(this) {
-            upRCData.ranges = it!!.ranges
+//            upRCData.ranges = it!!.ranges
 
-//            mBinding.mapView.setUpLaserScan(it)
+            rcData.f_create_map_data = it.ranges
+            mDragBean.upRCData = rcData
+            mBinding.mapView.setUpLaserScan(it)
         }
 
         //下激光点云
