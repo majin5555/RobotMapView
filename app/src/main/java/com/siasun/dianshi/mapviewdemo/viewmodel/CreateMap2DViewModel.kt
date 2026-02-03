@@ -21,7 +21,7 @@ class CreateMap2DViewModel : BaseViewModel() {
     /**
      * 下载地图
      */
-    fun downPngYaml(type: Int, mapId: Int,) {
+    fun downPngYaml(type: Int, mapId: Int) {
 
         viewModelScope.launch(Dispatchers.IO) {
 

@@ -5,7 +5,6 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.util.Log
 import com.ngu.lcmtypes.laser_t
 import com.siasun.dianshi.bean.ConstraintNode
 import com.siasun.dianshi.view.SlamWareBaseView
@@ -28,6 +27,8 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
 
     //3D建图关键帧
     private val keyFrames3D = ConcurrentHashMap<Int, KeyFrame>()
+    // 缓存点云绘制数组，避免频繁GC
+    private var mPointArray: FloatArray? = null
 
     /**
      * 设置工作模式
@@ -61,22 +62,35 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
         canvas.save()
         val mapView = parent.get() ?: return
         if (keyFrames3D.isNotEmpty()) {
+            // 预估需要的数组大小
+            var totalPointsCount = 0
+            keyFrames3D.values.forEach { frame ->
+                frame.points?.let { totalPointsCount += it.size }
+            }
+
+            // 批量处理所有点云
+            if (totalPointsCount > 0) {
+                // 优化：复用数组，避免频繁分配内存
+                if (mPointArray == null || mPointArray!!.size < totalPointsCount * 2) {
+                    mPointArray = FloatArray(totalPointsCount * 2)
+                }
+                val pointArray = mPointArray!!
+                var index = 0
+                keyFrames3D.values.forEach { frame ->
+                    frame.points?.forEach { point ->
+                        val screenPoint = mapView.worldToScreen(point.x, point.y)
+                        pointArray[index++] = screenPoint.x
+                        pointArray[index++] = screenPoint.y
+                    }
+                }
+                // 一次性绘制所有点云
+                canvas.drawPoints(pointArray, 0, index, mPaint)
+            }
+
+            // 批量绘制关键帧位置
             keyFrames3D.values.forEach { frame ->
                 val robotScreen = mapView.worldToScreen(frame.robotPos[0], frame.robotPos[1])
-                // 绘制关键帧位置
                 canvas.drawPoint(robotScreen.x, robotScreen.y, greenPaint)
-
-                frame.points?.let { points ->
-                    val contour = points.map { mapView.worldToScreen(it.x, it.y) }
-                    // 创建用于绘制点的FloatArray
-                    val pointArray = FloatArray(contour.size * 2)
-                    contour.forEachIndexed { index, point ->
-                        pointArray[index * 2] = point.x
-                        pointArray[index * 2 + 1] = point.y
-                    }
-                    // 绘制轮廓点
-                    canvas.drawPoints(pointArray, mPaint)
-                }
             }
         }
         canvas.restore()

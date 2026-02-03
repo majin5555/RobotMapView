@@ -6,6 +6,7 @@ import android.os.Bundle
 import androidx.annotation.RequiresApi
 import com.blankj.utilcode.util.ToastUtils
 import com.jeremyliao.liveeventbus.LiveEventBus
+import com.jxd.jxd_core.intent.startActivity
 import com.ngu.lcmtypes.laser_t
 import com.siasun.dianshi.GlobalVariable.SEND_NAVI_HEART
 import com.siasun.dianshi.base.BaseMvvmActivity
@@ -97,6 +98,9 @@ class CreateMap3DActivity :
             LogUtil.i("停止扫描")
             ToastUtils.showShort("停止扫描")
         }
+        mBinding.tvExpend.onClick {
+            startActivity<ExpandMap3DActivity>()
+        }
     }
 
     @SuppressLint("SetTextI18n")
@@ -106,7 +110,7 @@ class CreateMap3DActivity :
         //下载地图结果
         LiveEventBus.get(KEY_UPDATE_MAP, UpdateMapBean::class.java).observe(this) {
             ToastUtils.showLong("PM.yaml  && PM.png 下载成功")
-//            startActivity<ExpandMap2DActivity>()
+            startActivity<ExpandMap3DActivity>()
         }
         //建图导航心跳
         LiveEventBus.get(KEY_NAV_HEARTBEAT_STATE, ByteArray::class.java).observe(this) {
