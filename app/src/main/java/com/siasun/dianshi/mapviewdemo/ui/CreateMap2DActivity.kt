@@ -194,11 +194,11 @@ class CreateMap2DActivity :
         CommonWarnDialog.Builder(this).setMsg("保存地图").setOnCommonWarnDialogListener(object :
             CommonWarnDialog.Builder.CommonWarnDialogListener {
             override fun confirm() {
-                LogUtil.i("mBinding.mapView.mMapRotateRadians ${mBinding.mapView.mMapRotateRadians}")
-                //开始保存地图
+                LogUtil.i("mBinding.mapView.mMapRotateRadians ${mBinding.mapView.rotationRadians}")
+              //  开始保存地图 / 180 * Math.PI
                 MainController.saveEnvironment(
                     1,
-                    rotate = RadianUtil.toRadians(mBinding.mapView.mMapRotateRadians),
+                    rotate = mBinding.mapView.rotationRadians,
                     mapId = mapID
                 )
                 SEND_NAVI_HEART = true

@@ -36,6 +36,7 @@ import com.siasun.dianshi.view.createMap.ExpandAreaView
 import com.siasun.dianshi.view.PngMapView
 import com.siasun.dianshi.view.SlamWareBaseView
 import com.siasun.dianshi.view.createMap.RobotViewCreateMap
+import org.apache.commons.math3.analysis.function.Logit
 import java.math.RoundingMode
 import java.text.DecimalFormat
 
@@ -57,7 +58,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
 
     //视图高度
     var mMapScale = 1f //地图缩放级别
-    var mMapRotateRadians = 0.0f//旋转弧度
+
     private val mMaxMapScale = 5f //最大缩放级别
     private var mMinMapScale = 0.1f //最小缩放级别
 
@@ -76,6 +77,11 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
 
     //是否第一次接收到子图数据，如果没收到子图，直接跳过旋转环境
     var isStartRevSubMaps = false
+
+    /**
+     * 旋转弧度
+     */
+    var rotationRadians = 0f
 
     /**
      * *************** 监听器   start ***********************
@@ -164,7 +170,6 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
     }
 
     private fun setRotation(factor: Float, cx: Int, cy: Int) {
-        mMapRotateRadians = RadianUtil.toRadians(factor)
         mOuterMatrix.postRotate(RadianUtil.toAngel(factor), cx.toFloat(), cy.toFloat())
         setMatrixWithRotation(mOuterMatrix, factor)
     }
@@ -228,6 +233,10 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
         for (mapLayer in mapLayers) {
             mapLayer.setMatrixWithRotation(matrix, rotation)
         }
+        rotationRadians = RadianUtil.toRadians(mMapOutline2D!!.mRotation)
+        Log.d("setMatrixWithRotation", "角度 .  ${mMapOutline2D!!.mRotation}")
+        Log.d("setMatrixWithRotation", "弧度999 .  ${mMapOutline2D!!.mRotation / 180 * Math.PI}")
+        Log.d("setMatrixWithRotation", "弧度 .  $rotationRadians")
     }
 
     fun setCentred() {
@@ -296,6 +305,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
      */
     val viewHeight: Int
         get() = VIEW_HEIGHT
+
 
     /**
      * 世界坐标转屏幕坐标

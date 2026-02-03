@@ -81,6 +81,10 @@ class ExpandMap2DActivity :
     /**
      * 地图更新（绘制区域）
      * 地图扩展（不绘制）
+     *
+     * 局部更新 扩展地图都传list
+     * 局部更新list有数据
+     * 扩展地图list无数据
      */
     private fun expandMap() {
         mBinding.tvExpend.onClick {
@@ -218,11 +222,11 @@ class ExpandMap2DActivity :
         CommonWarnDialog.Builder(this).setMsg("保存地图").setOnCommonWarnDialogListener(object :
             CommonWarnDialog.Builder.CommonWarnDialogListener {
             override fun confirm() {
-                LogUtil.i("mBinding.mapView.mMapRotateRadians ${mBinding.mapView.mMapRotateRadians}")
+                LogUtil.i("mBinding.mapView.mMapRotateRadians ${mBinding.mapView.rotationRadians}")
                 //开始保存地图
                 MainController.saveEnvironment(
                     1,
-                    rotate = RadianUtil.toRadians(mBinding.mapView.mMapRotateRadians),
+                    rotate = mBinding.mapView.rotationRadians,
                     mapId = mapID
                 )
                 SEND_NAVI_HEART = true
