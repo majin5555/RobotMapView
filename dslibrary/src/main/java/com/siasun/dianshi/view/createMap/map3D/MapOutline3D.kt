@@ -14,10 +14,8 @@ import java.util.concurrent.ConcurrentHashMap
 import com.siasun.dianshi.bean.KeyFrame
 import com.siasun.dianshi.bean.KeyframePoint
 import com.siasun.dianshi.view.createMap.CreateMapWorkMode
-import kotlin.collections.get
 import kotlin.math.cos
 import kotlin.math.sin
-import kotlin.times
 
 /**
  * 建图地图轮廓
@@ -28,10 +26,8 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
     private val TAG = this::class.java.simpleName
     private var currentWorkMode = CreateMapWorkMode.MODE_SHOW_MAP
 
-
     //3D建图关键帧
     private val keyFrames = ConcurrentHashMap<Int, KeyFrame>()
-
 
     /**
      * 设置工作模式
@@ -74,6 +70,7 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
 
                 frame.points?.let { points ->
                     val contour = points.map { mapView.worldToScreen(it.x, it.y) }
+//                    Log.d(TAG, "contour  ${contour}")
 
                     // 创建用于绘制点的FloatArray
                     val pointArray = FloatArray(contour.size * 2)
@@ -81,10 +78,8 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
                         pointArray[index * 2] = point.x
                         pointArray[index * 2 + 1] = point.y
                     }
-                    canvas.drawPoints(pointArray, mPaint.apply {
-                        strokeWidth = 3f
-                        style = Paint.Style.FILL
-                    }) // 绘制轮廓点
+                    // 绘制轮廓点
+                    canvas.drawPoints(pointArray, mPaint)
                 }
             }
         }
@@ -103,13 +98,13 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
         val rad0 = laserData.rad0.toInt()
 
         if (!keyFrames.containsKey(rad0)) {
-            Log.i(TAG, "关键帧 ID $rad0")
-            Log.i(TAG, "关键帧 x ${robotPose[0]}")
-            Log.i(TAG, "关键帧 y ${robotPose[1]}")
-            Log.i(TAG, "关键帧 t ${robotPose[2]}")
-            Log.i(TAG, "关键帧 z ${robotPose[3]}")
-            Log.i(TAG, "关键帧 roll ${robotPose[4]}")
-            Log.i(TAG, "关键帧 pitch ${robotPose[5]}")
+//            Log.i(TAG, "关键帧 ID $rad0")
+//            Log.i(TAG, "关键帧 x ${robotPose[0]}")
+//            Log.i(TAG, "关键帧 y ${robotPose[1]}")
+//            Log.i(TAG, "关键帧 t ${robotPose[2]}")
+//            Log.i(TAG, "关键帧 z ${robotPose[3]}")
+//            Log.i(TAG, "关键帧 roll ${robotPose[4]}")
+//            Log.i(TAG, "关键帧 pitch ${robotPose[5]}")
 
             //关键帧第一帧 要单独显示
             if (rad0 == 0) {

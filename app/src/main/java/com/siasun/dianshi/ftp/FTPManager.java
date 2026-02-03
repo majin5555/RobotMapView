@@ -66,7 +66,7 @@ public class FTPManager {
         ftpClient.setControlEncoding("utf-8");
         ftpClient.setConnectTimeout(3 * 1000);
         try {
-            String ip = MMKV.defaultMMKV().decodeString(KEY_NEY_IP, "192.168.3.101");
+            String ip = MMKV.defaultMMKV().decodeString(KEY_NEY_IP);
             LogUtil.INSTANCE.d("IP " + ip);
             ftpClient.connect(ip, PORT); //连接ftp服务器
             ftpClient.login(MRC05_USER_NAME, MRC05_PWD);//登录ftp服务器

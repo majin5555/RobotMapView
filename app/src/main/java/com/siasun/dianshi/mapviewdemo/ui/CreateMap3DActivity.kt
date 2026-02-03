@@ -3,40 +3,33 @@ package com.siasun.dianshi.mapviewdemo.ui
 import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import androidx.annotation.RequiresApi
 import com.blankj.utilcode.util.ToastUtils
 import com.jeremyliao.liveeventbus.LiveEventBus
 import com.ngu.lcmtypes.laser_t
-import com.ngu.lcmtypes.robot_control_t
-import com.siasun.dianshi.ConstantBase
 import com.siasun.dianshi.GlobalVariable.SEND_NAVI_HEART
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.bean.ConstraintNode
-import com.siasun.dianshi.bean.ExpandArea
+import com.siasun.dianshi.bean.UpdateMapBean
 import com.siasun.dianshi.controller.MainController
-import com.siasun.dianshi.view.createMap.ExpandAreaView.OnExpandAreaCreatedListener
-import com.siasun.dianshi.view.createMap.map2D.CreateMapView2D
 import com.siasun.dianshi.dialog.CommonWarnDialog
 import com.siasun.dianshi.framework.ext.onClick
 import com.siasun.dianshi.framework.log.LogUtil
 import com.siasun.dianshi.mapviewdemo.CREATE_MAP
-import com.siasun.dianshi.mapviewdemo.KEY_AGV_COORDINATE
 import com.siasun.dianshi.mapviewdemo.KEY_CONFIGURATION_PARAMETERS
 import com.siasun.dianshi.mapviewdemo.KEY_CONFIGURATION_PARAMETERS_RESULT
 import com.siasun.dianshi.mapviewdemo.KEY_CONSTRAINT_CONSTRAINT_NODE_RESULT
 import com.siasun.dianshi.mapviewdemo.KEY_CONSTRAINT_NODE
 import com.siasun.dianshi.mapviewdemo.KEY_NAV_HEARTBEAT_STATE
 import com.siasun.dianshi.mapviewdemo.KEY_OPT_POSE
+import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_MAP
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_POS
-import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_SUB_MAPS
-import com.siasun.dianshi.mapviewdemo.R
 import com.siasun.dianshi.mapviewdemo.TAG_NAV
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityCreateMap3dDactivityBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.CreateMap3DViewModel
 import com.siasun.dianshi.utils.RadianUtil
 import com.siasun.dianshi.view.createMap.CreateMapWorkMode
-import com.siasun.dianshi.xpop.XpopUtils
+import com.tencent.mmkv.MMKV
 import java.util.Timer
 import java.util.TimerTask
 
@@ -48,19 +41,12 @@ class CreateMap3DActivity :
     //建图心跳定时器
     private val mTimer = Timer()
 
-    val mapID = 1
+    val mapID = 100
 
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
         MainController.init()
-
-        exePantMap()
-        //加载地图
-        mBinding.mapView.loadMap(
-            ConstantBase.getFilePath(mapID, ConstantBase.PAD_MAP_NAME_PNG),
-            ConstantBase.getFilePath(mapID, ConstantBase.PAD_MAP_NAME_YAML)
-        )
-
+        MMKV.defaultMMKV().encode("KEY_NEY_IP", "192.168.1.198");
         mTimer.schedule(object : TimerTask() {
             override fun run() {
                 if (SEND_NAVI_HEART) {
@@ -95,28 +81,15 @@ class CreateMap3DActivity :
         }
     }
 
-    private fun exePantMap() {
-        mBinding.btnSettingArea.onClick {
-            //扩展地图
-            mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION)
-
-        }
-        mBinding.btnCleanArea.onClick {
-            mBinding.mapView.resetExpandAreaView()
-        }
-
-        mBinding.mapView.getExpandAreaView()!!
-            .setOnExpandAreaCreatedListener(object : OnExpandAreaCreatedListener {
-                override fun onExpandAreaCreated(area: ExpandArea) {
-                    mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_CREATE_MAP)
-                    LogUtil.i("扩展地图 ${area}", null, TAG_NAV)
-                }
-            })
-    }
-
+    @SuppressLint("SetTextI18n")
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initData() {
         super.initData()
+        //下载地图结果
+        LiveEventBus.get(KEY_UPDATE_MAP, UpdateMapBean::class.java).observe(this) {
+            ToastUtils.showLong("PM.yaml  && PM.png 下载成功")
+//            startActivity<ExpandMap2DActivity>()
+        }
         //建图导航心跳
         LiveEventBus.get(KEY_NAV_HEARTBEAT_STATE, ByteArray::class.java).observe(this) {
             navHeartbeatState(it)
@@ -191,7 +164,7 @@ class CreateMap3DActivity :
 
     @RequiresApi(Build.VERSION_CODES.R)
     private fun navHeartbeatState(it: ByteArray) {
-        LogUtil.i("navHeartbeatState [0] = ${it[0].toInt()} ,navHeartbeatState [1] = ${it[1].toInt()} ")
+//        LogUtil.i("navHeartbeatState [0] = ${it[0].toInt()} ,navHeartbeatState [1] = ${it[1].toInt()} ")
 
         when (it[0].toInt()) {
             //定位
@@ -248,7 +221,7 @@ class CreateMap3DActivity :
 //                        showRouteMapDialog()
 //                    } else {
 //                        LogUtil.i("没有收到任何子图，直接询问是否保存地图", null, TAG_NAV)
-                        showSavaMapDialog()
+                    showSavaMapDialog()
 //                    }
 
                     mBinding.mapView.isStartRevSubMaps = false

@@ -24,8 +24,8 @@ import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_SUB_MAPS
 import com.siasun.dianshi.mapviewdemo.TAG_NAV
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityCreateMap2dDactivityBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.CreateMap2DViewModel
-import com.siasun.dianshi.utils.RadianUtil
 import com.siasun.dianshi.view.createMap.CreateMapWorkMode
+import com.tencent.mmkv.MMKV
 import java.util.Timer
 import java.util.TimerTask
 
@@ -43,6 +43,7 @@ class CreateMap2DActivity :
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
         MainController.init()
+        MMKV.defaultMMKV().encode("KEY_NEY_IP", "192.168.3.101");
 
         mTimer.schedule(object : TimerTask() {
             override fun run() {

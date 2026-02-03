@@ -6,6 +6,7 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import com.siasun.dianshi.view.createMap.map2D.CreateMapView2D;
+import com.siasun.dianshi.view.createMap.map3D.CreateMapView3D;
 
 
 /**
@@ -109,14 +110,15 @@ public class SlamGestureDetector {
                     float centerY = (prevPrimaryPosition.y + prevSecondaryPosition.y) / 2f;
                     PointF center = new PointF(centerX, centerY);
                     mListener.onMapPinch(scale, center);
-                    if (view instanceof CreateMapView2D) {
+
+                    //建图旋转地图
+                    if (view instanceof CreateMapView2D || view instanceof CreateMapView3D) {
                         // 旋转地图
                         PointF na = getNormalized(currPrimaryPosition, currSecondaryPosition);
                         PointF nb = getNormalized(prevPrimaryPosition, prevSecondaryPosition);
                         float rotate = (float) (Math.atan2(na.y, na.x) - Math.atan2(nb.y, nb.x));
                         mListener.onMapRotate(rotate, center);
                     }
-
                 }
                 break;
             case MotionEvent.ACTION_POINTER_UP:
