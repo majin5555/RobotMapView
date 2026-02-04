@@ -36,25 +36,25 @@ class UpLaserScanView<T>(context: Context?, val parent: WeakReference<T>) :
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        // 只有在绘制启用状态下才绘制点云
-        if (isDrawingEnabled && cloudList.isNotEmpty()) {
-            val mapView = parent.get() ?: return
+        synchronized(cloudList) {
+            // 只有在绘制启用状态下才绘制点云
+            if (isDrawingEnabled && cloudList.isNotEmpty()) {
+                val mapView = parent.get() ?: return
+
+                // 预分配数组大小
+                val pointsArray = FloatArray(cloudList.size * 2)
+                var index = 0
 
 
-            // 预分配数组大小
-            val pointsArray = FloatArray(cloudList.size * 2)
-            var index = 0
-
-
-            for (point in cloudList) {
-                if (mapView is MapViewInterface) {
-                    val screenPoint = mapView.worldToScreen(point.x, point.y)
-                    pointsArray[index++] = screenPoint.x
-                    pointsArray[index++] = screenPoint.y
+                for (point in cloudList) {
+                    if (mapView is MapViewInterface) {
+                        val screenPoint = mapView.worldToScreen(point.x, point.y)
+                        pointsArray[index++] = screenPoint.x
+                        pointsArray[index++] = screenPoint.y
+                    }
                 }
+                canvas.drawPoints(pointsArray, paint)
             }
-
-            canvas.drawPoints(pointsArray, paint)
         }
     }
 
@@ -62,24 +62,27 @@ class UpLaserScanView<T>(context: Context?, val parent: WeakReference<T>) :
      * 上激光点云
      */
     fun updateUpLaserScan(laser: laser_t) {
-        cloudList.clear()
-        val robotX = laser.ranges[0]
-        val robotY = laser.ranges[1]
-        val robotT = laser.ranges[2]
-        if (laser.ranges.size > 3) {
-            // 预分配容量
-            val expectedSize = (laser.ranges.size / 3) - 1
-            cloudList.ensureCapacity(expectedSize)
+        synchronized(cloudList) {
 
-            for (i in 1 until laser.ranges.size / 3) {
-                val laserX = laser.ranges[3 * i]
-                val laserY = laser.ranges[3 * i + 1]
-                cloudList.add(
-                    PointF(
-                        laserX * cos(robotT) - laserY * sin(robotT) + robotX,
-                        laserX * sin(robotT) + laserY * cos(robotT) + robotY
+            cloudList.clear()
+            val robotX = laser.ranges[0]
+            val robotY = laser.ranges[1]
+            val robotT = laser.ranges[2]
+            if (laser.ranges.size > 3) {
+                // 预分配容量
+                val expectedSize = (laser.ranges.size / 3) - 1
+                cloudList.ensureCapacity(expectedSize)
+
+                for (i in 1 until laser.ranges.size / 3) {
+                    val laserX = laser.ranges[3 * i]
+                    val laserY = laser.ranges[3 * i + 1]
+                    cloudList.add(
+                        PointF(
+                            laserX * cos(robotT) - laserY * sin(robotT) + robotX,
+                            laserX * sin(robotT) + laserY * cos(robotT) + robotY
+                        )
                     )
-                )
+                }
             }
         }
         postInvalidate()
