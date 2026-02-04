@@ -209,7 +209,7 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
      * 外部接口：更新关键帧数据 nav做回环检测 3D
      */
     fun parseOptPose(laserData: laser_t) {
-        Log.d(TAG, "3D回环检测开始")
+        Log.d(TAG, "3D回环检测开始 ${laserData.ranges.size}")
 
         var processedCount = 0
 
@@ -222,13 +222,16 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
             // 遍历所有数据（每个关键帧占4个Float: ID, X, Y, Theta）
             // 修复：确保循环不会越界，检查 i+3 是否在范围内
             val size = laserData.ranges.size
-            for (i in 0 until (size - 3) step 4) {
+            for (i in 0 until (size - 6) step 4) {
                 // 关键帧ID
                 val rad0: Int = laserData.ranges[i].toInt()
                 // 关键帧位置
                 val radX: Float = laserData.ranges[i + 1]
                 val radY: Float = laserData.ranges[i + 2]
                 val radT: Float = laserData.ranges[i + 3]
+                val radZ: Float = laserData.ranges[i + 4]
+                val radRoll: Float = laserData.ranges[i + 5]
+                val radPitch: Float = laserData.ranges[i + 6]
 
                 // 获取关键帧数据（非空校验）
                 val keyFrame = keyFrames3D[rad0] ?: continue
@@ -237,6 +240,9 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
                 keyFrame.robotPos[0] = radX
                 keyFrame.robotPos[1] = radY
                 keyFrame.robotPos[2] = radT
+                keyFrame.robotPos[3] = radZ
+                keyFrame.robotPos[4] = radRoll
+                keyFrame.robotPos[5] = radPitch
 
                 // 优化点：批量更新点云坐标（使用数学运算优化）
                 val cosT = cos(radT)
