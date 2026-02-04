@@ -10,13 +10,13 @@ import com.jeremyliao.liveeventbus.core.LiveEvent
 data class CrossDoor(
     val id: Int,
     val map_id: Int,
-    val door_msg: DoorMsg,
+    var door_msg: DoorMsg,
     var start_point: PointF = PointF(),
     var end_point: PointF = PointF()
 ) : LiveEvent
 
 
 data class DoorMsg(
-    val door_sn: String,
-    val type: String,
+    var door_sn: String,
+    var type: String,
 ) : LiveEvent
