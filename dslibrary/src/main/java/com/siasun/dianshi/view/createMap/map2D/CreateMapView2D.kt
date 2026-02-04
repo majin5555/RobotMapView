@@ -36,6 +36,7 @@ import androidx.core.content.withStyledAttributes
 import com.siasun.dianshi.view.createMap.ExpandAreaView
 import com.siasun.dianshi.view.PngMapView
 import com.siasun.dianshi.view.SlamWareBaseView
+import com.siasun.dianshi.view.UpLaserScanView
 import com.siasun.dianshi.view.createMap.RobotViewCreateMap
 
 /**
@@ -67,7 +68,8 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     private var mPngMapView: PngMapView? = null //png地图
     private var mMapOutline2D: MapOutline2D? = null //地图轮廓
     private var mExpandAreaView: ExpandAreaView<CreateMapView2D>? = null //地图更新区域
-    private var mUpLaserScanView: UpLaserScanView2D? = null//上激光点云
+    private var mCreatingUpLaserScanView: UpLaserScanView2D? = null//上激光点云
+    private var mUpLaserScanView: UpLaserScanView<CreateMapView2D>? = null//上激光点云
     private var mCreateMapRobotView: RobotViewCreateMap<CreateMapView2D>? = null //机器人图标
 
     // 机器人位姿 [x, y, theta(rad), z, roll, pitch]
@@ -119,7 +121,8 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
         // SurfaceView 模式下不再使用 addView 添加子 View
         // 而是通过 RenderThread 手动绘制这些 View
         mPngMapView = PngMapView(context)
-        mUpLaserScanView = UpLaserScanView2D(context, mMapView)
+        mCreatingUpLaserScanView = UpLaserScanView2D(context, mMapView)
+        mUpLaserScanView = UpLaserScanView(context, mMapView)
         mMapOutline2D = MapOutline2D(context, mMapView)
         mCreateMapRobotView = RobotViewCreateMap(context, mMapView)
         mExpandAreaView = ExpandAreaView(context, mMapView)
@@ -128,6 +131,8 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
         addMapLayers(mExpandAreaView)
         //地图轮廓
         addMapLayers(mMapOutline2D)
+        //建图上激光点云
+        addMapLayers(mCreatingUpLaserScanView)
         //上激光点云
         addMapLayers(mUpLaserScanView)
         //机器人图标
@@ -391,6 +396,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
 
         // 清理视图引用
         mPngMapView = null
+        mCreatingUpLaserScanView = null
         mUpLaserScanView = null
         mCreateMapRobotView = null
 
@@ -415,7 +421,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     fun setWorkMode(mode: WorkMode) {
         currentWorkMode = mode
         mMapOutline2D?.setWorkMode(mode)
-        mUpLaserScanView?.setWorkMode(mode)
+        mCreatingUpLaserScanView?.setWorkMode(mode)
         mCreateMapRobotView?.setWorkMode(mode)
         mExpandAreaView?.setWorkMode(mode)
     }
@@ -488,8 +494,14 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     fun parseLaserData(laserData: laser_t) {
         // 更新机器人位置（始终需要处理，不参与降采样）
         updateRobotPose(laserData.ranges[0], laserData.ranges[1], laserData.ranges[2])
-        mUpLaserScanView?.updateUpLaserScan(laserData)
+        mCreatingUpLaserScanView?.updateUpLaserScan(laserData)
     }
+
+    /**
+     * 扩展地图前显示点云数据
+     */
+    fun loadCurPointCloud(laserData: laser_t) =
+        mUpLaserScanView?.updateUpLaserScan(laserData)
 
 
     /**

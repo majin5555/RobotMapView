@@ -19,6 +19,8 @@ import com.siasun.dianshi.framework.ext.onClick
 import com.siasun.dianshi.framework.log.LogUtil
 import com.siasun.dianshi.mapviewdemo.CREATE_MAP
 import com.siasun.dianshi.mapviewdemo.KEY_AGV_COORDINATE
+import com.siasun.dianshi.mapviewdemo.KEY_CURRENT_POINT_CLOUD
+import com.siasun.dianshi.mapviewdemo.KEY_LOCATION
 import com.siasun.dianshi.mapviewdemo.KEY_NAV_HEARTBEAT_STATE
 import com.siasun.dianshi.mapviewdemo.KEY_OPT_POSE
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_POS
@@ -42,7 +44,8 @@ class ExpandMap2DActivity :
     val mapID = 1
 
     val list: MutableList<ExpandArea> = mutableListOf()
-    private var mRobotCoordinateBean = RobotCoordinateBean()
+    val robotPose = DoubleArray(6)
+
 
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
@@ -142,16 +145,32 @@ class ExpandMap2DActivity :
                 mBinding.tvMapSteps.text = "建图步数 ${it.rad0}"
             }
         }
+
+        //上激光点云
+        LiveEventBus.get<laser_t>(KEY_CURRENT_POINT_CLOUD).observe(this) {
+            mBinding.mapView.loadCurPointCloud(it)
+        }
         //接收车体坐标
         LiveEventBus.get<robot_control_t>(KEY_AGV_COORDINATE).observe(this) {
-//            mBinding.mapView.setAgvPose(it)
-            mRobotCoordinateBean.x = it.dparams[0]
-            mRobotCoordinateBean.y = it.dparams[1]
-            mRobotCoordinateBean.t = Math.toRadians(it.dparams[2])
+//          mBinding.mapView.setAgvPose(it)
+            robotPose[0] = it.dparams[0]
+            robotPose[1] = it.dparams[1]
+            robotPose[2] = Math.toRadians(it.dparams[2])
             if (it.dparams.size > 8) {
-                mRobotCoordinateBean.z = it.dparams[8]
-                mRobotCoordinateBean.roll = it.dparams[9]
-                mRobotCoordinateBean.pitch = it.dparams[10]
+                robotPose[3] = it.dparams[8]
+                robotPose[4] = it.dparams[9]
+                robotPose[5] = it.dparams[10]
+            }
+        }
+
+
+        //接收定位信息
+        LiveEventBus.get(KEY_LOCATION, Int::class.java).observeSticky(this) {
+            if (it == 1) {
+                mBinding.tvLocation.text = "定位成功"
+
+            } else {
+                mBinding.tvLocation.text = "定位失败"
             }
         }
     }

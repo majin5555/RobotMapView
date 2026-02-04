@@ -21,6 +21,12 @@
         android:text="建图步数"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <TextView
+        android:id="@+id/tvLocation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="定位状态" />
+
     <!-- 旋转-->
     <LinearLayout
         android:id="@+id/ll_rotate"
@@ -61,7 +67,6 @@
             android:text="结束扫描"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/tv_create" />
-
 
 
         <Button
