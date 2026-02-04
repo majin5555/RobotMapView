@@ -475,8 +475,9 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
 
     /**
      * 外部接口：更新子图数据 （建图模式） 2D
-     * type 扩展1
-     * type 新建2
+     *      * type 更新0
+     *      * type 扩展1
+     *      * type 新建2
      */
     fun parseSubMaps2D(mLaserT: laser_t, type: Int) {
         // 建图模式下，保持车体居中显示

@@ -215,7 +215,10 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
         val width = abs((maxTopRight.x - minBotLeft.x) / 0.05f)
         val height = abs((maxTopRight.y - minBotLeft.y) / 0.05f)
 
-        if (type == 1) {
+        if (type == 0) {//更新 使用地图PNG原有的宽高
+
+
+        } else if (type == 1) {//扩展 （1地图内的时候使用地图宽高、2地图外的时候使用子图计算的宽高）
             // 扩展地图时，如果子图的宽高大于底图的宽高，则使用子图的宽高
             if (width > mapView.mSrf.mapData.width) {
                 mapView.mSrf.mapData.width = width
@@ -223,8 +226,7 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
             if (height > mapView.mSrf.mapData.height) {
                 mapView.mSrf.mapData.height = height
             }
-        } else {
-            // 新建地图时，直接使用计算出的宽高
+        } else {  // 新建地图时，直接使用计算出的宽高
             mapView.mSrf.mapData.width = width
             mapView.mSrf.mapData.height = height
         }
