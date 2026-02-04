@@ -26,6 +26,10 @@ class PngMapView : View {
     
     private val mOuterMatrix = Matrix() // 使用val而不是var，避免重复创建
     private var mPngBitmap: Bitmap? = null
+    
+    // 偏移量
+    private var offsetX = 0f
+    private var offsetY = 0f
 
     constructor(context: Context?) : super(context) {
         init()
@@ -44,7 +48,15 @@ class PngMapView : View {
         super.onDraw(canvas)
         mPngBitmap?.also {
             canvas.save()
-            canvas.drawBitmap(it, mOuterMatrix, mPaint)
+            // 如果有偏移，先应用偏移
+            if (offsetX != 0f || offsetY != 0f) {
+                // 创建临时矩阵以避免修改 mOuterMatrix
+                val drawMatrix = Matrix(mOuterMatrix)
+                drawMatrix.preTranslate(offsetX, offsetY)
+                canvas.drawBitmap(it, drawMatrix, mPaint)
+            } else {
+                canvas.drawBitmap(it, mOuterMatrix, mPaint)
+            }
             canvas.restore()
         }
     }
@@ -68,7 +80,21 @@ class PngMapView : View {
             mPngBitmap!!.recycle()
         }
         mPngBitmap = bitmap
+        // 重置偏移
+        offsetX = 0f
+        offsetY = 0f
         postInvalidate()
+    }
+
+    /**
+     * 设置绘制偏移量
+     */
+    fun setOffset(x: Float, y: Float) {
+        if (offsetX != x || offsetY != y) {
+            offsetX = x
+            offsetY = y
+            postInvalidate()
+        }
     }
     
     override fun onDetachedFromWindow() {

@@ -55,9 +55,8 @@ import com.siasun.dianshi.view.createMap.MapViewInterface
  * 将在此画布中绘制slam的png地图
  */
 @SuppressLint("ViewConstructor")
-class MapView(
-    context: Context, private val attrs: AttributeSet, override val robotPose: FloatArray
-) : ShapeFrameLayout(context, attrs), SlamGestureDetector.OnRPGestureListener, MapViewInterface {
+class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLayout(context, attrs),
+    SlamGestureDetector.OnRPGestureListener, MapViewInterface {
 
 
     // 当前工作模式
@@ -124,6 +123,9 @@ class MapView(
         initView()
         setViewVisibility(attrs)
     }
+
+    // 机器人位姿 [x, y, theta(rad), z, roll, pitch]
+    override val robotPose = FloatArray(6)
 
     /**
      * 设置各个View显示
