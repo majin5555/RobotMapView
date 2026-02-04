@@ -63,6 +63,11 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     private val mMaxMapScale = 5f //最大缩放级别
     private var mMinMapScale = 0.1f //最小缩放级别
 
+    // 初始地图参数（用于计算扩展地图时的偏移量）
+    private var initialOriginX = 0f
+    private var initialOriginY = 0f
+    private var initialHeight = 0f
+
     private var mMapView: WeakReference<CreateMapView3D> = WeakReference(this)
     private var mapLayers: MutableList<SlamWareBaseView<CreateMapView3D>> = CopyOnWriteArrayList()
     private var mPngMapView: PngMapView? = null //png地图
@@ -456,13 +461,18 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
      * @param bitmap
      */
     private fun setBitmap(mapData: MapData, bitmap: Bitmap) {
-        mSrf.mapData.width = mapData.width
-        mSrf.mapData.height = mapData.height
-        mSrf.mapData.originX = mapData.originX
-        mSrf.mapData.originY = mapData.originY
-        mSrf.mapData.resolution = mapData.resolution
+        synchronized(mSrf.mapData) {
+            mSrf.mapData.width = mapData.width
+            mSrf.mapData.height = mapData.height
+            mSrf.mapData.originX = mapData.originX
+            mSrf.mapData.originY = mapData.originY
+            mSrf.mapData.resolution = mapData.resolution
 
-        Log.d(TAG, "setBitmap  mSrf.mapData ${mSrf.mapData}")
+            // 记录初始地图参数
+            initialOriginX = mapData.originX
+            initialOriginY = mapData.originY
+            initialHeight = mapData.height
+        }
 
         mPngMapView?.setBitmap(bitmap)
         // 设置地图后自动居中显示
@@ -513,31 +523,36 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
         Log.d(TAG, "calBinding mSrf.mapData.height ${laserData.intensities[1]}")
         Log.d(TAG, "calBinding originX ${laserData.intensities[2]}")
         Log.d(TAG, "calBinding originY ${laserData.intensities[3]}")
-        if (type == 0) {//更新
+        
+        synchronized(mSrf.mapData) {
+            if (type == 0) {//更新 使用地图PNG原有的宽高
 
-//            if (mSrf.mapData.height < laserData.intensities[0]) {
-//                mSrf.mapData.height = laserData.intensities[0]
-//            }
-//            if (mSrf.mapData.width < laserData.intensities[1]) {
-//                mSrf.mapData.width = laserData.intensities[2]
-//            }
 
-        } else if (type == 1) {//扩展
-            if (mSrf.mapData.height < laserData.intensities[0]) {
+
+            } else if (type == 1) {//扩展 （1地图内的时候使用地图宽高、2地图外的时候使用子图计算的宽高）
+                // 更新地图元数据
                 mSrf.mapData.height = laserData.intensities[0]
-            }
-            if (mSrf.mapData.width < laserData.intensities[1]) {
                 mSrf.mapData.width = laserData.intensities[1]
-            }
-        } else {//新建
-            // 解析地图元数据（关键帧或非关键帧均需要）
-            mSrf.mapData.height = laserData.intensities[0]
-            mSrf.mapData.width = laserData.intensities[1]
-            mSrf.mapData.originX = laserData.intensities[2]
-            mSrf.mapData.originY = laserData.intensities[3]
-            mSrf.mapData.resolution = laserData.intensities[4]
-        }
+                mSrf.mapData.originX = laserData.intensities[2]
+                mSrf.mapData.originY = laserData.intensities[3]
 
+                // 计算并设置PngMapView的偏移量
+                val res = mSrf.mapData.resolution
+                if (res > 0.0001f) {
+                    val offX = (initialOriginX - mSrf.mapData.originX) / res
+                    val offY = (mSrf.mapData.height - initialHeight) + (mSrf.mapData.originY - initialOriginY) / res
+                    mPngMapView?.setOffset(offX, offY)
+                }
+
+            } else {//新建
+                // 解析地图元数据（关键帧或非关键帧均需要）
+                mSrf.mapData.height = laserData.intensities[0]
+                mSrf.mapData.width = laserData.intensities[1]
+                mSrf.mapData.originX = laserData.intensities[2]
+                mSrf.mapData.originY = laserData.intensities[3]
+                mSrf.mapData.resolution = laserData.intensities[4]
+            }
+        }
     }
 
     /**

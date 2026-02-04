@@ -549,7 +549,14 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      * @param bitmap
      */
     private fun setBitmap(mapData: MapData, bitmap: Bitmap) {
-        mSrf.mapData = mapData
+        synchronized(mSrf.mapData) {
+            mSrf.mapData.width = mapData.width
+            mSrf.mapData.height = mapData.height
+            mSrf.mapData.originX = mapData.originX
+            mSrf.mapData.originY = mapData.originY
+            mSrf.mapData.resolution = mapData.resolution
+        }
+
         mPngMapView?.setBitmap(bitmap)
         // 设置地图后自动居中显示
         setCentred()

@@ -58,7 +58,10 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
      * 设置工作模式
      */
     fun setWorkMode(mode: WorkMode) {
-        if (currentWorkMode == mode) return // 避免重复设置
+        // 重置状态
+        if (mode != WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+            isCreating = false
+        }
 
         currentWorkMode = mode
 

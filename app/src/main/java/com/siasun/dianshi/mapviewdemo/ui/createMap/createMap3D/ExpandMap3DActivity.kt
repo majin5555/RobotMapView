@@ -99,7 +99,6 @@ class ExpandMap3DActivity :
             mBinding.mapView.isStartRevSubMaps = false
             mBinding.mapView.setWorkMode(WorkMode.MODE_CREATE_MAP)
 
-
             //更新地图
             CommonEditDialog.Builder(this).setOnCommonEditDialogListener(object :
                 CommonEditDialog.Builder.CommonEditDialogListener {
@@ -131,10 +130,6 @@ class ExpandMap3DActivity :
 
 
             }).setTitle("请输入最大高度").setMsg(2.5.toString()).create().show()
-
-            showLoading("开始扩展")
-            ToastUtils.showShort("开始扩展")
-            LogUtil.i("开始扩展", null, TAG_NAV)
         }
 
 
@@ -153,7 +148,6 @@ class ExpandMap3DActivity :
 
         //扩展地图 重制区域
         mBinding.btnCleanArea.onClick {
-//            list.clear()
             mBinding.mapView.resetExpandAreaView()
         }
     }

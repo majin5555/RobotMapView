@@ -502,16 +502,8 @@ class LCMController : AbsController(), LCMSubscriber {
         val iParams = ByteArray(2)
         iParams[0] = extendType.toByte()//0- 不冻结原环境模型，1 冻结原环境模
         iParams[1] = mapId.toByte()// 地图id
-//        val dParams = DoubleArray(6)
-//        dParams[0] = mRobotCoordinateBean.x
-//        dParams[1] = mRobotCoordinateBean.y
-//        dParams[2] = mRobotCoordinateBean.t
-//        dParams[3] = mRobotCoordinateBean.z
-//        dParams[4] = mRobotCoordinateBean.roll
-//        dParams[5] = mRobotCoordinateBean.pitch
         //TODO 需要增加3D信息
         sendRobotControlNew(32, robotPose, iParams, null, null, NAVI_SERVICE_COMMAND)
-        LogUtil.d("开始扩展 $robotPose")
     }
 
     /**
