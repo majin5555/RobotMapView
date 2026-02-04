@@ -3,6 +3,7 @@ package com.siasun.dianshi.view.createMap.map3D
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.PointF
 import android.graphics.RectF
@@ -14,7 +15,6 @@ import android.widget.ImageView
 import androidx.annotation.RequiresApi
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
 import com.ngu.lcmtypes.laser_t
 import com.siasun.dianshi.R
@@ -29,24 +29,25 @@ import com.siasun.dianshi.view.createMap.MapViewInterface
 import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.CopyOnWriteArrayList
-import androidx.core.content.withStyledAttributes
-import com.hjq.shape.layout.ShapeFrameLayout
+import android.view.SurfaceHolder
+import android.view.SurfaceView
+import com.bumptech.glide.request.target.SimpleTarget
 import com.siasun.dianshi.bean.ConstraintNode
 import com.siasun.dianshi.view.createMap.ExpandAreaView
 import com.siasun.dianshi.view.PngMapView
 import com.siasun.dianshi.view.SlamWareBaseView
 import com.siasun.dianshi.view.createMap.RobotViewCreateMap
-import java.math.RoundingMode
-import java.text.DecimalFormat
 
 /**
  * 地图画布
  * 3D 建图View
  */
-class CreateMapView3D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(context, attrs),
-    SlamGestureDetector.OnRPGestureListener, MapViewInterface {
+class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(context, attrs),
+    SlamGestureDetector.OnRPGestureListener, MapViewInterface, SurfaceHolder.Callback {
     private val TAG = this::class.java.simpleName
 
+    // 渲染线程
+    private var mRenderThread: RenderThread? = null
 
     // 当前工作模式
     private var currentWorkMode = CreateMapWorkMode.MODE_SHOW_MAP
@@ -82,6 +83,7 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
      * 旋转弧度
      */
     var rotationRadians = 0f
+
     /**
      * *************** 监听器   start ***********************
      */
@@ -95,36 +97,24 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
      */
 
     init {
-        // 移除setBackgroundColor调用，让ShapeFrameLayout的shape_solidColor和shape_radius生效
-        // 设置clipChildren为true，确保子视图不会超出父视图的圆角区域
-        clipChildren = true
-        clipToPadding = true
+        // 初始化 SurfaceHolder 回调
+        holder.addCallback(this)
+
         mOuterMatrix = Matrix()
         mGestureDetector = SlamGestureDetector(this, this)
         initView()
-        setViewVisibility(attrs)
     }
-
-    /**
-     * 设置各个View显示
-     */
-    private fun setViewVisibility(attrs: AttributeSet?) {
-        attrs?.let {
-            context.withStyledAttributes(it, R.styleable.MapView) {}
-        }
-    }
-
 
     private fun initView() {
-        val lp = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
         mPngMapView = PngMapView(context)
         mUpLaserScanView = UpLaserScanView3D(context, mMapView)
         mConstrainNodes = ConstrainNodes(context, mMapView)
         mMapOutline3D = MapOutline3D(context, mMapView)
         mCreateMapRobotView = RobotViewCreateMap(context, mMapView)
         mExpandAreaView = ExpandAreaView(context, mMapView)
-        //底图的View
-        addView(mPngMapView, lp)
+
+        // 注意：SurfaceView 模式下不再使用 addView 添加子 View
+        // 而是通过 RenderThread 手动绘制这些 View
 
         //扩展区域
         addMapLayers(mExpandAreaView)
@@ -144,7 +134,8 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (currentWorkMode == CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION) {
-            super.onTouchEvent(event)
+            // SurfaceView 模式下，需要手动分发事件给 ExpandAreaView
+            mExpandAreaView?.onTouchEvent(event)
             // 返回true表示事件已处理，禁止手势检测器处理，从而禁止底图拖动
             return true
         }
@@ -208,43 +199,51 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
     }
 
     private fun setMatrix(matrix: Matrix) {
+        // 复制矩阵以保证渲染线程安全
+        val matrixCopy = Matrix(matrix)
         if (currentWorkMode != CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION) {
-            mPngMapView?.setMatrix(matrix)
+            mPngMapView?.setMatrix(matrixCopy)
         }
         for (mapLayer in mapLayers) {
-            mapLayer.setMatrix(matrix)
+            mapLayer.setMatrix(matrixCopy)
         }
-        postInvalidate()
+        // postInvalidate() // RenderThread 自动循环渲染，不需要 invalidate
     }
 
     private fun setMatrixWithScale(matrix: Matrix, scale: Float) {
         mOuterMatrix = matrix
         mMapScale = scale
+        // 复制矩阵以保证渲染线程安全
+        val matrixCopy = Matrix(matrix)
         if (currentWorkMode != CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION) {
-            mPngMapView?.setMatrix(matrix)
+            mPngMapView?.setMatrix(matrixCopy)
         }
         for (mapLayer in mapLayers) {
-            mapLayer.setMatrixWithScale(matrix, scale)
+            mapLayer.setMatrixWithScale(matrixCopy, scale)
         }
     }
 
     private fun setMatrixWithScaleAndRotation(matrix: Matrix, scale: Float, rotation: Float) {
         mOuterMatrix = matrix
         mMapScale = scale
-        mPngMapView?.setMatrix(matrix)
+        // 复制矩阵以保证渲染线程安全
+        val matrixCopy = Matrix(matrix)
+        mPngMapView?.setMatrix(matrixCopy)
         for (mapLayer in mapLayers) {
-            mapLayer.setMatrixWithScale(matrix, scale)
+            mapLayer.setMatrixWithScale(matrixCopy, scale)
             mapLayer.mRotation = rotation
         }
     }
 
     private fun setMatrixWithRotation(matrix: Matrix, rotation: Float) {
         mOuterMatrix = matrix
+        // 复制矩阵以保证渲染线程安全
+        val matrixCopy = Matrix(matrix)
         if (currentWorkMode != CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION) {
-            mPngMapView?.setMatrix(matrix)
+            mPngMapView?.setMatrix(matrixCopy)
         }
         for (mapLayer in mapLayers) {
-            mapLayer.setMatrixWithRotation(matrix, rotation)
+            mapLayer.setMatrixWithRotation(matrixCopy, rotation)
         }
     }
 
@@ -365,17 +364,21 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
     private fun addMapLayers(mapLayer: SlamWareBaseView<CreateMapView3D>?) {
         if (mapLayer != null && !mapLayers.contains(mapLayer)) {
             mapLayers.add(mapLayer)
-            addView(
-                mapLayer, LayoutParams(
-                    LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT
-                )
-            )
         }
     }
 
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
+
+        // 停止渲染线程
+        mRenderThread?.setRunning(false)
+        try {
+            mRenderThread?.join()
+        } catch (e: InterruptedException) {
+            e.printStackTrace()
+        }
+        mRenderThread = null
 
         // 清理所有资源，避免内存泄漏
         mapLayers.clear()
@@ -455,8 +458,10 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
 
     /**
      * 外部接口 解析激光点云数据（建图模式） 3D
+     *      * type 扩展1
+     *      * type 新建2
      */
-    fun parseLaserData(laserData: laser_t) {
+    fun parseLaserData(laserData: laser_t, type: Int) {
 
         if (laserData.ranges.size <= 6) return // 最少包含机器人位置数据
 
@@ -474,14 +479,33 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
             keepRobotCentered()
         }
 
-        // 解析地图元数据（关键帧或非关键帧均需要）
-        mSrf.mapData.height = laserData.intensities[0]
-        mSrf.mapData.width = laserData.intensities[1]
-        mSrf.mapData.originX = laserData.intensities[2]
-        mSrf.mapData.originY = laserData.intensities[3]
-        mSrf.mapData.resolution = laserData.intensities[4]
+        calBinding(laserData, type)
+
         //更新点云数据
         mUpLaserScanView?.updateUpLaserScan(laserData)
+    }
+
+    /**
+     * 计算新建地图宽高
+     */
+    private fun calBinding(laserData: laser_t, type: Int) {
+        if (type == 1) {
+            if (mSrf.mapData.height < laserData.intensities[0]) {
+                mSrf.mapData.height = laserData.intensities[0]
+            }
+            if (mSrf.mapData.width < laserData.intensities[1]) {
+                mSrf.mapData.width = laserData.intensities[2]
+            }
+
+        } else {
+            // 解析地图元数据（关键帧或非关键帧均需要）
+            mSrf.mapData.height = laserData.intensities[0]
+            mSrf.mapData.width = laserData.intensities[1]
+            mSrf.mapData.originX = laserData.intensities[2]
+            mSrf.mapData.originY = laserData.intensities[3]
+            mSrf.mapData.resolution = laserData.intensities[4]
+        }
+
     }
 
     /**
@@ -518,10 +542,10 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
      * 辅助方法：将科学计数法表示的float值转换为普通小数表示的float值
      * 解决激光数据中theta值（laserData.ranges[2]）可能以科学计数法形式存在的问题
      */
-    private val df = DecimalFormat("0.000") // 固定小数点后3位
     private fun convertScientificToDecimal(value: Float): Float {
-        df.setRoundingMode(RoundingMode.HALF_UP) // 设置四舍五入
-        return df.format(value).toFloat()
+        // 优化：移除DecimalFormat，使用数学运算保留3位小数
+        // 避免 String.format 和 parseFloat 带来的大量GC和CPU消耗
+        return kotlin.math.round(value * 1000f) / 1000f
     }
 
     /**
@@ -567,4 +591,84 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : ShapeFrameLayout(
         fun onSingleTapListener(point: PointF)
     }
 
+    // SurfaceHolder.Callback 实现
+    override fun surfaceCreated(holder: SurfaceHolder) {
+        mRenderThread = RenderThread(holder)
+        mRenderThread?.setRunning(true)
+        mRenderThread?.start()
+    }
+
+    override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+        VIEW_WIDTH = width
+        VIEW_HEIGHT = height
+
+        // 更新虚拟子 View 的布局大小
+        mPngMapView?.layout(0, 0, width, height)
+        for (layer in mapLayers) {
+            layer.layout(0, 0, width, height)
+        }
+    }
+
+    override fun surfaceDestroyed(holder: SurfaceHolder) {
+        var retry = true
+        mRenderThread?.setRunning(false)
+        while (retry) {
+            try {
+                mRenderThread?.join()
+                retry = false
+            } catch (e: InterruptedException) {
+                e.printStackTrace()
+            }
+        }
+        mRenderThread = null
+    }
+
+    // 渲染线程
+    inner class RenderThread(private val surfaceHolder: SurfaceHolder) : Thread() {
+        private var running = false
+
+        fun setRunning(isRunning: Boolean) {
+            running = isRunning
+        }
+
+        override fun run() {
+            while (running) {
+                var canvas: Canvas? = null
+                try {
+                    canvas = surfaceHolder.lockCanvas()
+                    if (canvas != null) {
+                        synchronized(surfaceHolder) {
+                            // 绘制背景
+                            canvas.drawColor(android.graphics.Color.WHITE)
+
+                            // 绘制底图
+                            mPngMapView?.draw(canvas)
+
+                            // 绘制各图层
+                            for (layer in mapLayers) {
+                                layer.draw(canvas)
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                } finally {
+                    if (canvas != null) {
+                        try {
+                            surfaceHolder.unlockCanvasAndPost(canvas)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
+
+                // 控制帧率，避免过度消耗 CPU
+                try {
+                    sleep(16) // ~60 FPS
+                } catch (e: InterruptedException) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
 }

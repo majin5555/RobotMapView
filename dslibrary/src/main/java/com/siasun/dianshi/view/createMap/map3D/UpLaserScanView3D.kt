@@ -5,8 +5,6 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.PointF
-import android.util.Log
 import com.ngu.lcmtypes.laser_t
 import com.siasun.dianshi.bean.KeyframePoint
 import com.siasun.dianshi.view.SlamWareBaseView
@@ -14,6 +12,8 @@ import com.siasun.dianshi.view.createMap.CreateMapWorkMode
 import java.lang.ref.WeakReference
 import kotlin.math.cos
 import kotlin.math.sin
+
+import android.graphics.Matrix
 
 /**
  * 建图上激光点云
@@ -23,15 +23,21 @@ class UpLaserScanView3D(context: Context?, val parent: WeakReference<CreateMapVi
     SlamWareBaseView<CreateMapView3D>(context, parent) {
     private val TAG = this::class.java.simpleName
 
-    //激光点云
-    private val cloudList: MutableList<PointF> = mutableListOf()
+    //激光点云 (使用 FloatArray 存储世界坐标 [x1, y1, x2, y2, ...])
+    private var cloudPoints: FloatArray = FloatArray(0)
+    private var pointCount: Int = 0
+
+    // 矩阵对象，复用避免分配
+    private val mWorldToPixelMatrix = Matrix()
+    private val mTotalMatrix = Matrix()
+    
 
     private var currentWorkMode = CreateMapWorkMode.MODE_SHOW_MAP
 
     companion object {
         private val paint: Paint = Paint().apply {
             color = Color.RED
-            strokeWidth = 3f
+            strokeWidth = 5f
             style = Paint.Style.FILL
         }
     }
@@ -50,8 +56,10 @@ class UpLaserScanView3D(context: Context?, val parent: WeakReference<CreateMapVi
      * 上激光点云
      */
     fun updateUpLaserScan(laserData: laser_t) {
-        cloudList.clear()
-        if (laserData.ranges.size <= 6) return // 最少包含机器人位置数据
+        if (laserData.ranges.size <= 6) {
+            pointCount = 0
+            return // 最少包含机器人位置数据
+        }
         val mapView = parent.get() ?: return
         var keyPoints: MutableList<KeyframePoint>? = null
 
@@ -66,12 +74,27 @@ class UpLaserScanView3D(context: Context?, val parent: WeakReference<CreateMapVi
             totalPoints > 350 -> 50
             totalPoints > 320 -> 30
             totalPoints > 300 -> 20
-            totalPoints > 250 -> 10
-            totalPoints > 200 -> 5
-            else -> 2  // 数据量较小时，间隔2
+            totalPoints > 250 -> 15
+            totalPoints > 200 -> 10
+            else -> 8  // 数据量较小时，间隔2
         }
         val dynamicSampleInterval =
             maxOf(baseSampleInterval, (1f / mapView.mSrf.scale).toInt()) // 缩放越小，间隔越大
+
+        // 预估最大需要的点数，避免频繁扩容
+        val estimatedMaxPoints = (totalPoints / dynamicSampleInterval) + 10
+        if (cloudPoints.size < estimatedMaxPoints * 2) {
+            cloudPoints = FloatArray(estimatedMaxPoints * 2)
+        }
+        
+        pointCount = 0
+
+        // 缓存机器人位姿三角函数值，避免循环内重复计算
+        val robotX = mapView.robotPose[0]
+        val robotY = mapView.robotPose[1]
+        val robotTheta = mapView.robotPose[2]
+        val cosT = cos(robotTheta)
+        val sinT = sin(robotTheta)
 
         // 遍历激光点，按采样间隔降采样
         for (i in 0 until totalPoints step dynamicSampleInterval) {
@@ -82,16 +105,20 @@ class UpLaserScanView3D(context: Context?, val parent: WeakReference<CreateMapVi
             val laserY = laserData.ranges[index + 1]
 
             // 坐标变换（仅计算有效点）
-            val cosT = cos(mapView.robotPose[2])
-            val sinT = sin(mapView.robotPose[2])
-            val laserXNew = laserX * cosT - laserY * sinT + mapView.robotPose[0]
-            val laserYNew = laserX * sinT + laserY * cosT + mapView.robotPose[1]
+            val laserXNew = laserX * cosT - laserY * sinT + robotX
+            val laserYNew = laserX * sinT + laserY * cosT + robotY
 
-            cloudList.add(PointF(laserXNew, laserYNew))
+            // 存储世界坐标
+            if (pointCount * 2 + 1 < cloudPoints.size) {
+                cloudPoints[pointCount * 2] = laserXNew
+                cloudPoints[pointCount * 2 + 1] = laserYNew
+                pointCount++
+            }
 
             // 仅在关键帧时收集完整点云数据
             keyPoints?.add(KeyframePoint(laserX, laserY, laserXNew, laserYNew))
         }
+
         //添加地图轮廓关键帧
         mapView.mMapOutline3D?.addKeyFrames(laserData, keyPoints)
         postInvalidate()
@@ -101,12 +128,36 @@ class UpLaserScanView3D(context: Context?, val parent: WeakReference<CreateMapVi
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         canvas.save()
-        if (cloudList.isNotEmpty()) {
+        if (pointCount > 0) {
             val mapView = parent.get() ?: return
-            cloudList.forEach {
-                val p = mapView.worldToScreen(it.x, it.y)
-                canvas.drawPoint(p.x, p.y, paint)
+            
+            // 使用 Canvas 矩阵变换 (Hardware Accelerated)
+            // 1. 构建变换矩阵
+             var resolution = 0.05f
+            synchronized(mapView.mSrf.mapData) {
+                val mapData = mapView.mSrf.mapData
+                resolution = mapData.resolution
+                if (resolution <= 0) resolution = 0.05f
+                
+                mWorldToPixelMatrix.reset()
+                mWorldToPixelMatrix.postTranslate(-mapData.originX, -mapData.originY)
+                mWorldToPixelMatrix.postScale(1f / resolution, -1f / resolution)
+                mWorldToPixelMatrix.postTranslate(0f, mapData.height.toFloat())
             }
+            
+            mTotalMatrix.set(mapView.outerMatrix)
+            mTotalMatrix.preConcat(mWorldToPixelMatrix)
+            
+            canvas.concat(mTotalMatrix)
+            
+            // 2. 调整 Paint 大小以抵消缩放
+             val totalScale = mapView.mSrf.scale / resolution
+             if (totalScale > 0) {
+                 paint.strokeWidth = 3f / totalScale
+             }
+             
+            // 3. 直接绘制世界坐标点
+            canvas.drawPoints(cloudPoints, 0, pointCount * 2, paint)
         }
         canvas.restore()
     }
@@ -118,7 +169,8 @@ class UpLaserScanView3D(context: Context?, val parent: WeakReference<CreateMapVi
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         // 清理点云数据
-        cloudList.clear()
+        pointCount = 0
+        cloudPoints = FloatArray(0)
         // 清理父引用
         parent.clear()
     }

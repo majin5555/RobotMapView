@@ -1,4 +1,4 @@
-package com.siasun.dianshi.mapviewdemo.ui
+package com.siasun.dianshi.mapviewdemo.ui.createMap
 
 import android.graphics.PointF
 import android.os.Build

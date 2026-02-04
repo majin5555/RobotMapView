@@ -10,6 +10,7 @@ import com.siasun.dianshi.bean.ConstraintNode
 import com.siasun.dianshi.view.SlamWareBaseView
 import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 import com.siasun.dianshi.bean.KeyFrame
 import com.siasun.dianshi.bean.KeyframePoint
 import com.siasun.dianshi.view.createMap.CreateMapWorkMode
@@ -17,6 +18,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 import android.graphics.Matrix
+import android.util.Log
 
 /**
  * 建图地图轮廓
@@ -29,6 +31,8 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
 
     //3D建图关键帧
     private val keyFrames3D = ConcurrentHashMap<Int, KeyFrame>()
+    // 缓存点数，避免每次遍历计算
+    private val mCachedPointCount = AtomicInteger(0)
     // 缓存点云绘制数组，避免频繁GC
     private var mPointArray: FloatArray? = null
     private var isDirty = false
@@ -110,11 +114,8 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
             }
 
             // 5. 准备点云数据 (仅在脏标记时更新)
-            // 预估需要的数组大小
-            var totalPointsCount = 0
-            keyFrames3D.values.forEach { frame ->
-                frame.points?.let { totalPointsCount += it.size }
-            }
+            // 获取预估需要的数组大小
+            val totalPointsCount = mCachedPointCount.get()
             
             if (totalPointsCount > 0) {
                 // 优化：复用数组，避免频繁分配内存
@@ -131,14 +132,20 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
                     keyFrames3D.values.forEach { frame ->
                         frame.points?.forEach { point ->
                             // 直接存储世界坐标，无需 worldToScreen 转换
-                            pointArray[index++] = point.x
-                            pointArray[index++] = point.y
+                            if (index + 1 < pointArray.size) {
+                                pointArray[index++] = point.x
+                                pointArray[index++] = point.y
+                            }
                         }
                     }
                     isDirty = false
                 } else {
                     // 如果不脏，index 需要跳到末尾以便绘制正确数量
+                    // 注意：这里假设 totalPointsCount 与实际点数一致
+                    // 如果出现不一致（如并发修改），可能会有问题，但 isDirty 机制通常能保证
                     index = totalPointsCount * 2
+                    // 安全截断
+                    if (index > pointArray.size) index = pointArray.size
                 }
 
                 // 一次性绘制所有点云
@@ -180,6 +187,13 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
                         )
                     )
                 }
+                
+                // 累加点数缓存
+                keyPoints?.size?.let { count ->
+                    if (count > 0) {
+                        mCachedPointCount.addAndGet(count)
+                    }
+                }
 
                 keyFrames3D[rad0] = KeyFrame(keyPoints, mapView.robotPose.clone())
                 mapView.isStartRevSubMaps = true
@@ -192,6 +206,8 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
      * 外部接口：更新关键帧数据 nav做回环检测 3D
      */
     fun parseOptPose(laserData: laser_t) {
+        Log.d(TAG, "3D回环检测开始")
+
         // 新增：设置采样间隔（可根据实际需求调整，如每2个关键帧处理1个）
         val SAMPLE_INTERVAL = 2
         var processedCount = 0
@@ -235,7 +251,7 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
             hasUpdate = true
         }
         if (hasUpdate) isDirty = true
-//        Log.d(TAG, "更新关键帧数据：处理 $processedCount 个关键帧")
+        Log.d(TAG, "3D回环检测结束 更新关键帧数据：处理 $processedCount 个关键帧")
     }
 
     /**
@@ -245,6 +261,7 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
         super.onDetachedFromWindow()
         // 清理点云数据
         keyFrames3D.clear()
+        mCachedPointCount.set(0)
         // 清理父引用
         parent.clear()
     }

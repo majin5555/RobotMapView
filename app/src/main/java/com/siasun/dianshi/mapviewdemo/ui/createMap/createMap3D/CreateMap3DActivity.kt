@@ -1,4 +1,4 @@
-package com.siasun.dianshi.mapviewdemo.ui
+package com.siasun.dianshi.mapviewdemo.ui.createMap.createMap3D
 
 import android.annotation.SuppressLint
 import android.os.Build
@@ -8,7 +8,7 @@ import com.blankj.utilcode.util.ToastUtils
 import com.jeremyliao.liveeventbus.LiveEventBus
 import com.jxd.jxd_core.intent.startActivity
 import com.ngu.lcmtypes.laser_t
-import com.siasun.dianshi.GlobalVariable.SEND_NAVI_HEART
+import com.siasun.dianshi.GlobalVariable
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.bean.ConstraintNode
 import com.siasun.dianshi.bean.UpdateMapBean
@@ -30,7 +30,6 @@ import com.siasun.dianshi.mapviewdemo.TAG_NAV
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityCreateMap3dDactivityBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.CreateMap3DViewModel
 import com.siasun.dianshi.network.constant.KEY_NEY_IP
-import com.siasun.dianshi.utils.RadianUtil
 import com.siasun.dianshi.view.createMap.CreateMapWorkMode
 import com.tencent.mmkv.MMKV
 import java.util.Timer
@@ -52,7 +51,7 @@ class CreateMap3DActivity :
         MMKV.defaultMMKV().encode(KEY_NEY_IP, "192.168.1.198");
         mTimer.schedule(object : TimerTask() {
             override fun run() {
-                if (SEND_NAVI_HEART) {
+                if (GlobalVariable.SEND_NAVI_HEART) {
                     MainController.myController.mSendNaviHeartBeat()
                 }
             }
@@ -119,7 +118,7 @@ class CreateMap3DActivity :
         }
         //接收创建地图中车体位置 导航->PAD
         LiveEventBus.get(KEY_UPDATE_POS, laser_t::class.java).observe(this) {
-            mBinding.mapView.parseLaserData(it)
+            mBinding.mapView.parseLaserData(it, 2)
             if (it.rad0 > 0f) {
                 mBinding.tvMapSteps.text = "步数:${it.rad0}"
             }
@@ -239,7 +238,7 @@ class CreateMap3DActivity :
             //优化完成，询问pad是否保存地图
             2 -> {
                 if (mBinding.mapView.isStartRevSubMaps) {
-                    SEND_NAVI_HEART = false
+                    GlobalVariable.SEND_NAVI_HEART = false
 
                     showSavaMapDialog()
 
@@ -267,7 +266,7 @@ class CreateMap3DActivity :
                 MainController.saveEnvironment(
                     1, rotate = mBinding.mapView.rotationRadians, mapId = mapID
                 )
-                SEND_NAVI_HEART = true
+                GlobalVariable.SEND_NAVI_HEART = true
                 showLoading("保存地图中")
                 LogUtil.i("确定要保存地图么...点击确定", null, TAG_NAV)
             }
@@ -275,7 +274,7 @@ class CreateMap3DActivity :
             override fun discard() {
                 mBinding.mapView.isMapping = false
                 MainController.saveEnvironment(2, mapId = mapID)
-                SEND_NAVI_HEART = false
+                GlobalVariable.SEND_NAVI_HEART = false
                 LogUtil.i("确定要保存地图么...点击取消", null, TAG_NAV)
                 finish()
             }

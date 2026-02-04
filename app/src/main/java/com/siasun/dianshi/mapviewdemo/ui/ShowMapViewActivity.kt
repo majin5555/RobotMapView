@@ -45,6 +45,7 @@ import com.siasun.dianshi.mapviewdemo.PATH_MODE
 import com.siasun.dianshi.mapviewdemo.TAG_PP
 import com.siasun.dianshi.mapviewdemo.TEACH_PATH_PLAN
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityShowMapViewBinding
+import com.siasun.dianshi.mapviewdemo.ui.createMap.DragPositionViewActivity
 import com.siasun.dianshi.mapviewdemo.utils.GsonUtil
 import com.siasun.dianshi.mapviewdemo.utils.PathPlanningUtil1
 import com.siasun.dianshi.mapviewdemo.viewmodel.ShowMapViewModel

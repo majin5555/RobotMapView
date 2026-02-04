@@ -1,4 +1,4 @@
-package com.siasun.dianshi.mapviewdemo.ui
+package com.siasun.dianshi.mapviewdemo.ui.createMap.createMap3D
 
 import android.annotation.SuppressLint
 import android.os.Build
@@ -8,11 +8,10 @@ import com.blankj.utilcode.util.ToastUtils
 import com.jeremyliao.liveeventbus.LiveEventBus
 import com.ngu.lcmtypes.laser_t
 import com.siasun.dianshi.ConstantBase
-import com.siasun.dianshi.GlobalVariable.SEND_NAVI_HEART
+import com.siasun.dianshi.GlobalVariable
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.bean.ExpandArea
 import com.siasun.dianshi.controller.MainController
-import com.siasun.dianshi.view.createMap.ExpandAreaView.OnExpandAreaCreatedListener
 import com.siasun.dianshi.dialog.CommonWarnDialog
 import com.siasun.dianshi.framework.ext.onClick
 import com.siasun.dianshi.framework.log.LogUtil
@@ -20,24 +19,23 @@ import com.siasun.dianshi.mapviewdemo.CREATE_MAP
 import com.siasun.dianshi.mapviewdemo.KEY_NAV_HEARTBEAT_STATE
 import com.siasun.dianshi.mapviewdemo.KEY_OPT_POSE
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_POS
-import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_SUB_MAPS
 import com.siasun.dianshi.mapviewdemo.TAG_NAV
-import com.siasun.dianshi.mapviewdemo.databinding.ActivityExpandMap2dDactivityBinding
+import com.siasun.dianshi.mapviewdemo.databinding.ActivityExpandMap3dDactivityBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.CreateMap2DViewModel
-import com.siasun.dianshi.utils.RadianUtil
 import com.siasun.dianshi.view.createMap.CreateMapWorkMode
+import com.siasun.dianshi.view.createMap.ExpandAreaView
 import java.util.Timer
 import java.util.TimerTask
 
 /**
- * 扩展2D地图
+ * 扩展3D地图
  */
-class ExpandMap2DActivity :
-    BaseMvvmActivity<ActivityExpandMap2dDactivityBinding, CreateMap2DViewModel>() {
+class ExpandMap3DActivity :
+    BaseMvvmActivity<ActivityExpandMap3dDactivityBinding, CreateMap2DViewModel>() {
     //建图心跳定时器
     private val mTimer = Timer()
 
-    val mapID = 1
+    val mapID = 100
 
     val list: MutableList<ExpandArea> = mutableListOf()
 
@@ -47,7 +45,7 @@ class ExpandMap2DActivity :
 
         mTimer.schedule(object : TimerTask() {
             override fun run() {
-                if (SEND_NAVI_HEART) {
+                if (GlobalVariable.SEND_NAVI_HEART) {
                     MainController.myController.mSendNaviHeartBeat()
                 }
             }
@@ -102,7 +100,7 @@ class ExpandMap2DActivity :
         }
         //添加区域监听 获取添加区域的世界坐标
         mBinding.mapView.getExpandAreaView()!!
-            .setOnExpandAreaCreatedListener(object : OnExpandAreaCreatedListener {
+            .setOnExpandAreaCreatedListener(object : ExpandAreaView.OnExpandAreaCreatedListener {
                 override fun onExpandAreaCreated(area: ExpandArea) {
                     list.add(area)
                     LogUtil.i("扩展地图 $area")
@@ -124,21 +122,19 @@ class ExpandMap2DActivity :
         LiveEventBus.get(KEY_NAV_HEARTBEAT_STATE, ByteArray::class.java).observe(this) {
             navHeartbeatState(it)
         }
-        //接收子图数据
-        LiveEventBus.get(KEY_UPDATE_SUB_MAPS, laser_t::class.java).observe(this) {
-            mBinding.mapView.parseSubMaps2D(it, 1)
-        }
-        //子图优化 回环检测
-        LiveEventBus.get(KEY_OPT_POSE, laser_t::class.java).observe(this) {
-            mBinding.mapView.updateOptPose2D(it, 1)
-        }
+
         //接收创建地图中车体位置 导航->PAD
         LiveEventBus.get(KEY_UPDATE_POS, laser_t::class.java).observe(this) {
-            mBinding.mapView.parseLaserData(it)
+            mBinding.mapView.parseLaserData(it,1)
             if (it.rad0 > 0f) {
                 mBinding.tvMapSteps.text = "建图步数 ${it.rad0}"
             }
         }
+        //NAV 做回环时候给的数据  (NAV->PAD)
+        LiveEventBus.get(KEY_OPT_POSE, laser_t::class.java).observe(this) {
+            mBinding.mapView.parseOptPose(it)
+        }
+
     }
 
     @SuppressLint("SuspiciousIndentation")
@@ -160,7 +156,7 @@ class ExpandMap2DActivity :
                     mViewModel.downPngYaml(CREATE_MAP, 1)
 
                     //从建图模式到定位模式 后恢复地图不可旋转
-                    SEND_NAVI_HEART = false
+                    GlobalVariable.SEND_NAVI_HEART = false
 
                 }
                 mBinding.mapView.isMapping = false
@@ -193,7 +189,7 @@ class ExpandMap2DActivity :
             //优化完成，询问pad是否保存地图
             2 -> {
                 if (mBinding.mapView.isStartRevSubMaps) {
-                    SEND_NAVI_HEART = false
+                    GlobalVariable.SEND_NAVI_HEART = false
 
 //                    if (mBinding.mapView.isRouteMap) {
 //                        LogUtil.i("弹框---是否旋转地图", null, TAG_NAV)
@@ -229,7 +225,7 @@ class ExpandMap2DActivity :
                     rotate = mBinding.mapView.rotationRadians,
                     mapId = mapID
                 )
-                SEND_NAVI_HEART = true
+                GlobalVariable.SEND_NAVI_HEART = true
 //                    showLoading("保存地图中")
                 LogUtil.i("确定要保存地图么...点击确定", null, TAG_NAV)
             }
@@ -237,7 +233,7 @@ class ExpandMap2DActivity :
             override fun discard() {
                 mBinding.mapView.isMapping = false
                 MainController.saveEnvironment(2, mapId = mapID)
-                SEND_NAVI_HEART = false
+                GlobalVariable.SEND_NAVI_HEART = false
                 LogUtil.i("确定要保存地图么...点击取消", null, TAG_NAV)
                 finish()
             }
