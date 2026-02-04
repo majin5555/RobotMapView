@@ -47,6 +47,7 @@ import java.lang.ref.WeakReference
 import java.util.concurrent.CopyOnWriteArrayList
 import androidx.core.content.withStyledAttributes
 import com.hjq.shape.layout.ShapeFrameLayout
+import com.siasun.dianshi.bean.CrossDoor
 
 /**
  * 地图画布
@@ -86,7 +87,6 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         MODE_PATH_NODE_ATTR_EDIT, // 节点属性编辑模式
         MODE_PATH_SEGMENT_ATTR_EDIT, // 路段属性编辑模式
         MODE_PATH_CREATE, // 创建路线模式
-        MODE_CROSS_DOOR_ADD, // 添加过门模式
         MODE_CROSS_DOOR_EDIT, // 编辑过门模式
         MODE_CROSS_DOOR_DELETE,// 删除过门模式
         MODE_DRAG_POSITION // 拖拽定位模式
@@ -716,7 +716,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     }
 
     /**
-     * 设置充电站
+     * 获取充电站
      */
     fun getMachineStation(): MachineStation? = mHomeDockView?.getData()
 
@@ -952,6 +952,17 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     fun cleanCleanArea() = mPolygonEditView?.cleanData()
 
     /**
+     * 设置过门
+     */
+
+    fun addCrossDoor(crossDoor: CrossDoor) = mCrossView?.addCrossDoor(crossDoor)
+
+    /**
+     * 设置多个过门
+     */
+    fun addCrossDoors(crossDoors: List<CrossDoor>) = mCrossView?.addCrossDoors(crossDoors)
+
+    /**
      * 销毁
      */
     fun destroy() {
@@ -962,6 +973,19 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      * ******************************************************
      */
 
+
+    /**
+     * 设置过门删除监听器
+     */
+    fun setOnCrossDoorLineClickListener(listener: CrossDoorView.OnCrossDoorLineClickListener?) {
+        mCrossView?.setOnCrossDoorLineClickListener(listener)
+    }
+    /**
+     * 设置过门监听器
+     */
+    fun setOnCrossDoorDeleteClickListener(listener: CrossDoorView.OnCrossDoorDeleteClickListener?) {
+        mCrossView?.setOnCrossDoorDeleteClickListener(listener)
+    }
 
     /**
      * 设置定位区域编辑监听器

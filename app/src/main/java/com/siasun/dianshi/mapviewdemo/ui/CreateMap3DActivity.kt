@@ -110,6 +110,7 @@ class CreateMap3DActivity :
         //下载地图结果
         LiveEventBus.get(KEY_UPDATE_MAP, UpdateMapBean::class.java).observe(this) {
             ToastUtils.showLong("PM.yaml  && PM.png 下载成功")
+            dismissLoading()
             startActivity<ExpandMap3DActivity>()
         }
         //建图导航心跳
@@ -267,7 +268,7 @@ class CreateMap3DActivity :
                     1, rotate = mBinding.mapView.rotationRadians, mapId = mapID
                 )
                 SEND_NAVI_HEART = true
-//                    showLoading("保存地图中")
+                showLoading("保存地图中")
                 LogUtil.i("确定要保存地图么...点击确定", null, TAG_NAV)
             }
 

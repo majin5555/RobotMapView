@@ -272,7 +272,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     //过门
     fun initCrossDoor() {
         // 设置线点击事件监听器
-        mBinding.mapView.mCrossView?.setOnCrossDoorLineClickListener(object :
+        mBinding.mapView.setOnCrossDoorLineClickListener(object :
             com.siasun.dianshi.view.CrossDoorView.OnCrossDoorLineClickListener {
             override fun onCrossDoorLineClick(crossDoor: com.siasun.dianshi.bean.CrossDoor) {
                 // 点击了过门线，弹框显示信息
@@ -280,33 +280,29 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             }
         })
 
-
-        mBinding.btnAddCrossDoor.onClick {
-            // 设置工作模式为添加过门模式
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CROSS_DOOR_ADD)
-            // 在屏幕中心创建一个新的过门
-            mBinding.mapView.mCrossView?.createCrossDoorAtCenter()
-
-            val crossDoor = com.siasun.dianshi.bean.CrossDoor(
-                id = 1,
-                map_id = 2,
-                door_msg = com.siasun.dianshi.bean.DoorMsg(
-                    door_sn = "DOOR_001",
-                    type = "cross_door"
-                ),
-            )
-            mBinding.mapView.mCrossView?.addCrossDoor(crossDoor)
-            ToastUtils.showLong("已进入添加过门模式")
-        }
-
         // 设置线点击事件监听器
-        mBinding.mapView.mCrossView?.setOnCrossDoorDeleteClickListener(object :
+        mBinding.mapView.setOnCrossDoorDeleteClickListener(object :
             com.siasun.dianshi.view.CrossDoorView.OnCrossDoorDeleteClickListener {
             override fun onCrossDoorDeleteClick(crossDoor: com.siasun.dianshi.bean.CrossDoor) {
                 // 点击了过门线，弹框显示信息
                 showCrossDoorDialog(crossDoor)
             }
         })
+
+        //添加过门
+        mBinding.btnAddCrossDoor.onClick {
+            val crossDoor = com.siasun.dianshi.bean.CrossDoor(
+                id = 1,
+                map_id = 2,
+                door_msg = com.siasun.dianshi.bean.DoorMsg(
+                    door_sn = "DOOR_001", type = "cross_door"
+                ),
+            )
+            mBinding.mapView.addCrossDoor(crossDoor)
+            ToastUtils.showLong("已进入添加过门模式")
+        }
+
+
         mBinding.btnDeleteCrossDoor.onClick {
             // 切换到删除模式
             mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CROSS_DOOR_DELETE)
@@ -318,7 +314,6 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CROSS_DOOR_EDIT)
             ToastUtils.showLong("已进入编辑过门模式，可拖动端点修改位置")
         }
-
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
@@ -1049,14 +1044,14 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.btnCreateStation.onClick {
             XpopUtils(this).showCmsStationDialog(
                 onConfirmCall = { result ->
-                    result?.let {
-                        cmsStation.add(result)
-                        mBinding.mapView.setCmsStations(cmsStation)
-                    }
+                result?.let {
+                    cmsStation.add(result)
+                    mBinding.mapView.setCmsStations(cmsStation)
+                }
 
-                }, onDeleteCall = {
+            }, onDeleteCall = {
 
-                }, mapId
+            }, mapId
             )
         }
         //编辑避让点
@@ -1288,32 +1283,20 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
      * 显示过门信息对话框
      */
     private fun showCrossDoorDialog(crossDoor: com.siasun.dianshi.bean.CrossDoor) {
-        android.app.AlertDialog.Builder(this)
-            .setTitle("过门信息")
-            .setMessage(
-                "ID: ${crossDoor.id}\n"
-                        + "地图ID: ${crossDoor.map_id}\n"
-                        + "门编号: ${crossDoor.door_msg.door_sn}\n"
-                        + "类型: ${crossDoor.door_msg.type}\n"
-                        + "起点: (${
+        android.app.AlertDialog.Builder(this).setTitle("过门信息").setMessage(
+                "ID: ${crossDoor.id}\n" + "地图ID: ${crossDoor.map_id}\n" + "门编号: ${crossDoor.door_msg.door_sn}\n" + "类型: ${crossDoor.door_msg.type}\n" + "起点: (${
                     String.format(
-                        "%.2f",
-                        crossDoor.start_point.x
+                        "%.2f", crossDoor.start_point.x
                     )
-                }, ${String.format("%.2f", crossDoor.start_point.y)})\n"
-                        + "终点: (${
+                }, ${String.format("%.2f", crossDoor.start_point.y)})\n" + "终点: (${
                     String.format(
-                        "%.2f",
-                        crossDoor.end_point.x
+                        "%.2f", crossDoor.end_point.x
                     )
                 }, ${String.format("%.2f", crossDoor.end_point.y)})"
-            )
-            .setPositiveButton("确定", null)
-            .setNegativeButton("删除") { _, _ ->
+            ).setPositiveButton("确定", null).setNegativeButton("删除") { _, _ ->
                 // 删除选中的过门
                 mBinding.mapView.mCrossView?.removeCrossDoor(crossDoor)
                 ToastUtils.showLong("已删除过门: ${crossDoor.door_msg.door_sn}")
-            }
-            .show()
+            }.show()
     }
 }
