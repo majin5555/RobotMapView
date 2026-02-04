@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import com.siasun.dianshi.bean.KeyFrame
 import com.siasun.dianshi.bean.KeyframePoint
-import com.siasun.dianshi.view.createMap.CreateMapWorkMode
+import com.siasun.dianshi.view.WorkMode
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -27,7 +27,7 @@ import android.util.Log
 class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>) :
     SlamWareBaseView<CreateMapView3D>(context, parent) {
     private val TAG = this::class.java.simpleName
-    private var currentWorkMode = CreateMapWorkMode.MODE_SHOW_MAP
+    private var currentWorkMode = WorkMode.MODE_SHOW_MAP
 
     //3D建图关键帧
     private val keyFrames3D = ConcurrentHashMap<Int, KeyFrame>()
@@ -45,7 +45,7 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
     /**
      * 设置工作模式
      */
-    fun setWorkMode(mode: CreateMapWorkMode) {
+    fun setWorkMode(mode: WorkMode) {
         if (currentWorkMode == mode) return // 避免重复设置
 
         currentWorkMode = mode

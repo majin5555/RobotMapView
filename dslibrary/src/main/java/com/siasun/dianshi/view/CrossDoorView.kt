@@ -21,7 +21,7 @@ class CrossDoorView(
 ) : SlamWareBaseView<MapView>(context, parent) {
 
     // 当前工作模式
-    private var currentWorkMode: MapView.WorkMode = MapView.WorkMode.MODE_SHOW_MAP
+    private var currentWorkMode: WorkMode = WorkMode.MODE_SHOW_MAP
 
     // 控制是否绘制
     private var isDrawingEnabled = true
@@ -277,12 +277,12 @@ class CrossDoorView(
     /**
      * 设置工作模式
      */
-    fun setWorkMode(mode: MapView.WorkMode) {
+    fun setWorkMode(mode: WorkMode) {
         currentWorkMode = mode
         // 当进入编辑过门模式时，启用编辑功能
-        isEditing = (mode == MapView.WorkMode.MODE_CROSS_DOOR_EDIT)
+        isEditing = (mode == WorkMode.MODE_CROSS_DOOR_EDIT)
         // 当进入删除过门模式时，启用删除功能
-        isDeleting = (mode == MapView.WorkMode.MODE_CROSS_DOOR_DELETE)
+        isDeleting = (mode == WorkMode.MODE_CROSS_DOOR_DELETE)
         postInvalidate()
     }
 
@@ -314,7 +314,7 @@ class CrossDoorView(
         crossDoor.start_point = startPoint
         crossDoor.end_point = endPoint
         crossDoorList.add(crossDoor)
-        setWorkMode(MapView.WorkMode.MODE_CROSS_DOOR_EDIT)
+        setWorkMode(WorkMode.MODE_CROSS_DOOR_EDIT)
 
         postInvalidate()
     }

@@ -42,6 +42,7 @@ import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.TEACH_PATH
 import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.UI_COMMAND
 import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.UPDATE_POS
 import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.UPDATE_SUBMAPS
+import com.siasun.dianshi.GlobalVariable.LOCATION_VALVE
 import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.CmsPadInteraction_
 import com.siasun.dianshi.bean.ConstraintNode
@@ -76,6 +77,7 @@ import com.siasun.dianshi.mapviewdemo.KEY_CURRENT_POINT_CLOUD
 import com.siasun.dianshi.mapviewdemo.KEY_EXTEND_LOAD_SUB_MAP
 import com.siasun.dianshi.mapviewdemo.KEY_FINISH_CLEAN_AREA_ID
 import com.siasun.dianshi.mapviewdemo.KEY_HIGHLIGHT_RESULT
+import com.siasun.dianshi.mapviewdemo.KEY_LOCATION
 import com.siasun.dianshi.mapviewdemo.KEY_NAV_HEARTBEAT_STATE
 import com.siasun.dianshi.mapviewdemo.KEY_NAV_LOAD_SCAN_STATE_VALUE
 import com.siasun.dianshi.mapviewdemo.KEY_NEXT_CLEANING_AREA_ID
@@ -1516,7 +1518,7 @@ class LCMController : AbsController(), LCMSubscriber {
 
         val iParams = ByteArray(1)
         iParams[0] = layerId.toByte()
-        val pointArrayDouble = DoubleArray(3)
+        val pointArrayDouble = DoubleArray(pointArray.size)
         for (i in pointArray.indices) {
             pointArrayDouble[i] = pointArray[i].toDouble()
         }
@@ -1705,7 +1707,7 @@ class LCMController : AbsController(), LCMSubscriber {
         if (iParams.size > 15) receiveTeachState(iParams[15].toInt())
 //
 //        //定位信息
-//        if (iParams.size > 18) receiveLocationValve(iParams[18].toInt())
+        if (iParams.size > 18) receiveLocationValve(iParams[18].toInt())
 //
 //        //agv 状态
 //        if (iParams.size > 19) receiveAgvState(iParams[19].toInt())
@@ -2645,13 +2647,13 @@ class LCMController : AbsController(), LCMSubscriber {
     private var mCurrentLocationState = 0
 
     private fun receiveLocationValve(value: Int) {
-//        if (value == mCurrentLocationState) return
-//        else {
-//            LogUtil.i("变化 定位信息:${value}  -->(0:定位失败；1:定位成功)", null, TAG_CAR_BODY)
-//            mCurrentLocationState = value
-//            LOCATION_VALVE = value
-//            LiveEventBus.get(KEY_LOCATION, Int::class.java).post(value)
-//        }
+        if (value == mCurrentLocationState) return
+        else {
+            LogUtil.i("变化 定位信息:${value}  -->(0:定位失败；1:定位成功)", null, TAG_CAR_BODY)
+            mCurrentLocationState = value
+            LOCATION_VALVE = value
+            LiveEventBus.get(KEY_LOCATION, Int::class.java).post(value)
+        }
     }
 
 

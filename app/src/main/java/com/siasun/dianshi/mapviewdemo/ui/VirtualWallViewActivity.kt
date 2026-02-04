@@ -23,6 +23,7 @@ import com.siasun.dianshi.mapviewdemo.databinding.ActivityVirtualwallBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.ShowMapViewModel
 import com.siasun.dianshi.utils.YamlNew
 import com.siasun.dianshi.view.MapView
+import com.siasun.dianshi.view.WorkMode
 import java.io.File
 
 /**
@@ -93,19 +94,19 @@ class VirtualWallViewActivity : BaseMvvmActivity<ActivityVirtualwallBinding, Sho
 
                 R.id.rb_create -> {
                     // 创建虚拟墙模式
-                    mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_ADD)
+                    mBinding.mapView.setWorkMode(WorkMode.MODE_VIRTUAL_WALL_ADD)
                     // 默认创建普通虚拟墙
                     mBinding.mapView.addVirtualWall(3)
                 }
 
                 R.id.rb_edit -> {
                     // 编辑虚拟墙模式
-                    mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_EDIT)
+                    mBinding.mapView.setWorkMode(WorkMode.MODE_VIRTUAL_WALL_EDIT)
                 }
 
                 R.id.rb_delete -> {
                     // 删除虚拟墙模式
-                    mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_DELETE)
+                    mBinding.mapView.setWorkMode(WorkMode.MODE_VIRTUAL_WALL_DELETE)
                 }
             }
         }

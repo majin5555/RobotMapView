@@ -6,8 +6,8 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Paint
-import android.util.Log
 import com.siasun.dianshi.R
+import com.siasun.dianshi.view.WorkMode
 import com.siasun.dianshi.view.SlamWareBaseView
 import java.lang.ref.WeakReference
 
@@ -18,7 +18,7 @@ import java.lang.ref.WeakReference
 class RobotViewCreateMap<T : MapViewInterface>(context: Context?, val parent: WeakReference<T>) :
     SlamWareBaseView<T>(context, parent) {
 
-    private var currentWorkMode = CreateMapWorkMode.MODE_SHOW_MAP
+    private var currentWorkMode = WorkMode.MODE_SHOW_MAP
 
     // 机器人相关
     private val robotBitmap: Bitmap? by lazy {
@@ -36,7 +36,7 @@ class RobotViewCreateMap<T : MapViewInterface>(context: Context?, val parent: We
     /**
      * 设置工作模式
      */
-    fun setWorkMode(mode: CreateMapWorkMode) {
+    fun setWorkMode(mode: WorkMode) {
         if (currentWorkMode == mode) return // 避免重复设置
 
         currentWorkMode = mode

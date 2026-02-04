@@ -8,7 +8,7 @@ import android.graphics.Paint
 import android.graphics.PointF
 import com.ngu.lcmtypes.laser_t
 import com.siasun.dianshi.view.SlamWareBaseView
-import com.siasun.dianshi.view.createMap.CreateMapWorkMode
+import com.siasun.dianshi.view.WorkMode
 import java.lang.ref.WeakReference
 import kotlin.math.cos
 import kotlin.math.sin
@@ -22,7 +22,7 @@ class UpLaserScanView2D(context: Context?, val parent: WeakReference<CreateMapVi
 
     //激光点云
     private val cloudList: MutableList<PointF> = mutableListOf()
-    private var currentWorkMode = CreateMapWorkMode.MODE_SHOW_MAP
+    private var currentWorkMode = WorkMode.MODE_SHOW_MAP
 
     companion object {
         private val paint: Paint = Paint().apply {
@@ -35,7 +35,7 @@ class UpLaserScanView2D(context: Context?, val parent: WeakReference<CreateMapVi
     /**
      * 设置工作模式
      */
-    fun setWorkMode(mode: CreateMapWorkMode) {
+    fun setWorkMode(mode: WorkMode) {
         if (currentWorkMode == mode) return // 避免重复设置
 
         currentWorkMode = mode

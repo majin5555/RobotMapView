@@ -1,6 +1,7 @@
 package com.siasun.dianshi.network.api
 
 import VirtualWallNew
+import androidx.room.MapInfo
 import com.siasun.dianshi.network.request.RequestCommonMapId
 import com.pnc.core.network.response.BaseResponse
 import com.siasun.dianshi.bean.CleanAreaNew
@@ -14,6 +15,7 @@ import com.siasun.dianshi.bean.MergedPoseBean
 import com.siasun.dianshi.bean.RequestSaveArea
 import com.siasun.dianshi.bean.RequestSaveCmsWorkArea
 import com.siasun.dianshi.bean.SpArea
+import com.siasun.dianshi.bean.SwitchMapBean
 import com.siasun.dianshi.network.request.RequestGetSpecialArea
 import com.siasun.dianshi.network.request.RequestSaveSpecialArea
 import com.siasun.dianshi.network.request.RequestSaveVirtualWall
@@ -121,7 +123,8 @@ interface ApiInterface {
 
     @POST("/save_pad_areas")
     suspend fun saveAreas(@Body area: RequestSaveArea): BaseResponse<CleanAreaRootNew>
-//
+
+    //
     @POST("/save_virtual_wall")
     suspend fun saveVirtualWall(@Body vw: RequestSaveVirtualWall): BaseResponse<Any>
 
@@ -165,7 +168,7 @@ interface ApiInterface {
     @POST("/get_regions")
     suspend fun getSpecialArea(@Body data: RequestGetSpecialArea): BaseResponse<MutableList<SpArea>>?
 
-//
+    //
 //    /**
 //     * 保存过门区
 //     */
@@ -193,29 +196,34 @@ interface ApiInterface {
 
     @POST("/save_cms_work_areas_list")
     suspend fun saveCmsWorkAreas(@Body data: RequestSaveCmsWorkArea): BaseResponse<Any>
-//
+
+    //
 //
 //    @POST("/save_integrated_machine")
 //    suspend fun saveMachineStation(@Body date: RequestMachineStation): BaseResponse<Any>
 //
     @POST("/get_integrated_machine")
     suspend fun getMachineStation(): BaseResponse<MutableList<MachineStation>>
-//
+
+    //
 //    @POST("/save_cms_stations_data")
 //    suspend fun saveCmsStation(@Body data: RequestCmsStation): BaseResponse<Any>
 //
     @POST("/get_cms_stations_data")
     suspend fun getCmsStation(@Body data: RequestCommonMapId): BaseResponse<MutableList<CmsStation>>
-//
+
+    //
 //    @POST("/save_init_pose")
 //    suspend fun saveInitPose(@Body init: RequestInitPose): BaseResponse<Any>
 //
     @POST("/get_init_pose")
     suspend fun getInitPose(@Body data: RequestCommonMapId): BaseResponse<InitPoseRoot>
-//
+
+    //
     @POST("/get_merged_pose")
     suspend fun getMergedPose(@Body date: RequestCommonMapId): BaseResponse<MergedPoseBean>
-//
+
+    //
 //    @POST("/save_cms_elevator")
 //    suspend fun saveCmsElevator(@Body data: RequestCmsElevator): BaseResponse<Any>
 //
@@ -224,5 +232,10 @@ interface ApiInterface {
 //
 //    @POST("/trigger_hot_reload")
 //    suspend fun hotReload(@Body date:RequestHotReload):BaseResponse<BaseResponse<Any>>
+    /**
+     * 切换地图
+     */
+    @POST("/switch_map")
+    suspend fun switchMap(@Body mapInfo: SwitchMapBean): BaseResponse<MapInfo>
 
 }

@@ -26,7 +26,7 @@ import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_SUB_MAPS
 import com.siasun.dianshi.mapviewdemo.TAG_NAV
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityExpandMap2dDactivityBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.CreateMap2DViewModel
-import com.siasun.dianshi.view.createMap.CreateMapWorkMode
+import com.siasun.dianshi.view.WorkMode
 import com.siasun.dianshi.view.createMap.ExpandAreaView
 import java.util.Timer
 import java.util.TimerTask
@@ -92,7 +92,7 @@ class ExpandMap2DActivity :
     private fun expandMap() {
         mBinding.tvExpend.onClick {
             mBinding.mapView.isStartRevSubMaps = false
-            mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_CREATE_MAP)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_CREATE_MAP)
             MainController.sendStartPartialUpdate(list, mapID)
             showLoading("开始扩展")
             ToastUtils.showShort("开始扩展")
@@ -101,7 +101,7 @@ class ExpandMap2DActivity :
 
         //扩展地图 添加区域
         mBinding.btnSettingArea.onClick {
-            mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_EXTEND_MAP_ADD_REGION)
         }
         //添加区域监听 获取添加区域的世界坐标
         mBinding.mapView.getExpandAreaView()!!

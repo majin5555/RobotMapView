@@ -57,6 +57,7 @@ import com.siasun.dianshi.view.PolygonEditView
 import com.siasun.dianshi.view.PostingAreasView
 import com.siasun.dianshi.view.SpPolygonEditView
 import com.siasun.dianshi.view.VirtualWallView
+import com.siasun.dianshi.view.WorkMode
 import com.siasun.dianshi.xpop.XpopUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -207,7 +208,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         )
         //移动模式
         mBinding.btnMove.setOnClickListener {
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SHOW_MAP)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_SHOW_MAP)
         }
 //
 //        initMergedPose()
@@ -306,13 +307,13 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 
         mBinding.btnDeleteCrossDoor.onClick {
             // 切换到删除模式
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CROSS_DOOR_DELETE)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_CROSS_DOOR_DELETE)
             ToastUtils.showLong("已进入删除过门模式，点击线段进行删除")
         }
 
         mBinding.btnEditCrossDoor.onClick {
             // 切换到编辑模式
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CROSS_DOOR_EDIT)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_CROSS_DOOR_EDIT)
             ToastUtils.showLong("已进入编辑过门模式，可拖动端点修改位置")
         }
     }
@@ -370,42 +371,42 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 
         // 编辑路线
         mBinding.btnEditPath.onClick {
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_PATH_EDIT)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_PATH_EDIT)
         }
         //路段属性编辑
         mBinding.btnEditPathArr.onClick {
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_PATH_SEGMENT_ATTR_EDIT)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_PATH_SEGMENT_ATTR_EDIT)
 
         }
 
         //节点属性编辑
         mBinding.btnEditPointArr.onClick {
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_PATH_NODE_ATTR_EDIT)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_PATH_NODE_ATTR_EDIT)
         }
 
         // 合并路线
         mBinding.btnMergePath.onClick {
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_PATH_MERGE)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_PATH_MERGE)
         }
 
         // 删除路线
         mBinding.btnDeletePath.onClick {
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_PATH_DELETE)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_PATH_DELETE)
         }
 
         // 删除多条路线
         mBinding.btnDeleteMultiplePaths.onClick {
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_PATH_DELETE_MULTIPLE)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_PATH_DELETE_MULTIPLE)
         }
 
         // 曲线转直线
         mBinding.btnConvertPathToLine.onClick {
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_PATH_CONVERT_TO_LINE)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_PATH_CONVERT_TO_LINE)
         }
 
         // 创建路线
         mBinding.btnCreatePath.onClick {
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_PATH_CREATE)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_PATH_CREATE)
         }
 
         // 保存路线
@@ -558,7 +559,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         //添加特殊区域
         mBinding.btnAddSpArea.onClick {
             // 设置地图的工作模式为添加清扫区域模式
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SP_AREA_ADD)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_SP_AREA_ADD)
             // 创建一个新的清扫区域
             val newArea = SpArea().apply {
                 sub_name = "特殊区域${mSpArea.size + 1}"
@@ -577,7 +578,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 // 通过随机索引获取要删除的定位区域
                 val randomArea = mSpArea[randomIndex]
                 //切换特殊区域编辑模式
-                mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SP_AREA_EDIT)
+                mBinding.mapView.setWorkMode(WorkMode.MODE_SP_AREA_EDIT)
                 mBinding.mapView.setSelectedSpArea(randomArea)
             }
         }
@@ -635,7 +636,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         //添加混行区域
         mBinding.btnAddMixArea.onClick {
             // 设置地图的工作模式为添加清扫区域模式
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_MIX_AREA_ADD)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_MIX_AREA_ADD)
             // 创建一个新的清扫区域
             val newArea = WorkAreasNew().apply {
                 name = "混行区域${mMixArea.size + 1}"
@@ -655,7 +656,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 val randomArea = mBinding.mapView.getMixAreaData().toMutableList()[randomIndex]
 
                 // 设置地图的工作模式为编辑清扫区域模式
-                mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_MIX_AREA_EDIT)
+                mBinding.mapView.setWorkMode(WorkMode.MODE_MIX_AREA_EDIT)
 
                 // 将选中的区域设置到PolygonEditView中进行编辑
                 mBinding.mapView.setSelectedMixArea(randomArea)
@@ -717,7 +718,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         })
         //编辑充电站
         mBinding.btnEditChargeStation.onClick {
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_MACHINE_STATION_EDIT)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_MACHINE_STATION_EDIT)
         }
 
         //设置充电站点击监听器
@@ -757,7 +758,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         })
         //删除充电站
         mBinding.btnDeleteChargeStation.onClick {
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_MACHINE_STATION_DELETE)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_MACHINE_STATION_DELETE)
         }
         //保存充电站
         mBinding.btnSaveChargeStation.onClick {
@@ -802,12 +803,12 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         }
         //编辑乘梯点
         mBinding.btnEditElevator.onClick {
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_ELEVATOR_EDIT)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_ELEVATOR_EDIT)
         }
 
         //删除乘梯点
         mBinding.btnDeleteElevator.onClick {
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_ELEVATOR_DELETE)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_ELEVATOR_DELETE)
         }
 
         //设置乘梯点编辑监听器
@@ -856,7 +857,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 val randomArea = mBinding.mapView.getCleanAreaData().toMutableList()[randomIndex]
 
                 // 设置地图的工作模式为编辑清扫区域模式
-                mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CLEAN_AREA_EDIT)
+                mBinding.mapView.setWorkMode(WorkMode.MODE_CLEAN_AREA_EDIT)
 
                 // 将选中的区域设置到PolygonEditView中进行编辑
                 mBinding.mapView.setSelectedArea(randomArea)
@@ -910,7 +911,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         //添加清扫区域
         mBinding.btnAddArea.onClick {
             // 设置地图的工作模式为添加清扫区域模式
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CLEAN_AREA_ADD)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_CLEAN_AREA_ADD)
             // 创建一个新的清扫区域
             val newArea = CleanAreaNew().apply {
                 sub_name = "清扫区域${cleanAreas.size + 1}"
@@ -952,7 +953,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         //创建定位区域
         mBinding.btnPostingAreaAdd.onClick {
             // 设置创建定位区域模式
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_POSITING_AREA_ADD)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_POSITING_AREA_ADD)
         }
 
         // 设置定位区域创建监听器
@@ -960,7 +961,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             PostingAreasView.OnPositingAreaCreatedListener {
             override fun onPositingAreaCreated(area: PositingArea) {
                 // 切换回移动模式
-                mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_SHOW_MAP)
+                mBinding.mapView.setWorkMode(WorkMode.MODE_SHOW_MAP)
             }
         })
 
@@ -968,7 +969,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.btnPostingAreaEdit.setOnClickListener {
             // 随机选择一个定位区域高亮显示
             if (mBinding.mapView.getPositingAreas().toMutableList().isNotEmpty()) {
-                mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_POSITING_AREA_EDIT)
+                mBinding.mapView.setWorkMode(WorkMode.MODE_POSITING_AREA_EDIT)
 
                 // 生成0到positingAreas.size-1之间的随机索引
                 val randomIndex =
@@ -1018,7 +1019,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     private fun initRemoveNoise() {
         //删除噪点
         mBinding.btnRemoveNoise.setOnClickListener {
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_REMOVE_NOISE)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_REMOVE_NOISE)
         }
         // 设置去除噪点监听器
         mBinding.mapView.setOnRemoveNoiseListener(object : MapView.IRemoveNoiseListener {
@@ -1057,7 +1058,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         }
         //编辑避让点
         mBinding.btnEditStation.onClick {
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CMS_STATION_EDIT)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_CMS_STATION_EDIT)
         }
         // 设置避让点点击监听器
         mBinding.mapView.setOnStationClickListener(object :
@@ -1070,7 +1071,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         })
         //删除避让点
         mBinding.btnDeleteStation.onClick {
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_CMS_STATION_DELETE)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_CMS_STATION_DELETE)
         }
 
         // 设置避让点删除监听器
@@ -1097,25 +1098,25 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         //添加虚拟墙
         mBinding.btnVirAdd.setOnClickListener {
             // 创建虚拟墙模式
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_ADD)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_VIRTUAL_WALL_ADD)
             // 默认创建普通虚拟墙
             mBinding.mapView.addVirtualWall(3)
         }
         //编辑虚拟墙
         mBinding.btnVirEdit.setOnClickListener {
             // 编辑虚拟墙模式
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_EDIT)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_VIRTUAL_WALL_EDIT)
 
         }
         //删除虚拟墙
         mBinding.btnVirDel.setOnClickListener {
             // 删除虚拟墙模式
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_DELETE)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_VIRTUAL_WALL_DELETE)
         }
         //编辑虚拟墙类型
         mBinding.btnVirTypeEdit.setOnClickListener {
             // 编辑虚拟墙类型模式
-            mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_VIRTUAL_WALL_TYPE_EDIT)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_VIRTUAL_WALL_TYPE_EDIT)
         }
         // 设置虚拟墙点击监听器
         mBinding.mapView.setOnVirtualWallClickListener(object :

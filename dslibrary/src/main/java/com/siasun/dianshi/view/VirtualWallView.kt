@@ -37,7 +37,7 @@ class VirtualWallView(
     }
 
     // 当前工作模式
-    private var currentWorkMode: MapView.WorkMode = MapView.WorkMode.MODE_SHOW_MAP
+    private var currentWorkMode: WorkMode = WorkMode.MODE_SHOW_MAP
 
     // 创建虚拟墙相关变量
     private var isCreating = false
@@ -133,7 +133,7 @@ class VirtualWallView(
                     )
 
                     // 如果是选中的线，使用选中画笔
-                    if (currentWorkMode == MapView.WorkMode.MODE_VIRTUAL_WALL_EDIT && index == selectedLineIndex) {
+                    if (currentWorkMode == WorkMode.MODE_VIRTUAL_WALL_EDIT && index == selectedLineIndex) {
                         canvas.drawLine(start.x, start.y, end.x, end.y, mSelectedPaint)
 
                         // 绘制绿色实心端点圆
@@ -203,20 +203,20 @@ class VirtualWallView(
     /**
      * 设置工作模式
      */
-    fun setWorkMode(mode: MapView.WorkMode) {
+    fun setWorkMode(mode: WorkMode) {
         currentWorkMode = mode
         // 重置状态
-        if (mode != MapView.WorkMode.MODE_VIRTUAL_WALL_ADD) {
+        if (mode != WorkMode.MODE_VIRTUAL_WALL_ADD) {
             isCreating = false
             startPoint = null
             currentPoint = null
         }
-        if (mode != MapView.WorkMode.MODE_VIRTUAL_WALL_EDIT) {
+        if (mode != WorkMode.MODE_VIRTUAL_WALL_EDIT) {
             selectedLineIndex = -1
             isEditing = false
             touchedPointIndex = -1
         }
-        if (mode != MapView.WorkMode.MODE_VIRTUAL_WALL_TYPE_EDIT) {
+        if (mode != WorkMode.MODE_VIRTUAL_WALL_TYPE_EDIT) {
             selectedLineIndex = -1
         }
         postInvalidate()
@@ -405,19 +405,19 @@ class VirtualWallView(
         val consumed: Boolean
 
         when (currentWorkMode) {
-            MapView.WorkMode.MODE_VIRTUAL_WALL_ADD -> {
+            WorkMode.MODE_VIRTUAL_WALL_ADD -> {
                 consumed = handleAddModeTouch(event, mapView)
             }
 
-            MapView.WorkMode.MODE_VIRTUAL_WALL_EDIT -> {
+            WorkMode.MODE_VIRTUAL_WALL_EDIT -> {
                 consumed = handleEditModeTouch(event, mapView)
             }
 
-            MapView.WorkMode.MODE_VIRTUAL_WALL_DELETE -> {
+            WorkMode.MODE_VIRTUAL_WALL_DELETE -> {
                 consumed = handleDeleteModeTouch(event, mapView)
             }
 
-            MapView.WorkMode.MODE_VIRTUAL_WALL_TYPE_EDIT -> {
+            WorkMode.MODE_VIRTUAL_WALL_TYPE_EDIT -> {
                 consumed = handleTypeEditModeTouch(event, mapView)
             }
 

@@ -11,6 +11,7 @@ import android.view.MotionEvent
 import com.siasun.dianshi.bean.End
 import com.siasun.dianshi.bean.ExpandArea
 import com.siasun.dianshi.bean.Start
+import com.siasun.dianshi.view.WorkMode
 import com.siasun.dianshi.view.SlamWareBaseView
 import java.lang.ref.WeakReference
 import kotlin.math.max
@@ -23,7 +24,7 @@ import kotlin.math.min
 @SuppressLint("ViewConstructor")
 class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakReference<T>) :
     SlamWareBaseView<T>(context, parent) {
-    private var currentWorkMode = CreateMapWorkMode.MODE_SHOW_MAP
+    private var currentWorkMode = WorkMode.MODE_SHOW_MAP
 
 
     // 创建过程状态
@@ -56,7 +57,7 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
     /**
      * 设置工作模式
      */
-    fun setWorkMode(mode: CreateMapWorkMode) {
+    fun setWorkMode(mode: WorkMode) {
         if (currentWorkMode == mode) return // 避免重复设置
 
         currentWorkMode = mode
@@ -90,7 +91,7 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         // 只在扩展地图增加区域模式下响应触摸事件
-        if (currentWorkMode != CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION) return false
+        if (currentWorkMode != WorkMode.MODE_EXTEND_MAP_ADD_REGION) return false
 
         return handleCreateModeTouch(event)
     }
@@ -101,7 +102,7 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
     private fun handleCreateModeTouch(event: MotionEvent): Boolean {
         val mapView = mParent.get() ?: return false
 
-        if (currentWorkMode == CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+        if (currentWorkMode == WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
             val worldPoint = mapView.screenToWorld(event.x, event.y)
 
             when (event.action) {

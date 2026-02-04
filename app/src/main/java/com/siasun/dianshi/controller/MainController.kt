@@ -5,7 +5,6 @@ import com.siasun.dianshi.GlobalVariable.SEND_NAVI_HEART
 import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.ExpandArea
 import com.siasun.dianshi.bean.PositingArea
-import com.siasun.dianshi.bean.RobotCoordinateBean
 import com.siasun.dianshi.controller.lcm.LCMController
 
 object MainController {

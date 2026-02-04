@@ -19,7 +19,7 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
     SlamWareBaseView<MapView>(context, parent) {
 
     // 当前工作模式
-    private var currentWorkMode = MapView.WorkMode.MODE_SHOW_MAP
+    private var currentWorkMode = WorkMode.MODE_SHOW_MAP
 
     // 触摸点坐标
     private val startPoint = PointF()
@@ -56,12 +56,12 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
     /**
      * 设置工作模式
      */
-    fun setWorkMode(mode: MapView.WorkMode) {
+    fun setWorkMode(mode: WorkMode) {
         if (currentWorkMode == mode) return // 避免重复设置
 
         currentWorkMode = mode
         // 如果不是擦除噪点模式，重置绘制状态
-        if (mode != MapView.WorkMode.MODE_REMOVE_NOISE) {
+        if (mode != WorkMode.MODE_REMOVE_NOISE) {
             resetDrawingState()
         }
     }
@@ -116,7 +116,7 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         // 只有在擦除噪点模式下才响应触摸事件
-        if (currentWorkMode != MapView.WorkMode.MODE_REMOVE_NOISE) {
+        if (currentWorkMode != WorkMode.MODE_REMOVE_NOISE) {
             return false
         }
 

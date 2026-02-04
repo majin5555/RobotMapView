@@ -5,6 +5,7 @@ import android.graphics.PointF
 import android.os.Build
 import android.os.Bundle
 import androidx.annotation.RequiresApi
+import androidx.core.content.ContextCompat
 import com.blankj.utilcode.util.ToastUtils
 import com.jeremyliao.liveeventbus.LiveEventBus
 import com.ngu.lcmtypes.laser_t
@@ -13,7 +14,7 @@ import com.siasun.dianshi.ConstantBase
 import com.siasun.dianshi.GlobalVariable
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.bean.ExpandArea
-import com.siasun.dianshi.bean.RobotCoordinateBean
+import com.siasun.dianshi.bean.SwitchMapBean
 import com.siasun.dianshi.controller.MainController
 import com.siasun.dianshi.dialog.CommonEditDialog
 import com.siasun.dianshi.dialog.CommonWarnDialog
@@ -21,6 +22,8 @@ import com.siasun.dianshi.framework.ext.onClick
 import com.siasun.dianshi.framework.log.LogUtil
 import com.siasun.dianshi.mapviewdemo.CREATE_MAP
 import com.siasun.dianshi.mapviewdemo.KEY_AGV_COORDINATE
+import com.siasun.dianshi.mapviewdemo.KEY_CURRENT_POINT_CLOUD
+import com.siasun.dianshi.mapviewdemo.KEY_LOCATION
 import com.siasun.dianshi.mapviewdemo.KEY_NAV_HEARTBEAT_STATE
 import com.siasun.dianshi.mapviewdemo.KEY_OPT_POSE
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_POS
@@ -28,7 +31,7 @@ import com.siasun.dianshi.mapviewdemo.R
 import com.siasun.dianshi.mapviewdemo.TAG_NAV
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityExpandMap3dDactivityBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.CreateMap2DViewModel
-import com.siasun.dianshi.view.createMap.CreateMapWorkMode
+import com.siasun.dianshi.view.WorkMode
 import com.siasun.dianshi.view.createMap.ExpandAreaView
 import java.util.Timer
 import java.util.TimerTask
@@ -69,6 +72,11 @@ class ExpandMap3DActivity :
         mBinding.tvSave.onClick {
             showSavaMapDialog()
         }
+        //定位
+        mBinding.btnLocation.onClick {
+            ToastUtils.showShort("00定位")
+            mViewModel.switchMapInfo(SwitchMapBean(100, 0.0, 0.0, 0.0, source = 10))
+        }
 
         //停止扫描
         mBinding.tvStop.onClick {
@@ -89,7 +97,7 @@ class ExpandMap3DActivity :
         //扩展地图
         mBinding.tvUpdate.onClick {
             mBinding.mapView.isStartRevSubMaps = false
-            mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_CREATE_MAP)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_CREATE_MAP)
 
 
             //更新地图
@@ -132,7 +140,7 @@ class ExpandMap3DActivity :
 
         //扩展地图 添加区域
         mBinding.btnSettingArea.onClick {
-            mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_EXTEND_MAP_ADD_REGION)
         }
         //添加区域监听 获取添加区域的世界坐标
         mBinding.mapView.getExpandAreaView()!!
@@ -162,7 +170,7 @@ class ExpandMap3DActivity :
         //扩展地图
         mBinding.tvExpend.onClick {
             mBinding.mapView.isStartRevSubMaps = false
-            mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_CREATE_MAP)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_CREATE_MAP)
 
             MainController.startExtendMap(0, robotPose, mapID)
 
@@ -208,6 +216,12 @@ class ExpandMap3DActivity :
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initData() {
         super.initData()
+
+        //上激光点云
+        LiveEventBus.get<laser_t>(KEY_CURRENT_POINT_CLOUD).observe(this) {
+            mBinding.mapView.loadCurPointCloud(it)
+        }
+
         //建图导航心跳
         LiveEventBus.get(KEY_NAV_HEARTBEAT_STATE, ByteArray::class.java).observe(this) {
             navHeartbeatState(it)
@@ -236,6 +250,16 @@ class ExpandMap3DActivity :
                 robotPose[5] = it.dparams[10]
             }
         }
+
+        //接收定位信息
+        LiveEventBus.get(KEY_LOCATION, Int::class.java).observeSticky(this) {
+            if (it == 1) {
+                mBinding.tvLocation.text = "定位成功"
+
+            } else {
+                mBinding.tvLocation.text = "定位失败"
+            }
+        }
     }
 
     @SuppressLint("SuspiciousIndentation")
@@ -258,6 +282,9 @@ class ExpandMap3DActivity :
 
                     //从建图模式到定位模式 后恢复地图不可旋转
                     GlobalVariable.SEND_NAVI_HEART = false
+                    MainController.sendOnlinePoint(
+                        100, mBinding.mapView.robotPose
+                    )
 
                 }
                 mBinding.mapView.isMapping = false

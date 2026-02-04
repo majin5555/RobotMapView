@@ -15,7 +15,7 @@ import java.nio.ByteBuffer
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.abs
 import androidx.core.graphics.createBitmap
-import com.siasun.dianshi.view.createMap.CreateMapWorkMode
+import com.siasun.dianshi.view.WorkMode
 import org.apache.commons.math3.linear.Array2DRowRealMatrix
 import kotlin.math.cos
 import kotlin.math.sin
@@ -28,7 +28,7 @@ import kotlin.collections.iterator
 class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>) :
     SlamWareBaseView<CreateMapView2D>(context, parent) {
     private val TAG = this::class.java.simpleName
-    private var currentCreateMapWorkMode = CreateMapWorkMode.MODE_SHOW_MAP
+    private var currentCreateMapWorkMode = WorkMode.MODE_SHOW_MAP
 
     //绘制地图的数据 建图时 2D
     private val keyFrames2d = ConcurrentHashMap<Int, SubMapData>()
@@ -46,7 +46,7 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
     /**
      * 设置工作模式
      */
-    fun setWorkMode(mode: CreateMapWorkMode) {
+    fun setWorkMode(mode: WorkMode) {
         if (currentCreateMapWorkMode == mode) return // 避免重复设置
 
         currentCreateMapWorkMode = mode

@@ -48,49 +48,17 @@ import java.util.concurrent.CopyOnWriteArrayList
 import androidx.core.content.withStyledAttributes
 import com.hjq.shape.layout.ShapeFrameLayout
 import com.siasun.dianshi.bean.CrossDoor
+import com.siasun.dianshi.view.createMap.MapViewInterface
 
 /**
  * 地图画布
  * 将在此画布中绘制slam的png地图
  */
-class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLayout(context, attrs),
-    SlamGestureDetector.OnRPGestureListener {
+@SuppressLint("ViewConstructor")
+class MapView(
+    context: Context, private val attrs: AttributeSet, override val robotPose: FloatArray
+) : ShapeFrameLayout(context, attrs), SlamGestureDetector.OnRPGestureListener, MapViewInterface {
 
-    // 工作模式枚举
-    enum class WorkMode {
-        MODE_SHOW_MAP,         // 移动地图模式
-        MODE_VIRTUAL_WALL_ADD, // 创建虚拟墙模式
-        MODE_VIRTUAL_WALL_EDIT,// 编辑虚拟墙模式
-        MODE_VIRTUAL_WALL_TYPE_EDIT,// 编辑虚拟墙类型模式
-        MODE_VIRTUAL_WALL_DELETE, // 删除虚拟墙模式
-        MODE_CMS_STATION_EDIT,  // 修改避让点模式
-        MODE_CMS_STATION_DELETE, // 删除避让点模式
-        MODE_ELEVATOR_EDIT,    // 编辑乘梯点模式
-        MODE_ELEVATOR_DELETE,  // 删除乘梯点模式
-        MODE_MACHINE_STATION_EDIT,  // 编辑充电站模式
-        MODE_MACHINE_STATION_DELETE, // 删除充电站模式
-        MODE_REMOVE_NOISE,      // 擦除噪点模式
-        MODE_POSITING_AREA_ADD, // 创建定位区域模式
-        MODE_POSITING_AREA_EDIT, // 编辑定位区域模式
-        MODE_POSITING_AREA_DELETE, // 删除定位区域模式
-        MODE_CLEAN_AREA_EDIT, // 编辑清扫区域模式
-        MODE_CLEAN_AREA_ADD, // 创建清扫区域模式
-        MODE_SP_AREA_EDIT, // 编辑特殊区域模式
-        MODE_SP_AREA_ADD, // 创建特殊区域模式
-        MODE_MIX_AREA_ADD, // 创建混行区域模式
-        MODE_MIX_AREA_EDIT, // 编辑混行区域模式
-        MODE_PATH_EDIT, // 编辑路线模式
-        MODE_PATH_MERGE, // 合并路线模式
-        MODE_PATH_DELETE, // 删除路线模式
-        MODE_PATH_DELETE_MULTIPLE, // 删除多条路线模式
-        MODE_PATH_CONVERT_TO_LINE, // 曲线转直线模式 //暂时没有
-        MODE_PATH_NODE_ATTR_EDIT, // 节点属性编辑模式
-        MODE_PATH_SEGMENT_ATTR_EDIT, // 路段属性编辑模式
-        MODE_PATH_CREATE, // 创建路线模式
-        MODE_CROSS_DOOR_EDIT, // 编辑过门模式
-        MODE_CROSS_DOOR_DELETE,// 删除过门模式
-        MODE_DRAG_POSITION // 拖拽定位模式
-    }
 
     // 当前工作模式
     private var currentWorkMode = WorkMode.MODE_SHOW_MAP
@@ -117,7 +85,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     var mElevatorView: ElevatorView? = null//乘梯点
     var mStationView: StationsView? = null//站点
     var mOnlinePoseView: OnlinePoseView? = null//上线点
-    var mUpLaserScanView: UpLaserScanView? = null//上激光点云
+    var mUpLaserScanView: UpLaserScanView<MapView>? = null//上激光点云
     var mDownLaserScanView: DownLaserScanView? = null//下激光点云
     var mTopViewPathView: TopViewPathView? = null//顶视路线
     var mRemoveNoiseView: RemoveNoiseView? = null//噪点擦出
@@ -411,7 +379,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     /**
      * 世界坐标转屏幕坐标
      */
-    fun worldToScreen(x: Float, y: Float): PointF {
+    override fun worldToScreen(x: Float, y: Float): PointF {
         synchronized(mSrf.mapData) {
             return mapPixelCoordinateToMapWidthCoordinateF(mSrf.worldToScreen(x, y))
         }
@@ -432,7 +400,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     /**
      * 屏幕坐标转世界坐标
      */
-    fun screenToWorld(x: Float, y: Float): PointF {
+    override fun screenToWorld(x: Float, y: Float): PointF {
         synchronized(mSrf.mapData) {
             // 首先将屏幕坐标转换为地图像素坐标
             val mapPixelPoint = widgetCoordinateToMapPixelCoordinate(PointF(x, y))
@@ -546,7 +514,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     /**
      * 获取当前工作模式
      */
-    fun getCurrentWorkMode(): WorkMode {
+    override fun getCurrentWorkMode(): WorkMode {
         return currentWorkMode
     }
 
@@ -980,6 +948,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     fun setOnCrossDoorLineClickListener(listener: CrossDoorView.OnCrossDoorLineClickListener?) {
         mCrossView?.setOnCrossDoorLineClickListener(listener)
     }
+
     /**
      * 设置过门监听器
      */

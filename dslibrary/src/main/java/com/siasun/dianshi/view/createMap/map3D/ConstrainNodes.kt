@@ -8,7 +8,7 @@ import android.graphics.Paint
 import com.siasun.dianshi.bean.ConstraintNode
 import com.siasun.dianshi.view.SlamWareBaseView
 import java.lang.ref.WeakReference
-import com.siasun.dianshi.view.createMap.CreateMapWorkMode
+import com.siasun.dianshi.view.WorkMode
 
 import android.graphics.Matrix
 
@@ -19,7 +19,7 @@ import android.graphics.Matrix
 class ConstrainNodes(context: Context?, val parent: WeakReference<CreateMapView3D>) :
     SlamWareBaseView<CreateMapView3D>(context, parent) {
     private val TAG = this::class.java.simpleName
-    private var currentWorkMode = CreateMapWorkMode.MODE_SHOW_MAP
+    private var currentWorkMode = WorkMode.MODE_SHOW_MAP
 
     //添加人工约束节点数据 (使用同步列表确保线程安全)
     private val keyConstraintNodes: MutableList<ConstraintNode> = java.util.Collections.synchronizedList(mutableListOf())
@@ -40,7 +40,7 @@ class ConstrainNodes(context: Context?, val parent: WeakReference<CreateMapView3
     /**
      * 设置工作模式
      */
-    fun setWorkMode(mode: CreateMapWorkMode) {
+    fun setWorkMode(mode: WorkMode) {
         if (currentWorkMode == mode) return // 避免重复设置
 
         currentWorkMode = mode

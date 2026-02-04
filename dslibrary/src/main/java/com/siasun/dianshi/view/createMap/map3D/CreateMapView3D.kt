@@ -9,6 +9,7 @@ import android.graphics.PointF
 import android.graphics.RectF
 import android.os.Build
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
 import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import android.widget.ImageView
@@ -17,14 +18,13 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.transition.Transition
 import com.ngu.lcmtypes.laser_t
-import com.siasun.dianshi.R
 import com.siasun.dianshi.bean.MapData
 import com.siasun.dianshi.utils.CoordinateConversion
 import com.siasun.dianshi.utils.MathUtils
 import com.siasun.dianshi.utils.RadianUtil
 import com.siasun.dianshi.utils.SlamGestureDetector
 import com.siasun.dianshi.utils.YamlNew
-import com.siasun.dianshi.view.createMap.CreateMapWorkMode
+import com.siasun.dianshi.view.WorkMode
 import com.siasun.dianshi.view.createMap.MapViewInterface
 import java.io.File
 import java.lang.ref.WeakReference
@@ -36,6 +36,7 @@ import com.siasun.dianshi.bean.ConstraintNode
 import com.siasun.dianshi.view.createMap.ExpandAreaView
 import com.siasun.dianshi.view.PngMapView
 import com.siasun.dianshi.view.SlamWareBaseView
+import com.siasun.dianshi.view.UpLaserScanView
 import com.siasun.dianshi.view.createMap.RobotViewCreateMap
 
 /**
@@ -50,7 +51,7 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     private var mRenderThread: RenderThread? = null
 
     // 当前工作模式
-    private var currentWorkMode = CreateMapWorkMode.MODE_SHOW_MAP
+    private var currentWorkMode = WorkMode.MODE_SHOW_MAP
 
     var mSrf = CoordinateConversion()//坐标转化工具类
     private var mOuterMatrix = Matrix()
@@ -66,7 +67,8 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     private var mapLayers: MutableList<SlamWareBaseView<CreateMapView3D>> = CopyOnWriteArrayList()
     private var mPngMapView: PngMapView? = null //png地图
     var mMapOutline3D: MapOutline3D? = null //地图轮廓
-    private var mUpLaserScanView: UpLaserScanView3D? = null//上激光点云
+    private var mCreatingUpLaserScanView: UpLaserScanView3D? = null//上激光点云
+    private var mUpLaserScanView: UpLaserScanView<CreateMapView3D>? = null//上激光点云（非建图显示）
     var mConstrainNodes: ConstrainNodes? = null//人工约束节点
     private var mCreateMapRobotView: RobotViewCreateMap<CreateMapView3D>? = null //机器人图标
     private var mExpandAreaView: ExpandAreaView<CreateMapView3D>? = null //地图更新区域
@@ -107,7 +109,8 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
 
     private fun initView() {
         mPngMapView = PngMapView(context)
-        mUpLaserScanView = UpLaserScanView3D(context, mMapView)
+        mCreatingUpLaserScanView = UpLaserScanView3D(context, mMapView)
+        mUpLaserScanView = UpLaserScanView(context, mMapView)
         mConstrainNodes = ConstrainNodes(context, mMapView)
         mMapOutline3D = MapOutline3D(context, mMapView)
         mCreateMapRobotView = RobotViewCreateMap(context, mMapView)
@@ -122,7 +125,9 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
         addMapLayers(mMapOutline3D)
         //人工约束节点
         addMapLayers(mConstrainNodes)
-        //上激光点云
+        //建图上激光点云
+        addMapLayers(mCreatingUpLaserScanView)
+        //非建图上激光点云
         addMapLayers(mUpLaserScanView)
         //机器人图标
         addMapLayers(mCreateMapRobotView)
@@ -133,7 +138,7 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (currentWorkMode == CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+        if (currentWorkMode == WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
             // SurfaceView 模式下，需要手动分发事件给 ExpandAreaView
             mExpandAreaView?.onTouchEvent(event)
             // 返回true表示事件已处理，禁止手势检测器处理，从而禁止底图拖动
@@ -154,7 +159,7 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
 
     override fun onMapMove(distanceX: Int, distanceY: Int) {
         // 在扩展地图增加区域模式下禁止滑动
-        if (currentWorkMode != CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+        if (currentWorkMode != WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
             setTransition(distanceX, distanceY)
         }
     }
@@ -171,7 +176,7 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
 
     private fun setTransition(dx: Int, dy: Int) {
         mOuterMatrix.postTranslate(dx.toFloat(), dy.toFloat())
-        if (currentWorkMode == CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+        if (currentWorkMode == WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
             // 在扩展地图增加区域模式下，只更新子图层的矩阵，不更新 png 地图
             for (mapLayer in mapLayers) {
                 mapLayer.setMatrix(mOuterMatrix)
@@ -201,7 +206,7 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     private fun setMatrix(matrix: Matrix) {
         // 复制矩阵以保证渲染线程安全
         val matrixCopy = Matrix(matrix)
-        if (currentWorkMode != CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+        if (currentWorkMode != WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
             mPngMapView?.setMatrix(matrixCopy)
         }
         for (mapLayer in mapLayers) {
@@ -215,7 +220,7 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
         mMapScale = scale
         // 复制矩阵以保证渲染线程安全
         val matrixCopy = Matrix(matrix)
-        if (currentWorkMode != CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+        if (currentWorkMode != WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
             mPngMapView?.setMatrix(matrixCopy)
         }
         for (mapLayer in mapLayers) {
@@ -239,7 +244,7 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
         mOuterMatrix = matrix
         // 复制矩阵以保证渲染线程安全
         val matrixCopy = Matrix(matrix)
-        if (currentWorkMode != CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+        if (currentWorkMode != WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
             mPngMapView?.setMatrix(matrixCopy)
         }
         for (mapLayer in mapLayers) {
@@ -385,6 +390,7 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
 
         // 清理视图引用
         mPngMapView = null
+        mCreatingUpLaserScanView = null
         mUpLaserScanView = null
         mCreateMapRobotView = null
 
@@ -406,10 +412,10 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     /**
      * 设置工作模式
      */
-    fun setWorkMode(mode: CreateMapWorkMode) {
+    fun setWorkMode(mode: WorkMode) {
         currentWorkMode = mode
         mMapOutline3D?.setWorkMode(mode)
-        mUpLaserScanView?.setWorkMode(mode)
+        mCreatingUpLaserScanView?.setWorkMode(mode)
         mCreateMapRobotView?.setWorkMode(mode)
         mExpandAreaView?.setWorkMode(mode)
     }
@@ -417,7 +423,7 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     /**
      * 获取当前工作模式
      */
-    override fun getCurrentWorkMode(): CreateMapWorkMode {
+    override fun getCurrentWorkMode(): WorkMode {
         return currentWorkMode
     }
 
@@ -450,7 +456,14 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
      * @param bitmap
      */
     private fun setBitmap(mapData: MapData, bitmap: Bitmap) {
-        mSrf.mapData = mapData
+        mSrf.mapData.width = mapData.width
+        mSrf.mapData.height = mapData.height
+        mSrf.mapData.originX = mapData.originX
+        mSrf.mapData.originY = mapData.originY
+        mSrf.mapData.resolution = mapData.resolution
+
+        Log.d(TAG, "setBitmap  mSrf.mapData ${mSrf.mapData}")
+
         mPngMapView?.setBitmap(bitmap)
         // 设置地图后自动居中显示
         setCentred()
@@ -458,6 +471,7 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
 
     /**
      * 外部接口 解析激光点云数据（建图模式） 3D
+     *      * type 更新0
      *      * type 扩展1
      *      * type 新建2
      */
@@ -475,29 +489,47 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
             laserData.ranges[5]
         )
         //保持居中
-        if (currentWorkMode == CreateMapWorkMode.MODE_CREATE_MAP) {
+        if (currentWorkMode == WorkMode.MODE_CREATE_MAP) {
             keepRobotCentered()
         }
 
         calBinding(laserData, type)
 
         //更新点云数据
-        mUpLaserScanView?.updateUpLaserScan(laserData)
+        mCreatingUpLaserScanView?.updateUpLaserScan(laserData)
     }
+
+    /**
+     * 扩展地图前显示点云数据
+     */
+    fun loadCurPointCloud(laserData: laser_t) = mUpLaserScanView?.updateUpLaserScan(laserData)
+
 
     /**
      * 计算新建地图宽高
      */
     private fun calBinding(laserData: laser_t, type: Int) {
-        if (type == 1) {
+        Log.d(TAG, "calBinding mSrf.mapData.width ${laserData.intensities[0]}")
+        Log.d(TAG, "calBinding mSrf.mapData.height ${laserData.intensities[1]}")
+        Log.d(TAG, "calBinding originX ${laserData.intensities[2]}")
+        Log.d(TAG, "calBinding originY ${laserData.intensities[3]}")
+        if (type == 0) {//更新
+
+//            if (mSrf.mapData.height < laserData.intensities[0]) {
+//                mSrf.mapData.height = laserData.intensities[0]
+//            }
+//            if (mSrf.mapData.width < laserData.intensities[1]) {
+//                mSrf.mapData.width = laserData.intensities[2]
+//            }
+
+        } else if (type == 1) {//扩展
             if (mSrf.mapData.height < laserData.intensities[0]) {
                 mSrf.mapData.height = laserData.intensities[0]
             }
             if (mSrf.mapData.width < laserData.intensities[1]) {
-                mSrf.mapData.width = laserData.intensities[2]
+                mSrf.mapData.width = laserData.intensities[1]
             }
-
-        } else {
+        } else {//新建
             // 解析地图元数据（关键帧或非关键帧均需要）
             mSrf.mapData.height = laserData.intensities[0]
             mSrf.mapData.width = laserData.intensities[1]

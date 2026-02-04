@@ -21,6 +21,12 @@
         android:text="建图步数"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <TextView
+        android:id="@+id/tvLocation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="定位状态" />
+
     <!-- 旋转-->
     <LinearLayout
         android:id="@+id/ll_rotate"
@@ -29,6 +35,13 @@
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
+
+        <Button
+            android:id="@+id/btn_location"
+            android:layout_width="160dp"
+            android:layout_height="60dp"
+            android:gravity="center"
+            android:text="定位" />
 
         <Button
             android:id="@+id/btn_setting_area"
@@ -63,7 +76,6 @@
             app:layout_constraintEnd_toStartOf="@+id/tv_create" />
 
 
-
         <Button
             android:id="@+id/tv_expend"
             android:layout_width="180dp"
@@ -73,7 +85,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
-    <Button
+        <Button
             android:id="@+id/tv_update"
             android:layout_width="180dp"
             android:layout_height="wrap_content"

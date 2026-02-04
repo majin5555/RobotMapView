@@ -30,7 +30,7 @@ import com.siasun.dianshi.mapviewdemo.TAG_NAV
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityCreateMap3dDactivityBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.CreateMap3DViewModel
 import com.siasun.dianshi.network.constant.KEY_NEY_IP
-import com.siasun.dianshi.view.createMap.CreateMapWorkMode
+import com.siasun.dianshi.view.WorkMode
 import com.tencent.mmkv.MMKV
 import java.util.Timer
 import java.util.TimerTask
@@ -66,7 +66,7 @@ class CreateMap3DActivity :
         //开始扫描
         mBinding.tvCreate.onClick {
             mBinding.mapView.isStartRevSubMaps = false
-            mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_CREATE_MAP)
+            mBinding.mapView.setWorkMode(WorkMode.MODE_CREATE_MAP)
             MainController.startCreateEnvironment()
             showLoading("开始扫描")
             ToastUtils.showShort("开始扫描")
@@ -204,6 +204,10 @@ class CreateMap3DActivity :
 
                 }
                 mBinding.mapView.isMapping = false
+
+                MainController.sendOnlinePoint(
+                    100, mBinding.mapView.robotPose
+                )
             }
 
             //开始建图

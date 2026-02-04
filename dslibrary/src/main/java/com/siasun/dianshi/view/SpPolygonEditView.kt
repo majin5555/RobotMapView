@@ -28,7 +28,7 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
     var list: MutableList<SpArea> = mutableListOf()
 
     // 编辑模式相关变量
-    private var currentWorkMode = MapView.WorkMode.MODE_SHOW_MAP
+    private var currentWorkMode = WorkMode.MODE_SHOW_MAP
     private var selectedArea: SpArea? = null
     private var selectedPointIndex: Int = -1
     private var isDragging = false
@@ -98,10 +98,10 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
     /**
      * 设置工作模式
      */
-    fun setWorkMode(mode: MapView.WorkMode) {
+    fun setWorkMode(mode: WorkMode) {
         this.currentWorkMode = mode
         // 如果退出编辑模式，清空选中状态
-        if (mode != MapView.WorkMode.MODE_SP_AREA_ADD && mode != MapView.WorkMode.MODE_SP_AREA_EDIT) {
+        if (mode != WorkMode.MODE_SP_AREA_ADD && mode != WorkMode.MODE_SP_AREA_EDIT) {
             selectedArea = null
             selectedPointIndex = -1
             isDragging = false
@@ -393,7 +393,7 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
             return true
         }
 
-        if ((currentWorkMode != MapView.WorkMode.MODE_SP_AREA_ADD && currentWorkMode != MapView.WorkMode.MODE_SP_AREA_EDIT) || selectedArea == null) {
+        if ((currentWorkMode != WorkMode.MODE_SP_AREA_ADD && currentWorkMode != WorkMode.MODE_SP_AREA_EDIT) || selectedArea == null) {
             return false
         }
 
@@ -487,7 +487,7 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
     }
 
     override fun onDoubleTap(e: MotionEvent): Boolean {
-        if ((currentWorkMode != MapView.WorkMode.MODE_SP_AREA_ADD && currentWorkMode != MapView.WorkMode.MODE_SP_AREA_EDIT) || selectedArea == null) {
+        if ((currentWorkMode != WorkMode.MODE_SP_AREA_ADD && currentWorkMode != WorkMode.MODE_SP_AREA_EDIT) || selectedArea == null) {
             return false
         }
 
@@ -569,7 +569,7 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
         canvas.drawPath(path, if (isSelected) selectedAreaPaint else areaPaint)
 
         // 如果是编辑、添加或删除模式且区域被选中，绘制所有顶点和边中点
-        if ((currentWorkMode == MapView.WorkMode.MODE_SP_AREA_ADD || currentWorkMode == MapView.WorkMode.MODE_SP_AREA_EDIT) && isSelected) {
+        if ((currentWorkMode == WorkMode.MODE_SP_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT) && isSelected) {
             // 绘制所有顶点
             for (i in points.indices) {
                 val screenPoint =

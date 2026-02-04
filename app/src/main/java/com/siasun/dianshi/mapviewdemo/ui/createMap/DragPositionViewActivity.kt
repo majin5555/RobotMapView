@@ -14,6 +14,7 @@ import com.siasun.dianshi.mapviewdemo.KEY_LOCATION_DRAG
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityShowMapViewBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.ShowMapViewModel
 import com.siasun.dianshi.view.MapView
+import com.siasun.dianshi.view.WorkMode
 
 /**
  * 拖拽定位地图
@@ -28,7 +29,7 @@ class DragPositionViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, Sh
     override fun initView(savedInstanceState: Bundle?) {
         MainController.init()
         mDragBean = intent.getSerializableExtra(KEY_LOCATION_DRAG) as DragLocationBean?
-        mBinding.mapView.setWorkMode(MapView.WorkMode.MODE_DRAG_POSITION)
+        mBinding.mapView.setWorkMode(WorkMode.MODE_DRAG_POSITION)
 
         mDragBean?.upRCData?.let {
             mLasertData.ranges = it.f_create_map_data

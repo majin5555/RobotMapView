@@ -10,7 +10,7 @@ import android.view.MotionEvent
 import androidx.core.content.ContextCompat
 import com.siasun.dianshi.R
 import com.siasun.dianshi.bean.MachineStation
-import com.siasun.dianshi.view.MapView.WorkMode
+import com.siasun.dianshi.view.WorkMode
 import java.lang.ref.WeakReference
 
 /**

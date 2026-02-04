@@ -33,7 +33,7 @@ class ElevatorView(context: Context?, parent: WeakReference<MapView>) :
     private var onElevatorDeleteListener: OnElevatorDeleteListener? = null
 
     // 当前工作模式
-    private var currentWorkMode: MapView.WorkMode = MapView.WorkMode.MODE_SHOW_MAP
+    private var currentWorkMode: WorkMode = WorkMode.MODE_SHOW_MAP
 
     // 绘图参数常量
     private companion object {
@@ -119,7 +119,7 @@ class ElevatorView(context: Context?, parent: WeakReference<MapView>) :
                 drawCircle(canvas, pointLocation, BASE_RADIUS, mPaint)
 
                 // 根据工作模式绘制外圈圆环
-                if (currentWorkMode == MapView.WorkMode.MODE_ELEVATOR_EDIT) {
+                if (currentWorkMode == WorkMode.MODE_ELEVATOR_EDIT) {
                     // 编辑模式：绘制绿色圆环
                     mPaint.color = Color.GREEN
                     mPaint.style = Paint.Style.STROKE
@@ -127,7 +127,7 @@ class ElevatorView(context: Context?, parent: WeakReference<MapView>) :
                     drawCircle(canvas, pointLocation, BASE_RADIUS + 5f, mPaint)
                     // 恢复填充样式
                     mPaint.style = Paint.Style.FILL
-                } else if (currentWorkMode == MapView.WorkMode.MODE_ELEVATOR_DELETE) {
+                } else if (currentWorkMode == WorkMode.MODE_ELEVATOR_DELETE) {
                     // 删除模式：绘制红色圆环
                     mPaint.color = Color.RED
                     mPaint.style = Paint.Style.STROKE
@@ -154,7 +154,7 @@ class ElevatorView(context: Context?, parent: WeakReference<MapView>) :
                 drawCircle(canvas, pointLocation, BASE_RADIUS, mPaint)
 
                 // 根据工作模式绘制外圈圆环
-                if (currentWorkMode == MapView.WorkMode.MODE_ELEVATOR_EDIT) {
+                if (currentWorkMode == WorkMode.MODE_ELEVATOR_EDIT) {
                     // 编辑模式：绘制绿色圆环
                     mPaint.color = Color.GREEN
                     mPaint.style = Paint.Style.STROKE
@@ -162,7 +162,7 @@ class ElevatorView(context: Context?, parent: WeakReference<MapView>) :
                     drawCircle(canvas, pointLocation, BASE_RADIUS + 5f, mPaint)
                     // 恢复填充样式
                     mPaint.style = Paint.Style.FILL
-                } else if (currentWorkMode == MapView.WorkMode.MODE_ELEVATOR_DELETE) {
+                } else if (currentWorkMode == WorkMode.MODE_ELEVATOR_DELETE) {
                     // 删除模式：绘制红色圆环
                     mPaint.color = Color.RED
                     mPaint.style = Paint.Style.STROKE
@@ -194,7 +194,7 @@ class ElevatorView(context: Context?, parent: WeakReference<MapView>) :
     /**
      * 设置工作模式
      */
-    fun setWorkMode(workMode: MapView.WorkMode) {
+    fun setWorkMode(workMode: WorkMode) {
         this.currentWorkMode = workMode
     }
 
@@ -220,8 +220,8 @@ class ElevatorView(context: Context?, parent: WeakReference<MapView>) :
         val mapView = mParent.get() ?: return super.onTouchEvent(event)
 
         // 只有在编辑或删除模式下才处理点击事件
-        if (currentWorkMode != MapView.WorkMode.MODE_ELEVATOR_EDIT &&
-            currentWorkMode != MapView.WorkMode.MODE_ELEVATOR_DELETE
+        if (currentWorkMode != WorkMode.MODE_ELEVATOR_EDIT &&
+            currentWorkMode != WorkMode.MODE_ELEVATOR_DELETE
         ) {
             return super.onTouchEvent(event)
         }
@@ -238,11 +238,11 @@ class ElevatorView(context: Context?, parent: WeakReference<MapView>) :
 
         clickedElevator?.let {
             when (currentWorkMode) {
-                MapView.WorkMode.MODE_ELEVATOR_EDIT -> {
+                WorkMode.MODE_ELEVATOR_EDIT -> {
                     onElevatorEditListener?.onElevatorEdit(it)
                 }
 
-                MapView.WorkMode.MODE_ELEVATOR_DELETE -> {
+                WorkMode.MODE_ELEVATOR_DELETE -> {
                     onElevatorDeleteListener?.onElevatorDelete(it)
                     postInvalidate()
                 }

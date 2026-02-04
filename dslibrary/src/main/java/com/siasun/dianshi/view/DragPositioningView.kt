@@ -29,7 +29,7 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
     val dragRobotPose = DragRobotPose()
 
     // 当前工作模式
-    private var currentWorkMode: MapView.WorkMode = MapView.WorkMode.MODE_SHOW_MAP
+    private var currentWorkMode: WorkMode = WorkMode.MODE_SHOW_MAP
 
     private var offsetX = 0f
     private var offsetY = 0f
@@ -134,9 +134,9 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
     /**
      * 设置工作模式
      */
-    fun setWorkMode(mode: MapView.WorkMode) {
+    fun setWorkMode(mode: WorkMode) {
         currentWorkMode = mode
-        if (mode != MapView.WorkMode.MODE_DRAG_POSITION) {
+        if (mode != WorkMode.MODE_DRAG_POSITION) {
             // 重置偏移量
             offsetX = 0f
             offsetY = 0f
@@ -149,7 +149,7 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (currentWorkMode != MapView.WorkMode.MODE_DRAG_POSITION) return false
+        if (currentWorkMode != WorkMode.MODE_DRAG_POSITION) return false
         val mapView = parent.get() ?: return false
 
         when (event.action and MotionEvent.ACTION_MASK) {

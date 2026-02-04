@@ -26,7 +26,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
 ) : SlamWareBaseView<MapView>(context, parent) {
     private var isDrawingEnabled: Boolean = true
     private var cLayer: CLayer? = null
-    private var currentWorkMode: MapView.WorkMode = MapView.WorkMode.MODE_SHOW_MAP
+    private var currentWorkMode: WorkMode = WorkMode.MODE_SHOW_MAP
 
     // 路段编辑相关属性
     private var selectedPath: com.siasun.dianshi.bean.pp.world.Path? = null // 当前选中的路段
@@ -74,10 +74,10 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
     /**
      * 设置工作模式
      */
-    fun setWorkMode(mode: MapView.WorkMode) {
+    fun setWorkMode(mode: WorkMode) {
         currentWorkMode = mode
         // 如果退出路径编辑模式、节点属性编辑模式、路段属性编辑模式、删除模式和创建模式，重置选择状态
-        if (mode != MapView.WorkMode.MODE_PATH_EDIT && mode != MapView.WorkMode.MODE_PATH_NODE_ATTR_EDIT && mode != MapView.WorkMode.MODE_PATH_SEGMENT_ATTR_EDIT && mode != MapView.WorkMode.MODE_PATH_DELETE && mode != MapView.WorkMode.MODE_PATH_DELETE_MULTIPLE && mode != MapView.WorkMode.MODE_PATH_MERGE && mode != MapView.WorkMode.MODE_PATH_CREATE) {
+        if (mode != WorkMode.MODE_PATH_EDIT && mode != WorkMode.MODE_PATH_NODE_ATTR_EDIT && mode != WorkMode.MODE_PATH_SEGMENT_ATTR_EDIT && mode != WorkMode.MODE_PATH_DELETE && mode != WorkMode.MODE_PATH_DELETE_MULTIPLE && mode != WorkMode.MODE_PATH_MERGE && mode != WorkMode.MODE_PATH_CREATE) {
             selectedPath = null
             selectedNode = null
             draggingNode = null
@@ -96,7 +96,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
             // 重置创建路线模式的属性
             pathCreateStartNode = null
             tempPath = null
-        } else if (mode == MapView.WorkMode.MODE_PATH_DELETE_MULTIPLE) {
+        } else if (mode == WorkMode.MODE_PATH_DELETE_MULTIPLE) {
             // 进入删除多条路线模式，重置相关属性
             selectedPath = null
             selectedNode = null
@@ -115,7 +115,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
             // 重置创建路线模式的属性
             pathCreateStartNode = null
             tempPath = null
-        } else if (mode == MapView.WorkMode.MODE_PATH_MERGE) {
+        } else if (mode == WorkMode.MODE_PATH_MERGE) {
             // 进入路线合并模式，重置相关属性
             selectedPath = null
             selectedNode = null
@@ -135,7 +135,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
             // 重置创建路线模式的属性
             pathCreateStartNode = null
             tempPath = null
-        } else if (mode == MapView.WorkMode.MODE_PATH_CREATE) {
+        } else if (mode == WorkMode.MODE_PATH_CREATE) {
             // 进入创建路线模式，重置相关属性
             selectedPath = null
             selectedNode = null
@@ -457,7 +457,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
      */
     override fun onTouchEvent(event: MotionEvent): Boolean {
         // 在路径编辑模式、节点属性编辑模式、路段属性编辑模式、删除模式、合并模式和创建模式下都处理触摸事件
-        if (currentWorkMode != MapView.WorkMode.MODE_PATH_EDIT && currentWorkMode != MapView.WorkMode.MODE_PATH_NODE_ATTR_EDIT && currentWorkMode != MapView.WorkMode.MODE_PATH_SEGMENT_ATTR_EDIT && currentWorkMode != MapView.WorkMode.MODE_PATH_DELETE && currentWorkMode != MapView.WorkMode.MODE_PATH_DELETE_MULTIPLE && currentWorkMode != MapView.WorkMode.MODE_PATH_MERGE && currentWorkMode != MapView.WorkMode.MODE_PATH_CREATE) {
+        if (currentWorkMode != WorkMode.MODE_PATH_EDIT && currentWorkMode != WorkMode.MODE_PATH_NODE_ATTR_EDIT && currentWorkMode != WorkMode.MODE_PATH_SEGMENT_ATTR_EDIT && currentWorkMode != WorkMode.MODE_PATH_DELETE && currentWorkMode != WorkMode.MODE_PATH_DELETE_MULTIPLE && currentWorkMode != WorkMode.MODE_PATH_MERGE && currentWorkMode != WorkMode.MODE_PATH_CREATE) {
             return super.onTouchEvent(event)
         }
 
@@ -466,7 +466,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
         val worldPoint = mapView.screenToWorld(screenPoint.x, screenPoint.y)
 
         // 创建路线模式下的处理
-        if (currentWorkMode == MapView.WorkMode.MODE_PATH_CREATE) {
+        if (currentWorkMode == WorkMode.MODE_PATH_CREATE) {
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     // 处理创建路线的点击事件
@@ -483,7 +483,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
         }
 
         // 删除多条路线模式下的处理
-        if (currentWorkMode == MapView.WorkMode.MODE_PATH_DELETE_MULTIPLE) {
+        if (currentWorkMode == WorkMode.MODE_PATH_DELETE_MULTIPLE) {
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     // 开始框选
@@ -571,11 +571,11 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                             selectedPath = path
 
                             // 只有在路径编辑模式下允许拖动节点，节点属性编辑模式下只选中不允许拖动
-                            if (currentWorkMode == MapView.WorkMode.MODE_PATH_EDIT) {
+                            if (currentWorkMode == WorkMode.MODE_PATH_EDIT) {
                                 draggingNode = startNode
                                 draggingControlPoint = null
                                 dragStartPoint = screenPoint
-                            } else if (currentWorkMode == MapView.WorkMode.MODE_PATH_MERGE) {
+                            } else if (currentWorkMode == WorkMode.MODE_PATH_MERGE) {
                                 // 路线合并模式下，选择起点
                                 if (selectedMergeStartNode == null) {
                                     // 还没有选择起点，选择当前起点
@@ -596,10 +596,10 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
 
                             // 触发节点选中回调（在路径编辑模式和节点属性编辑模式下都触发）
                             // 在节点属性编辑模式下，只有当点击的节点与当前选中的节点不同时才触发回调
-                            if ((currentWorkMode == MapView.WorkMode.MODE_PATH_EDIT || currentWorkMode == MapView.WorkMode.MODE_PATH_NODE_ATTR_EDIT)) {
+                            if ((currentWorkMode == WorkMode.MODE_PATH_EDIT || currentWorkMode == WorkMode.MODE_PATH_NODE_ATTR_EDIT)) {
 
                                 // 节点属性编辑模式下检查是否重复点击同一节点
-                                if (currentWorkMode == MapView.WorkMode.MODE_PATH_NODE_ATTR_EDIT) {
+                                if (currentWorkMode == WorkMode.MODE_PATH_NODE_ATTR_EDIT) {
                                     // 只有当点击的节点与当前选中的节点不同时，才触发回调
                                     if (selectedNode != startNode || selectedPath != path) {
                                         selectedNode = startNode
@@ -607,7 +607,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                     }
                                 }
                                 return
-                            } else if (currentWorkMode == MapView.WorkMode.MODE_PATH_MERGE) {
+                            } else if (currentWorkMode == WorkMode.MODE_PATH_MERGE) {
                                 invalidate()
                                 return
                             }
@@ -622,11 +622,11 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                             selectedPath = path
 
                             // 只有在路径编辑模式下允许拖动节点，节点属性编辑模式下只选中不允许拖动
-                            if (currentWorkMode == MapView.WorkMode.MODE_PATH_EDIT) {
+                            if (currentWorkMode == WorkMode.MODE_PATH_EDIT) {
                                 draggingNode = endNode
                                 draggingControlPoint = null
                                 dragStartPoint = screenPoint
-                            } else if (currentWorkMode == MapView.WorkMode.MODE_PATH_MERGE) {
+                            } else if (currentWorkMode == WorkMode.MODE_PATH_MERGE) {
                                 // 路线合并模式下，选择终点
                                 if (selectedMergeStartNode == null) {
                                     // 还没有选择起点，选择当前终点作为起点
@@ -647,10 +647,10 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
 
                             // 触发节点选中回调（在路径编辑模式和节点属性编辑模式下都触发）
                             // 在节点属性编辑模式下，只有当点击的节点与当前选中的节点不同时才触发回调
-                            if ((currentWorkMode == MapView.WorkMode.MODE_PATH_EDIT || currentWorkMode == MapView.WorkMode.MODE_PATH_NODE_ATTR_EDIT)) {
+                            if ((currentWorkMode == WorkMode.MODE_PATH_EDIT || currentWorkMode == WorkMode.MODE_PATH_NODE_ATTR_EDIT)) {
 
                                 // 节点属性编辑模式下检查是否重复点击同一节点
-                                if (currentWorkMode == MapView.WorkMode.MODE_PATH_NODE_ATTR_EDIT) {
+                                if (currentWorkMode == WorkMode.MODE_PATH_NODE_ATTR_EDIT) {
                                     // 只有当点击的节点与当前选中的节点不同时，才触发回调
                                     if (selectedNode != endNode || selectedPath != path) {
                                         selectedNode = endNode
@@ -658,23 +658,23 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                     }
                                 }
                                 return
-                            } else if (currentWorkMode == MapView.WorkMode.MODE_PATH_MERGE) {
+                            } else if (currentWorkMode == WorkMode.MODE_PATH_MERGE) {
                                 invalidate()
                                 return
                             }
                         }
 
                         // 触发路段选中回调（在路径编辑模式、路段属性编辑模式和删除模式下都触发）
-                        if (currentWorkMode == MapView.WorkMode.MODE_PATH_EDIT || currentWorkMode == MapView.WorkMode.MODE_PATH_SEGMENT_ATTR_EDIT || currentWorkMode == MapView.WorkMode.MODE_PATH_DELETE) {
+                        if (currentWorkMode == WorkMode.MODE_PATH_EDIT || currentWorkMode == WorkMode.MODE_PATH_SEGMENT_ATTR_EDIT || currentWorkMode == WorkMode.MODE_PATH_DELETE) {
 
                             // 路段属性编辑模式下检查是否重复点击同一路段
-                            if (currentWorkMode == MapView.WorkMode.MODE_PATH_SEGMENT_ATTR_EDIT) {
+                            if (currentWorkMode == WorkMode.MODE_PATH_SEGMENT_ATTR_EDIT) {
                                 // 只有当点击的路段与当前选中的路段不同时，才触发回调
                                 if (selectedPath != path) {
                                     selectedPath = path
                                     onPathAttributeEditListener?.onPathSelected(path)
                                 }
-                            } else if (currentWorkMode == MapView.WorkMode.MODE_PATH_DELETE) {
+                            } else if (currentWorkMode == WorkMode.MODE_PATH_DELETE) {
                                 // 删除模式下，点击路段直接删除
                                 selectedPath = path
                             } else {
@@ -729,7 +729,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
     private fun handleMoveEvent(worldPoint: PointF) {
 
         // 更新节点位置 - 只有在路径编辑模式下才允许拖动节点
-        if (draggingNode != null && currentWorkMode == MapView.WorkMode.MODE_PATH_EDIT) {
+        if (draggingNode != null && currentWorkMode == WorkMode.MODE_PATH_EDIT) {
 
             // 直接访问节点的x和y属性，因为Node类继承自Point2d，x和y是public字段
             try {
@@ -830,11 +830,11 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
      * 处理抬起事件
      */
     private fun handleUpEvent(event: MotionEvent) {
-        if (currentWorkMode == MapView.WorkMode.MODE_PATH_DELETE) {
+        if (currentWorkMode == WorkMode.MODE_PATH_DELETE) {
             selectedPath?.let {
                 deletePath(it)
             }
-        } else if (currentWorkMode == MapView.WorkMode.MODE_PATH_DELETE_MULTIPLE) {
+        } else if (currentWorkMode == WorkMode.MODE_PATH_DELETE_MULTIPLE) {
 
             // 结束框选
             if (isBoxSelecting) {
@@ -850,7 +850,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                 boxSelectEndPoint = null
                 invalidate()
             }
-        } else if (currentWorkMode == MapView.WorkMode.MODE_PATH_CREATE) {
+        } else if (currentWorkMode == WorkMode.MODE_PATH_CREATE) {
 
             // 检查是否是长按结束路径创建
             if (event.eventTime - event.downTime > 500) {
@@ -935,7 +935,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
 
                             // 根据工作模式绘制不同效果
                             when (currentWorkMode) {
-                                MapView.WorkMode.MODE_PATH_EDIT, MapView.WorkMode.MODE_PATH_NODE_ATTR_EDIT -> {
+                                WorkMode.MODE_PATH_EDIT, WorkMode.MODE_PATH_NODE_ATTR_EDIT -> {
                                     // 编辑模式或节点属性编辑模式
                                     if (selectedPath == path) {
                                         // 绘制选中的路段
@@ -944,7 +944,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                         path.DrawID(mapView.mSrf, canvas, Color.GREEN, mPaint)
 
                                         // 绘制控制点（仅对GenericPath有效）
-                                        if (path is GenericPath && currentWorkMode == MapView.WorkMode.MODE_PATH_EDIT) {
+                                        if (path is GenericPath && currentWorkMode == WorkMode.MODE_PATH_EDIT) {
                                             // 使用库函数绘制控制点，区分拖动状态
                                             path.DrawCtrlPoints(
                                                 mapView.mSrf,
@@ -976,7 +976,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                     }
                                 }
 
-                                MapView.WorkMode.MODE_PATH_SEGMENT_ATTR_EDIT -> {
+                                WorkMode.MODE_PATH_SEGMENT_ATTR_EDIT -> {
                                     // 路段属性编辑模式：显示所有路段编号
                                     path.Draw(
                                         mapView.mSrf,
@@ -988,7 +988,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                     path.DrawID(mapView.mSrf, canvas, Color.BLACK, mPaint)
                                 }
                                 //删除单条
-                                MapView.WorkMode.MODE_PATH_DELETE -> {
+                                WorkMode.MODE_PATH_DELETE -> {
                                     // 删除模式：绘制所有路段，选中时显示红色高亮
                                     if (selectedPath == path) {
                                         //绘制路线
@@ -1017,7 +1017,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                     }
                                 }
                                 //删除多条
-                                MapView.WorkMode.MODE_PATH_DELETE_MULTIPLE -> {
+                                WorkMode.MODE_PATH_DELETE_MULTIPLE -> {
                                     // 删除多条路线模式：先正常绘制所有路线
                                     path.Draw(mapView.mSrf, canvas, Color.BLACK, mPaint)
                                     // 绘制路段编号
@@ -1031,7 +1031,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                     )
                                 }
                                 //路段合并
-                                MapView.WorkMode.MODE_PATH_MERGE -> {
+                                WorkMode.MODE_PATH_MERGE -> {
                                     // 路线合并模式：正常绘制路段，放大显示选中的节点
                                     path.Draw(mapView.mSrf, canvas, Color.BLACK, mPaint)
                                     // 绘制路段编号
@@ -1108,7 +1108,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                 canvas.restore()
 
                 // 在删除多条路线模式下，绘制选中的路线为红色
-                if (currentWorkMode == MapView.WorkMode.MODE_PATH_DELETE_MULTIPLE) {
+                if (currentWorkMode == WorkMode.MODE_PATH_DELETE_MULTIPLE) {
                     // 绘制所有选中的路线为红色（应用矩阵变换）
                     canvas.save()
                     canvas.concat(mMatrix)
@@ -1145,7 +1145,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                 }
 
                 // 在创建路线模式下，绘制临时的起点节点
-                if (currentWorkMode == MapView.WorkMode.MODE_PATH_CREATE && pathCreateStartNode != null) {
+                if (currentWorkMode == WorkMode.MODE_PATH_CREATE && pathCreateStartNode != null) {
                     val mapView = mapViewRef.get() ?: return
                     // 应用矩阵变换
                     canvas.save()
@@ -1155,7 +1155,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                     canvas.restore()
                 }
                 // 在创建路线模式下，绘制临时曲线路段
-                if (currentWorkMode == MapView.WorkMode.MODE_PATH_CREATE && tempPath != null) {
+                if (currentWorkMode == WorkMode.MODE_PATH_CREATE && tempPath != null) {
                     val mapView = mapViewRef.get() ?: return
                     // 应用矩阵变换
                     canvas.save()

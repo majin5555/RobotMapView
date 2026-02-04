@@ -27,7 +27,7 @@ class StationsView(context: Context?, var parent: WeakReference<MapView>) :
     private val stationScreenPositions = mutableMapOf<CmsStation, Pair<Float, Float>>()
 
     // 当前工作模式
-    private var currentWorkMode = MapView.WorkMode.MODE_SHOW_MAP
+    private var currentWorkMode = WorkMode.MODE_SHOW_MAP
 
     // 点击事件回调接口
     interface OnStationClickListener {
@@ -93,7 +93,7 @@ class StationsView(context: Context?, var parent: WeakReference<MapView>) :
 
                     // 根据工作模式调整绘制样式
                     when (currentWorkMode) {
-                        MapView.WorkMode.MODE_CMS_STATION_EDIT -> {
+                        WorkMode.MODE_CMS_STATION_EDIT -> {
                             // 修改避让点模式下，绘制更大的圆圈和更粗的边框，增加视觉提示
                             mPaint.color = Color.GREEN
                             mPaint.style = Paint.Style.STROKE
@@ -105,7 +105,7 @@ class StationsView(context: Context?, var parent: WeakReference<MapView>) :
                             mPaint.color = Color.RED
                             drawCircle(canvas, locate, radius, mPaint)
                         }
-                        MapView.WorkMode.MODE_CMS_STATION_DELETE -> {
+                        WorkMode.MODE_CMS_STATION_DELETE -> {
                             // 删除避让点模式下，绘制红色边框和填充，增加删除视觉提示
                             mPaint.color = Color.RED
                             mPaint.style = Paint.Style.STROKE
@@ -154,7 +154,7 @@ class StationsView(context: Context?, var parent: WeakReference<MapView>) :
                 if (distance <= radius * 2) { // 扩大点击检测范围，提高用户体验
                     // 根据当前工作模式选择调用不同的监听器
                     when (currentWorkMode) {
-                        MapView.WorkMode.MODE_CMS_STATION_DELETE -> {
+                        WorkMode.MODE_CMS_STATION_DELETE -> {
                             // 删除模式下，调用删除监听器
                             onStationDeleteListener?.onStationDelete(station)
                         }
@@ -173,7 +173,7 @@ class StationsView(context: Context?, var parent: WeakReference<MapView>) :
     /**
      * 设置工作模式
      */
-    fun setWorkMode(mode: MapView.WorkMode) {
+    fun setWorkMode(mode: WorkMode) {
         currentWorkMode = mode
         // 根据工作模式调整绘制和交互行为
         postInvalidate()

@@ -27,7 +27,7 @@ import com.siasun.dianshi.utils.MathUtils
 import com.siasun.dianshi.utils.RadianUtil
 import com.siasun.dianshi.utils.SlamGestureDetector
 import com.siasun.dianshi.utils.YamlNew
-import com.siasun.dianshi.view.createMap.CreateMapWorkMode
+import com.siasun.dianshi.view.WorkMode
 import com.siasun.dianshi.view.createMap.MapViewInterface
 import java.io.File
 import java.lang.ref.WeakReference
@@ -37,9 +37,6 @@ import com.siasun.dianshi.view.createMap.ExpandAreaView
 import com.siasun.dianshi.view.PngMapView
 import com.siasun.dianshi.view.SlamWareBaseView
 import com.siasun.dianshi.view.createMap.RobotViewCreateMap
-import org.apache.commons.math3.analysis.function.Logit
-import java.math.RoundingMode
-import java.text.DecimalFormat
 
 /**
  * 地图画布
@@ -52,7 +49,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     private var mRenderThread: RenderThread? = null
 
     // 当前工作模式
-    private var currentWorkMode = CreateMapWorkMode.MODE_SHOW_MAP
+    private var currentWorkMode = WorkMode.MODE_SHOW_MAP
 
     var mSrf = CoordinateConversion()//坐标转化工具类
     private var mOuterMatrix = Matrix()
@@ -126,7 +123,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
         mMapOutline2D = MapOutline2D(context, mMapView)
         mCreateMapRobotView = RobotViewCreateMap(context, mMapView)
         mExpandAreaView = ExpandAreaView(context, mMapView)
-        
+
         //扩展区域
         addMapLayers(mExpandAreaView)
         //地图轮廓
@@ -142,7 +139,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (currentWorkMode == CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+        if (currentWorkMode == WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
             // SurfaceView 模式下，需要手动分发事件给 ExpandAreaView
             mExpandAreaView?.onTouchEvent(event)
             // 返回true表示事件已处理，禁止手势检测器处理，从而禁止底图拖动
@@ -163,7 +160,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
 
     override fun onMapMove(distanceX: Int, distanceY: Int) {
         // 在扩展地图增加区域模式下禁止滑动
-        if (currentWorkMode != CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+        if (currentWorkMode != WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
             setTransition(distanceX, distanceY)
         }
     }
@@ -179,7 +176,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
 
     private fun setTransition(dx: Int, dy: Int) {
         mOuterMatrix.postTranslate(dx.toFloat(), dy.toFloat())
-        if (currentWorkMode == CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+        if (currentWorkMode == WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
             // 在扩展地图增加区域模式下，只更新子图层的矩阵，不更新 png 地图
             for (mapLayer in mapLayers) {
                 mapLayer.setMatrix(mOuterMatrix)
@@ -208,7 +205,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     private fun setMatrix(matrix: Matrix) {
         // 复制矩阵以保证渲染线程安全
         val matrixCopy = Matrix(matrix)
-        if (currentWorkMode != CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+        if (currentWorkMode != WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
             mPngMapView?.setMatrix(matrixCopy)
         }
         for (mapLayer in mapLayers) {
@@ -222,7 +219,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
         mMapScale = scale
         // 复制矩阵以保证渲染线程安全
         val matrixCopy = Matrix(matrix)
-        if (currentWorkMode != CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+        if (currentWorkMode != WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
             mPngMapView?.setMatrix(matrixCopy)
         }
         for (mapLayer in mapLayers) {
@@ -246,7 +243,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
         mOuterMatrix = matrix
         // 复制矩阵以保证渲染线程安全
         val matrixCopy = Matrix(matrix)
-        if (currentWorkMode != CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+        if (currentWorkMode != WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
             mPngMapView?.setMatrix(matrixCopy)
         }
         for (mapLayer in mapLayers) {
@@ -415,7 +412,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     /**
      * 设置工作模式
      */
-    fun setWorkMode(mode: CreateMapWorkMode) {
+    fun setWorkMode(mode: WorkMode) {
         currentWorkMode = mode
         mMapOutline2D?.setWorkMode(mode)
         mUpLaserScanView?.setWorkMode(mode)
@@ -426,7 +423,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     /**
      * 获取当前工作模式
      */
-    override fun getCurrentWorkMode(): CreateMapWorkMode {
+    override fun getCurrentWorkMode(): WorkMode {
         return currentWorkMode
     }
 
@@ -459,7 +456,11 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
      * @param bitmap
      */
     private fun setBitmap(mapData: MapData, bitmap: Bitmap) {
-        mSrf.mapData = mapData
+        mSrf.mapData.width = mapData.width
+        mSrf.mapData.height = mapData.height
+        mSrf.mapData.originX = mapData.originX
+        mSrf.mapData.originY = mapData.originY
+        mSrf.mapData.resolution = mapData.resolution
         mPngMapView?.setBitmap(bitmap)
         // 设置地图后自动居中显示
         setCentred()
@@ -473,7 +474,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
      */
     fun parseSubMaps2D(mLaserT: laser_t, type: Int) {
         // 建图模式下，保持车体居中显示
-        if (currentWorkMode == CreateMapWorkMode.MODE_CREATE_MAP) {
+        if (currentWorkMode == WorkMode.MODE_CREATE_MAP) {
             keepRobotCentered()
         }
         mMapOutline2D?.parseSubMaps2D(mLaserT, type)
@@ -576,7 +577,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
         VIEW_WIDTH = width
         VIEW_HEIGHT = height
-        
+
         // 更新虚拟子 View 的布局大小
         mPngMapView?.layout(0, 0, width, height)
         for (layer in mapLayers) {
@@ -615,10 +616,10 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
                         synchronized(surfaceHolder) {
                             // 绘制背景
                             canvas.drawColor(android.graphics.Color.WHITE)
-                            
+
                             // 绘制底图
                             mPngMapView?.draw(canvas)
-                            
+
                             // 绘制各图层
                             for (layer in mapLayers) {
                                 layer.draw(canvas)

@@ -178,10 +178,10 @@ class PostingAreasView(context: Context?, parent: WeakReference<MapView>) :
     /**
      * 设置工作模式
      */
-    fun setEditMode(mode: MapView.WorkMode) {
-        isEditMode = mode == MapView.WorkMode.MODE_POSITING_AREA_EDIT
-        isDeleteMode = mode == MapView.WorkMode.MODE_POSITING_AREA_DELETE
-        isCreateMode = mode == MapView.WorkMode.MODE_POSITING_AREA_ADD
+    fun setEditMode(mode: WorkMode) {
+        isEditMode = mode == WorkMode.MODE_POSITING_AREA_EDIT
+        isDeleteMode = mode == WorkMode.MODE_POSITING_AREA_DELETE
+        isCreateMode = mode == WorkMode.MODE_POSITING_AREA_ADD
 
         if (!isEditMode && !isDeleteMode && !isCreateMode) {
             // 退出所有操作模式时清除状态

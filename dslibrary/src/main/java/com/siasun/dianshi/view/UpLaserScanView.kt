@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PointF
 import com.ngu.lcmtypes.laser_t
+import com.siasun.dianshi.view.createMap.MapViewInterface
 import java.lang.ref.WeakReference
 import kotlin.math.cos
 import kotlin.math.sin
@@ -15,8 +16,8 @@ import kotlin.math.sin
  * 上激光点云
  */
 @SuppressLint("ViewConstructor")
-class UpLaserScanView(context: Context?, val parent: WeakReference<MapView>) :
-    SlamWareBaseView<MapView>(context, parent) {
+class UpLaserScanView<T>(context: Context?, val parent: WeakReference<T>) :
+    SlamWareBaseView<T>(context, parent) {
     // 控制是否绘制
     private var isDrawingEnabled: Boolean = true
 
@@ -39,15 +40,18 @@ class UpLaserScanView(context: Context?, val parent: WeakReference<MapView>) :
         if (isDrawingEnabled && cloudList.isNotEmpty()) {
             val mapView = parent.get() ?: return
 
+
             // 预分配数组大小
             val pointsArray = FloatArray(cloudList.size * 2)
             var index = 0
 
 
             for (point in cloudList) {
-                val screenPoint = mapView.worldToScreen(point.x, point.y)
-                pointsArray[index++] = screenPoint.x
-                pointsArray[index++] = screenPoint.y
+                if (mapView is MapViewInterface) {
+                    val screenPoint = mapView.worldToScreen(point.x, point.y)
+                    pointsArray[index++] = screenPoint.x
+                    pointsArray[index++] = screenPoint.y
+                }
             }
 
             canvas.drawPoints(pointsArray, paint)
