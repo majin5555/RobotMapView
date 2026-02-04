@@ -16,6 +16,8 @@ import com.siasun.dianshi.view.createMap.CreateMapWorkMode
 import kotlin.math.cos
 import kotlin.math.sin
 
+import android.graphics.Matrix
+
 /**
  * 建图地图轮廓
  */
@@ -29,6 +31,12 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
     private val keyFrames3D = ConcurrentHashMap<Int, KeyFrame>()
     // 缓存点云绘制数组，避免频繁GC
     private var mPointArray: FloatArray? = null
+    private var isDirty = false
+
+    // 实例Paint，避免修改静态Paint影响其他
+    private val mDrawPaint = Paint(mPaint)
+    private val mGreenDrawPaint = Paint(greenPaint)
+    private val mWorldToPixelMatrix = Matrix()
 
     /**
      * 设置工作模式
@@ -62,35 +70,84 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
         canvas.save()
         val mapView = parent.get() ?: return
         if (keyFrames3D.isNotEmpty()) {
+            // 1. 构建世界坐标到地图像素坐标的变换矩阵
+            // 注意：必须在同步块中获取 mapData 数据
+            var resolution = 0.05f
+            synchronized(mapView.mSrf.mapData) {
+                val mapData = mapView.mSrf.mapData
+                resolution = mapData.resolution
+                if (resolution <= 0) resolution = 0.05f
+                
+                // 构建 World -> Pixel 矩阵
+                // px = (wx - originX) / resolution
+                // py = height - (wy - originY) / resolution
+                mWorldToPixelMatrix.reset()
+                mWorldToPixelMatrix.postTranslate(-mapData.originX, -mapData.originY)
+                mWorldToPixelMatrix.postScale(1f / resolution, -1f / resolution)
+                mWorldToPixelMatrix.postTranslate(0f, mapData.height.toFloat())
+            }
+
+            // 2. 组合矩阵：Total = OuterMatrix * WorldToPixelMatrix
+            // 注意：Canvas的concat顺序是 preConcat，所以先 concat OuterMatrix (Pixel->Screen)，再 concat WorldToPixel (World->Pixel)
+            // 实际上 canvas.concat(M) 等价于 current = current * M.
+            // 我们希望 point * M_total -> screen.
+            // screen = Outer * Pixel
+            // Pixel = WorldToPixel * World
+            // screen = Outer * (WorldToPixel * World)
+            // 所以 M_total = Outer * WorldToPixel
+            val totalMatrix = Matrix(mapView.outerMatrix)
+            totalMatrix.preConcat(mWorldToPixelMatrix)
+            
+            // 3. 应用矩阵到 Canvas
+            canvas.concat(totalMatrix)
+            
+            // 4. 调整 Paint 线宽，抵消缩放影响，保持屏幕上固定像素大小
+            // 总缩放比例 approx = mapScale / resolution
+            val totalScale = mapView.mSrf.scale / resolution
+            if (totalScale > 0) {
+                mDrawPaint.strokeWidth = 3f / totalScale
+                mGreenDrawPaint.strokeWidth = 5f / totalScale
+            }
+
+            // 5. 准备点云数据 (仅在脏标记时更新)
             // 预估需要的数组大小
             var totalPointsCount = 0
             keyFrames3D.values.forEach { frame ->
                 frame.points?.let { totalPointsCount += it.size }
             }
-
-            // 批量处理所有点云
+            
             if (totalPointsCount > 0) {
                 // 优化：复用数组，避免频繁分配内存
                 if (mPointArray == null || mPointArray!!.size < totalPointsCount * 2) {
                     mPointArray = FloatArray(totalPointsCount * 2)
+                    isDirty = true // 数组扩容需要重新填充
                 }
+                
                 val pointArray = mPointArray!!
                 var index = 0
-                keyFrames3D.values.forEach { frame ->
-                    frame.points?.forEach { point ->
-                        val screenPoint = mapView.worldToScreen(point.x, point.y)
-                        pointArray[index++] = screenPoint.x
-                        pointArray[index++] = screenPoint.y
+                
+                // 如果数据脏了，重新填充世界坐标
+                if (isDirty) {
+                    keyFrames3D.values.forEach { frame ->
+                        frame.points?.forEach { point ->
+                            // 直接存储世界坐标，无需 worldToScreen 转换
+                            pointArray[index++] = point.x
+                            pointArray[index++] = point.y
+                        }
                     }
+                    isDirty = false
+                } else {
+                    // 如果不脏，index 需要跳到末尾以便绘制正确数量
+                    index = totalPointsCount * 2
                 }
+
                 // 一次性绘制所有点云
-                canvas.drawPoints(pointArray, 0, index, mPaint)
+                canvas.drawPoints(pointArray, 0, index, mDrawPaint)
             }
 
-            // 批量绘制关键帧位置
+            // 6. 批量绘制关键帧位置 (也使用世界坐标)
             keyFrames3D.values.forEach { frame ->
-                val robotScreen = mapView.worldToScreen(frame.robotPos[0], frame.robotPos[1])
-                canvas.drawPoint(robotScreen.x, robotScreen.y, greenPaint)
+                canvas.drawPoint(frame.robotPos[0], frame.robotPos[1], mGreenDrawPaint)
             }
         }
         canvas.restore()
@@ -126,6 +183,7 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
 
                 keyFrames3D[rad0] = KeyFrame(keyPoints, mapView.robotPose.clone())
                 mapView.isStartRevSubMaps = true
+                isDirty = true // 数据更新，标记脏
             }
         }
     }
@@ -139,6 +197,9 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
         var processedCount = 0
 
         if (laserData.ranges.isEmpty()) return
+
+        // 标记脏数据，需要重绘
+        var hasUpdate = false
 
         // 按采样间隔遍历数据（步长为4*SAMPLE_INTERVAL，每个关键帧占4个Float）
         for (i in 0 until laserData.ranges.size step 4 * SAMPLE_INTERVAL) {
@@ -171,7 +232,9 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
             }
 
             processedCount++
+            hasUpdate = true
         }
+        if (hasUpdate) isDirty = true
 //        Log.d(TAG, "更新关键帧数据：处理 $processedCount 个关键帧")
     }
 
