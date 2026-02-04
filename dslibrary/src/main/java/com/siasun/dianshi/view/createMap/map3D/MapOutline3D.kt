@@ -31,15 +31,14 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
 
     //3D建图关键帧
     private val keyFrames3D = ConcurrentHashMap<Int, KeyFrame>()
+
     // 缓存点数，避免每次遍历计算
     private val mCachedPointCount = AtomicInteger(0)
+
     // 缓存点云绘制数组，避免频繁GC
     private var mPointArray: FloatArray? = null
     private var isDirty = false
 
-    // 实例Paint，避免修改静态Paint影响其他
-    private val mDrawPaint = Paint(mPaint)
-    private val mGreenDrawPaint = Paint(greenPaint)
     private val mWorldToPixelMatrix = Matrix()
 
     /**
@@ -59,7 +58,7 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
             strokeWidth = 3f
         }
 
-        val greenPaint = Paint().apply {
+        val mGreenDrawPaint = Paint().apply {
             color = Color.GREEN
             style = Paint.Style.FILL
             strokeWidth = 5f
@@ -81,7 +80,7 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
                 val mapData = mapView.mSrf.mapData
                 resolution = mapData.resolution
                 if (resolution <= 0) resolution = 0.05f
-                
+
                 // 构建 World -> Pixel 矩阵
                 // px = (wx - originX) / resolution
                 // py = height - (wy - originY) / resolution
@@ -101,60 +100,64 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
             // 所以 M_total = Outer * WorldToPixel
             val totalMatrix = Matrix(mapView.outerMatrix)
             totalMatrix.preConcat(mWorldToPixelMatrix)
-            
+
             // 3. 应用矩阵到 Canvas
             canvas.concat(totalMatrix)
-            
+
             // 4. 调整 Paint 线宽，抵消缩放影响，保持屏幕上固定像素大小
             // 总缩放比例 approx = mapScale / resolution
             val totalScale = mapView.mSrf.scale / resolution
             if (totalScale > 0) {
-                mDrawPaint.strokeWidth = 3f / totalScale
+                mPaint.strokeWidth = 3f / totalScale
                 mGreenDrawPaint.strokeWidth = 5f / totalScale
             }
 
             // 5. 准备点云数据 (仅在脏标记时更新)
             // 获取预估需要的数组大小
             val totalPointsCount = mCachedPointCount.get()
-            
+
             if (totalPointsCount > 0) {
                 // 优化：复用数组，避免频繁分配内存
                 if (mPointArray == null || mPointArray!!.size < totalPointsCount * 2) {
                     mPointArray = FloatArray(totalPointsCount * 2)
                     isDirty = true // 数组扩容需要重新填充
                 }
-                
+
                 val pointArray = mPointArray!!
                 var index = 0
-                
+
                 // 如果数据脏了，重新填充世界坐标
-                if (isDirty) {
-                    keyFrames3D.values.forEach { frame ->
-                        frame.points?.forEach { point ->
-                            // 直接存储世界坐标，无需 worldToScreen 转换
-                            if (index + 1 < pointArray.size) {
-                                pointArray[index++] = point.x
-                                pointArray[index++] = point.y
+                synchronized(keyFrames3D) {
+                    if (isDirty) {
+                        keyFrames3D.values.forEach { frame ->
+                            frame.points?.forEach { point ->
+                                // 直接存储世界坐标，无需 worldToScreen 转换
+                                if (index + 1 < pointArray.size) {
+                                    pointArray[index++] = point.x
+                                    pointArray[index++] = point.y
+                                }
                             }
                         }
+                        isDirty = false
+                    } else {
+                        // 如果不脏，index 需要跳到末尾以便绘制正确数量
+                        // 注意：这里假设 totalPointsCount 与实际点数一致
+                        // 如果出现不一致（如并发修改），可能会有问题，但 isDirty 机制通常能保证
+                        index = totalPointsCount * 2
+                        // 安全截断
+                        if (index > pointArray.size) index = pointArray.size
                     }
-                    isDirty = false
-                } else {
-                    // 如果不脏，index 需要跳到末尾以便绘制正确数量
-                    // 注意：这里假设 totalPointsCount 与实际点数一致
-                    // 如果出现不一致（如并发修改），可能会有问题，但 isDirty 机制通常能保证
-                    index = totalPointsCount * 2
-                    // 安全截断
-                    if (index > pointArray.size) index = pointArray.size
                 }
 
                 // 一次性绘制所有点云
-                canvas.drawPoints(pointArray, 0, index, mDrawPaint)
+                canvas.drawPoints(pointArray, 0, index, mPaint)
             }
 
             // 6. 批量绘制关键帧位置 (也使用世界坐标)
-            keyFrames3D.values.forEach { frame ->
-                canvas.drawPoint(frame.robotPos[0], frame.robotPos[1], mGreenDrawPaint)
+            synchronized(keyFrames3D) {
+                keyFrames3D.values.forEach { frame ->
+                    canvas.drawPoint(frame.robotPos[0], frame.robotPos[1], mGreenDrawPaint)
+                }
             }
         }
         canvas.restore()
@@ -187,7 +190,7 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
                         )
                     )
                 }
-                
+
                 // 累加点数缓存
                 keyPoints?.size?.let { count ->
                     if (count > 0) {
@@ -208,8 +211,6 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
     fun parseOptPose(laserData: laser_t) {
         Log.d(TAG, "3D回环检测开始")
 
-        // 新增：设置采样间隔（可根据实际需求调整，如每2个关键帧处理1个）
-        val SAMPLE_INTERVAL = 2
         var processedCount = 0
 
         if (laserData.ranges.isEmpty()) return
@@ -217,40 +218,46 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
         // 标记脏数据，需要重绘
         var hasUpdate = false
 
-        // 按采样间隔遍历数据（步长为4*SAMPLE_INTERVAL，每个关键帧占4个Float）
-        for (i in 0 until laserData.ranges.size step 4 * SAMPLE_INTERVAL) {
-            // 关键帧ID
-            val rad0: Int = laserData.ranges[i].toInt()
-            // 关键帧位置
-            val radX: Float = laserData.ranges[i + 1]
-            val radY: Float = laserData.ranges[i + 2]
-            val radT: Float = laserData.ranges[i + 3]
+        synchronized(keyFrames3D) {
+            // 遍历所有数据（每个关键帧占4个Float: ID, X, Y, Theta）
+            // 修复：确保循环不会越界，检查 i+3 是否在范围内
+            val size = laserData.ranges.size
+            for (i in 0 until (size - 3) step 4) {
+                // 关键帧ID
+                val rad0: Int = laserData.ranges[i].toInt()
+                // 关键帧位置
+                val radX: Float = laserData.ranges[i + 1]
+                val radY: Float = laserData.ranges[i + 2]
+                val radT: Float = laserData.ranges[i + 3]
 
-            // 获取关键帧数据（非空校验）
-            val keyFrame = keyFrames3D[rad0] ?: continue
+                // 获取关键帧数据（非空校验）
+                val keyFrame = keyFrames3D[rad0] ?: continue
 
-            // 更新机器人位置（原子操作，避免中间状态）
-            keyFrame.robotPos[0] = radX
-            keyFrame.robotPos[1] = radY
-            keyFrame.robotPos[2] = radT
+                // 更新机器人位置（原子操作，避免中间状态）
+                keyFrame.robotPos[0] = radX
+                keyFrame.robotPos[1] = radY
+                keyFrame.robotPos[2] = radT
 
-            // 优化点：批量更新点云坐标（使用数学运算优化）
-            val cosT = cos(radT)
-            val sinT = sin(radT)
-            val radXOffset = radX
-            val radYOffset = radY
+                // 优化点：批量更新点云坐标（使用数学运算优化）
+                val cosT = cos(radT)
+                val sinT = sin(radT)
+                val radXOffset = radX
+                val radYOffset = radY
 
-            // 仅更新当前关键帧的点云（避免遍历所有关键帧）
-            keyFrame.points?.forEach { item ->
-                // 复用预计算的三角函数值
-                item.x = item.cloudX * cosT - item.cloudY * sinT + radXOffset
-                item.y = item.cloudX * sinT + item.cloudY * cosT + radYOffset
+                // 仅更新当前关键帧的点云（避免遍历所有关键帧）
+                keyFrame.points?.forEach { item ->
+                    // 复用预计算的三角函数值
+                    item.x = item.cloudX * cosT - item.cloudY * sinT + radXOffset
+                    item.y = item.cloudX * sinT + item.cloudY * cosT + radYOffset
+                }
+
+                processedCount++
+                hasUpdate = true
             }
-
-            processedCount++
-            hasUpdate = true
+            if (hasUpdate) isDirty = true
         }
-        if (hasUpdate) isDirty = true
+
+        mPaint.color = Color.BLUE
         Log.d(TAG, "3D回环检测结束 更新关键帧数据：处理 $processedCount 个关键帧")
     }
 
