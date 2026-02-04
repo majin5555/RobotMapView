@@ -7,15 +7,18 @@ import androidx.annotation.RequiresApi
 import com.blankj.utilcode.util.ToastUtils
 import com.jeremyliao.liveeventbus.LiveEventBus
 import com.ngu.lcmtypes.laser_t
+import com.ngu.lcmtypes.robot_control_t
 import com.siasun.dianshi.ConstantBase
 import com.siasun.dianshi.GlobalVariable
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.bean.ExpandArea
+import com.siasun.dianshi.bean.RobotCoordinateBean
 import com.siasun.dianshi.controller.MainController
 import com.siasun.dianshi.dialog.CommonWarnDialog
 import com.siasun.dianshi.framework.ext.onClick
 import com.siasun.dianshi.framework.log.LogUtil
 import com.siasun.dianshi.mapviewdemo.CREATE_MAP
+import com.siasun.dianshi.mapviewdemo.KEY_AGV_COORDINATE
 import com.siasun.dianshi.mapviewdemo.KEY_NAV_HEARTBEAT_STATE
 import com.siasun.dianshi.mapviewdemo.KEY_OPT_POSE
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_POS
@@ -39,6 +42,7 @@ class ExpandMap2DActivity :
     val mapID = 1
 
     val list: MutableList<ExpandArea> = mutableListOf()
+    private var mRobotCoordinateBean = RobotCoordinateBean()
 
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
@@ -136,6 +140,18 @@ class ExpandMap2DActivity :
             mBinding.mapView.parseLaserData(it)
             if (it.rad0 > 0f) {
                 mBinding.tvMapSteps.text = "建图步数 ${it.rad0}"
+            }
+        }
+        //接收车体坐标
+        LiveEventBus.get<robot_control_t>(KEY_AGV_COORDINATE).observe(this) {
+//            mBinding.mapView.setAgvPose(it)
+            mRobotCoordinateBean.x = it.dparams[0]
+            mRobotCoordinateBean.y = it.dparams[1]
+            mRobotCoordinateBean.t = Math.toRadians(it.dparams[2])
+            if (it.dparams.size > 8) {
+                mRobotCoordinateBean.z = it.dparams[8]
+                mRobotCoordinateBean.roll = it.dparams[9]
+                mRobotCoordinateBean.pitch = it.dparams[10]
             }
         }
     }

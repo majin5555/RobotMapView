@@ -5,6 +5,7 @@ import com.siasun.dianshi.GlobalVariable.SEND_NAVI_HEART
 import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.ExpandArea
 import com.siasun.dianshi.bean.PositingArea
+import com.siasun.dianshi.bean.RobotCoordinateBean
 import com.siasun.dianshi.controller.lcm.LCMController
 
 object MainController {
@@ -102,6 +103,25 @@ object MainController {
      * 结束建立地图
      */
     fun stopCreateEnvironment() = myController.mMapStopCreate()
+
+    /**
+     * 3D
+     * 发送扩展地图
+     */
+
+    fun startExtendMap(extendType: Int, robotPose: DoubleArray, mapId: Int) {
+        SEND_NAVI_HEART = true
+        myController.mSendExtendMap(extendType, robotPose, mapId)
+    }
+
+    /**
+     * 3D 更新地图
+     * pad向导航发送更新3d地图
+     */
+    fun send3DUpdateMap(dParams: DoubleArray, mapId: Int) {
+        SEND_NAVI_HEART = true
+        myController.mSend3DUpdateMap(dParams, mapId)
+    }
 
     /**
      * 手动清扫 标准扫
@@ -286,7 +306,6 @@ object MainController {
      */
 //    fun sendTemplateLoc(templateRoot: TemplateRoot) = myController.mSendTemplateLoc(templateRoot)
 
-    fun sendExtendMap(extendType: Int) = myController.mSendExtendMap(extendType)
 
     /**
      *应答导航
@@ -399,7 +418,7 @@ object MainController {
 
     /**
      * Pad—>导航
-     * 开始局部更新
+     * 2D 局部更新\扩展地图用同一个命令
      */
     fun sendStartPartialUpdate(mList: MutableList<ExpandArea>, mapID: Int = 0) {
         SEND_NAVI_HEART = true

@@ -5,6 +5,7 @@ import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.ExpandArea
 import com.siasun.dianshi.bean.PartialUpdateArea
 import com.siasun.dianshi.bean.PositingArea
+import com.siasun.dianshi.bean.RobotCoordinateBean
 
 /**
  * @author xiaomingliang
@@ -71,7 +72,10 @@ abstract class AbsController {
     abstract fun mSendReloadSpecialFile()
     abstract fun mSendTeachPath(pathType: IntArray?, nodeLoc: DoubleArray?, areaId: ByteArray?)
     abstract fun mSendResetEv()
-    abstract fun mSendExtendMap(extendType: Int)
+    abstract fun mSendExtendMap(
+        extendType: Int, robotPose: DoubleArray, mapId: Int
+    )
+
     abstract fun mSendPlsArea(onOffSonar: Byte, onOffLaser: Byte, onOffPLS: Byte)
     abstract fun mSendUpload(file: String)
     abstract fun mSendEraseEvPoint(start: PointF, end: PointF, mapId: Int)

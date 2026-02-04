@@ -49,6 +49,7 @@ import com.siasun.dianshi.bean.ExpandArea
 import com.siasun.dianshi.bean.PartialUpdateArea
 import com.siasun.dianshi.bean.PlanPathResult
 import com.siasun.dianshi.bean.PositingArea
+import com.siasun.dianshi.bean.RobotCoordinateBean
 import com.siasun.dianshi.bean.TeachPoint
 import com.siasun.dianshi.bean.perception_t
 import com.siasun.dianshi.bean.robot_control_t_new
@@ -480,12 +481,36 @@ class LCMController : AbsController(), LCMSubscriber {
      */
     override fun mSendLoadSubMapForExtendMap() = sendLoadSubMapForExtendMap()
 
+
     /**
      * pad->导航
      * 发送扩展地图方式
      * extendType 0- 不冻结原环境模型，1 冻结原环境模型
      */
-    override fun mSendExtendMap(extendType: Int) = sendExtendMap(extendType)
+    override fun mSendExtendMap(
+        extendType: Int, robotPose: DoubleArray, mapId: Int
+    ) = sendExtendMap(extendType, robotPose, mapId)
+
+
+    /**
+     *  发送扩展地图方式
+     */
+    @SuppressLint("NewApi")
+    private fun sendExtendMap(extendType: Int, robotPose: DoubleArray, mapId: Int) {
+        val iParams = ByteArray(2)
+        iParams[0] = extendType.toByte()//0- 不冻结原环境模型，1 冻结原环境模
+        iParams[1] = mapId.toByte()// 地图id
+//        val dParams = DoubleArray(6)
+//        dParams[0] = mRobotCoordinateBean.x
+//        dParams[1] = mRobotCoordinateBean.y
+//        dParams[2] = mRobotCoordinateBean.t
+//        dParams[3] = mRobotCoordinateBean.z
+//        dParams[4] = mRobotCoordinateBean.roll
+//        dParams[5] = mRobotCoordinateBean.pitch
+        //TODO 需要增加3D信息
+        sendRobotControlNew(32, robotPose, iParams, null, null, NAVI_SERVICE_COMMAND)
+        LogUtil.d("开始扩展 $robotPose")
+    }
 
     /**
      * pad->导航
@@ -520,7 +545,6 @@ class LCMController : AbsController(), LCMSubscriber {
      */
     override fun mSendStartPartialUpdate(mList: MutableList<ExpandArea>, mapID: Int) =
         sendStartPartialUpdate(mList, mapID)
-
 
 
     /**
@@ -1289,9 +1313,7 @@ class LCMController : AbsController(), LCMSubscriber {
      */
     @RequiresApi(Build.VERSION_CODES.O)
     override fun mSendReflectorAreaPoint(
-        start: PointF,
-        end: PointF,
-        mapId: Int
+        start: PointF, end: PointF, mapId: Int
     ) = sendReflectAreaPoint(start, end, mapId = mapId)
 
     /**
@@ -1305,10 +1327,7 @@ class LCMController : AbsController(), LCMSubscriber {
      * pad向导航发送3d更新地图
      */
     @RequiresApi(Build.VERSION_CODES.O)
-    override fun mSend3DUpdateMap(
-        dParams: DoubleArray,
-        mapId: Int
-    ) {
+    override fun mSend3DUpdateMap(dParams: DoubleArray, mapId: Int) {
         send3DUpdateMap(dParams, mapId = mapId)
     }
 
@@ -3218,9 +3237,7 @@ class LCMController : AbsController(), LCMSubscriber {
      */
     @RequiresApi(Build.VERSION_CODES.O)
     private fun sendCreateReflectorMap(
-        dParams: DoubleArray,
-        count: Int = 1,
-        mapId: Int
+        dParams: DoubleArray, count: Int = 1, mapId: Int
     ) {
 
         val iParams = ByteArray(1)

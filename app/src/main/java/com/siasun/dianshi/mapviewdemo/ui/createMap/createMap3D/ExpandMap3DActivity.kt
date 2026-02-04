@@ -1,24 +1,30 @@
 package com.siasun.dianshi.mapviewdemo.ui.createMap.createMap3D
 
 import android.annotation.SuppressLint
+import android.graphics.PointF
 import android.os.Build
 import android.os.Bundle
 import androidx.annotation.RequiresApi
 import com.blankj.utilcode.util.ToastUtils
 import com.jeremyliao.liveeventbus.LiveEventBus
 import com.ngu.lcmtypes.laser_t
+import com.ngu.lcmtypes.robot_control_t
 import com.siasun.dianshi.ConstantBase
 import com.siasun.dianshi.GlobalVariable
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.bean.ExpandArea
+import com.siasun.dianshi.bean.RobotCoordinateBean
 import com.siasun.dianshi.controller.MainController
+import com.siasun.dianshi.dialog.CommonEditDialog
 import com.siasun.dianshi.dialog.CommonWarnDialog
 import com.siasun.dianshi.framework.ext.onClick
 import com.siasun.dianshi.framework.log.LogUtil
 import com.siasun.dianshi.mapviewdemo.CREATE_MAP
+import com.siasun.dianshi.mapviewdemo.KEY_AGV_COORDINATE
 import com.siasun.dianshi.mapviewdemo.KEY_NAV_HEARTBEAT_STATE
 import com.siasun.dianshi.mapviewdemo.KEY_OPT_POSE
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_POS
+import com.siasun.dianshi.mapviewdemo.R
 import com.siasun.dianshi.mapviewdemo.TAG_NAV
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityExpandMap3dDactivityBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.CreateMap2DViewModel
@@ -37,7 +43,9 @@ class ExpandMap3DActivity :
 
     val mapID = 100
 
-    val list: MutableList<ExpandArea> = mutableListOf()
+    //    val list: MutableList<ExpandArea> = mutableListOf()
+    var mExpandArea: ExpandArea = ExpandArea(PointF(0f, 0f), PointF(0f, 0f))
+    val robotPose = DoubleArray(6)
 
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
@@ -62,7 +70,6 @@ class ExpandMap3DActivity :
             showSavaMapDialog()
         }
 
-
         //停止扫描
         mBinding.tvStop.onClick {
             //结束建图指令
@@ -71,9 +78,76 @@ class ExpandMap3DActivity :
             ToastUtils.showShort("停止扫描")
         }
 
-
         //扩展地图
         expandMap()
+        //更新地图
+        updateMap()
+    }
+
+    private fun updateMap() {
+
+        //扩展地图
+        mBinding.tvUpdate.onClick {
+            mBinding.mapView.isStartRevSubMaps = false
+            mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_CREATE_MAP)
+
+
+            //更新地图
+            CommonEditDialog.Builder(this).setOnCommonEditDialogListener(object :
+                CommonEditDialog.Builder.CommonEditDialogListener {
+                override fun confirm(str: String) {
+
+                    val dParams = DoubleArray(12)
+
+                    LogUtil.i("robotPose = ${robotPose}")
+                    dParams[0] = robotPose[0]
+                    dParams[1] = robotPose[1]
+                    dParams[2] = robotPose[2]
+                    dParams[3] = robotPose[3]
+                    dParams[4] = robotPose[4]
+                    dParams[5] = robotPose[5]
+                    dParams[6] = (-100).toDouble()
+                    dParams[7] = str.toDouble()
+                    dParams[8] = mExpandArea.start.x.toDouble()
+                    dParams[9] = mExpandArea.start.y.toDouble()
+                    dParams[10] = mExpandArea.end.x.toDouble()
+                    dParams[11] = mExpandArea.end.y.toDouble()
+
+                    MainController.send3DUpdateMap(dParams, mapID)
+
+//                    ToastUtils.showLong(resources.getString(R.string.update_map_3d_star))
+
+                    LogUtil.i("dParams = ${dParams.contentToString()}")
+                    LogUtil.i("开始更新")
+                }
+
+
+            }).setTitle("请输入最大高度").setMsg(2.5.toString()).create().show()
+
+            showLoading("开始扩展")
+            ToastUtils.showShort("开始扩展")
+            LogUtil.i("开始扩展", null, TAG_NAV)
+        }
+
+
+        //扩展地图 添加区域
+        mBinding.btnSettingArea.onClick {
+            mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION)
+        }
+        //添加区域监听 获取添加区域的世界坐标
+        mBinding.mapView.getExpandAreaView()!!
+            .setOnExpandAreaCreatedListener(object : ExpandAreaView.OnExpandAreaCreatedListener {
+                override fun onExpandAreaCreated(area: ExpandArea) {
+                    mExpandArea = area
+                    LogUtil.i("扩展地图 $area")
+                }
+            })
+
+        //扩展地图 重制区域
+        mBinding.btnCleanArea.onClick {
+//            list.clear()
+            mBinding.mapView.resetExpandAreaView()
+        }
     }
 
     /**
@@ -85,33 +159,49 @@ class ExpandMap3DActivity :
      * 扩展地图list无数据
      */
     private fun expandMap() {
+        //扩展地图
         mBinding.tvExpend.onClick {
             mBinding.mapView.isStartRevSubMaps = false
             mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_CREATE_MAP)
-            MainController.sendStartPartialUpdate(list, mapID)
+
+            MainController.startExtendMap(0, robotPose, mapID)
+
+//            //更新地图
+//            CommonEditDialog.Builder(this).setOnCommonEditDialogListener(object :
+//                CommonEditDialog.Builder.CommonEditDialogListener {
+//                override fun confirm(str: String) {
+//
+//                        val dParams = DoubleArray(12)
+//
+//                        LogUtil.i("mRobotCoordinateBean = ${mRobotCoordinateBean}")
+//                        dParams[0] = mRobotCoordinateBean.x
+//                        dParams[1] = mRobotCoordinateBean.y
+//                        dParams[2] = mRobotCoordinateBean.t
+//                        dParams[3] = mRobotCoordinateBean.z
+//                        dParams[4] = mRobotCoordinateBean.roll
+//                        dParams[5] = mRobotCoordinateBean.pitch
+//                        dParams[6] = (-100).toDouble()
+//                        dParams[7] = str.toDouble()
+//                        dParams[8] = partialUpdate.start.x.toDouble()
+//                        dParams[9] = partialUpdate.start.y.toDouble()
+//                        dParams[10] = partialUpdate.end.x.toDouble()
+//                        dParams[11] = partialUpdate.end.y.toDouble()
+//                        MainController.send3DUpdateMap(dParams, mapID)
+//
+//                        ToastUtils.showLong(resources.getString(R.string.update_map_3d_star))
+//
+//                        LogUtil.i("dParams = ${dParams.contentToString()}")
+//                        LogUtil.i("开始更新")
+//                    }
+//
+//
+//            }).setTitle("请输入最大高度").setMsg(2.5.toString()).create().show()
+
             showLoading("开始扩展")
             ToastUtils.showShort("开始扩展")
             LogUtil.i("开始扩展", null, TAG_NAV)
         }
 
-        //扩展地图 添加区域
-        mBinding.btnSettingArea.onClick {
-            mBinding.mapView.setWorkMode(CreateMapWorkMode.MODE_EXTEND_MAP_ADD_REGION)
-        }
-        //添加区域监听 获取添加区域的世界坐标
-        mBinding.mapView.getExpandAreaView()!!
-            .setOnExpandAreaCreatedListener(object : ExpandAreaView.OnExpandAreaCreatedListener {
-                override fun onExpandAreaCreated(area: ExpandArea) {
-                    list.add(area)
-                    LogUtil.i("扩展地图 $area")
-                }
-            })
-
-        //扩展地图 重制区域
-        mBinding.btnCleanArea.onClick {
-            list.clear()
-            mBinding.mapView.resetExpandAreaView()
-        }
     }
 
     @SuppressLint("SetTextI18n")
@@ -125,7 +215,7 @@ class ExpandMap3DActivity :
 
         //接收创建地图中车体位置 导航->PAD
         LiveEventBus.get(KEY_UPDATE_POS, laser_t::class.java).observe(this) {
-            mBinding.mapView.parseLaserData(it,1)
+            mBinding.mapView.parseLaserData(it, 1)
             if (it.rad0 > 0f) {
                 mBinding.tvMapSteps.text = "建图步数 ${it.rad0}"
             }
@@ -134,7 +224,18 @@ class ExpandMap3DActivity :
         LiveEventBus.get(KEY_OPT_POSE, laser_t::class.java).observe(this) {
             mBinding.mapView.parseOptPose(it)
         }
-
+        //接收车体坐标
+        LiveEventBus.get<robot_control_t>(KEY_AGV_COORDINATE).observe(this) {
+//            mBinding.mapView.setAgvPose(it)
+            robotPose[0] = it.dparams[0]
+            robotPose[1] = it.dparams[1]
+            robotPose[2] = Math.toRadians(it.dparams[2])
+            if (it.dparams.size > 8) {
+                robotPose[3] = it.dparams[8]
+                robotPose[4] = it.dparams[9]
+                robotPose[5] = it.dparams[10]
+            }
+        }
     }
 
     @SuppressLint("SuspiciousIndentation")
@@ -221,9 +322,7 @@ class ExpandMap3DActivity :
                 LogUtil.i("mBinding.mapView.mMapRotateRadians ${mBinding.mapView.rotationRadians}")
                 //开始保存地图
                 MainController.saveEnvironment(
-                    1,
-                    rotate = mBinding.mapView.rotationRadians,
-                    mapId = mapID
+                    1, rotate = mBinding.mapView.rotationRadians, mapId = mapID
                 )
                 GlobalVariable.SEND_NAVI_HEART = true
 //                    showLoading("保存地图中")
