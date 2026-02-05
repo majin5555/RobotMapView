@@ -144,6 +144,7 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
             }
         }
     }
+
     /**
      * 设置各个CheckBox的显示隐藏
      */
@@ -218,6 +219,11 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
 
             typedArray.recycle()
         }
+    }
+
+    fun setShowBottomLaser(isShow: Boolean) {
+        mBinding.cbLowerLaserPointCloud.isVisible = isShow
+        mBinding.cbLowerLaserPointCloud.isChecked = isShow
     }
 
     override fun onDetachedFromWindow() {

@@ -939,6 +939,14 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      */
     fun addCrossDoors(crossDoors: List<CrossDoor>) = mCrossView?.addCrossDoors(crossDoors)
 
+
+    /**
+     * 是否显示下点云
+     */
+    fun showBottomLaser(isShow: Boolean) {
+        mLegendView?.setShowBottomLaser(isShow)
+    }
+
     /**
      * 销毁
      */
