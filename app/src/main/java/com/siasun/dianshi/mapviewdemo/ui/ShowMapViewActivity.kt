@@ -21,11 +21,15 @@ import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.CmsStation
 import com.siasun.dianshi.bean.DragLocationBean
+import com.siasun.dianshi.bean.ElevatorPoint
+import com.siasun.dianshi.bean.GatePointBean
 import com.siasun.dianshi.bean.PlanPathResult
 import com.siasun.dianshi.bean.PositingArea
+import com.siasun.dianshi.bean.PstParkBean
 import com.siasun.dianshi.bean.RC.RCData
 import com.siasun.dianshi.bean.SpArea
 import com.siasun.dianshi.bean.TeachPoint
+import com.siasun.dianshi.bean.WaitPointBean
 import com.siasun.dianshi.bean.WorkAreasNew
 import com.siasun.dianshi.bean.pp.world.PathIndex
 import com.siasun.dianshi.controller.MainController
@@ -217,13 +221,13 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initRemoveNoise()
 //        initPostingArea()
 //        initCleanArea()
-//        initElevator()
+        initElevator()
 //        initPose()
 //        initMachineStation()
 //        initMixArea()
 //        initSpAreas()
 //        initPath()
-        initCrossDoor()
+//        initCrossDoor()
 
         mBinding.btnAddGloblePath.onClick {
 
@@ -800,6 +804,14 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         //添加
         mBinding.btnAddElevator.onClick {
             //弹框增加乘梯点
+            val elevatorPoint = ElevatorPoint(
+                "称梯点",
+                pstPark = PstParkBean(1.1F, 1.2F, 1.3F, 0F, 0F, 0F),
+                gatePoint = GatePointBean(2.1F, 2.2F, 2.3F, 0F, 0F, 0F),
+                waitPoint = WaitPointBean(3.1F, 3.2F, 3.3F, 0F, 0F, 0F),
+            )
+
+            mBinding.mapView.setElevators(mutableListOf(elevatorPoint))
         }
         //编辑乘梯点
         mBinding.btnEditElevator.onClick {
@@ -1046,14 +1058,14 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.btnCreateStation.onClick {
             XpopUtils(this).showCmsStationDialog(
                 onConfirmCall = { result ->
-                result?.let {
-                    cmsStation.add(result)
-                    mBinding.mapView.setCmsStations(cmsStation)
-                }
+                    result?.let {
+                        cmsStation.add(result)
+                        mBinding.mapView.setCmsStations(cmsStation)
+                    }
 
-            }, onDeleteCall = {
+                }, onDeleteCall = {
 
-            }, mapId
+                }, mapId
             )
         }
         //编辑避让点
@@ -1286,19 +1298,19 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
      */
     private fun showCrossDoorDialog(crossDoor: com.siasun.dianshi.bean.CrossDoor) {
         android.app.AlertDialog.Builder(this).setTitle("过门信息").setMessage(
-                "ID: ${crossDoor.id}\n" + "地图ID: ${crossDoor.map_id}\n" + "门编号: ${crossDoor.door_msg.door_sn}\n" + "类型: ${crossDoor.door_msg.type}\n" + "起点: (${
-                    String.format(
-                        "%.2f", crossDoor.start_point.x
-                    )
-                }, ${String.format("%.2f", crossDoor.start_point.y)})\n" + "终点: (${
-                    String.format(
-                        "%.2f", crossDoor.end_point.x
-                    )
-                }, ${String.format("%.2f", crossDoor.end_point.y)})"
-            ).setPositiveButton("确定", null).setNegativeButton("删除") { _, _ ->
-                // 删除选中的过门
-                mBinding.mapView.mCrossView?.removeCrossDoor(crossDoor)
-                ToastUtils.showLong("已删除过门: ${crossDoor.door_msg.door_sn}")
-            }.show()
+            "ID: ${crossDoor.id}\n" + "地图ID: ${crossDoor.map_id}\n" + "门编号: ${crossDoor.door_msg.door_sn}\n" + "类型: ${crossDoor.door_msg.type}\n" + "起点: (${
+                String.format(
+                    "%.2f", crossDoor.start_point.x
+                )
+            }, ${String.format("%.2f", crossDoor.start_point.y)})\n" + "终点: (${
+                String.format(
+                    "%.2f", crossDoor.end_point.x
+                )
+            }, ${String.format("%.2f", crossDoor.end_point.y)})"
+        ).setPositiveButton("确定", null).setNegativeButton("删除") { _, _ ->
+            // 删除选中的过门
+            mBinding.mapView.mCrossView?.removeCrossDoor(crossDoor)
+            ToastUtils.showLong("已删除过门: ${crossDoor.door_msg.door_sn}")
+        }.show()
     }
 }

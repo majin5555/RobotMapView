@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PointF
 import android.view.MotionEvent
+import androidx.core.content.ContextCompat
 import com.siasun.dianshi.R
 import com.siasun.dianshi.bean.ElevatorPoint
 import java.lang.ref.WeakReference
@@ -103,6 +104,7 @@ class ElevatorView(context: Context?, parent: WeakReference<MapView>) :
         // 预加载字符串资源，避免在循环中重复获取
         val gatePointText = context.getString(R.string.gate_point)
         val pstParkPointText = context.getString(R.string.pst_park_point)
+        val waitPointText = context.getString(R.string.station3)
 
         // 复用PointF对象，减少内存分配
         val pointLocation = PointF()
@@ -140,7 +142,7 @@ class ElevatorView(context: Context?, parent: WeakReference<MapView>) :
                 pointLocation.x += 10f
                 pointLocation.y += 10f
                 mPaint.color = Color.GRAY
-                drawLabel(canvas, gatePointText, pointLocation, mPaint)
+                drawLabel(canvas, waitPointText, pointLocation, mPaint)
             }
 
             item.pstPark?.let { pstPark ->
@@ -172,9 +174,48 @@ class ElevatorView(context: Context?, parent: WeakReference<MapView>) :
                     mPaint.style = Paint.Style.FILL
                 }
 
+
                 pointLocation.x += 10f
                 pointLocation.y += 10f
                 mPaint.color = Color.GRAY
+                drawLabel(
+                    canvas, pstParkPointText, pointLocation, mPaint
+                )
+            }
+
+            item.waitPoint?.let { waitPoint ->
+                mPaint.color = Color.GRAY
+                // 获取世界坐标转屏幕坐标的结果
+                val screenPoint = mapView.worldToScreen(waitPoint.x, waitPoint.y)
+                // 将结果赋值给pointLocation对象
+                pointLocation.set(screenPoint.x, screenPoint.y)
+
+                // 绘制乘梯点本体
+                drawCircle(canvas, pointLocation, BASE_RADIUS, mPaint)
+
+                // 根据工作模式绘制外圈圆环
+                if (currentWorkMode == WorkMode.MODE_ELEVATOR_EDIT) {
+                    // 编辑模式：绘制绿色圆环
+                    mPaint.color = Color.GREEN
+                    mPaint.style = Paint.Style.STROKE
+                    mPaint.strokeWidth = 2f
+                    drawCircle(canvas, pointLocation, BASE_RADIUS + 5f, mPaint)
+                    // 恢复填充样式
+                    mPaint.style = Paint.Style.FILL
+                } else if (currentWorkMode == WorkMode.MODE_ELEVATOR_DELETE) {
+                    // 删除模式：绘制红色圆环
+                    mPaint.color = Color.RED
+                    mPaint.style = Paint.Style.STROKE
+                    mPaint.strokeWidth = 2f
+                    drawCircle(canvas, pointLocation, BASE_RADIUS + 5f, mPaint)
+                    // 恢复填充样式
+                    mPaint.style = Paint.Style.FILL
+                }
+
+
+                pointLocation.x += 10f
+                pointLocation.y += 10f
+                mPaint.color =  Color.GRAY
                 drawLabel(
                     canvas, pstParkPointText, pointLocation, mPaint
                 )

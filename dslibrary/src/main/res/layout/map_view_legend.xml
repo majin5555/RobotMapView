@@ -7,31 +7,45 @@
     app:shape_radius="10dp"
     app:shape_solidColor="#00000000">
 
-    <TextView
-        android:id="@+id/tv_legend"
+
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:id="@+id/root_legend"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/legend"
-        android:textColor="#003894"
-        android:textSize="24sp" />
+        android:orientation="horizontal">
 
-    <androidx.appcompat.widget.AppCompatImageView
-        android:id="@+id/iv_legend"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_margin="10dp"
-        android:src="@drawable/iv_back"
-        app:layout_constraintTop_toBottomOf="@+id/tv_legend" />
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/iv_legend"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_gravity="center_vertical"
+            android:src="@drawable/iv_back"
+            app:layout_constraintLeft_toLeftOf="parent" />
+
+        <TextView
+            android:id="@+id/tv_legend"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:text="@string/legend"
+            android:textColor="#333333"
+            android:textSize="28sp"
+            app:layout_constraintBottom_toBottomOf="@id/iv_legend"
+            app:layout_constraintLeft_toRightOf="@id/iv_legend"
+            app:layout_constraintTop_toTopOf="@id/iv_legend" />
+
+
+    </androidx.appcompat.widget.LinearLayoutCompat>
 
 
     <com.hjq.shape.layout.ShapeConstraintLayout
         android:id="@+id/con_legend"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
         android:padding="8dp"
         android:visibility="gone"
-        app:layout_constraintStart_toEndOf="@+id/iv_legend"
-        app:layout_constraintTop_toBottomOf="@+id/con_map">
+        app:layout_constraintTop_toBottomOf="@+id/root_legend">
 
         <ScrollView
             android:id="@+id/ScrollView"

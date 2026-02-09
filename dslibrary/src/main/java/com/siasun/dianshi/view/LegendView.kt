@@ -35,7 +35,7 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
     init {
         init(context, attrs)
 
-        mBinding.ivLegend.setOnClickListener {
+        mBinding.rootLegend.setOnClickListener {
             if (mBinding.conLegend.isVisible) {
                 mBinding.ivLegend.setImageResource(R.drawable.iv_back)
                 mBinding.conLegend.visibility = GONE
