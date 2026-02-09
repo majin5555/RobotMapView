@@ -4,6 +4,8 @@ import android.content.Context
 import android.graphics.*
 import android.view.GestureDetector
 import android.view.MotionEvent
+import com.siasun.dianshi.bean.ElevatorPoint
+import com.siasun.dianshi.bean.PassPoints
 import com.siasun.dianshi.bean.WorkAreasNew
 import com.siasun.dianshi.bean.PointNew
 import java.lang.ref.WeakReference
@@ -32,6 +34,9 @@ class MixAreaView(context: Context?, val parent: WeakReference<MapView>) :
 
     // 控制是否绘制
     private var isDrawingEnabled: Boolean = true
+
+    private val clickThreshold = 20f // 像素单位
+
 
     // 绘制相关的画笔 - 使用伴生对象创建静态实例，避免重复创建
     companion object {
@@ -78,6 +83,13 @@ class MixAreaView(context: Context?, val parent: WeakReference<MapView>) :
             color = Color.BLACK
             isAntiAlias = true
         }
+
+        private val passPointPain = Paint().apply {
+            color = Color.GRAY
+        }
+
+        const val BASE_RADIUS = 10f
+        const val BASE_TEXT_SIZE = 10f
     }
 
     // 边中点的半径
@@ -156,7 +168,7 @@ class MixAreaView(context: Context?, val parent: WeakReference<MapView>) :
         val halfSize = sizePx / 2f
 
 
-        val topLeft =  mapView.screenToWorld(centerX - halfSize,centerY - halfSize)
+        val topLeft = mapView.screenToWorld(centerX - halfSize, centerY - halfSize)
         val topRight = mapView.screenToWorld(centerX + halfSize, centerY - halfSize)
         val bottomRight = mapView.screenToWorld(centerX + halfSize, centerY + halfSize)
         val bottomLeft = mapView.screenToWorld(centerX - halfSize, centerY + halfSize)
@@ -164,10 +176,10 @@ class MixAreaView(context: Context?, val parent: WeakReference<MapView>) :
 
         newArea.areaVertexPnt.apply {
             clear()
-            add(PointNew(topLeft.x,topLeft.y))
-            add(PointNew(topRight.x,topRight.y))
-            add(PointNew(bottomRight.x,bottomRight.y))
-            add(PointNew(bottomLeft.x,bottomLeft.y))
+            add(PointNew(topLeft.x, topLeft.y))
+            add(PointNew(topRight.x, topRight.y))
+            add(PointNew(bottomRight.x, bottomRight.y))
+            add(PointNew(bottomLeft.x, bottomLeft.y))
         }
 
         // 将新区域添加到列表
@@ -425,6 +437,8 @@ class MixAreaView(context: Context?, val parent: WeakReference<MapView>) :
             return false
         }
 
+        val mapView = mParent.get() ?: return super.onTouchEvent(event)
+
         val x = event.x
         val y = event.y
         var handled = false
@@ -447,6 +461,17 @@ class MixAreaView(context: Context?, val parent: WeakReference<MapView>) :
                         addVertexOnEdge(selectedArea!!, edgeIndex)
                         handled = true
                     }
+                }
+
+
+                // 转换为世界坐标
+                val worldPoint = mapView.screenToWorld(x, y)
+
+                // 查找点击位置附近的乘梯点
+                val clickedPassPoint = findPassPointNearPoint(worldPoint)
+
+                clickedPassPoint?.let {
+                    onCleanAreaEditListener?.onEditPassPoint(it)
                 }
             }
 
@@ -572,10 +597,14 @@ class MixAreaView(context: Context?, val parent: WeakReference<MapView>) :
      * 绘制单个不规则图形区域
      */
     private fun drawPolygon(canvas: Canvas, area: WorkAreasNew, isSelected: Boolean) {
+
+
         val points = area.areaVertexPnt
         if (points.isEmpty()) return
 
         val mapView = mapViewRef.get() ?: return
+
+        val pointLocation = PointF()
 
         // 复用Path对象
         path.reset()
@@ -627,6 +656,21 @@ class MixAreaView(context: Context?, val parent: WeakReference<MapView>) :
                     canvas.drawText("+", screenMidPoint.x, screenMidPoint.y + 8, edgePointTextPaint)
                 }
             }
+
+        }
+
+        if (currentWorkMode == WorkMode.MODE_MIX_AREA_EDIT) {
+            val passPoints = area.passPointsList
+            passPoints.forEach { pass ->
+                val screenPoint = mapView.worldToScreen(pass.gate.x, pass.gate.y)
+                pointLocation.set(screenPoint.x, screenPoint.y)
+                passPointPain.color = Color.GREEN
+                passPointPain.style = Paint.Style.STROKE
+                passPointPain.strokeWidth = 2f
+                drawCircle(canvas, pointLocation, BASE_RADIUS + 5f, passPointPain)
+                // 恢复填充样式
+                passPointPain.style = Paint.Style.FILL
+            }
         }
 
         // 绘制区域名称在最右边点的下边
@@ -643,6 +687,17 @@ class MixAreaView(context: Context?, val parent: WeakReference<MapView>) :
             // 绘制文本
             canvas.drawText(area.name, textX, textY, textPaint)
         }
+
+
+        area.passPointsList.forEach { passPoint ->
+            val screenPoint = mapView.worldToScreen(passPoint.gate.x, passPoint.gate.y)
+            pointLocation.set(screenPoint.x, screenPoint.y)
+            drawCircle(canvas, pointLocation, BASE_RADIUS, passPointPain)
+
+            pointLocation.x += 10f
+            pointLocation.y += 10f
+            canvas.drawText(passPoint.id, pointLocation.x, pointLocation.y, textPaint)
+        }
     }
 
     fun getData(): List<WorkAreasNew> {
@@ -657,6 +712,51 @@ class MixAreaView(context: Context?, val parent: WeakReference<MapView>) :
     fun setDrawingEnabled(enabled: Boolean) {
         this.isDrawingEnabled = enabled
         postInvalidate()
+    }
+
+    /**
+     * 查找指定世界坐标点附近的乘梯点
+     */
+    private fun findPassPointNearPoint(worldPoint: PointF): PassPoints? {
+        val mapView = mParent.get() ?: return null
+        selectedArea ?: return null
+
+        val passPointsCopy: List<PassPoints>
+        synchronized(selectedArea!!.passPointsList) {
+            passPointsCopy = selectedArea!!.passPointsList.toList()
+        }
+
+        for (passPoint in passPointsCopy) {
+            // 检查gatePoint
+            passPoint.gate.let {
+                val gateScreenPoint = mapView.worldToScreen(it.x, it.y)
+                if (isPointNearScreenPoint(gateScreenPoint, worldPoint, mapView)) {
+                    return passPoint
+                }
+            }
+
+        }
+
+        return null
+    }
+
+    /**
+     * 检查两个点是否在屏幕上足够接近
+     */
+    private fun isPointNearScreenPoint(
+        screenPoint: PointF,
+        worldPoint: PointF,
+        mapView: MapView
+    ): Boolean {
+        // 将世界坐标转换为屏幕坐标
+        val worldScreenPoint = mapView.worldToScreen(worldPoint.x, worldPoint.y)
+
+        // 计算屏幕距离
+        val dx = screenPoint.x - worldScreenPoint.x
+        val dy = screenPoint.y - worldScreenPoint.y
+        val distance = Math.sqrt((dx * dx + dy * dy).toDouble())
+
+        return distance <= clickThreshold
     }
 
     override fun onDetachedFromWindow() {
@@ -693,5 +793,7 @@ class MixAreaView(context: Context?, val parent: WeakReference<MapView>) :
 
         // 创建了新区域
         fun onAreaCreated(area: WorkAreasNew) {}
+
+        fun onEditPassPoint(passPoints: PassPoints?) {}
     }
 }

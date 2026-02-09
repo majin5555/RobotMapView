@@ -22,7 +22,9 @@ import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.CmsStation
 import com.siasun.dianshi.bean.DragLocationBean
 import com.siasun.dianshi.bean.ElevatorPoint
+import com.siasun.dianshi.bean.Gate
 import com.siasun.dianshi.bean.GatePointBean
+import com.siasun.dianshi.bean.PassPoints
 import com.siasun.dianshi.bean.PlanPathResult
 import com.siasun.dianshi.bean.PositingArea
 import com.siasun.dianshi.bean.PstParkBean
@@ -221,10 +223,10 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initRemoveNoise()
 //        initPostingArea()
 //        initCleanArea()
-        initElevator()
+//        initElevator()
 //        initPose()
 //        initMachineStation()
-//        initMixArea()
+        initMixArea()
 //        initSpAreas()
 //        initPath()
 //        initCrossDoor()
@@ -645,6 +647,12 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             val newArea = WorkAreasNew().apply {
                 name = "混行区域${mMixArea.size + 1}"
                 id = "${mMixArea.size + 1}"//随机申城
+                passPointsList = mutableListOf(
+                    PassPoints(
+                        "过渡点1",
+                        gate = Gate(2.2f, 2.3f, 2.4f),
+                    )
+                )
             }
             mMixArea.add(newArea)
             mBinding.mapView.createMixArea(newArea)
@@ -687,6 +695,11 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             override fun onAreaCreated(area: WorkAreasNew) {
                 LogUtil.i("创建了新的混行区域   ${area.toJson()}")
             }
+
+            override fun onEditPassPoint(passPoints: PassPoints?) {
+                LogUtil.i("点击了过渡点   ${passPoints}")
+
+            }
         })
         //删除混行区域
         mBinding.btnDeleteMixArea.onClick {
@@ -706,7 +719,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.btnSaveMixArea.onClick {
             LogUtil.d("保存混行区 ${mBinding.mapView.getMixAreaData().toJson()}")
 
-            mViewModel.saveAreaLiveDate
+            mBinding.mapView.setWorkMode(WorkMode.MODE_SHOW_MAP)
         }
     }
 
