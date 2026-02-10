@@ -165,7 +165,7 @@ object MainController {
 
     /**
      * 多地图
-     *保存环境 1 保存 2 取消  3 旋转角度
+     *保存环境 1 保存 2 取消  3 旋转角度 保存
      */
     fun saveEnvironment(cmdId: Byte, rotate: Float = 0f, mapId: Int = -1) {
         myController.mSaveEnvironment(cmdId, rotate, mapId)

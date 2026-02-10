@@ -48,7 +48,7 @@ class CreateMap3DActivity :
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
         MainController.init()
-        MMKV.defaultMMKV().encode(KEY_NEY_IP, "192.168.1.198");
+        MMKV.defaultMMKV().encode(KEY_NEY_IP, "192.168.3.101");
         mTimer.schedule(object : TimerTask() {
             override fun run() {
                 if (GlobalVariable.SEND_NAVI_HEART) {
@@ -202,12 +202,12 @@ class CreateMap3DActivity :
 
                     mViewModel.downPngYaml(CREATE_MAP, mapID)
 
-                }
-                mBinding.mapView.isMapping = false
+                    mBinding.mapView.isMapping = false
 
-                MainController.sendOnlinePoint(
-                    100, mBinding.mapView.robotPose
-                )
+                    MainController.sendOnlinePoint(
+                        100, mBinding.mapView.robotPose
+                    )
+                }
             }
 
             //开始建图
@@ -267,9 +267,16 @@ class CreateMap3DActivity :
             override fun confirm() {
                 LogUtil.i("mBinding.mapView.mMapRotate ${mBinding.mapView.rotationRadians}")
                 //开始保存地图 mBinding.mapView.rotationRadians就是弧度
-                MainController.saveEnvironment(
-                    1, rotate = mBinding.mapView.rotationRadians, mapId = mapID
-                )
+                if (mBinding.mapView.rotationRadians == 0f) {
+                    MainController.saveEnvironment(
+                        1, mapId = mapID
+                    )
+                } else {
+                    MainController.saveEnvironment(
+                        3, rotate = -mBinding.mapView.rotationRadians, mapId = mapID
+                    )
+                }
+
                 GlobalVariable.SEND_NAVI_HEART = true
                 showLoading("保存地图中")
                 LogUtil.i("确定要保存地图么...点击确定", null, TAG_NAV)

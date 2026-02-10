@@ -197,12 +197,16 @@ class CreateMap2DActivity :
             CommonWarnDialog.Builder.CommonWarnDialogListener {
             override fun confirm() {
                 LogUtil.i("mBinding.mapView.mMapRotateRadians ${mBinding.mapView.rotationRadians}")
-              //  开始保存地图 / 180 * Math.PI
-                MainController.saveEnvironment(
-                    1,
-                    rotate = mBinding.mapView.rotationRadians,
-                    mapId = mapID
-                )
+                //  开始保存地图 / 180 * Math.PI
+                if (mBinding.mapView.rotationRadians == 0f) {
+                    MainController.saveEnvironment(
+                        1, mapId = mapID
+                    )
+                } else {
+                    MainController.saveEnvironment(
+                        3, rotate = -mBinding.mapView.rotationRadians, mapId = mapID
+                    )
+                }
                 GlobalVariable.SEND_NAVI_HEART = true
 //                    showLoading("保存地图中")
                 LogUtil.i("确定要保存地图么...点击确定", null, TAG_NAV)
