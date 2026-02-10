@@ -142,7 +142,7 @@ class ElevatorView(context: Context?, parent: WeakReference<MapView>) :
                 pointLocation.x += 10f
                 pointLocation.y += 10f
                 mPaint.color = Color.GRAY
-                drawLabel(canvas, waitPointText, pointLocation, mPaint)
+                drawLabel(canvas, gatePointText, pointLocation, mPaint)
             }
 
             item.pstPark?.let { pstPark ->
@@ -217,7 +217,7 @@ class ElevatorView(context: Context?, parent: WeakReference<MapView>) :
                 pointLocation.y += 10f
                 mPaint.color =  Color.GRAY
                 drawLabel(
-                    canvas, pstParkPointText, pointLocation, mPaint
+                    canvas, waitPointText, pointLocation, mPaint
                 )
             }
         }
