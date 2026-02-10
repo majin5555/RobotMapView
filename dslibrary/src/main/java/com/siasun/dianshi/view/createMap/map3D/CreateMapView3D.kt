@@ -519,10 +519,10 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
      * 计算新建地图宽高
      */
     private fun calBinding(laserData: laser_t, type: Int) {
-        Log.d(TAG, "calBinding mSrf.mapData.width ${laserData.intensities[0]}")
-        Log.d(TAG, "calBinding mSrf.mapData.height ${laserData.intensities[1]}")
-        Log.d(TAG, "calBinding originX ${laserData.intensities[2]}")
-        Log.d(TAG, "calBinding originY ${laserData.intensities[3]}")
+//        Log.d(TAG, "calBinding mSrf.mapData.width ${laserData.intensities[0]}")
+//        Log.d(TAG, "calBinding mSrf.mapData.height ${laserData.intensities[1]}")
+//        Log.d(TAG, "calBinding originX ${laserData.intensities[2]}")
+//        Log.d(TAG, "calBinding originY ${laserData.intensities[3]}")
         
         synchronized(mSrf.mapData) {
             if (type == 0) {//更新 使用地图PNG原有的宽高
