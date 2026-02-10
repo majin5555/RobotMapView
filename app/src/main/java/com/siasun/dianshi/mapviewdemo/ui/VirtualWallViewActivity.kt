@@ -1,18 +1,15 @@
 package com.siasun.dianshi.mapviewdemo.ui
 
-import android.graphics.Bitmap
 import android.os.Bundle
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.request.target.SimpleTarget
-import com.bumptech.glide.request.transition.Transition
+import android.util.Log
 import com.jeremyliao.liveeventbus.LiveEventBus
 import com.ngu.lcmtypes.laser_t
 import com.ngu.lcmtypes.robot_control_t
-import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.ConstantBase
+import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.controller.MainController
 import com.siasun.dianshi.framework.ext.onClick
+import com.siasun.dianshi.framework.log.LogUtil
 import com.siasun.dianshi.mapviewdemo.KEY_AGV_COORDINATE
 import com.siasun.dianshi.mapviewdemo.KEY_BOTTOM_CURRENT_POINT_CLOUD
 import com.siasun.dianshi.mapviewdemo.KEY_CURRENT_POINT_CLOUD
@@ -21,10 +18,9 @@ import com.siasun.dianshi.mapviewdemo.RunningState
 import com.siasun.dianshi.mapviewdemo.TaskState
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityVirtualwallBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.ShowMapViewModel
-import com.siasun.dianshi.utils.YamlNew
-import com.siasun.dianshi.view.MapView
+import com.siasun.dianshi.network.constant.KEY_NEY_IP
 import com.siasun.dianshi.view.WorkMode
-import java.io.File
+import com.tencent.mmkv.MMKV
 
 /**
  * 虚拟墙
@@ -33,26 +29,16 @@ class VirtualWallViewActivity : BaseMvvmActivity<ActivityVirtualwallBinding, Sho
 
     val mapId = 1
     override fun initView(savedInstanceState: Bundle?) {
+        MMKV.defaultMMKV().encode(KEY_NEY_IP, "192.168.3.101");
+
         MainController.init()
-
-        val file = File(ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_PNG))
-        Glide.with(this).asBitmap().load(file).skipMemoryCache(true)
-            .diskCacheStrategy(DiskCacheStrategy.NONE).into(object : SimpleTarget<Bitmap?>() {
-                override fun onResourceReady(
-                    resource: Bitmap, transition: Transition<in Bitmap?>?
-                ) {
-                    val mPngMapData = YamlNew().loadYaml(
-                        ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_YAML),
-                        resource.height.toFloat(),
-                        resource.width.toFloat(),
-                    )
-//                    mBinding.mapView.setBitmap(mPngMapData, resource)
-                }
-            })
-
+        //加载地图
+        mBinding.mapView.loadMap(
+            ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_PNG),
+            ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_YAML)
+        )
 
         initListener()
-
 
     }
 
@@ -80,6 +66,7 @@ class VirtualWallViewActivity : BaseMvvmActivity<ActivityVirtualwallBinding, Sho
         }
         //加载虚拟墙
         mViewModel.getVirtualWall(mapId, onComplete = { virtualWall ->
+            LogUtil.d("加载虚拟墙 ${virtualWall}")
             virtualWall?.let {
                 mBinding.mapView.setVirtualWall(it)
             }
@@ -112,8 +99,12 @@ class VirtualWallViewActivity : BaseMvvmActivity<ActivityVirtualwallBinding, Sho
         }
         //保存
         mBinding.btnConfirm.onClick {
+            Log.d("VirtualWallViewActivity", mBinding.mapView.getVirtualWall().toString())
             mBinding.mapView.getVirtualWall()
-                ?.let { it1 -> mViewModel.saveVirtualWall(mapId, it1) }
+                ?.let { it1 ->
+                    it1.LAYERSUM = 1
+                    mViewModel.saveVirtualWall(mapId, it1)
+                }
         }
 
     }

@@ -472,6 +472,7 @@ class VirtualWallView(
                             startWorld.x, startWorld.y
                         ) && isPointInMapRange(endWorld.x, endWorld.y)
                     ) {
+                        virtualWall.LAYERSUM = 1
                         // 确保至少有一个图层
                         if (virtualWall.LAYER.isEmpty()) {
                             virtualWall.LAYER.add(VirWallLayerNew(ArrayList(), 0, 0))
