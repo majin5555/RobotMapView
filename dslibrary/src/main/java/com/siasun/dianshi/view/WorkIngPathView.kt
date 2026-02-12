@@ -20,7 +20,7 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
     SlamWareBaseView<MapView>(context, parent) {
 
     // 机器人有任务 实时路径，限制最大长度防止内存溢出
-    private val MAX_PATH_POINTS = 10000 // 可根据实际需求调整
+    private val MAX_PATH_POINTS = 50000 // 可根据实际需求调整
 
     // 机器人实时位置 有任务状态下
     private val cartPosList = Collections.synchronizedList(mutableListOf<PointF>())
@@ -28,10 +28,10 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
     // 绘制画笔 - 移至伴生对象，避免重复创建
     companion object {
         private val mPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            strokeWidth = 5f
+            strokeWidth = 3f
             isAntiAlias = true
             style = Paint.Style.STROKE
-            color = color.green
+            color = Color.GREEN
         }
     }
 

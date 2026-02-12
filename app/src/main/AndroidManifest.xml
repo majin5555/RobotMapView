@@ -77,11 +77,8 @@
         <activity
             android:name=".ui.createMap.createMap3D.CreateMap3DActivity"
             android:exported="true">
-<!--            <intent-filter>-->
-<!--                <action android:name="android.intent.action.MAIN" />-->
 
-<!--                <category android:name="android.intent.category.LAUNCHER" />-->
-<!--            </intent-filter>-->
+
 
         </activity>
         <activity
@@ -106,7 +103,11 @@
         <activity
             android:name=".ui.VirtualWallViewActivity"
             android:exported="true"
-            android:label="@string/app_name" />
+            android:label="@string/app_name">
+
+
+        </activity>
+
         <activity
             android:name=".ui.createMap.DragPositionViewActivity"
             android:exported="true"
@@ -114,7 +115,11 @@
         <activity
             android:name=".ui.createMap.createMap3D.ExpandMap3DActivity"
             android:exported="true"
-            android:label="@string/app_name" />
+            android:label="@string/app_name">
+
+
+        </activity>
+
     </application>
 
 </manifest>
