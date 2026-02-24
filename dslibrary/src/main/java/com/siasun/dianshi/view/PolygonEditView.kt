@@ -30,6 +30,9 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
     private var selectedArea: CleanAreaNew? = null
     private var selectedPointIndex: Int = -1
     private var isDragging = false
+    private var isAreaDragging = false
+    private var lastTouchX = 0f
+    private var lastTouchY = 0f
     private val vertexRadius = 10f // 顶点半径
 
     // 控制是否绘制
@@ -250,6 +253,29 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
     }
 
     /**
+     * 判断点是否在多边形内部（射线法）
+     */
+    private fun isPointInPolygon(area: CleanAreaNew, screenX: Float, screenY: Float): Boolean {
+        val mapView = mapViewRef.get() ?: return false
+        val worldPoint = mapView.screenToWorld(screenX, screenY)
+        val x = worldPoint.x
+        val y = worldPoint.y
+
+        var isInside = false
+        val points = area.m_VertexPnt
+        var j = points.size - 1
+        for (i in points.indices) {
+            if ((points[i].Y > y) != (points[j].Y > y) &&
+                (x < (points[j].X - points[i].X) * (y - points[i].Y) / (points[j].Y - points[i].Y) + points[i].X)
+            ) {
+                isInside = !isInside
+            }
+            j = i
+        }
+        return isInside
+    }
+
+    /**
      * 检查点是否在顶点的可点击范围内
      */
     private fun isPointInVertex(screenX: Float, screenY: Float, vertex: PointNew): Boolean {
@@ -465,6 +491,13 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
                         // 在边上添加新顶点
                         addVertexOnEdge(selectedArea!!, edgeIndex)
                         handled = true
+                    } else if (isPointInPolygon(selectedArea!!, x, y)) {
+                        // 检查是否在多边形内部，如果是则开启区域拖动
+                        isAreaDragging = true
+                        lastTouchX = x
+                        lastTouchY = y
+                        handled = true
+                        onCleanAreaEditListener?.onAreaDragStart(selectedArea!!)
                     }
                 }
             }
@@ -486,6 +519,25 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
                     }
                     invalidate() // 触发重绘
                     handled = true
+                } else if (isAreaDragging && selectedArea != null) {
+                    val mapView = mapViewRef.get() ?: return false
+                    // 计算移动的偏移量（世界坐标系）
+                    val lastWorld = mapView.screenToWorld(lastTouchX, lastTouchY)
+                    val currWorld = mapView.screenToWorld(x, y)
+                    val dx = currWorld.x - lastWorld.x
+                    val dy = currWorld.y - lastWorld.y
+
+                    // 更新所有顶点
+                    selectedArea!!.m_VertexPnt.forEach { point ->
+                        point.X += dx
+                        point.Y += dy
+                    }
+
+                    lastTouchX = x
+                    lastTouchY = y
+                    invalidate()
+                    onCleanAreaEditListener?.onAreaDragging(selectedArea!!)
+                    handled = true
                 }
             }
 
@@ -494,8 +546,12 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
                     // 通知监听器顶点拖动结束
                     onCleanAreaEditListener?.onVertexDragEnd(selectedArea!!, selectedPointIndex)
                     handled = true
+                } else if (isAreaDragging && selectedArea != null) {
+                    onCleanAreaEditListener?.onAreaDragEnd(selectedArea!!)
+                    handled = true
                 }
                 isDragging = false
+                isAreaDragging = false
                 selectedPointIndex = -1
             }
         }
@@ -725,5 +781,14 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
 
         // 创建了新区域
         fun onAreaCreated(area: CleanAreaNew) {}
+
+        // 区域开始拖动
+        fun onAreaDragStart(area: CleanAreaNew) {}
+
+        // 区域拖动中
+        fun onAreaDragging(area: CleanAreaNew) {}
+
+        // 区域拖动结束
+        fun onAreaDragEnd(area: CleanAreaNew) {}
     }
 }
