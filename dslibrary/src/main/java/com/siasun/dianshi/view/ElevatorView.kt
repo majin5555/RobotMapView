@@ -109,7 +109,32 @@ class ElevatorView(context: Context?, parent: WeakReference<MapView>) :
         // 复用PointF对象，减少内存分配
         val pointLocation = PointF()
 
+
+
         for (item in elevatorsCopy) {
+
+            item.gatePoint?.let { gate ->
+                item.pstPark?.let { pstPark ->
+
+                    val gateScreen = mapView.worldToScreen(gate.x, gate.y)
+                    val pstScreen = mapView.worldToScreen(pstPark.x, pstPark.y)
+
+                    mPaint.color = Color.YELLOW
+                    mPaint.style = Paint.Style.STROKE
+                    mPaint.strokeWidth = 4f
+
+                    canvas.drawLine(
+                        gateScreen.x,
+                        gateScreen.y,
+                        pstScreen.x,
+                        pstScreen.y,
+                        mPaint
+                    )
+
+                    mPaint.style = Paint.Style.FILL
+                }
+            }
+
             item.gatePoint?.let { gate ->
                 mPaint.color = Color.GRAY
                 // 获取世界坐标转屏幕坐标的结果
@@ -215,7 +240,7 @@ class ElevatorView(context: Context?, parent: WeakReference<MapView>) :
 
                 pointLocation.x += 10f
                 pointLocation.y += 10f
-                mPaint.color =  Color.GRAY
+                mPaint.color = Color.GRAY
                 drawLabel(
                     canvas, waitPointText, pointLocation, mPaint
                 )
