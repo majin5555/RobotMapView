@@ -77,6 +77,7 @@ import kotlin.random.Random
  */
 class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMapViewModel>() {
     private val mDragBean = DragLocationBean()
+    private val mReflectorMaps = mutableListOf<com.siasun.dianshi.bean.ReflectorMapBean>()
 
 
     val mapId = 1
@@ -222,7 +223,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        iniVirtualWall()
 //        initRemoveNoise()
 //        initPostingArea()
-        initCleanArea()
+//        initCleanArea()
+        initReflector()
 //        initElevator()
 //        initPose()
 //        initMachineStation()
@@ -1035,6 +1037,37 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             MainController.sendPositingArea(
                 mapId, mBinding.mapView.getPositingAreas().toMutableList()
             )
+        }
+    }
+
+    /**
+     * 反光板
+     */
+    private fun initReflector() {
+        // 设置初始数据
+        mBinding.mapView.setReflectorMap(mReflectorMaps)
+
+        // 添加反光板
+        mBinding.btnAddReflector.setOnClickListener {
+            mBinding.mapView.setWorkMode(WorkMode.WORK_MODE_ADD_REFLECTOR_AREA)
+            ToastUtils.showLong("已进入添加反光板模式，滑动屏幕添加")
+        }
+
+        // 编辑反光板
+        mBinding.btnEditReflector.setOnClickListener {
+            mBinding.mapView.setWorkMode(WorkMode.WORK_MODE_EDIT_REFLECTOR)
+            ToastUtils.showLong("已进入编辑反光板模式，拖动反光板边缘调整大小")
+        }
+
+        // 保存反光板
+        mBinding.btnSaveReflector.setOnClickListener {
+            val list = mBinding.mapView.getReflectorMap()
+            mReflectorMaps.clear()
+            mReflectorMaps.addAll(list)
+            // 这里可以添加保存逻辑，例如发送给后台或保存到本地
+            ToastUtils.showLong("保存成功，当前反光板数量：${list.size}")
+            // 退出编辑模式
+            mBinding.mapView.setWorkMode(WorkMode.MODE_SHOW_MAP)
         }
     }
 

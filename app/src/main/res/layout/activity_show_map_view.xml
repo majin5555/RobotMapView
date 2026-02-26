@@ -430,6 +430,24 @@
                 android:text="保存特殊区域"
                 app:layout_constraintTop_toBottomOf="@+id/btn_add_sp_area" />
 
+            <Button
+                android:id="@+id/btn_add_reflector"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="添加反光板" />
+
+            <Button
+                android:id="@+id/btn_edit_reflector"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="编辑反光板" />
+
+            <Button
+                android:id="@+id/btn_save_reflector"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="保存反光板" />
+
         </LinearLayout>
     </ScrollView>
 
