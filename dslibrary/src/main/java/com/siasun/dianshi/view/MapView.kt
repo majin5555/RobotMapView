@@ -108,7 +108,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     private var mGestureDetector: SlamGestureDetector? = null
 
     //删除噪点
-    private var mRemoveNoiseListener: IRemoveNoiseListener? = null
+//    private var mRemoveNoiseListener: IRemoveNoiseListener? = null
 
     /**
      * 旋转弧度
@@ -491,7 +491,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         // 清理监听器
         mSingleTapListener = null
         mGestureDetector = null
-        mRemoveNoiseListener = null
+//        mRemoveNoiseListener = null
 
         // 清理矩阵和其他对象
         mOuterMatrix = Matrix()
@@ -933,6 +933,20 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     }
 
     /**
+     * 获取所有绘制的噪点区域(世界坐标)
+     */
+    fun getRemoveNoiseRects(): List<RectF> {
+        val rects = mRemoveNoiseView?.getRects() ?: ArrayList()
+        val worldRects = ArrayList<RectF>()
+        for (rect in rects) {
+            val leftTop = screenToWorld(rect.left, rect.top)
+            val rightBottom = screenToWorld(rect.right, rect.bottom)
+            worldRects.add(RectF(leftTop.x, leftTop.y, rightBottom.x, rightBottom.y))
+        }
+        return worldRects
+    }
+
+    /**
      * 清除清扫路径
      */
     fun clearCleanPathPlan() = mPathView?.setCleanPathPlanResultBean(null)
@@ -1101,21 +1115,32 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mWallView?.updateVirtualWallType(lineIndex, newConfig)
     }
 
-    /**
-     * 设置擦除噪点监听器
-     */
-    fun setOnRemoveNoiseListener(listener: IRemoveNoiseListener?) {
-        mRemoveNoiseListener = listener
-        mRemoveNoiseView?.setOnRemoveNoiseListener(object : RemoveNoiseView.OnRemoveNoiseListener {
-            override fun onRemoveNoise(leftTop: PointF, rightBottom: PointF) {
-                // 将屏幕坐标转换为世界坐标
-                val worldLeftTop = screenToWorld(leftTop.x, leftTop.y)
-                val worldRightBottom = screenToWorld(rightBottom.x, rightBottom.y)
-                // 使用弱引用的监听器
-                mRemoveNoiseListener?.onRemoveNoise(worldLeftTop, worldRightBottom)
-            }
-        })
-    }
+//    /**
+//     * 设置擦除噪点监听器
+//     */
+//    fun setOnRemoveNoiseListener(listener: IRemoveNoiseListener?) {
+//        mRemoveNoiseListener = listener
+//        mRemoveNoiseView?.setOnRemoveNoiseListener(object : RemoveNoiseView.OnRemoveNoiseListener {
+//            override fun onRemoveNoise(leftTop: PointF, rightBottom: PointF) {
+//                // 将屏幕坐标转换为世界坐标
+//                val worldLeftTop = screenToWorld(leftTop.x, leftTop.y)
+//                val worldRightBottom = screenToWorld(rightBottom.x, rightBottom.y)
+//                // 使用弱引用的监听器
+//                mRemoveNoiseListener?.onRemoveNoise(worldLeftTop, worldRightBottom)
+//            }
+//
+//            override fun onRemoveNoiseDeleted(rect: RectF) {
+//                // 将屏幕坐标转换为世界坐标
+//                val worldLeftTop = screenToWorld(rect.left, rect.top)
+//                val worldRightBottom = screenToWorld(rect.right, rect.bottom)
+//                // 创建世界坐标系的矩形
+//                val worldRect = RectF(worldLeftTop.x, worldLeftTop.y, worldRightBottom.x, worldRightBottom.y)
+//                // 确保 rect 是标准化的（left < right, top < bottom），如果需要的话。
+//                // screenToWorld转换后坐标系可能变化，这里直接传递转换后的点构成的矩形
+//                mRemoveNoiseListener?.onRemoveNoiseDeleted(worldRect)
+//            }
+//        })
+//    }
 
     /**
      * 手指抬起监听 回调是世界坐标
@@ -1128,17 +1153,23 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         fun onSingleTapListener(point: PointF)
     }
 
-    /**
-     * 擦除噪点监听器接口
-     */
-    interface IRemoveNoiseListener {
-        /**
-         * 当用户完成噪点擦除操作时调用
-         * @param leftTop 矩形左上角的世界坐标
-         * @param rightBottom 矩形右下角的世界坐标
-         */
-        fun onRemoveNoise(leftTop: PointF, rightBottom: PointF)
-    }
+//    /**
+//     * 擦除噪点监听器接口
+//     */
+//    interface IRemoveNoiseListener {
+//        /**
+//         * 当用户完成噪点擦除操作时调用
+//         * @param leftTop 矩形左上角的世界坐标
+//         * @param rightBottom 矩形右下角的世界坐标
+//         */
+//        fun onRemoveNoise(leftTop: PointF, rightBottom: PointF)
+//
+//        /**
+//         * 当用户删除已绘制的噪点区域时调用
+//         * @param rect 被删除的矩形（世界坐标）
+//         */
+//        fun onRemoveNoiseDeleted(rect: RectF)
+//    }
 
 
 }

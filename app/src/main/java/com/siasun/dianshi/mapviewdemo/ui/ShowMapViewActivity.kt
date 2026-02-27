@@ -1,8 +1,5 @@
 package com.siasun.dianshi.mapviewdemo.ui
 
-import android.app.ActivityManager
-import android.content.Context
-import android.graphics.PointF
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -221,9 +218,9 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initMergedPose()
 //        initStation()
 //        iniVirtualWall()
-//        initRemoveNoise()
+        initRemoveNoise()
 //        initPostingArea()
-        initCleanArea()
+//        initCleanArea()
 //        initReflector()
 //        initElevator()
 //        initPose()
@@ -1078,14 +1075,31 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         //删除噪点
         mBinding.btnRemoveNoise.setOnClickListener {
             mBinding.mapView.setWorkMode(WorkMode.MODE_REMOVE_NOISE)
+        }       //删除噪点
+        mBinding.btnRemoveNoiseSure.setOnClickListener {
+            // 获取所有去除噪点区域
+            val removeNoiseRects = mBinding.mapView.getRemoveNoiseRects()
+            LogUtil.d("获取所有去除噪点区域: $removeNoiseRects")
         }
-        // 设置去除噪点监听器
-        mBinding.mapView.setOnRemoveNoiseListener(object : MapView.IRemoveNoiseListener {
-            override fun onRemoveNoise(leftTop: PointF, rightBottom: PointF) {
-                // 处理噪点区域信息，这里可以添加日志或者发送到控制器
-                LogUtil.d("去除噪点区域: 左上角(${leftTop.x}, ${leftTop.y}), 右下角(${rightBottom.x}, ${rightBottom.y})")
-            }
-        })
+
+
+//        // 设置去除噪点监听器
+//        mBinding.mapView.setOnRemoveNoiseListener(object : MapView.IRemoveNoiseListener {
+//            override fun onRemoveNoise(leftTop: PointF, rightBottom: PointF) {
+////                // 处理噪点区域信息，这里可以添加日志或者发送到控制器
+////                LogUtil.d("去除噪点区域: 左上角(${leftTop.x}, ${leftTop.y}), 右下角(${rightBottom.x}, ${rightBottom.y})")
+////                MainController.sendEraseEvPoint(leftTop, rightBottom, mapId)
+////                // 不再立即清除绘制，支持显示多个噪点区域
+////                // mBinding.mapView.clearRemoveNoiseDrawing()
+////                ToastUtils.showLong("已发送去除噪点指令")
+//            }
+//
+//            override fun onRemoveNoiseDeleted(rect: RectF) {
+//                LogUtil.d("删除了噪点区域: $rect")
+//                ToastUtils.showLong("已删除选中的噪点区域")
+//                // 如果有对应的撤销指令，可以在这里发送
+//            }
+//        })
     }
 
     /**
