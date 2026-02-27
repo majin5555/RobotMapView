@@ -89,7 +89,7 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     /**
      * 旋转弧度
      */
-    var rotationRadians = 0f
+    override var rotationRadians = 0f
 
     /**
      * *************** 监听器   start ***********************
@@ -523,10 +523,9 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
 //        Log.d(TAG, "calBinding mSrf.mapData.height ${laserData.intensities[1]}")
 //        Log.d(TAG, "calBinding originX ${laserData.intensities[2]}")
 //        Log.d(TAG, "calBinding originY ${laserData.intensities[3]}")
-        
+
         synchronized(mSrf.mapData) {
             if (type == 0) {//更新 使用地图PNG原有的宽高
-
 
 
             } else if (type == 1) {//扩展 （1地图内的时候使用地图宽高、2地图外的时候使用子图计算的宽高）
@@ -540,7 +539,8 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
                 val res = mSrf.mapData.resolution
                 if (res > 0.0001f) {
                     val offX = (initialOriginX - mSrf.mapData.originX) / res
-                    val offY = (mSrf.mapData.height - initialHeight) + (mSrf.mapData.originY - initialOriginY) / res
+                    val offY =
+                        (mSrf.mapData.height - initialHeight) + (mSrf.mapData.originY - initialOriginY) / res
                     mPngMapView?.setOffset(offX, offY)
                 }
 

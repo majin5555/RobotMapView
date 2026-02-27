@@ -110,6 +110,10 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     //删除噪点
     private var mRemoveNoiseListener: IRemoveNoiseListener? = null
 
+    /**
+     * 旋转弧度
+     */
+    override var rotationRadians = 0f
 
     /**
      * *************** 监听器   end ***********************
