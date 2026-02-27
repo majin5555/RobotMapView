@@ -123,8 +123,10 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
         mBinding.cbArea.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
                 parentRef.get()?.mPolygonEditView?.setDrawingEnabled(true) // 启用绘制
+                parentRef.get()?.mSpPolygonEditView?.setDrawingEnabled(true)
             } else {
                 parentRef.get()?.mPolygonEditView?.setDrawingEnabled(false) // 禁用绘制
+                parentRef.get()?.mSpPolygonEditView?.setDrawingEnabled(false)
             }
         }
         //路径

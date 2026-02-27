@@ -119,7 +119,7 @@ class ElevatorView(context: Context?, parent: WeakReference<MapView>) :
                     val gateScreen = mapView.worldToScreen(gate.x, gate.y)
                     val pstScreen = mapView.worldToScreen(pstPark.x, pstPark.y)
 
-                    mPaint.color = Color.YELLOW
+                    mPaint.color = ContextCompat.getColor(context, R.color.color_FFD44F)
                     mPaint.style = Paint.Style.STROKE
                     mPaint.strokeWidth = 4f
 
