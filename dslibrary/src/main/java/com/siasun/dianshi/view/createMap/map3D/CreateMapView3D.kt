@@ -73,6 +73,7 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     private var mPngMapView: PngMapView? = null //png地图
     var mMapOutline3D: MapOutline3D? = null //地图轮廓
     private var mCreatingUpLaserScanView: UpLaserScanView3D? = null//上激光点云
+    private var mAllKeyFrames: AllKeyFrameView3D? = null//所有关键帧
     private var mUpLaserScanView: UpLaserScanView<CreateMapView3D>? = null//上激光点云（非建图显示）
     var mConstrainNodes: ConstrainNodes? = null//人工约束节点
     private var mCreateMapRobotView: RobotViewCreateMap<CreateMapView3D>? = null //机器人图标
@@ -115,6 +116,7 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     private fun initView() {
         mPngMapView = PngMapView(context)
         mCreatingUpLaserScanView = UpLaserScanView3D(context, mMapView)
+        mAllKeyFrames = AllKeyFrameView3D(context, mMapView)
         mUpLaserScanView = UpLaserScanView(context, mMapView)
         mConstrainNodes = ConstrainNodes(context, mMapView)
         mMapOutline3D = MapOutline3D(context, mMapView)
@@ -132,6 +134,8 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
         addMapLayers(mConstrainNodes)
         //建图上激光点云
         addMapLayers(mCreatingUpLaserScanView)
+        //所有关键帧
+        addMapLayers(mAllKeyFrames)
         //非建图上激光点云
         addMapLayers(mUpLaserScanView)
         //机器人图标
@@ -396,6 +400,7 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
         // 清理视图引用
         mPngMapView = null
         mCreatingUpLaserScanView = null
+        mAllKeyFrames = null
         mUpLaserScanView = null
         mCreateMapRobotView = null
 
@@ -421,6 +426,7 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
         currentWorkMode = mode
         mMapOutline3D?.setWorkMode(mode)
         mCreatingUpLaserScanView?.setWorkMode(mode)
+        mAllKeyFrames?.setWorkMode(mode)
         mCreateMapRobotView?.setWorkMode(mode)
         mExpandAreaView?.setWorkMode(mode)
     }
@@ -584,6 +590,13 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
         mConstrainNodes?.addConstraintNodes(constraintNode)
     }
 
+
+    /**
+     * 外部接口：更新关键帧数据 拓展地图时显示所有关键帧位置
+     */
+    fun parseKeyFramePose(mLaserT: laser_t) {
+        mAllKeyFrames?.parseKeyFramePose(mLaserT)
+    }
 
     /**
      * 辅助方法：将科学计数法表示的float值转换为普通小数表示的float值
