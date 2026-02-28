@@ -1075,7 +1075,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         //删除噪点
         mBinding.btnRemoveNoise.setOnClickListener {
             mBinding.mapView.setWorkMode(WorkMode.MODE_REMOVE_NOISE)
-        }       //删除噪点
+        }
+        //删除噪点
         mBinding.btnRemoveNoiseSure.setOnClickListener {
             // 获取所有去除噪点区域
             val removeNoiseRects = mBinding.mapView.getRemoveNoiseRects()

@@ -33,7 +33,7 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
     private var rectRight = 0f
     private var rectBottom = 0f
 
-    // 存储所有绘制的矩形
+    // 存储所有绘制的矩形（世界坐标）
     private val rectList = ArrayList<RectF>()
 
     // 是否正在绘制
@@ -76,10 +76,12 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
         if (currentWorkMode == mode) return // 避免重复设置
 
         currentWorkMode = mode
-        // 如果不是擦除噪点模式，重置绘制状态
-        if (mode != WorkMode.MODE_REMOVE_NOISE) {
-            resetDrawingState()
-        }
+        // 任何模式下都只重置绘制状态，不清除已绘制的矩形
+        isDrawing = false
+        startPoint.set(0f, 0f)
+        endPoint.set(0f, 0f)
+        resetRect()
+        invalidate()
     }
 
     /**
@@ -102,7 +104,7 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
     }
 
     /**
-     * 获取所有绘制的噪点区域
+     * 获取所有绘制的噪点区域（世界坐标）
      */
     fun getRects(): List<RectF> {
         return ArrayList(rectList)
@@ -233,15 +235,18 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
 
         // 将当前矩形添加到列表中
         if (rectLeft != rectRight && rectTop != rectBottom) {
-            // 3D模式下只支持绘制1个框
-            if (is3D) {
-                rectList.clear()
+            val mapView = mParent.get()
+            if (mapView != null) {
+                // 转换为世界坐标存储
+                val leftTop = mapView.screenToWorld(rectLeft, rectTop)
+                val rightBottom = mapView.screenToWorld(rectRight, rectBottom)
+
+                // 3D模式下只支持绘制1个框
+                if (is3D) {
+                    rectList.clear()
+                }
+                rectList.add(RectF(leftTop.x, leftTop.y, rightBottom.x, rightBottom.y))
             }
-            rectList.add(RectF(rectLeft, rectTop, rectRight, rectBottom))
-//             // 触发回调
-//            leftTopPoint.set(rectLeft, rectTop)
-//            rightBottomPoint.set(rectRight, rectBottom)
-//            onRemoveNoiseListener?.onRemoveNoise(leftTopPoint, rightBottomPoint)
         }
 
         // 重置当前绘制状态，准备下一次绘制
@@ -254,12 +259,23 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
      * 处理点击事件，删除被点击的矩形
      */
     private fun handleTap(x: Float, y: Float) {
+        val mapView = mParent.get() ?: return
+        
         // 倒序遍历，优先删除上层（后绘制）的矩形
         for (i in rectList.indices.reversed()) {
             val rect = rectList[i]
-            if (rect.contains(x, y)) {
+            // 将存储的世界坐标矩形转换为屏幕坐标进行判断
+            val leftTop = mapView.worldToScreen(rect.left, rect.top)
+            val rightBottom = mapView.worldToScreen(rect.right, rect.bottom)
+            
+            // 构造屏幕坐标矩形（处理可能的坐标翻转）
+            val screenLeft = leftTop.x.coerceAtMost(rightBottom.x)
+            val screenTop = leftTop.y.coerceAtMost(rightBottom.y)
+            val screenRight = leftTop.x.coerceAtLeast(rightBottom.x)
+            val screenBottom = leftTop.y.coerceAtLeast(rightBottom.y)
+            
+            if (x >= screenLeft && x <= screenRight && y >= screenTop && y <= screenBottom) {
                 rectList.removeAt(i)
-//                onRemoveNoiseListener?.onRemoveNoiseDeleted(rect)
                 break // 每次点击只删除一个
             }
         }
@@ -279,9 +295,22 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
+        val mapView = mParent.get() ?: return
+
         // 绘制所有已保存的矩形
         for (rect in rectList) {
-            canvas.drawRect(rect, paint)
+            // 将世界坐标转换为屏幕坐标
+            val leftTop = mapView.worldToScreen(rect.left, rect.top)
+            val rightBottom = mapView.worldToScreen(rect.right, rect.bottom)
+            
+            // 处理坐标翻转
+            val screenLeft = leftTop.x.coerceAtMost(rightBottom.x)
+            val screenTop = leftTop.y.coerceAtMost(rightBottom.y)
+            val screenRight = leftTop.x.coerceAtLeast(rightBottom.x)
+            val screenBottom = leftTop.y.coerceAtLeast(rightBottom.y)
+            
+            tempRect.set(screenLeft, screenTop, screenRight, screenBottom)
+            canvas.drawRect(tempRect, paint)
         }
 
         // 绘制当前正在拖动的矩形
