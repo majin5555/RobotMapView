@@ -1115,6 +1115,13 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mWallView?.updateVirtualWallType(lineIndex, newConfig)
     }
 
+    /**
+     * 设置是否是3D模式
+     */
+    fun set3D(is3D: Boolean) {
+       mRemoveNoiseView?.set3D(is3D)
+    }
+
 //    /**
 //     * 设置擦除噪点监听器
 //     */

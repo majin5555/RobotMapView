@@ -42,6 +42,9 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
     // 最小滑动距离，用于区分点击和拖动
     private val touchSlop: Int
 
+    // 是否是3D模式
+    private var is3D = true
+
     init {
         val configuration = ViewConfiguration.get(context!!)
         touchSlop = configuration.scaledTouchSlop
@@ -77,6 +80,13 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
         if (mode != WorkMode.MODE_REMOVE_NOISE) {
             resetDrawingState()
         }
+    }
+
+    /**
+     * 设置是否是3D模式
+     */
+    fun set3D(is3D: Boolean) {
+        this.is3D = is3D
     }
 
     /**
@@ -223,6 +233,10 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
 
         // 将当前矩形添加到列表中
         if (rectLeft != rectRight && rectTop != rectBottom) {
+            // 3D模式下只支持绘制1个框
+            if (is3D) {
+                rectList.clear()
+            }
             rectList.add(RectF(rectLeft, rectTop, rectRight, rectBottom))
 //             // 触发回调
 //            leftTopPoint.set(rectLeft, rectTop)
