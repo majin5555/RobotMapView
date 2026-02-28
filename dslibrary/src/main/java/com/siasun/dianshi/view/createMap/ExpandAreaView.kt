@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.PointF
 import android.graphics.RectF
 import android.view.MotionEvent
@@ -47,9 +48,8 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
         }
     }
 
-
-    // 复用的RectF对象
-    private val tempRect = RectF()
+    // 复用的Path对象
+    private val tempPath = Path()
 
     // 区域创建完成监听器
     private var onExpandAreaCreatedListener: OnExpandAreaCreatedListener? = null
@@ -203,22 +203,28 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
 
         // 绘制正在创建的区域
         if (createStartPoint != null && createEndPoint != null) {
-            val leftTop = mapView.worldToScreen(createStartPoint!!.x, createStartPoint!!.y)
-            val rightBottom = mapView.worldToScreen(createEndPoint!!.x, createEndPoint!!.y)
+            val sx = createStartPoint!!.x
+            val sy = createStartPoint!!.y
+            val ex = createEndPoint!!.x
+            val ey = createEndPoint!!.y
 
-            tempRect.set(
-                min(leftTop.x, rightBottom.x),
-                min(leftTop.y, rightBottom.y),
-                max(leftTop.x, rightBottom.x),
-                max(leftTop.y, rightBottom.y)
-            )
+            // 获取四个顶点（世界坐标）
+            // 左上(sx, sy) -> 右上(ex, sy) -> 右下(ex, ey) -> 左下(sx, ey)
+            // 转换为屏幕坐标
+            val p1 = mapView.worldToScreen(sx, sy)
+            val p2 = mapView.worldToScreen(ex, sy)
+            val p3 = mapView.worldToScreen(ex, ey)
+            val p4 = mapView.worldToScreen(sx, ey)
 
-            // 应用地图的旋转
-            canvas.rotate(
-                mRotation, (leftTop.x + rightBottom.x) / 2, (leftTop.y + rightBottom.y) / 2
-            )
+            // 使用 Path 绘制，确保旋转时形状正确
+            tempPath.reset()
+            tempPath.moveTo(p1.x, p1.y)
+            tempPath.lineTo(p2.x, p2.y)
+            tempPath.lineTo(p3.x, p3.y)
+            tempPath.lineTo(p4.x, p4.y)
+            tempPath.close()
 
-            canvas.drawRect(tempRect, creatingRectPaint)
+            canvas.drawPath(tempPath, creatingRectPaint)
         }
 
         canvas.restore()
