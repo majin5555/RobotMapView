@@ -460,6 +460,31 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
         invalidate()
     }
 
+    /**
+     * 请求删除指定的顶点（仅回调，不实际删除）
+     */
+    private fun requestRemoveVertex(area: CleanAreaNew, vertexIndex: Int) {
+        val points = area.m_VertexPnt
+        // 确保删除后还有至少3个顶点，保持多边形有效
+        if (points.size <= 3) return
+
+        // 通知监听器请求删除顶点
+        onCleanAreaEditListener?.onVertexRemoved(area, vertexIndex)
+    }
+
+    /**
+     * 确认删除指定的顶点（实际删除操作）
+     */
+    fun performDeleteVertex(area: CleanAreaNew, vertexIndex: Int) {
+        val points = area.m_VertexPnt
+        if (points.size <= 3) return
+        
+        if (vertexIndex >= 0 && vertexIndex < points.size) {
+            points.removeAt(vertexIndex)
+            invalidate()
+        }
+    }
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         // 先处理手势事件
         if (gestureDetector.onTouchEvent(event)) {
@@ -620,8 +645,8 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
         // 先检查是否双击在顶点上
         val clickedVertexIndex = findNearbyVertexIndex(selectedArea!!, x, y)
         if (clickedVertexIndex != -1) {
-            // 删除与该顶点相关的边（删除下一条边，即顶点clickedVertexIndex和(clickedVertexIndex+1)%points.size之间的边）
-            removeEdge(selectedArea!!, clickedVertexIndex)
+            // 请求删除该顶点
+            requestRemoveVertex(selectedArea!!, clickedVertexIndex)
             return true
         }
 
@@ -795,6 +820,9 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
 
         // 删除了边
         fun onEdgeRemoved(area: CleanAreaNew, edgeIndex: Int)
+
+        // 删除了顶点
+        fun onVertexRemoved(area: CleanAreaNew, vertexIndex: Int) 
 
         // 创建了新区域
         fun onAreaCreated(area: CleanAreaNew) {}

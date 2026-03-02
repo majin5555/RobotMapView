@@ -16,6 +16,7 @@ import com.siasun.dianshi.ConstantBase.PAD_WORLD_NAME
 import com.siasun.dianshi.ConstantBase.getFolderPath
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.bean.CleanAreaNew
+import com.siasun.dianshi.dialog.CommonWarnDialog
 import com.siasun.dianshi.bean.CmsStation
 import com.siasun.dianshi.bean.DragLocationBean
 import com.siasun.dianshi.bean.ElevatorPoint
@@ -594,7 +595,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         // 设置特殊区域编辑监听器
         mBinding.mapView.setOnSpAreaEditListener(object : SpPolygonEditView.OnSpAreaEditListener {
 
-            override fun onVertexDragEnd(area: SpArea, vertexIndex: Int) {
+            override fun onVertexDragEnd(area: SpArea, vertexIndex: Int, isInsideMap: Boolean) {
                 LogUtil.i("编辑特殊区域onVertexDragEnd    ${area.toJson()}")
             }
 
@@ -895,7 +896,11 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.mapView.setOnCleanAreaEditListener(object :
             PolygonEditView.OnCleanAreaEditListener {
 
-            override fun onVertexDragEnd(area: CleanAreaNew, vertexIndex: Int, isInsideMap: Boolean) {
+            override fun onVertexDragEnd(
+                area: CleanAreaNew,
+                vertexIndex: Int,
+                isInsideMap: Boolean
+            ) {
                 LogUtil.d("onVertexDragEnd area $area isInsideMap $isInsideMap")
                 if (area.routeType == AreaType.AREA_AUTO) {
                     MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
@@ -923,6 +928,22 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                         "编辑区域onEdgeRemoved  申请路径规划 ${area.toJson()}", null, TAG_PP
                     )
                 }
+            }
+
+            override fun onVertexRemoved(area: CleanAreaNew, vertexIndex: Int) {
+                LogUtil.i(
+                    "编辑区域onVertexRemoved  删除了定点 $vertexIndex", null, TAG_PP
+                )
+                CommonWarnDialog.Builder(this@ShowMapViewActivity)
+                    .setTitle("提示")
+                    .setMsg("确定要删除该顶点吗？")
+                    .setOnCommonWarnDialogListener(object : CommonWarnDialog.Builder.CommonWarnDialogListener {
+                        override fun confirm() {
+                            mBinding.mapView.performDeleteVertex(area, vertexIndex)
+                        }
+                    })
+                    .create()
+                    .show()
             }
 
             override fun onAreaCreated(area: CleanAreaNew) {

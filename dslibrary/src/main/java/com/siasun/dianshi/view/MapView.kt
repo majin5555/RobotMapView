@@ -1082,6 +1082,13 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     }
 
     /**
+     * 确认删除清扫区域的顶点
+     */
+    fun performDeleteVertex(area: CleanAreaNew, vertexIndex: Int) {
+        mPolygonEditView?.performDeleteVertex(area, vertexIndex)
+    }
+
+    /**
      * 设置特殊域编辑监听器
      */
     fun setOnSpAreaEditListener(listener: SpPolygonEditView.OnSpAreaEditListener?) {
