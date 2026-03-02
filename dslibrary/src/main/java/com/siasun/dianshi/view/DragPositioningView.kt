@@ -124,10 +124,8 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
      * 更新拖拽后的车体坐标
      */
     private fun updateDragRobotPose() {
-        val mapView = parent.get() ?: return
-        val screenToWorld = mapView.screenToWorld(robotCenter.x + offsetX, robotCenter.y + offsetY)
-        dragRobotPose.x = screenToWorld.x
-        dragRobotPose.y = screenToWorld.y
+        dragRobotPose.x = robotCenter.x + offsetX
+        dragRobotPose.y = robotCenter.y + offsetY
         dragRobotPose.theta = initialRobotTheta + offsetRotation
     }
 
