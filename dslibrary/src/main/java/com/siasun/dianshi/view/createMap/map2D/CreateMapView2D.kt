@@ -83,7 +83,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     /**
      * 旋转弧度
      */
-    var rotationRadians = 0f
+    override var rotationRadians = 0f
 
     /**
      * *************** 监听器   start ***********************
@@ -501,8 +501,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     /**
      * 扩展地图前显示点云数据
      */
-    fun loadCurPointCloud(laserData: laser_t) =
-        mUpLaserScanView?.updateUpLaserScan(laserData)
+    fun loadCurPointCloud(laserData: laser_t) = mUpLaserScanView?.updateUpLaserScan(laserData)
 
 
     /**

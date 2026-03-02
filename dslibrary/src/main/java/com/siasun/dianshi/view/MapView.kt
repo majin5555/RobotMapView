@@ -48,6 +48,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import androidx.core.content.withStyledAttributes
 import com.hjq.shape.layout.ShapeFrameLayout
 import com.siasun.dianshi.bean.CrossDoor
+import com.siasun.dianshi.bean.ReflectorMapBean
 import com.siasun.dianshi.view.createMap.MapViewInterface
 
 /**
@@ -68,7 +69,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     private var VIEW_HEIGHT = 0
 
     //视图高度
-    private var mMapScale = 1f //地图缩放级别
+    var mMapScale = 1f //地图缩放级别
     private val mMaxMapScale = 5f //最大缩放级别
     private var mMinMapScale = 0.1f //最小缩放级别
 
@@ -97,6 +98,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     var mRobotView: RobotView? = null //机器人图标
     var mWorkIngPathView: WorkIngPathView? = null //机器人工作路径
     var mDragPositioningView: DragPositioningView? = null //拖拽定位view
+    var mReflectMapView: ReflectMapView? = null //反光板地图view
 
     /**
      * *************** 监听器   start ***********************
@@ -106,8 +108,12 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     private var mGestureDetector: SlamGestureDetector? = null
 
     //删除噪点
-    private var mRemoveNoiseListener: IRemoveNoiseListener? = null
+//    private var mRemoveNoiseListener: IRemoveNoiseListener? = null
 
+    /**
+     * 旋转弧度
+     */
+    override var rotationRadians = 0f
 
     /**
      * *************** 监听器   end ***********************
@@ -176,6 +182,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mPathView = PathView(context, mMapView)
         mWorldPadView = WorldPadView(context, mMapView)
         mDragPositioningView = DragPositioningView(context, mMapView)
+        mReflectMapView = ReflectMapView(context, mMapView)
         //底图的View
         addView(mPngMapView, lp)
 
@@ -213,7 +220,10 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         addMapLayers(mWorldPadView)
         //显示工作路径
         addMapLayers(mWorkIngPathView)
+        //新过门
         addMapLayers(mCrossView)
+        //反光板地图
+        addMapLayers(mReflectMapView)
         //地图名称
         addView(mMapNameView)
         //机器人图标
@@ -238,7 +248,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mMapNameView?.setScreen(point)
 
         // 如果是擦除噪点模式、创建定位区域模式、编辑定位区域模式、删除定位区域模式、编辑清扫区域模式或创建清扫区域模式，或者路径编辑模式，或者创建路径模式
-        if (currentWorkMode == WorkMode.MODE_REMOVE_NOISE || currentWorkMode == WorkMode.MODE_POSITING_AREA_ADD || currentWorkMode == WorkMode.MODE_POSITING_AREA_EDIT || currentWorkMode == WorkMode.MODE_POSITING_AREA_DELETE || currentWorkMode == WorkMode.MODE_CLEAN_AREA_EDIT || currentWorkMode == WorkMode.MODE_CLEAN_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_EDIT || currentWorkMode == WorkMode.MODE_PATH_EDIT || currentWorkMode == WorkMode.MODE_PATH_CREATE || currentWorkMode == WorkMode.MODE_DRAG_POSITION) {
+        if (currentWorkMode == WorkMode.MODE_REMOVE_NOISE || currentWorkMode == WorkMode.MODE_POSITING_AREA_ADD || currentWorkMode == WorkMode.MODE_POSITING_AREA_EDIT || currentWorkMode == WorkMode.MODE_POSITING_AREA_DELETE || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_EDIT || currentWorkMode == WorkMode.MODE_PATH_EDIT || currentWorkMode == WorkMode.MODE_PATH_CREATE || currentWorkMode == WorkMode.MODE_DRAG_POSITION || currentWorkMode == WorkMode.WORK_MODE_ADD_REFLECTOR_AREA || currentWorkMode == WorkMode.WORK_MODE_EDIT_REFLECTOR) {
             // 让事件传递给子视图（如RemoveNoiseView、PostingAreasView或PathView）处理
             // 先调用父类的onTouchEvent让事件传递给子视图
             super.onTouchEvent(event)
@@ -476,11 +486,12 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mMapNameView = null
         mCrossView = null
         mDragPositioningView = null
+        mReflectMapView = null
 
         // 清理监听器
         mSingleTapListener = null
         mGestureDetector = null
-        mRemoveNoiseListener = null
+//        mRemoveNoiseListener = null
 
         // 清理矩阵和其他对象
         mOuterMatrix = Matrix()
@@ -511,6 +522,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mWorldPadView?.setWorkMode(mode)
         mCrossView?.setWorkMode(mode)
         mDragPositioningView?.setWorkMode(mode)
+        mReflectMapView?.setWorkMode(mode)
     }
 
     /**
@@ -632,6 +644,24 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      * 获取拖拽定位车体数据y
      */
     fun getDragRobotPose() = mDragPositioningView?.dragRobotPose
+
+
+    /**
+     * 设置反光板地图
+     */
+    fun setReflectorMap(list: MutableList<ReflectorMapBean>) =
+        mReflectMapView?.setReflectorMap(list)
+
+    /**
+     * 获取反光板数据
+     */
+    fun getReflectorMap(): MutableList<ReflectorMapBean> =
+        mReflectMapView?.getData() ?: mutableListOf()
+
+    /**
+     * 清除反光板地图
+     */
+    fun cleanReflector() = mReflectMapView?.cleanReflector()
 
     /**
      * 设置AGV 位姿 机器人图标的实时位置
@@ -903,6 +933,20 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     }
 
     /**
+     * 获取所有绘制的噪点区域(世界坐标)
+     */
+    fun getRemoveNoiseRects(): List<RectF> {
+        val rects = mRemoveNoiseView?.getRects() ?: ArrayList()
+        val worldRects = ArrayList<RectF>()
+        for (rect in rects) {
+            val leftTop = screenToWorld(rect.left, rect.top)
+            val rightBottom = screenToWorld(rect.right, rect.bottom)
+            worldRects.add(RectF(leftTop.x, leftTop.y, rightBottom.x, rightBottom.y))
+        }
+        return worldRects
+    }
+
+    /**
      * 清除清扫路径
      */
     fun clearCleanPathPlan() = mPathView?.setCleanPathPlanResultBean(null)
@@ -1072,20 +1116,38 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     }
 
     /**
-     * 设置擦除噪点监听器
+     * 设置是否是3D模式
      */
-    fun setOnRemoveNoiseListener(listener: IRemoveNoiseListener?) {
-        mRemoveNoiseListener = listener
-        mRemoveNoiseView?.setOnRemoveNoiseListener(object : RemoveNoiseView.OnRemoveNoiseListener {
-            override fun onRemoveNoise(leftTop: PointF, rightBottom: PointF) {
-                // 将屏幕坐标转换为世界坐标
-                val worldLeftTop = screenToWorld(leftTop.x, leftTop.y)
-                val worldRightBottom = screenToWorld(rightBottom.x, rightBottom.y)
-                // 使用弱引用的监听器
-                mRemoveNoiseListener?.onRemoveNoise(worldLeftTop, worldRightBottom)
-            }
-        })
+    fun set3D(is3D: Boolean) {
+       mRemoveNoiseView?.set3D(is3D)
     }
+
+//    /**
+//     * 设置擦除噪点监听器
+//     */
+//    fun setOnRemoveNoiseListener(listener: IRemoveNoiseListener?) {
+//        mRemoveNoiseListener = listener
+//        mRemoveNoiseView?.setOnRemoveNoiseListener(object : RemoveNoiseView.OnRemoveNoiseListener {
+//            override fun onRemoveNoise(leftTop: PointF, rightBottom: PointF) {
+//                // 将屏幕坐标转换为世界坐标
+//                val worldLeftTop = screenToWorld(leftTop.x, leftTop.y)
+//                val worldRightBottom = screenToWorld(rightBottom.x, rightBottom.y)
+//                // 使用弱引用的监听器
+//                mRemoveNoiseListener?.onRemoveNoise(worldLeftTop, worldRightBottom)
+//            }
+//
+//            override fun onRemoveNoiseDeleted(rect: RectF) {
+//                // 将屏幕坐标转换为世界坐标
+//                val worldLeftTop = screenToWorld(rect.left, rect.top)
+//                val worldRightBottom = screenToWorld(rect.right, rect.bottom)
+//                // 创建世界坐标系的矩形
+//                val worldRect = RectF(worldLeftTop.x, worldLeftTop.y, worldRightBottom.x, worldRightBottom.y)
+//                // 确保 rect 是标准化的（left < right, top < bottom），如果需要的话。
+//                // screenToWorld转换后坐标系可能变化，这里直接传递转换后的点构成的矩形
+//                mRemoveNoiseListener?.onRemoveNoiseDeleted(worldRect)
+//            }
+//        })
+//    }
 
     /**
      * 手指抬起监听 回调是世界坐标
@@ -1098,17 +1160,23 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         fun onSingleTapListener(point: PointF)
     }
 
-    /**
-     * 擦除噪点监听器接口
-     */
-    interface IRemoveNoiseListener {
-        /**
-         * 当用户完成噪点擦除操作时调用
-         * @param leftTop 矩形左上角的世界坐标
-         * @param rightBottom 矩形右下角的世界坐标
-         */
-        fun onRemoveNoise(leftTop: PointF, rightBottom: PointF)
-    }
+//    /**
+//     * 擦除噪点监听器接口
+//     */
+//    interface IRemoveNoiseListener {
+//        /**
+//         * 当用户完成噪点擦除操作时调用
+//         * @param leftTop 矩形左上角的世界坐标
+//         * @param rightBottom 矩形右下角的世界坐标
+//         */
+//        fun onRemoveNoise(leftTop: PointF, rightBottom: PointF)
+//
+//        /**
+//         * 当用户删除已绘制的噪点区域时调用
+//         * @param rect 被删除的矩形（世界坐标）
+//         */
+//        fun onRemoveNoiseDeleted(rect: RectF)
+//    }
 
 
 }

@@ -1,8 +1,5 @@
 package com.siasun.dianshi.mapviewdemo.ui
 
-import android.app.ActivityManager
-import android.content.Context
-import android.graphics.PointF
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -77,6 +74,7 @@ import kotlin.random.Random
  */
 class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMapViewModel>() {
     private val mDragBean = DragLocationBean()
+    private val mReflectorMaps = mutableListOf<com.siasun.dianshi.bean.ReflectorMapBean>()
 
 
     val mapId = 1
@@ -222,12 +220,12 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        iniVirtualWall()
 //        initRemoveNoise()
 //        initPostingArea()
-//        initCleanArea()
+        initCleanArea()
 //        initElevator()
 //        initPose()
 //        initMachineStation()
 //        initMixArea()
-        initSpAreas()
+//        initSpAreas()
 //        initPath()
 //        initCrossDoor()
 
@@ -1039,6 +1037,37 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     }
 
     /**
+     * 反光板
+     */
+    private fun initReflector() {
+        // 设置初始数据
+        mBinding.mapView.setReflectorMap(mReflectorMaps)
+
+        // 添加反光板
+        mBinding.btnAddReflector.setOnClickListener {
+            mBinding.mapView.setWorkMode(WorkMode.WORK_MODE_ADD_REFLECTOR_AREA)
+            ToastUtils.showLong("已进入添加反光板模式，滑动屏幕添加")
+        }
+
+        // 编辑反光板
+        mBinding.btnEditReflector.setOnClickListener {
+            mBinding.mapView.setWorkMode(WorkMode.WORK_MODE_EDIT_REFLECTOR)
+            ToastUtils.showLong("已进入编辑反光板模式，拖动反光板边缘调整大小")
+        }
+
+        // 保存反光板
+        mBinding.btnSaveReflector.setOnClickListener {
+            val list = mBinding.mapView.getReflectorMap()
+            mReflectorMaps.clear()
+            mReflectorMaps.addAll(list)
+            // 这里可以添加保存逻辑，例如发送给后台或保存到本地
+            ToastUtils.showLong("保存成功，当前反光板数量：${list.size}")
+            // 退出编辑模式
+            mBinding.mapView.setWorkMode(WorkMode.MODE_SHOW_MAP)
+        }
+    }
+
+    /**
      * 删除噪点
      */
     private fun initRemoveNoise() {
@@ -1046,13 +1075,31 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.btnRemoveNoise.setOnClickListener {
             mBinding.mapView.setWorkMode(WorkMode.MODE_REMOVE_NOISE)
         }
-        // 设置去除噪点监听器
-        mBinding.mapView.setOnRemoveNoiseListener(object : MapView.IRemoveNoiseListener {
-            override fun onRemoveNoise(leftTop: PointF, rightBottom: PointF) {
-                // 处理噪点区域信息，这里可以添加日志或者发送到控制器
-                LogUtil.d("去除噪点区域: 左上角(${leftTop.x}, ${leftTop.y}), 右下角(${rightBottom.x}, ${rightBottom.y})")
-            }
-        })
+        //删除噪点
+        mBinding.btnRemoveNoiseSure.setOnClickListener {
+            // 获取所有去除噪点区域
+            val removeNoiseRects = mBinding.mapView.getRemoveNoiseRects()
+            LogUtil.d("获取所有去除噪点区域: $removeNoiseRects")
+        }
+
+
+//        // 设置去除噪点监听器
+//        mBinding.mapView.setOnRemoveNoiseListener(object : MapView.IRemoveNoiseListener {
+//            override fun onRemoveNoise(leftTop: PointF, rightBottom: PointF) {
+////                // 处理噪点区域信息，这里可以添加日志或者发送到控制器
+////                LogUtil.d("去除噪点区域: 左上角(${leftTop.x}, ${leftTop.y}), 右下角(${rightBottom.x}, ${rightBottom.y})")
+////                MainController.sendEraseEvPoint(leftTop, rightBottom, mapId)
+////                // 不再立即清除绘制，支持显示多个噪点区域
+////                // mBinding.mapView.clearRemoveNoiseDrawing()
+////                ToastUtils.showLong("已发送去除噪点指令")
+//            }
+//
+//            override fun onRemoveNoiseDeleted(rect: RectF) {
+//                LogUtil.d("删除了噪点区域: $rect")
+//                ToastUtils.showLong("已删除选中的噪点区域")
+//                // 如果有对应的撤销指令，可以在这里发送
+//            }
+//        })
     }
 
     /**

@@ -36,10 +36,57 @@
             android:orientation="vertical">
 
             <Button
+                android:id="@+id/btn_remove_noise_sure"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="确定去除噪点" />
+            <Button
+                android:id="@+id/btn_remove_noise"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="去除噪点" />
+
+            <Button
+                android:id="@+id/btn_location"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="获取定位点信息"
+                app:layout_constraintTop_toBottomOf="@+id/btn_posting_area_commit" />
+
+            <Button
+                android:id="@+id/btn_edit_area"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="编辑清扫区域"
+                app:layout_constraintTop_toBottomOf="@+id/btn_posting_area_commit" />
+
+            <Button
+                android:id="@+id/btn_add_area"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="添加清扫区域"
+                app:layout_constraintTop_toBottomOf="@+id/btn_edit_area" />
+
+            <Button
+                android:id="@+id/btn_save_area"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="保存清扫区域"
+                app:layout_constraintTop_toBottomOf="@+id/btn_add_area" />
+
+            <Button
+                android:id="@+id/btn_delete_area"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="删除清扫区域"
+                app:layout_constraintTop_toBottomOf="@+id/btn_save_area" />
+
+            <Button
                 android:id="@+id/btn_drag_positing"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="拖拽定位" />
+
             <Button
                 android:id="@+id/btn_add_cross_door"
                 android:layout_width="wrap_content"
@@ -166,12 +213,6 @@
                 android:layout_height="wrap_content"
                 android:text="平移地图" />
 
-            <Button
-                android:id="@+id/btn_remove_noise"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="去除噪点"
-                app:layout_constraintTop_toBottomOf="@+id/btn_move" />
 
             <Button
                 android:id="@+id/btn_add_charge_station"
@@ -374,34 +415,6 @@
 
 
             <Button
-                android:id="@+id/btn_edit_area"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="编辑清扫区域"
-                app:layout_constraintTop_toBottomOf="@+id/btn_posting_area_commit" />
-
-            <Button
-                android:id="@+id/btn_add_area"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="添加清扫区域"
-                app:layout_constraintTop_toBottomOf="@+id/btn_edit_area" />
-
-            <Button
-                android:id="@+id/btn_save_area"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="保存清扫区域"
-                app:layout_constraintTop_toBottomOf="@+id/btn_add_area" />
-
-            <Button
-                android:id="@+id/btn_delete_area"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="删除清扫区域"
-                app:layout_constraintTop_toBottomOf="@+id/btn_save_area" />
-
-            <Button
                 android:id="@+id/btn_add_sp_area"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -429,6 +442,24 @@
                 android:layout_height="wrap_content"
                 android:text="保存特殊区域"
                 app:layout_constraintTop_toBottomOf="@+id/btn_add_sp_area" />
+
+            <Button
+                android:id="@+id/btn_add_reflector"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="添加反光板" />
+
+            <Button
+                android:id="@+id/btn_edit_reflector"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="编辑反光板" />
+
+            <Button
+                android:id="@+id/btn_save_reflector"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="保存反光板" />
 
         </LinearLayout>
     </ScrollView>

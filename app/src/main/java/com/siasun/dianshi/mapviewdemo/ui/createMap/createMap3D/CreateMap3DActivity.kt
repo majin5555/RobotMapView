@@ -291,4 +291,39 @@ class CreateMap3DActivity :
             }
         }).create().show()
     }
+
+//    fun leftMulYaw(a: Pose, d: Double) {
+//        val c = cos(d)
+//        val s = sin(d)
+//
+//        // t' = Rz(d) * t
+//        val x: Double = a.x
+//        val y: Double = a.y
+//        a.x = c * x - s * y
+//        a.y = s * x + c * y
+//
+//        // R' = Rz(d) * R  (ZYX Euler)
+//        val cr = cos(a.r)
+//        val sr = sin(a.r)
+//        val cp = cos(a.p)
+//        val sp = sin(a.p)
+//        val cy = cos(a.yaw)
+//        val sy = sin(a.yaw)
+//
+//        // 原始旋转矩阵关键元素
+//        val R00 = cy * cp
+//        val R10 = sy * cp
+//        val R20 = -sp
+//        val R21 = cp * sr
+//        val R22 = cp * cr
+//
+//        // 左乘后更新 row0, row1
+//        val R00n = c * R00 - s * R10
+//        val R10n = s * R00 + c * R10
+//
+//        // 重新提取 ZYX 欧拉角
+//        a.p = asin(-R20)
+//        a.yaw = atan2(R10n, R00n)
+//        a.r = atan2(R21, R22)
+//    }
 }

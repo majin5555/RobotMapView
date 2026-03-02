@@ -36,4 +36,6 @@ enum class WorkMode {
     MODE_DRAG_POSITION,// 拖拽定位模式
     MODE_CREATE_MAP,       // 创建地图模式
     MODE_EXTEND_MAP_ADD_REGION, // 扩展地图增加区域模式
+    WORK_MODE_ADD_REFLECTOR_AREA,//添加反光区域
+    WORK_MODE_EDIT_REFLECTOR //编辑反光板模式
 }

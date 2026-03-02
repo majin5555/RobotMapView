@@ -6,9 +6,11 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.util.Log
 import com.siasun.dianshi.R
 import com.siasun.dianshi.view.WorkMode
 import com.siasun.dianshi.view.SlamWareBaseView
+import org.apache.commons.math3.analysis.function.Logit
 import java.lang.ref.WeakReference
 
 /**
@@ -51,12 +53,14 @@ class RobotViewCreateMap<T : MapViewInterface>(context: Context?, val parent: We
         val bitmap = robotBitmap ?: return
 
         val p = mapView.worldToScreen(
-            mapView.robotPose[0],
-            mapView.robotPose[1]
+            mapView.robotPose[0], mapView.robotPose[1]
         )
 
         canvas.translate(p.x, p.y)
-        canvas.rotate(-Math.toDegrees(mapView.robotPose[2].toDouble()).toFloat())
+        canvas.rotate(
+            -Math.toDegrees(mapView.robotPose[2].toDouble() - mapView.rotationRadians.toDouble())
+                .toFloat()
+        )
         canvas.drawBitmap(bitmap, -bitmap.width / 2f, -bitmap.height / 2f, robotPaint)
         canvas.restore()
     }

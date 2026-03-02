@@ -8,7 +8,9 @@ import android.graphics.Paint
 import android.graphics.PointF
 import android.graphics.RectF
 import android.view.MotionEvent
+import android.view.ViewConfiguration
 import java.lang.ref.WeakReference
+import kotlin.math.abs
 
 /**
  * 噪点擦除视图
@@ -31,8 +33,22 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
     private var rectRight = 0f
     private var rectBottom = 0f
 
+    // 存储所有绘制的矩形（世界坐标）
+    private val rectList = ArrayList<RectF>()
+
     // 是否正在绘制
     private var isDrawing = false
+    
+    // 最小滑动距离，用于区分点击和拖动
+    private val touchSlop: Int
+
+    // 是否是3D模式
+    private var is3D = false
+
+    init {
+        val configuration = ViewConfiguration.get(context!!)
+        touchSlop = configuration.scaledTouchSlop
+    }
 
     // 绘图画笔 - 使用伴生对象创建静态实例，避免重复创建
     companion object {
@@ -44,7 +60,7 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
     }
 
     // 监听器 - 使用WeakReference防止内存泄漏
-    private var onRemoveNoiseListener: OnRemoveNoiseListener? = null
+//    private var onRemoveNoiseListener: OnRemoveNoiseListener? = null
 
     // 复用的PointF对象，减少内存分配
     private val leftTopPoint = PointF()
@@ -60,10 +76,19 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
         if (currentWorkMode == mode) return // 避免重复设置
 
         currentWorkMode = mode
-        // 如果不是擦除噪点模式，重置绘制状态
-        if (mode != WorkMode.MODE_REMOVE_NOISE) {
-            resetDrawingState()
-        }
+        // 任何模式下都只重置绘制状态，不清除已绘制的矩形
+        isDrawing = false
+        startPoint.set(0f, 0f)
+        endPoint.set(0f, 0f)
+        resetRect()
+        invalidate()
+    }
+
+    /**
+     * 设置是否是3D模式
+     */
+    fun set3D(is3D: Boolean) {
+        this.is3D = is3D
     }
 
     /**
@@ -74,7 +99,15 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
         startPoint.set(0f, 0f)
         endPoint.set(0f, 0f)
         resetRect()
+        rectList.clear()
         invalidate()
+    }
+
+    /**
+     * 获取所有绘制的噪点区域（世界坐标）
+     */
+    fun getRects(): List<RectF> {
+        return ArrayList(rectList)
     }
 
     /**
@@ -94,24 +127,30 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
         rectBottom = 0f
     }
 
-    /**
-     * 擦除噪点监听器接口
-     */
-    interface OnRemoveNoiseListener {
-        /**
-         * 当用户完成噪点擦除操作时调用
-         * @param leftTop 矩形左上角的屏幕坐标
-         * @param rightBottom 矩形右下角的屏幕坐标
-         */
-        fun onRemoveNoise(leftTop: PointF, rightBottom: PointF)
-    }
+//    /**
+//     * 擦除噪点监听器接口
+//     */
+//    interface OnRemoveNoiseListener {
+//        /**
+//         * 当用户完成噪点擦除操作时调用
+//         * @param leftTop 矩形左上角的屏幕坐标
+//         * @param rightBottom 矩形右下角的屏幕坐标
+//         */
+//        fun onRemoveNoise(leftTop: PointF, rightBottom: PointF)
+//
+//        /**
+//         * 当用户删除已绘制的噪点区域时调用
+//         * @param rect 被删除的矩形（屏幕坐标）
+//         */
+//        fun onRemoveNoiseDeleted(rect: RectF)
+//    }
 
     /**
      * 设置擦除噪点监听器
      */
-    fun setOnRemoveNoiseListener(listener: OnRemoveNoiseListener?) {
-        onRemoveNoiseListener = listener
-    }
+//    fun setOnRemoveNoiseListener(listener: OnRemoveNoiseListener?) {
+//        onRemoveNoiseListener = listener
+//    }
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -174,6 +213,18 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
     private fun handleActionUp(event: MotionEvent) {
         if (!isDrawing) return
 
+        // 检查是否为点击事件（移动距离小于 touchSlop）
+        val dx = abs(event.x - startPoint.x)
+        val dy = abs(event.y - startPoint.y)
+        if (dx < touchSlop && dy < touchSlop) {
+            // 是点击事件，检查是否点击了某个矩形
+            handleTap(event.x, event.y)
+            isDrawing = false
+            resetRect()
+            invalidate()
+            return
+        }
+
         // 检查触摸点是否在地图范围内
         val x = event.x.coerceIn(0f, width.toFloat())
         val y = event.y.coerceIn(0f, height.toFloat())
@@ -181,12 +232,53 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
         // 更新结束点并计算矩形
         endPoint.set(x, y)
         updateRectFromPoints()
-        invalidate()
 
-        // 触发回调
-        leftTopPoint.set(rectLeft, rectTop)
-        rightBottomPoint.set(rectRight, rectBottom)
-        onRemoveNoiseListener?.onRemoveNoise(leftTopPoint, rightBottomPoint)
+        // 将当前矩形添加到列表中
+        if (rectLeft != rectRight && rectTop != rectBottom) {
+            val mapView = mParent.get()
+            if (mapView != null) {
+                // 转换为世界坐标存储
+                val leftTop = mapView.screenToWorld(rectLeft, rectTop)
+                val rightBottom = mapView.screenToWorld(rectRight, rectBottom)
+
+                // 3D模式下只支持绘制1个框
+                if (is3D) {
+                    rectList.clear()
+                }
+                rectList.add(RectF(leftTop.x, leftTop.y, rightBottom.x, rightBottom.y))
+            }
+        }
+
+        // 重置当前绘制状态，准备下一次绘制
+        isDrawing = false
+        resetRect()
+        invalidate()
+    }
+
+    /**
+     * 处理点击事件，删除被点击的矩形
+     */
+    private fun handleTap(x: Float, y: Float) {
+        val mapView = mParent.get() ?: return
+        
+        // 倒序遍历，优先删除上层（后绘制）的矩形
+        for (i in rectList.indices.reversed()) {
+            val rect = rectList[i]
+            // 将存储的世界坐标矩形转换为屏幕坐标进行判断
+            val leftTop = mapView.worldToScreen(rect.left, rect.top)
+            val rightBottom = mapView.worldToScreen(rect.right, rect.bottom)
+            
+            // 构造屏幕坐标矩形（处理可能的坐标翻转）
+            val screenLeft = leftTop.x.coerceAtMost(rightBottom.x)
+            val screenTop = leftTop.y.coerceAtMost(rightBottom.y)
+            val screenRight = leftTop.x.coerceAtLeast(rightBottom.x)
+            val screenBottom = leftTop.y.coerceAtLeast(rightBottom.y)
+            
+            if (x >= screenLeft && x <= screenRight && y >= screenTop && y <= screenBottom) {
+                rectList.removeAt(i)
+                break // 每次点击只删除一个
+            }
+        }
     }
 
     /**
@@ -203,8 +295,26 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        // 只要矩形有效就绘制，无论是绘制中还是绘制完成后
-        if (rectLeft != rectRight && rectTop != rectBottom) {
+        val mapView = mParent.get() ?: return
+
+        // 绘制所有已保存的矩形
+        for (rect in rectList) {
+            // 将世界坐标转换为屏幕坐标
+            val leftTop = mapView.worldToScreen(rect.left, rect.top)
+            val rightBottom = mapView.worldToScreen(rect.right, rect.bottom)
+            
+            // 处理坐标翻转
+            val screenLeft = leftTop.x.coerceAtMost(rightBottom.x)
+            val screenTop = leftTop.y.coerceAtMost(rightBottom.y)
+            val screenRight = leftTop.x.coerceAtLeast(rightBottom.x)
+            val screenBottom = leftTop.y.coerceAtLeast(rightBottom.y)
+            
+            tempRect.set(screenLeft, screenTop, screenRight, screenBottom)
+            canvas.drawRect(tempRect, paint)
+        }
+
+        // 绘制当前正在拖动的矩形
+        if (isDrawing && rectLeft != rectRight && rectTop != rectBottom) {
             tempRect.set(rectLeft, rectTop, rectRight, rectBottom)
             canvas.drawRect(tempRect, paint)
         }
@@ -214,7 +324,7 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
         super.onDetachedFromWindow()
 
         // 清理资源，防止内存泄漏
-        onRemoveNoiseListener = null
+//        onRemoveNoiseListener = null
 
         // 重置状态
         resetDrawingState()

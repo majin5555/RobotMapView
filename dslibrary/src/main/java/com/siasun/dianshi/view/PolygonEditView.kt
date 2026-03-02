@@ -83,7 +83,7 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
             color = Color.BLACK
             isAntiAlias = true
         }
-        
+
         // 填充区域的画笔 - 透明蓝色
         private val fillPaint = Paint().apply {
             style = Paint.Style.FILL
@@ -183,7 +183,7 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
         val halfSize = sizePx / 2f
 
 
-        val topLeft =  mapView.screenToWorld(centerX - halfSize,centerY - halfSize)
+        val topLeft = mapView.screenToWorld(centerX - halfSize, centerY - halfSize)
         val topRight = mapView.screenToWorld(centerX + halfSize, centerY - halfSize)
         val bottomRight = mapView.screenToWorld(centerX + halfSize, centerY + halfSize)
         val bottomLeft = mapView.screenToWorld(centerX - halfSize, centerY + halfSize)
@@ -191,10 +191,10 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
 
         newArea.m_VertexPnt.apply {
             clear()
-            add(PointNew(topLeft.x,topLeft.y))
-            add(PointNew(topRight.x,topRight.y))
-            add(PointNew(bottomRight.x,bottomRight.y))
-            add(PointNew(bottomLeft.x,bottomLeft.y))
+            add(PointNew(topLeft.x, topLeft.y))
+            add(PointNew(topRight.x, topRight.y))
+            add(PointNew(bottomRight.x, bottomRight.y))
+            add(PointNew(bottomLeft.x, bottomLeft.y))
 
         }
 
@@ -453,8 +453,8 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
         // 确保删除后还有至少3个顶点，保持多边形有效
         if (points.size <= 3) return
 
-        // 删除边上的第二个点（即edgeIndex+1位置的点），这样就删除了edgeIndex对应的边
-        points.removeAt((edgeIndex + 1) % points.size)
+        // 删除边上的第二个点（即edgeIndex位置的点），这样就删除了edgeIndex对应的边
+        points.removeAt((edgeIndex) % points.size)
         // 通知监听器删除了边
         onCleanAreaEditListener?.onEdgeRemoved(area, edgeIndex)
         invalidate()
