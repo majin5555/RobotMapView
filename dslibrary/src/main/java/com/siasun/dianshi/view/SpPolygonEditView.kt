@@ -442,8 +442,15 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 if (isDragging && selectedPointIndex != -1) {
+                    val mapView = mapViewRef?.get() ?: return false
+                    // 检查是否在地图范围内
+                    val isInsideMap = mapView.isInsideMap(x, y)
                     // 通知监听器顶点拖动结束
-                    onSpAreaEditListener?.onVertexDragEnd(selectedArea!!, selectedPointIndex)
+                    onSpAreaEditListener?.onVertexDragEnd(
+                        selectedArea!!,
+                        selectedPointIndex,
+                        isInsideMap
+                    )
                     handled = true
                 }
                 isDragging = false
@@ -649,7 +656,7 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
         fun onVertexDragging(area: SpArea, vertexIndex: Int, newX: Float, newY: Float) {}
 
         // 顶点拖动结束
-        fun onVertexDragEnd(area: SpArea, vertexIndex: Int)
+        fun onVertexDragEnd(area: SpArea, vertexIndex: Int, isInsideMap: Boolean)
 
         // 添加了新顶点
         fun onVertexAdded(area: SpArea, vertexIndex: Int, x: Float, y: Float)
