@@ -96,6 +96,20 @@ class PngMapView : View {
             postInvalidate()
         }
     }
+
+    /**
+     * 获取地图位图宽度
+     */
+    fun getBitmapWidth(): Int {
+        return mPngBitmap?.width ?: 0
+    }
+
+    /**
+     * 获取地图位图高度
+     */
+    fun getBitmapHeight(): Int {
+        return mPngBitmap?.height ?: 0
+    }
     
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()

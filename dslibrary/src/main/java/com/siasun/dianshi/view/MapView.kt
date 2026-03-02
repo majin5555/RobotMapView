@@ -101,6 +101,40 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     var mReflectMapView: ReflectMapView? = null //反光板地图view
 
     /**
+     * 获取地图位图宽度
+     */
+    fun getPngBitmapWidth(): Int {
+        return mPngMapView?.getBitmapWidth() ?: 0
+    }
+
+    /**
+     * 获取地图位图高度
+     */
+    fun getPngBitmapHeight(): Int {
+        return mPngMapView?.getBitmapHeight() ?: 0
+    }
+
+    /**
+     * 判断屏幕坐标(x,y)是否在地图图片范围内
+     */
+    fun isInsideMap(x: Float, y: Float): Boolean {
+        val pngMapView = mPngMapView ?: return false
+        val width = pngMapView.getBitmapWidth()
+        val height = pngMapView.getBitmapHeight()
+        if (width <= 0 || height <= 0) return false
+
+        val invertMatrix = Matrix()
+        mOuterMatrix.invert(invertMatrix)
+
+        val points = floatArrayOf(x, y)
+        invertMatrix.mapPoints(points)
+        val mapX = points[0]
+        val mapY = points[1]
+
+        return mapX >= 0 && mapX <= width && mapY >= 0 && mapY <= height
+    }
+
+    /**
      * *************** 监听器   start ***********************
      */
 

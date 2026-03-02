@@ -543,11 +543,28 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 if (isDragging && selectedPointIndex != -1) {
+                    val mapView = mapViewRef.get() ?: return false
+                    // 检查是否在地图范围内
+                    val isInsideMap = mapView.isInsideMap(x, y)
                     // 通知监听器顶点拖动结束
-                    onCleanAreaEditListener?.onVertexDragEnd(selectedArea!!, selectedPointIndex)
+                    onCleanAreaEditListener?.onVertexDragEnd(
+                        selectedArea!!,
+                        selectedPointIndex,
+                        isInsideMap
+                    )
                     handled = true
                 } else if (isAreaDragging && selectedArea != null) {
-                    onCleanAreaEditListener?.onAreaDragEnd(selectedArea!!)
+                    val mapView = mapViewRef.get() ?: return false
+                    // 检查是否在地图范围内
+                    var isAllInside = true
+                    for (point in selectedArea!!.m_VertexPnt) {
+                        val screenPoint = mapView.worldToScreen(point.X, point.Y)
+                        if (!mapView.isInsideMap(screenPoint.x, screenPoint.y)) {
+                            isAllInside = false
+                            break
+                        }
+                    }
+                    onCleanAreaEditListener?.onAreaDragEnd(selectedArea!!, isAllInside)
                     handled = true
                 }
                 isDragging = false
@@ -771,7 +788,7 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
         fun onVertexDragging(area: CleanAreaNew, vertexIndex: Int, newX: Float, newY: Float) {}
 
         // 顶点拖动结束
-        fun onVertexDragEnd(area: CleanAreaNew, vertexIndex: Int)
+        fun onVertexDragEnd(area: CleanAreaNew, vertexIndex: Int, isInsideMap: Boolean)
 
         // 添加了新顶点
         fun onVertexAdded(area: CleanAreaNew, vertexIndex: Int, x: Float, y: Float)
@@ -789,6 +806,6 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
         fun onAreaDragging(area: CleanAreaNew) {}
 
         // 区域拖动结束
-        fun onAreaDragEnd(area: CleanAreaNew) {}
+        fun onAreaDragEnd(area: CleanAreaNew, isInsideMap: Boolean) {}
     }
 }

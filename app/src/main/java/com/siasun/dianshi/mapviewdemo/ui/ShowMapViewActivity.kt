@@ -110,6 +110,9 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //                mBinding.mapView.setDragPositionData( )
 //
 //            }
+//            override fun onAreaDragEnd(area: CleanAreaNew, isInsideMap: Boolean) {
+//                LogUtil.d("onAreaDragEnd area $area isInsideMap $isInsideMap")
+//            }
 //        })
 
 //        mBinding.btnAddTeachPath.onClick {
@@ -214,13 +217,13 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.btnMove.setOnClickListener {
             mBinding.mapView.setWorkMode(WorkMode.MODE_SHOW_MAP)
         }
-//
+
 //        initMergedPose()
 //        initStation()
 //        iniVirtualWall()
-        initRemoveNoise()
+//        initRemoveNoise()
 //        initPostingArea()
-//        initCleanArea()
+          initCleanArea()
 //        initReflector()
 //        initElevator()
 //        initPose()
@@ -892,8 +895,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.mapView.setOnCleanAreaEditListener(object :
             PolygonEditView.OnCleanAreaEditListener {
 
-            override fun onVertexDragEnd(area: CleanAreaNew, vertexIndex: Int) {
-                LogUtil.d("onVertexDragEnd area $area")
+            override fun onVertexDragEnd(area: CleanAreaNew, vertexIndex: Int, isInsideMap: Boolean) {
+                LogUtil.d("onVertexDragEnd area $area isInsideMap $isInsideMap")
                 if (area.routeType == AreaType.AREA_AUTO) {
                     MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
                     LogUtil.i(
@@ -928,6 +931,17 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 if (area.routeType == AreaType.AREA_AUTO) {
                     MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
                     LogUtil.i("创建了新的清扫区域  申请路径规划 ${area.toJson()}", null, TAG_PP)
+                }
+            }
+
+            override fun onAreaDragEnd(area: CleanAreaNew, isInsideMap: Boolean) {
+                LogUtil.d("onAreaDragEnd area $area isInsideMap $isInsideMap")
+                if (!isInsideMap) {
+                    ToastUtils.showLong("区域超出地图范围")
+                }
+                if (area.routeType == AreaType.AREA_AUTO) {
+                    MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
+                    LogUtil.i("编辑区域onAreaDragEnd  申请路径规划 ${area.toJson()}", null, TAG_PP)
                 }
             }
         })
