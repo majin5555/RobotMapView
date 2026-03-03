@@ -971,13 +971,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      */
     fun getRemoveNoiseRects(): List<RectF> {
         val rects = mRemoveNoiseView?.getRects() ?: ArrayList()
-        val worldRects = ArrayList<RectF>()
-        for (rect in rects) {
-            val leftTop = screenToWorld(rect.left, rect.top)
-            val rightBottom = screenToWorld(rect.right, rect.bottom)
-            worldRects.add(RectF(leftTop.x, leftTop.y, rightBottom.x, rightBottom.y))
-        }
-        return worldRects
+        return rects
     }
 
     /**
