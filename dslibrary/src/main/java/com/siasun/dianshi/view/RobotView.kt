@@ -5,10 +5,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.Paint
-import android.util.Log
 import com.siasun.dianshi.R
 import java.lang.ref.WeakReference
 
@@ -19,7 +17,6 @@ import java.lang.ref.WeakReference
 class RobotView(context: Context?, val parent: WeakReference<MapView>) :
     SlamWareBaseView<MapView>(context, parent) {
 
-    private var mPaint: Paint? = null
     private var robotPaint: Paint? = null
     private var agvPose: DoubleArray? = null
     private val onRobotMatrix = Matrix()
@@ -35,13 +32,6 @@ class RobotView(context: Context?, val parent: WeakReference<MapView>) :
     }
 
     private fun initPaints() {
-        mPaint = Paint().apply {
-            strokeWidth = 1f
-            isAntiAlias = true
-            style = Paint.Style.FILL
-            alpha = 100
-            color = Color.parseColor("#d2f0f4")
-        }
         robotPaint = Paint().apply {
             isAntiAlias = true
             alpha = 255 // 完全不透明
@@ -99,9 +89,6 @@ class RobotView(context: Context?, val parent: WeakReference<MapView>) :
                 bitmap.recycle()
             }
         }
-        // 清理Paint对象
-        mPaint?.reset()
-        mPaint = null
         robotPaint?.reset()
         robotPaint = null
         // 清理其他资源

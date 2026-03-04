@@ -2,15 +2,20 @@ package com.siasun.dianshi.view
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.PointF
 import android.view.MotionEvent
 import com.ngu.lcmtypes.laser_t
+import com.siasun.dianshi.R
 import java.lang.ref.WeakReference
 import kotlin.math.atan2
 import kotlin.math.cos
+import kotlin.math.hypot
 import kotlin.math.sin
 
 /**
@@ -45,6 +50,12 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
     private var isRotating = false
     private var lastFingerRotation = 0f
     private var needResetAnchor = false
+    private val onRobotMatrix = Matrix()
+
+    // 机器人相关
+    private val robotBitmap: Bitmap? by lazy {
+        BitmapFactory.decodeResource(resources, R.mipmap.current_location)
+    }
 
     companion object {
         private val paint: Paint = Paint().apply {
@@ -52,15 +63,20 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
             strokeWidth = 2f
             style = Paint.Style.FILL
         }
+        private val robotPaint = Paint().apply {
+            isAntiAlias = true
+            alpha = 255 // 完全不透明
+        }
     }
 
 
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        val mapView = parent.get() ?: return
+
         // 只有在绘制启用状态下才绘制点云
         if (cloudList.isNotEmpty()) {
-            val mapView = parent.get() ?: return
 
             // 预分配数组大小
             val pointsArray = FloatArray(cloudList.size * 2)
@@ -84,6 +100,36 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
             }
 
             canvas.drawPoints(pointsArray, paint)
+
+        }
+
+        dragRobotPose.let { pose ->
+            robotBitmap?.let { bitmap ->
+                // 重置变换矩阵，避免变换累积导致的跳动
+                onRobotMatrix.reset()
+                // 将世界坐标转换为屏幕坐标
+                val screenPos = mapView.worldToScreen(pose.x, pose.y)
+
+                // 计算图标中心点偏移，使图标中心与坐标点重合
+                val offsetX = -bitmap.width / 2f
+                val offsetY = -bitmap.height / 2f
+
+                // 设置变换矩阵：
+                // 1. 先平移到原点（以图标中心为锚点）
+                onRobotMatrix.postTranslate(offsetX, offsetY)
+                // 2. 然后应用旋转（以图标中心为轴心）
+                onRobotMatrix.postRotate(
+                    -pose.theta,
+                    0f, 0f // 旋转轴心为图标中心
+                )
+                // 3. 最后平移到屏幕目标位置
+                onRobotMatrix.postTranslate(screenPos.x, screenPos.y)
+
+                // 绘制机器人图标
+                robotPaint?.let {
+                    canvas.drawBitmap(bitmap, onRobotMatrix, it)
+                }
+            }
         }
     }
 
@@ -152,69 +198,97 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
 
         when (event.action and MotionEvent.ACTION_MASK) {
             MotionEvent.ACTION_DOWN -> {
-                isDragging = true
-                needResetAnchor = false
-                val worldPoint = mapView.screenToWorld(event.x, event.y)
-                lastTouchX = worldPoint.x
-                lastTouchY = worldPoint.y
-                return true
+                // 判断点击位置是否在机器人附近
+                val screenPos = mapView.worldToScreen(dragRobotPose.x, dragRobotPose.y)
+                val dist = hypot(event.x - screenPos.x, event.y - screenPos.y)
+                // 阈值设为80像素，可根据屏幕密度调整
+                if (dist < 80) {
+                    isDragging = true
+                    needResetAnchor = false
+                    val worldPoint = mapView.screenToWorld(event.x, event.y)
+                    lastTouchX = worldPoint.x
+                    lastTouchY = worldPoint.y
+                    return true
+                } else {
+                    isDragging = false
+                    // 点击非机器人区域，交给MapView处理手势（平移、缩放、旋转）
+                    mapView.processMapGestures(event)
+                    return true
+                }
             }
 
             MotionEvent.ACTION_POINTER_DOWN -> {
-                if (event.pointerCount == 2) {
-                    isRotating = true
-                    lastFingerRotation = rotation(event)
+                if (isDragging) {
+                    if (event.pointerCount == 2) {
+                        isRotating = true
+                        lastFingerRotation = rotation(event)
+                    }
+                } else {
+                    mapView.processMapGestures(event)
                 }
                 return true
             }
 
             MotionEvent.ACTION_MOVE -> {
-                if (isRotating && event.pointerCount == 2) {
-                    val currentRotation = rotation(event)
-                    val delta = currentRotation - lastFingerRotation
-                    offsetRotation -= delta
+                if (isDragging) {
+                    if (isRotating && event.pointerCount == 2) {
+                        val currentRotation = rotation(event)
+                        val delta = currentRotation - lastFingerRotation
+                        offsetRotation -= delta
 
-                    lastFingerRotation = currentRotation
-                    updateDragRobotPose()
-                    postInvalidate()
-                    return true
-                }
-
-                if (isDragging && !isRotating) {
-                    val worldPoint = mapView.screenToWorld(event.x, event.y)
-
-                    if (needResetAnchor) {
-                        lastTouchX = worldPoint.x
-                        lastTouchY = worldPoint.y
-                        needResetAnchor = false
+                        lastFingerRotation = currentRotation
+                        updateDragRobotPose()
+                        postInvalidate()
                         return true
                     }
 
-                    val dx = worldPoint.x - lastTouchX
-                    val dy = worldPoint.y - lastTouchY
+                    if (!isRotating) {
+                        val worldPoint = mapView.screenToWorld(event.x, event.y)
 
-                    // 累加偏移量
-                    offsetX += dx
-                    offsetY += dy
+                        if (needResetAnchor) {
+                            lastTouchX = worldPoint.x
+                            lastTouchY = worldPoint.y
+                            needResetAnchor = false
+                            return true
+                        }
 
-                    lastTouchX = worldPoint.x
-                    lastTouchY = worldPoint.y
-                    updateDragRobotPose()
-                    postInvalidate()
-                    return true
+                        val dx = worldPoint.x - lastTouchX
+                        val dy = worldPoint.y - lastTouchY
+
+                        // 累加偏移量
+                        offsetX += dx
+                        offsetY += dy
+
+                        lastTouchX = worldPoint.x
+                        lastTouchY = worldPoint.y
+                        updateDragRobotPose()
+                        postInvalidate()
+                        return true
+                    }
+                } else {
+                    mapView.processMapGestures(event)
                 }
+                return true
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                isDragging = false
-                isRotating = false
+                if (isDragging) {
+                    isDragging = false
+                    isRotating = false
+                } else {
+                    mapView.processMapGestures(event)
+                }
                 return true
             }
 
             MotionEvent.ACTION_POINTER_UP -> {
-                if (event.pointerCount == 2) {
-                    isRotating = false
-                    needResetAnchor = true
+                if (isDragging) {
+                    if (event.pointerCount == 2) {
+                        isRotating = false
+                        needResetAnchor = true
+                    }
+                } else {
+                    mapView.processMapGestures(event)
                 }
                 return true
             }

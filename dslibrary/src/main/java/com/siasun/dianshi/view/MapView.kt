@@ -282,7 +282,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mMapNameView?.setScreen(point)
 
         // 如果是擦除噪点模式、创建定位区域模式、编辑定位区域模式、删除定位区域模式、编辑清扫区域模式或创建清扫区域模式，或者路径编辑模式，或者创建路径模式
-        if (currentWorkMode == WorkMode.MODE_REMOVE_NOISE || currentWorkMode == WorkMode.MODE_POSITING_AREA_ADD || currentWorkMode == WorkMode.MODE_POSITING_AREA_EDIT || currentWorkMode == WorkMode.MODE_POSITING_AREA_DELETE || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_EDIT || currentWorkMode == WorkMode.MODE_PATH_EDIT || currentWorkMode == WorkMode.MODE_PATH_CREATE || currentWorkMode == WorkMode.MODE_DRAG_POSITION || currentWorkMode == WorkMode.WORK_MODE_ADD_REFLECTOR_AREA || currentWorkMode == WorkMode.WORK_MODE_EDIT_REFLECTOR) {
+        if (currentWorkMode == WorkMode.MODE_REMOVE_NOISE || currentWorkMode == WorkMode.MODE_POSITING_AREA_ADD || currentWorkMode == WorkMode.MODE_POSITING_AREA_EDIT || currentWorkMode == WorkMode.MODE_POSITING_AREA_DELETE || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_EDIT || currentWorkMode == WorkMode.MODE_PATH_EDIT || currentWorkMode == WorkMode.MODE_PATH_CREATE || currentWorkMode == WorkMode.WORK_MODE_ADD_REFLECTOR_AREA || currentWorkMode == WorkMode.WORK_MODE_EDIT_REFLECTOR) {
             // 让事件传递给子视图（如RemoveNoiseView、PostingAreasView或PathView）处理
             // 先调用父类的onTouchEvent让事件传递给子视图
             super.onTouchEvent(event)
@@ -537,6 +537,13 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      * *******************      外部接口        **************
      * ******************************************************
      */
+
+    /**
+     * 手动处理手势事件（供子View调用，以支持特定模式下的地图缩放等）
+     */
+    fun processMapGestures(event: MotionEvent) {
+        mGestureDetector?.onTouchEvent(event, this)
+    }
 
     /**
      * 设置工作模式
@@ -1154,7 +1161,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      * 设置是否是3D模式
      */
     fun set3D(is3D: Boolean) {
-       mRemoveNoiseView?.set3D(is3D)
+        mRemoveNoiseView?.set3D(is3D)
     }
 
 //    /**
