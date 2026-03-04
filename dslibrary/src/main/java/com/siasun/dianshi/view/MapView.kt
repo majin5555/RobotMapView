@@ -332,7 +332,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     }
 
     private fun singleTap(event: MotionEvent) {
-        mSingleTapListener?.onSingleTapListener(screenToWorld(event.x, event.y))
+        mSingleTapListener?.onSingleTapListener(mMapScale, screenToWorld(event.x, event.y))
     }
 
     private fun setMatrix(matrix: Matrix) {
@@ -567,6 +567,39 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     }
 
     /**
+     * 设置地图状态（固定缩放级别和固定位置）
+     * @param scale 缩放级别
+     * @param centerX 世界坐标X，将置于视图中心
+     * @param centerY 世界坐标Y，将置于视图中心
+     */
+    fun setMapStatus(scale: Float, centerX: Float, centerY: Float) {
+        if (VIEW_WIDTH == 0 || VIEW_HEIGHT == 0) return
+
+        var finalScale = scale
+        // 限制缩放范围
+        if (finalScale > mMaxMapScale) finalScale = mMaxMapScale
+        if (finalScale < mMinMapScale) finalScale = mMinMapScale
+
+        // 获取地图像素坐标
+        val mapPixelPoint = synchronized(mSrf.mapData) {
+            mSrf.worldToScreen(centerX, centerY)
+        }
+
+        // 计算平移量，使目标点位于视图中心
+        // ViewX = MapPixelX * scale + TranslateX
+        // TranslateX = ViewCenter - MapPixelX * scale
+        val tx = (VIEW_WIDTH / 2f) - (mapPixelPoint.x * finalScale)
+        val ty = (VIEW_HEIGHT / 2f) - (mapPixelPoint.y * finalScale)
+
+        val matrix = Matrix()
+        matrix.postScale(finalScale, finalScale)
+        matrix.postTranslate(tx, ty)
+
+        // 更新矩阵
+        setMatrixWithScale(matrix, finalScale)
+    }
+
+    /**
      * 获取当前工作模式
      */
     override fun getCurrentWorkMode(): WorkMode {
@@ -591,6 +624,29 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
                         resource.width.toFloat(),
                     )
                     setBitmap(mPngMapData, resource)
+                }
+            })
+    }
+
+    /**
+     * 加载地图
+     * pngPath png文件路径
+     * yamlPath yaml文件路径
+     */
+    fun loadMap(pngPath: String, yamlPath: String, scale: Float, centerX: Float, centerY: Float) {
+        val file = File(pngPath)
+        Glide.with(this).asBitmap().load(file).skipMemoryCache(true)
+            .diskCacheStrategy(DiskCacheStrategy.NONE).into(object : SimpleTarget<Bitmap?>() {
+                override fun onResourceReady(
+                    resource: Bitmap, transition: Transition<in Bitmap?>?
+                ) {
+                    val mPngMapData = YamlNew().loadYaml(
+                        yamlPath,
+                        resource.height.toFloat(),
+                        resource.width.toFloat(),
+                    )
+                    setBitmap(mPngMapData, resource)
+                    setMapStatus(scale, centerX, centerY)
                 }
             })
     }
@@ -1198,9 +1254,11 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mSingleTapListener = listener
     }
 
+
     interface ISingleTapListener {
-        fun onSingleTapListener(point: PointF)
+        fun onSingleTapListener(mMapScale: Float, point: PointF)
     }
+
 
 //    /**
 //     * 擦除噪点监听器接口

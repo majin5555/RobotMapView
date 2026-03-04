@@ -126,9 +126,11 @@ public class SlamGestureDetector {
                 break;
             case MotionEvent.ACTION_UP:
                 // 第一根放下的手指抬起
-                if (touchMode == MODE_TAP) {
-                    mListener.onMapTap(event);
-                }
+//                if (touchMode == MODE_TAP) {
+//                    mListener.onMapTap(event);
+//                }
+                mListener.onMapTap(event);
+
                 multiFingers = false;
                 clear();
                 break;
