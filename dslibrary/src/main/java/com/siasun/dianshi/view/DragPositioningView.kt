@@ -119,8 +119,7 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
                 onRobotMatrix.postTranslate(offsetX, offsetY)
                 // 2. 然后应用旋转（以图标中心为轴心）
                 onRobotMatrix.postRotate(
-                    -pose.theta,
-                    0f, 0f // 旋转轴心为图标中心
+                    -pose.theta, 0f, 0f // 旋转轴心为图标中心
                 )
                 // 3. 最后平移到屏幕目标位置
                 onRobotMatrix.postTranslate(screenPos.x, screenPos.y)
@@ -180,6 +179,8 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
      */
     fun setWorkMode(mode: WorkMode) {
         currentWorkMode = mode
+        // 禁用机器人图标绘制
+        parent.get()?.mRobotView?.setDrawingEnabled(false)
         if (mode != WorkMode.MODE_DRAG_POSITION) {
             // 重置偏移量
             offsetX = 0f

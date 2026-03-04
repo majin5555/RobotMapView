@@ -21,6 +21,9 @@ class RobotView(context: Context?, val parent: WeakReference<MapView>) :
     private var agvPose: DoubleArray? = null
     private val onRobotMatrix = Matrix()
 
+    // 控制是否绘制
+    private var isDrawingEnabled: Boolean = true
+
     // 机器人相关
     private val robotBitmap: Bitmap? by lazy {
         BitmapFactory.decodeResource(resources, R.mipmap.current_location)
@@ -41,32 +44,33 @@ class RobotView(context: Context?, val parent: WeakReference<MapView>) :
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val mapView = parent.get() as? MapView ?: return
+        if (isDrawingEnabled) {
+            agvPose?.let { pose ->
+                robotBitmap?.let { bitmap ->
+                    // 重置变换矩阵，避免变换累积导致的跳动
+                    onRobotMatrix.reset()
+                    // 将世界坐标转换为屏幕坐标
+                    val screenPos = mapView.worldToScreen(pose[0].toFloat(), pose[1].toFloat())
 
-        agvPose?.let { pose ->
-            robotBitmap?.let { bitmap ->
-                // 重置变换矩阵，避免变换累积导致的跳动
-                onRobotMatrix.reset()
-                // 将世界坐标转换为屏幕坐标
-                val screenPos = mapView.worldToScreen(pose[0].toFloat(), pose[1].toFloat())
+                    // 计算图标中心点偏移，使图标中心与坐标点重合
+                    val offsetX = -bitmap.width / 2f
+                    val offsetY = -bitmap.height / 2f
 
-                // 计算图标中心点偏移，使图标中心与坐标点重合
-                val offsetX = -bitmap.width / 2f
-                val offsetY = -bitmap.height / 2f
+                    // 设置变换矩阵：
+                    // 1. 先平移到原点（以图标中心为锚点）
+                    onRobotMatrix.postTranslate(offsetX, offsetY)
+                    // 2. 然后应用旋转（以图标中心为轴心）
+                    onRobotMatrix.postRotate(
+                        -pose[2].toFloat(),
+                        0f, 0f // 旋转轴心为图标中心
+                    )
+                    // 3. 最后平移到屏幕目标位置
+                    onRobotMatrix.postTranslate(screenPos.x, screenPos.y)
 
-                // 设置变换矩阵：
-                // 1. 先平移到原点（以图标中心为锚点）
-                onRobotMatrix.postTranslate(offsetX, offsetY)
-                // 2. 然后应用旋转（以图标中心为轴心）
-                onRobotMatrix.postRotate(
-                    -pose[2].toFloat(),
-                    0f, 0f // 旋转轴心为图标中心
-                )
-                // 3. 最后平移到屏幕目标位置
-                onRobotMatrix.postTranslate(screenPos.x, screenPos.y)
-
-                // 绘制机器人图标
-                robotPaint?.let {
-                    canvas.drawBitmap(bitmap, onRobotMatrix, it)
+                    // 绘制机器人图标
+                    robotPaint?.let {
+                        canvas.drawBitmap(bitmap, onRobotMatrix, it)
+                    }
                 }
             }
         }
@@ -78,6 +82,14 @@ class RobotView(context: Context?, val parent: WeakReference<MapView>) :
      */
     fun setAgvData(array: DoubleArray) {
         agvPose = array
+        postInvalidate()
+    }
+
+    /**
+     * 设置是否启用绘制
+     */
+    fun setDrawingEnabled(enabled: Boolean) {
+        this.isDrawingEnabled = enabled
         postInvalidate()
     }
 
