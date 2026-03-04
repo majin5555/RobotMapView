@@ -16,6 +16,7 @@ import com.siasun.dianshi.bean.MergedPoseBean
 import com.siasun.dianshi.bean.RequestSaveArea
 import com.siasun.dianshi.bean.RequestSaveCmsWorkArea
 import com.siasun.dianshi.bean.SpArea
+import com.siasun.dianshi.bean.SwitchMapBean
 import com.siasun.dianshi.bean.WorkAreasNew
 import com.siasun.dianshi.bean.toUpload
 import com.siasun.dianshi.network.manager.ApiManager
@@ -310,6 +311,18 @@ class ShowMapViewModel : BaseViewModel() {
         }, successBlock = {
             saveWorksArea.postValue(true)
         })
+    }
+    /**
+     * 通知server切换地图
+     */
+    fun switchMapInfo(map: SwitchMapBean) {
+        launchUIWithResult(responseBlock = {
+            ApiManager.api.switchMap(map)
+        }, errorCall = object : IApiErrorCallback {
+            override fun onError(code: Int?, error: String?) {
+                super.onError(code, error)
+            }
+        }, successBlock = {})
     }
 
 }

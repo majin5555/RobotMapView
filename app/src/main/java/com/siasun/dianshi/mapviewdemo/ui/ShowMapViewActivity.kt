@@ -53,6 +53,7 @@ import com.siasun.dianshi.mapviewdemo.ui.createMap.DragPositionViewActivity
 import com.siasun.dianshi.mapviewdemo.utils.GsonUtil
 import com.siasun.dianshi.mapviewdemo.utils.PathPlanningUtil1
 import com.siasun.dianshi.mapviewdemo.viewmodel.ShowMapViewModel
+import com.siasun.dianshi.network.constant.KEY_NEY_IP
 import com.siasun.dianshi.utils.World
 import com.siasun.dianshi.view.HomeDockView
 import com.siasun.dianshi.view.MapView
@@ -63,6 +64,7 @@ import com.siasun.dianshi.view.SpPolygonEditView
 import com.siasun.dianshi.view.VirtualWallView
 import com.siasun.dianshi.view.WorkMode
 import com.siasun.dianshi.xpop.XpopUtils
+import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -78,7 +80,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     private val mReflectorMaps = mutableListOf<com.siasun.dianshi.bean.ReflectorMapBean>()
 
 
-    val mapId = 1
+    val mapId = 14
     var cleanAreas: MutableList<CleanAreaNew> = mutableListOf()
     var mSpArea: MutableList<SpArea> = mutableListOf()
     var mMixArea: MutableList<WorkAreasNew> = mutableListOf()
@@ -89,6 +91,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
+        MMKV.defaultMMKV().encode(KEY_NEY_IP, "192.168.1.198");
+
         MainController.init()
         //加载地图
         mBinding.mapView.loadMap(
@@ -222,9 +226,9 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initMergedPose()
 //        initStation()
 //        iniVirtualWall()
-//        initRemoveNoise()
+//          initRemoveNoise()
 //        initPostingArea()
-          initCleanArea()
+//        initCleanArea()
 //        initReflector()
 //        initElevator()
 //        initPose()
@@ -937,7 +941,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 CommonWarnDialog.Builder(this@ShowMapViewActivity)
                     .setTitle("提示")
                     .setMsg("确定要删除该顶点吗？")
-                    .setOnCommonWarnDialogListener(object : CommonWarnDialog.Builder.CommonWarnDialogListener {
+                    .setOnCommonWarnDialogListener(object :
+                        CommonWarnDialog.Builder.CommonWarnDialogListener {
                         override fun confirm() {
                             mBinding.mapView.performDeleteVertex(area, vertexIndex)
                         }

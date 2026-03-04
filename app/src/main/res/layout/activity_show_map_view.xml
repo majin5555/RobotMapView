@@ -34,7 +34,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
-
+            <Button
+                android:id="@+id/btn_move"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="平移地图" />
             <Button
                 android:id="@+id/btn_remove_noise_sure"
                 android:layout_width="wrap_content"
@@ -206,12 +210,6 @@
                 android:layout_height="wrap_content"
                 android:text="保存路线"
                 app:layout_constraintTop_toBottomOf="@+id/btn_create_path" />
-
-            <Button
-                android:id="@+id/btn_move"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="平移地图" />
 
 
             <Button
