@@ -370,7 +370,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         }
     }
 
-    fun setCentred() {
+    fun setCentred(isCentred: Boolean = true) {
         val scaledRect = RectF()
         if (VIEW_WIDTH == 0 || VIEW_HEIGHT == 0) {
             // 使用弱引用避免内存泄漏
@@ -388,7 +388,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
                         } else {
                             mapView.viewTreeObserver.removeGlobalOnLayoutListener(this)
                         }
-                        mapView.setCentred()
+                        mapView.setCentred(isCentred)
                     }
                 }
             }
@@ -406,13 +406,15 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
             )
             val scale = scaledRect.width() / iWidth
             mMinMapScale = scale / 4
-            mMapScale = scale
-            mOuterMatrix = Matrix()
-            mOuterMatrix.postScale(mMapScale, mMapScale)
-            mOuterMatrix.postTranslate(
-                (VIEW_WIDTH - mMapScale * iWidth) / 2, (VIEW_HEIGHT - mMapScale * iHeight) / 2
-            )
-            setMatrixWithScaleAndRotation(mOuterMatrix, mMapScale, 0f)
+            if (isCentred) {
+                mMapScale = scale
+                mOuterMatrix = Matrix()
+                mOuterMatrix.postScale(mMapScale, mMapScale)
+                mOuterMatrix.postTranslate(
+                    (VIEW_WIDTH - mMapScale * iWidth) / 2, (VIEW_HEIGHT - mMapScale * iHeight) / 2
+                )
+                setMatrixWithScaleAndRotation(mOuterMatrix, mMapScale, 0f)
+            }
         }
     }
 
@@ -645,7 +647,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
                         resource.height.toFloat(),
                         resource.width.toFloat(),
                     )
-                    setBitmap(mPngMapData, resource)
+                    setBitmap(mPngMapData, resource, false)
                     setMapStatus(scale, centerX, centerY)
                 }
             })
@@ -657,7 +659,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      *
      * @param bitmap
      */
-    private fun setBitmap(mapData: MapData, bitmap: Bitmap) {
+    private fun setBitmap(mapData: MapData, bitmap: Bitmap, isCentred: Boolean = true) {
         synchronized(mSrf.mapData) {
             mSrf.mapData.width = mapData.width
             mSrf.mapData.height = mapData.height
@@ -668,7 +670,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
 
         mPngMapView?.setBitmap(bitmap)
         // 设置地图后自动居中显示
-        setCentred()
+        setCentred(isCentred)
     }
 
     /**
