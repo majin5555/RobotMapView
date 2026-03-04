@@ -10,12 +10,10 @@ import com.siasun.dianshi.bean.DragLocationBean
 import com.siasun.dianshi.bean.SwitchMapBean
 import com.siasun.dianshi.controller.MainController
 import com.siasun.dianshi.framework.ext.onClick
-import com.siasun.dianshi.framework.log.LogUtil
 import com.siasun.dianshi.mapviewdemo.KEY_LOCATION_DRAG
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityShowMapViewBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.ShowMapViewModel
 import com.siasun.dianshi.view.WorkMode
-import kotlin.text.toDouble
 
 /**
  * 拖拽定位地图

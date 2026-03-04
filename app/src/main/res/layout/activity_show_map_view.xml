@@ -40,6 +40,11 @@
                 android:layout_height="wrap_content"
                 android:text="平移地图" />
             <Button
+                android:id="@+id/btn_view_config"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="指定视图窗口" />
+            <Button
                 android:id="@+id/btn_remove_noise_sure"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
