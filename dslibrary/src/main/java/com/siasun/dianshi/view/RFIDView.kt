@@ -7,11 +7,9 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PointF
 import android.view.MotionEvent
+import androidx.core.content.ContextCompat
 import com.siasun.dianshi.R
-import com.siasun.dianshi.bean.CmsStation
 import com.siasun.dianshi.bean.RFID
-import com.siasun.dianshi.view.StationsView.OnStationClickListener
-import com.siasun.dianshi.view.StationsView.OnStationDeleteListener
 import java.lang.ref.WeakReference
 import kotlin.collections.component1
 import kotlin.collections.component2
@@ -68,6 +66,13 @@ class RFIDView(context: Context?, var parent: WeakReference<MapView>) :
             style = Paint.Style.FILL
             strokeWidth = 1f
         }
+
+        private val mTextPaint = Paint().apply {
+            color = Color.BLACK
+            isAntiAlias = true
+            style = Paint.Style.FILL
+            strokeWidth = 1f
+        }
     }
 
     /**
@@ -83,7 +88,7 @@ class RFIDView(context: Context?, var parent: WeakReference<MapView>) :
         super.onDraw(canvas)
         if (isDrawingEnabled) {
             // 清空之前的屏幕坐标映射
-            rfIds.clear()
+            rfIdScreenPositions.clear()
 
             // 获取MapView实例，避免重复调用get()
             val mapView = parent.get() ?: return
@@ -92,7 +97,7 @@ class RFIDView(context: Context?, var parent: WeakReference<MapView>) :
                 // 使用世界坐标转换为屏幕坐标
                 val locate = mapView.worldToScreen(rfId.tagX, rfId.tagY)
                 // 保存避让点的屏幕坐标，用于点击检测
-                rfIdScreenPositions[rfId] = Pair(rfId.tagX, rfId.tagY)
+                rfIdScreenPositions[rfId] = Pair(locate.x, locate.y)
                 when (currentWorkMode) {
                     WorkMode.WORK_MODE_EDIT_RF_ID -> {
                         // 修改避让点模式下，绘制更大的圆圈和更粗的边框，增加视觉提示
@@ -128,12 +133,13 @@ class RFIDView(context: Context?, var parent: WeakReference<MapView>) :
                 }
 
                 // 复用PointF对象
-                reusablePointF.set(locate.x, locate.y)
+                reusablePointF.set(locate.x + 10f, locate.y - 10f)
+
                 drawLabel(
                     canvas,
                     "${context.getString(R.string.rf_id)} : ${rfId.tId}",
                     reusablePointF,
-                    mPaint
+                    mTextPaint
                 )
             }
         }

@@ -21,6 +21,7 @@
         app:showPositingArea="true"
         app:showStations="true"
         app:showTopViewPath="true"
+        app:showRFID="true"
         app:showUpLaserPointCloud="true"
         app:showVirtualWall="true"
         app:showWorldPath="true" />
@@ -463,6 +464,18 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="保存反光板" />
+
+            <Button
+                android:id="@+id/btn_save_rfid"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="添加RFID" />
+
+            <Button
+                android:id="@+id/btn_edit_rfid"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="编辑RFID" />
 
         </LinearLayout>
     </ScrollView>

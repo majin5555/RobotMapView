@@ -28,6 +28,7 @@ import com.siasun.dianshi.bean.PlanPathResult
 import com.siasun.dianshi.bean.PositingArea
 import com.siasun.dianshi.bean.PstParkBean
 import com.siasun.dianshi.bean.RC.RCData
+import com.siasun.dianshi.bean.RFID
 import com.siasun.dianshi.bean.SpArea
 import com.siasun.dianshi.bean.TeachPoint
 import com.siasun.dianshi.bean.WaitPointBean
@@ -62,6 +63,7 @@ import com.siasun.dianshi.view.MapView.ISingleTapListener
 import com.siasun.dianshi.view.MixAreaView
 import com.siasun.dianshi.view.PolygonEditView
 import com.siasun.dianshi.view.PostingAreasView
+import com.siasun.dianshi.view.RFIDView
 import com.siasun.dianshi.view.SpPolygonEditView
 import com.siasun.dianshi.view.VirtualWallView
 import com.siasun.dianshi.view.WorkMode
@@ -238,6 +240,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initSpAreas()
 //        initPath()
 //        initCrossDoor()
+        initRFId()
 
         mBinding.btnAddGloblePath.onClick {
 
@@ -1184,14 +1187,14 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.btnCreateStation.onClick {
             XpopUtils(this).showCmsStationDialog(
                 onConfirmCall = { result ->
-                result?.let {
-                    cmsStation.add(result)
-                    mBinding.mapView.setCmsStations(cmsStation)
-                }
+                    result?.let {
+                        cmsStation.add(result)
+                        mBinding.mapView.setCmsStations(cmsStation)
+                    }
 
-            }, onDeleteCall = {
+                }, onDeleteCall = {
 
-            }, mapId
+                }, mapId
             )
         }
         //编辑避让点
@@ -1276,6 +1279,24 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 // 更新虚拟墙类型
                 mBinding.mapView.updateVirtualWallType(lineIndex, newConfig)
             }
+        })
+    }
+
+    private fun initRFId() {
+        mBinding.btnSaveRfid.onClick {
+            val rfId = RFID("1", 3.0F, 4.2F)
+            mBinding.mapView.setRFId(mutableListOf(rfId))
+        }
+
+        mBinding.btnEditRfid.onClick {
+            mBinding.mapView.setWorkMode(WorkMode.WORK_MODE_EDIT_RF_ID)
+        }
+
+        mBinding.mapView.setOnRFIdClickListener(object : RFIDView.OnRFIdClickListener {
+            override fun onRFIdClick(rfId: RFID) {
+                LogUtil.i("点击的RFId = ${rfId}")
+            }
+
         })
     }
 
