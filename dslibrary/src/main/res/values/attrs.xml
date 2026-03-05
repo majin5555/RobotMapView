@@ -29,5 +29,7 @@
         <attr name="showWorldPath" default="false" format="boolean" />
         <!--混行区域-->
         <attr name="showMixArea" default="false" format="boolean" />
+        <!--        rfid-->
+        <attr name="showRFID" default="false" format="boolean" />
     </declare-styleable>
 </resources>

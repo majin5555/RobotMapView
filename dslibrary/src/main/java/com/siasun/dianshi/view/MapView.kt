@@ -48,6 +48,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import androidx.core.content.withStyledAttributes
 import com.hjq.shape.layout.ShapeFrameLayout
 import com.siasun.dianshi.bean.CrossDoor
+import com.siasun.dianshi.bean.RFID
 import com.siasun.dianshi.bean.ReflectorMapBean
 import com.siasun.dianshi.view.createMap.MapViewInterface
 
@@ -201,7 +202,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mHomeDockView = HomeDockView(context, mMapView)
         mElevatorView = ElevatorView(context, mMapView)
         mStationView = StationsView(context, mMapView)
-        mRFIDView = RFIDView(context,mMapView)
+        mRFIDView = RFIDView(context, mMapView)
         mOnlinePoseView = OnlinePoseView(context, mMapView)
         mUpLaserScanView = UpLaserScanView(context, mMapView)
         mDownLaserScanView = DownLaserScanView(context, mMapView)
@@ -840,6 +841,10 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mStationView?.setCmsStations(list)
     }
 
+    fun setRFId(list: MutableList<RFID>) {
+        mRFIDView?.setRFIds(list)
+    }
+
     /**
      * 设置乘梯点
      */
@@ -1178,6 +1183,18 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      */
     fun setOnStationDeleteListener(listener: StationsView.OnStationDeleteListener) =
         mStationView?.setOnStationDeleteListener(listener)
+
+    /**
+     * 设置RFId点击监听器
+     */
+    fun setOnRFIdClickListener(listener: RFIDView.OnRFIdClickListener) =
+        mRFIDView?.setOnRFIdClickListener(listener)
+
+    /**
+     * 设置RFId删除监听
+     */
+    fun setOnRFIdDeleteListener(listener: RFIDView.OnRFIdDeleteListener) =
+        mRFIDView?.setOnRFIdDeleteClickListener(listener)
 
     /**
      * 设置乘梯点编辑监听器

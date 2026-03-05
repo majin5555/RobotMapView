@@ -87,6 +87,15 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
             }
         }
 
+        //rfId
+        mBinding.cbRfId.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                parentRef.get()?.mRFIDView?.setDrawingEnabled(true) // 启用绘制
+            } else {
+                parentRef.get()?.mRFIDView?.setDrawingEnabled(false) // 禁用绘制
+            }
+        }
+
         mBinding.cbRfId.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
                 parentRef.get()?.mRFIDView?.setDrawingEnabled(true) // 启用绘制
@@ -227,6 +236,8 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
                 if (typedArray.getBoolean(R.styleable.MapView_showMixArea, false)) VISIBLE else GONE
 
 
+            mBinding.cbRfId.visibility =
+                if (typedArray.getBoolean(R.styleable.MapView_showRFID, false)) VISIBLE else GONE
             typedArray.recycle()
         }
     }
@@ -248,5 +259,6 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
         mBinding.cbChargeStation.setOnCheckedChangeListener(null)
         mBinding.cbElevator.setOnCheckedChangeListener(null)
         mBinding.cbPositingArea.setOnCheckedChangeListener(null)
+        mBinding.cbRfId.setOnCheckedChangeListener(null)
     }
 }
