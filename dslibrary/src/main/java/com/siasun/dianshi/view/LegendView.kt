@@ -86,6 +86,14 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
                 parentRef.get()?.mStationView?.setDrawingEnabled(false) // 禁用绘制
             }
         }
+
+        mBinding.cbRfId.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                parentRef.get()?.mRFIDView?.setDrawingEnabled(true) // 启用绘制
+            } else {
+                parentRef.get()?.mRFIDView?.setDrawingEnabled(false) // 禁用绘制
+            }
+        }
         //上线点
         mBinding.cbOnlinePose.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
