@@ -1,6 +1,7 @@
 package com.siasun.dianshi.controller
 
 import android.graphics.PointF
+import android.graphics.RectF
 import com.siasun.dianshi.GlobalVariable.SEND_NAVI_HEART
 import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.ExpandArea
@@ -194,6 +195,13 @@ object MainController {
      */
     fun sendOnlinePoint(layerId: Int, pointArray: FloatArray) =
         myController.mSendOnlinePoint(layerId, pointArray)
+
+    /**
+     * 3D 发送删除噪点
+     */
+    fun send3DRemoveNoise(rectFs: List<RectF>, mapId: Int, minHigh: Float = 0f, maxHigh: Float) {
+       myController.mSend3DRemoveNoise(rectFs, mapId, minHigh, maxHigh)
+    }
 
     /**
      *同时通知cms 和 车体）

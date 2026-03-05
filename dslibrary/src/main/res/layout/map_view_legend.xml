@@ -22,14 +22,12 @@
             android:src="@drawable/iv_back"
             app:layout_constraintLeft_toLeftOf="parent" />
 
-        <TextView
+        <ImageView
             android:id="@+id/tv_legend"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="10dp"
-            android:text="@string/legend"
-            android:textColor="#333333"
-            android:textSize="28sp"
+            android:src="@drawable/icon_map_legend"
             app:layout_constraintBottom_toBottomOf="@id/iv_legend"
             app:layout_constraintLeft_toRightOf="@id/iv_legend"
             app:layout_constraintTop_toTopOf="@id/iv_legend" />

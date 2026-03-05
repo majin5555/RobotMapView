@@ -1,6 +1,5 @@
 package com.siasun.dianshi.mapviewdemo.ui.createMap
 
-import android.graphics.PointF
 import android.os.Build
 import android.os.Bundle
 import androidx.annotation.RequiresApi
@@ -8,12 +7,12 @@ import com.ngu.lcmtypes.laser_t
 import com.siasun.dianshi.ConstantBase
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.bean.DragLocationBean
+import com.siasun.dianshi.bean.SwitchMapBean
 import com.siasun.dianshi.controller.MainController
-import com.siasun.dianshi.framework.log.LogUtil
+import com.siasun.dianshi.framework.ext.onClick
 import com.siasun.dianshi.mapviewdemo.KEY_LOCATION_DRAG
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityShowMapViewBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.ShowMapViewModel
-import com.siasun.dianshi.view.MapView
 import com.siasun.dianshi.view.WorkMode
 
 /**
@@ -21,7 +20,7 @@ import com.siasun.dianshi.view.WorkMode
  */
 class DragPositionViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMapViewModel>() {
 
-    val mapId = 1
+    val mapId = 10
     var mDragBean: DragLocationBean? = null
     private var mLasertData: laser_t = laser_t()
 
@@ -43,25 +42,36 @@ class DragPositionViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, Sh
             ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_YAML)
         )
 
-        //点击屏幕回调
-        mBinding.mapView.setSingleTapListener(object : MapView.ISingleTapListener {
-            override fun onSingleTapListener(point: PointF) {
-                LogUtil.i("点击屏幕回调  ${point}")
-                //上激光
-                mLasertData.ranges[0] = point.x
-                mLasertData.ranges[1] = point.y
-
-                LogUtil.i("点击屏幕回调x  ${mLasertData.ranges[0]}")
-                LogUtil.i("点击屏幕回调y ${mLasertData.ranges[1]}")
-                LogUtil.i("点击屏幕回调t ${mLasertData.ranges[2]}")
-
-                mBinding.mapView.setDragPositionData(mLasertData)
-
-            }
-        })
-
-
-        val dragRobotPose = mBinding.mapView.getDragRobotPose()
+        mBinding.btnLocation.onClick {
+            mViewModel.switchMapInfo(
+                SwitchMapBean(
+                    10,
+                    mBinding.mapView.getDragRobotPose()!!.x.toDouble(),
+                    mBinding.mapView.getDragRobotPose()!!.y.toDouble(),
+                    mBinding.mapView.getDragRobotPose()!!.theta.toDouble()
+                )
+            )
+//            LogUtil.i("getDragRobotPose ${mBinding.mapView.getDragRobotPose()}")
+        }
+//        //点击屏幕回调
+//        mBinding.mapView.setSingleTapListener(object : MapView.ISingleTapListener {
+//            override fun onSingleTapListener(point: PointF) {
+//                LogUtil.i("点击屏幕回调  ${point}")
+//                //上激光
+//                mLasertData.ranges[0] = point.x
+//                mLasertData.ranges[1] = point.y
+//
+//                LogUtil.i("点击屏幕回调x  ${mLasertData.ranges[0]}")
+//                LogUtil.i("点击屏幕回调y ${mLasertData.ranges[1]}")
+//                LogUtil.i("点击屏幕回调t ${mLasertData.ranges[2]}")
+//
+//                mBinding.mapView.setDragPositionData(mLasertData)
+//
+//
+//                LogUtil.i("getDragRobotPose ${ mBinding.mapView.getDragRobotPose()}")
+//
+//            }
+//        })
     }
 
 }

@@ -1,6 +1,7 @@
 package com.siasun.dianshi.controller
 
 import android.graphics.PointF
+import android.graphics.RectF
 import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.ExpandArea
 import com.siasun.dianshi.bean.PartialUpdateArea
@@ -131,4 +132,7 @@ abstract class AbsController {
 
     //pad向导航发送更新地图
     abstract fun mSend3DUpdateMap(dParams: DoubleArray, mapId: Int)
+    //3d删除噪点
+    abstract fun mSend3DRemoveNoise(poStart: PointF, poEnd: PointF, minHigh: Float, maxHigh: Float)
+    abstract fun mSend3DRemoveNoise(rectFs: List<RectF>,mapId: Int, minHigh: Float,maxHigh: Float)
 }

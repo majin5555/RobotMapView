@@ -1,5 +1,6 @@
 package com.siasun.dianshi.mapviewdemo.ui
 
+import android.graphics.PointF
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -16,6 +17,7 @@ import com.siasun.dianshi.ConstantBase.PAD_WORLD_NAME
 import com.siasun.dianshi.ConstantBase.getFolderPath
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.bean.CleanAreaNew
+import com.siasun.dianshi.dialog.CommonWarnDialog
 import com.siasun.dianshi.bean.CmsStation
 import com.siasun.dianshi.bean.DragLocationBean
 import com.siasun.dianshi.bean.ElevatorPoint
@@ -52,9 +54,11 @@ import com.siasun.dianshi.mapviewdemo.ui.createMap.DragPositionViewActivity
 import com.siasun.dianshi.mapviewdemo.utils.GsonUtil
 import com.siasun.dianshi.mapviewdemo.utils.PathPlanningUtil1
 import com.siasun.dianshi.mapviewdemo.viewmodel.ShowMapViewModel
+import com.siasun.dianshi.network.constant.KEY_NEY_IP
 import com.siasun.dianshi.utils.World
 import com.siasun.dianshi.view.HomeDockView
 import com.siasun.dianshi.view.MapView
+import com.siasun.dianshi.view.MapView.ISingleTapListener
 import com.siasun.dianshi.view.MixAreaView
 import com.siasun.dianshi.view.PolygonEditView
 import com.siasun.dianshi.view.PostingAreasView
@@ -62,6 +66,7 @@ import com.siasun.dianshi.view.SpPolygonEditView
 import com.siasun.dianshi.view.VirtualWallView
 import com.siasun.dianshi.view.WorkMode
 import com.siasun.dianshi.xpop.XpopUtils
+import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -77,7 +82,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     private val mReflectorMaps = mutableListOf<com.siasun.dianshi.bean.ReflectorMapBean>()
 
 
-    val mapId = 1
+    val mapId = 14
     var cleanAreas: MutableList<CleanAreaNew> = mutableListOf()
     var mSpArea: MutableList<SpArea> = mutableListOf()
     var mMixArea: MutableList<WorkAreasNew> = mutableListOf()
@@ -88,6 +93,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
+        MMKV.defaultMMKV().encode(KEY_NEY_IP, "192.168.1.198");
+
         MainController.init()
         //加载地图
         mBinding.mapView.loadMap(
@@ -109,6 +116,9 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //
 //                mBinding.mapView.setDragPositionData( )
 //
+//            }
+//            override fun onAreaDragEnd(area: CleanAreaNew, isInsideMap: Boolean) {
+//                LogUtil.d("onAreaDragEnd area $area isInsideMap $isInsideMap")
 //            }
 //        })
 
@@ -214,7 +224,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.btnMove.setOnClickListener {
             mBinding.mapView.setWorkMode(WorkMode.MODE_SHOW_MAP)
         }
-//
+
 //        initMergedPose()
 //        initStation()
 //        iniVirtualWall()
@@ -590,7 +600,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         // 设置特殊区域编辑监听器
         mBinding.mapView.setOnSpAreaEditListener(object : SpPolygonEditView.OnSpAreaEditListener {
 
-            override fun onVertexDragEnd(area: SpArea, vertexIndex: Int) {
+            override fun onVertexDragEnd(area: SpArea, vertexIndex: Int, isInsideMap: Boolean) {
                 LogUtil.i("编辑特殊区域onVertexDragEnd    ${area.toJson()}")
             }
 
@@ -891,8 +901,10 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.mapView.setOnCleanAreaEditListener(object :
             PolygonEditView.OnCleanAreaEditListener {
 
-            override fun onVertexDragEnd(area: CleanAreaNew, vertexIndex: Int) {
-                LogUtil.d("onVertexDragEnd area $area")
+            override fun onVertexDragEnd(
+                area: CleanAreaNew, vertexIndex: Int, isInsideMap: Boolean
+            ) {
+                LogUtil.d("onVertexDragEnd area $area isInsideMap $isInsideMap")
                 if (area.routeType == AreaType.AREA_AUTO) {
                     MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
                     LogUtil.i(
@@ -921,12 +933,36 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 }
             }
 
+            override fun onVertexRemoved(area: CleanAreaNew, vertexIndex: Int) {
+                LogUtil.i(
+                    "编辑区域onVertexRemoved  删除了定点 $vertexIndex", null, TAG_PP
+                )
+                CommonWarnDialog.Builder(this@ShowMapViewActivity).setTitle("提示")
+                    .setMsg("确定要删除该顶点吗？").setOnCommonWarnDialogListener(object :
+                        CommonWarnDialog.Builder.CommonWarnDialogListener {
+                        override fun confirm() {
+                            mBinding.mapView.performDeleteVertex(area, vertexIndex)
+                        }
+                    }).create().show()
+            }
+
             override fun onAreaCreated(area: CleanAreaNew) {
                 // 将新创建的清扫区域添加到本地列表
                 LogUtil.d("创建了新的清扫区域: ${area.sub_name}, ID: ${area.regId}")
                 if (area.routeType == AreaType.AREA_AUTO) {
                     MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
                     LogUtil.i("创建了新的清扫区域  申请路径规划 ${area.toJson()}", null, TAG_PP)
+                }
+            }
+
+            override fun onAreaDragEnd(area: CleanAreaNew, isInsideMap: Boolean) {
+                LogUtil.d("onAreaDragEnd area $area isInsideMap $isInsideMap")
+                if (!isInsideMap) {
+                    ToastUtils.showLong("区域超出地图范围")
+                }
+                if (area.routeType == AreaType.AREA_AUTO) {
+                    MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
+                    LogUtil.i("编辑区域onAreaDragEnd  申请路径规划 ${area.toJson()}", null, TAG_PP)
                 }
             }
         })
@@ -1071,17 +1107,47 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
      * 删除噪点
      */
     private fun initRemoveNoise() {
+        var mScle = 0f
+        var mX = 0f
+        var mY = 0f
         //删除噪点
         mBinding.btnRemoveNoise.setOnClickListener {
             mBinding.mapView.setWorkMode(WorkMode.MODE_REMOVE_NOISE)
         }
+
+        mBinding.btnViewConfig.setOnClickListener {
+            //加载地图
+            mBinding.mapView.loadMap(
+                ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_PNG),
+                ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_YAML),
+                mScle,
+                mX,
+                mY
+            )
+        }
+
         //删除噪点
         mBinding.btnRemoveNoiseSure.setOnClickListener {
             // 获取所有去除噪点区域
             val removeNoiseRects = mBinding.mapView.getRemoveNoiseRects()
             LogUtil.d("获取所有去除噪点区域: $removeNoiseRects")
+            MainController.send3DRemoveNoise(
+                rectFs = removeNoiseRects,
+                mapId = mapId,
+                maxHigh = 20f,
+            )
         }
 
+        mBinding.mapView.setSingleTapListener(object : ISingleTapListener {
+            override fun onSingleTapListener(
+                mMapScale: Float, point: PointF
+            ) {
+                mScle = mMapScale
+                mX = point.x
+                mY = point.y
+                LogUtil.d("缩放级别:${mMapScale} 世界坐标 $point")
+            }
+        })
 
 //        // 设置去除噪点监听器
 //        mBinding.mapView.setOnRemoveNoiseListener(object : MapView.IRemoveNoiseListener {
@@ -1118,14 +1184,14 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.btnCreateStation.onClick {
             XpopUtils(this).showCmsStationDialog(
                 onConfirmCall = { result ->
-                    result?.let {
-                        cmsStation.add(result)
-                        mBinding.mapView.setCmsStations(cmsStation)
-                    }
+                result?.let {
+                    cmsStation.add(result)
+                    mBinding.mapView.setCmsStations(cmsStation)
+                }
 
-                }, onDeleteCall = {
+            }, onDeleteCall = {
 
-                }, mapId
+            }, mapId
             )
         }
         //编辑避让点

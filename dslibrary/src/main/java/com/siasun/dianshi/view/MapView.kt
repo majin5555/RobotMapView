@@ -102,6 +102,40 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     var mReflectMapView: ReflectMapView? = null //反光板地图view
 
     /**
+     * 获取地图位图宽度
+     */
+    fun getPngBitmapWidth(): Int {
+        return mPngMapView?.getBitmapWidth() ?: 0
+    }
+
+    /**
+     * 获取地图位图高度
+     */
+    fun getPngBitmapHeight(): Int {
+        return mPngMapView?.getBitmapHeight() ?: 0
+    }
+
+    /**
+     * 判断屏幕坐标(x,y)是否在地图图片范围内
+     */
+    fun isInsideMap(x: Float, y: Float): Boolean {
+        val pngMapView = mPngMapView ?: return false
+        val width = pngMapView.getBitmapWidth()
+        val height = pngMapView.getBitmapHeight()
+        if (width <= 0 || height <= 0) return false
+
+        val invertMatrix = Matrix()
+        mOuterMatrix.invert(invertMatrix)
+
+        val points = floatArrayOf(x, y)
+        invertMatrix.mapPoints(points)
+        val mapX = points[0]
+        val mapY = points[1]
+
+        return mapX >= 0 && mapX <= width && mapY >= 0 && mapY <= height
+    }
+
+    /**
      * *************** 监听器   start ***********************
      */
 
@@ -252,7 +286,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mMapNameView?.setScreen(point)
 
         // 如果是擦除噪点模式、创建定位区域模式、编辑定位区域模式、删除定位区域模式、编辑清扫区域模式或创建清扫区域模式，或者路径编辑模式，或者创建路径模式
-        if (currentWorkMode == WorkMode.MODE_REMOVE_NOISE || currentWorkMode == WorkMode.MODE_POSITING_AREA_ADD || currentWorkMode == WorkMode.MODE_POSITING_AREA_EDIT || currentWorkMode == WorkMode.MODE_POSITING_AREA_DELETE || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_EDIT || currentWorkMode == WorkMode.MODE_PATH_EDIT || currentWorkMode == WorkMode.MODE_PATH_CREATE || currentWorkMode == WorkMode.MODE_DRAG_POSITION || currentWorkMode == WorkMode.WORK_MODE_ADD_REFLECTOR_AREA || currentWorkMode == WorkMode.WORK_MODE_EDIT_REFLECTOR) {
+        if (currentWorkMode == WorkMode.MODE_REMOVE_NOISE || currentWorkMode == WorkMode.MODE_POSITING_AREA_ADD || currentWorkMode == WorkMode.MODE_POSITING_AREA_EDIT || currentWorkMode == WorkMode.MODE_POSITING_AREA_DELETE || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_ADD || currentWorkMode == WorkMode.MODE_SP_AREA_EDIT || currentWorkMode == WorkMode.MODE_MIX_AREA_EDIT || currentWorkMode == WorkMode.MODE_PATH_EDIT || currentWorkMode == WorkMode.MODE_PATH_CREATE || currentWorkMode == WorkMode.WORK_MODE_ADD_REFLECTOR_AREA || currentWorkMode == WorkMode.WORK_MODE_EDIT_REFLECTOR) {
             // 让事件传递给子视图（如RemoveNoiseView、PostingAreasView或PathView）处理
             // 先调用父类的onTouchEvent让事件传递给子视图
             super.onTouchEvent(event)
@@ -302,7 +336,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     }
 
     private fun singleTap(event: MotionEvent) {
-        mSingleTapListener?.onSingleTapListener(screenToWorld(event.x, event.y))
+        mSingleTapListener?.onSingleTapListener(mMapScale, screenToWorld(event.x, event.y))
     }
 
     private fun setMatrix(matrix: Matrix) {
@@ -340,7 +374,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         }
     }
 
-    fun setCentred() {
+    fun setCentred(isCentred: Boolean = true) {
         val scaledRect = RectF()
         if (VIEW_WIDTH == 0 || VIEW_HEIGHT == 0) {
             // 使用弱引用避免内存泄漏
@@ -358,7 +392,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
                         } else {
                             mapView.viewTreeObserver.removeGlobalOnLayoutListener(this)
                         }
-                        mapView.setCentred()
+                        mapView.setCentred(isCentred)
                     }
                 }
             }
@@ -376,13 +410,15 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
             )
             val scale = scaledRect.width() / iWidth
             mMinMapScale = scale / 4
-            mMapScale = scale
-            mOuterMatrix = Matrix()
-            mOuterMatrix.postScale(mMapScale, mMapScale)
-            mOuterMatrix.postTranslate(
-                (VIEW_WIDTH - mMapScale * iWidth) / 2, (VIEW_HEIGHT - mMapScale * iHeight) / 2
-            )
-            setMatrixWithScaleAndRotation(mOuterMatrix, mMapScale, 0f)
+            if (isCentred) {
+                mMapScale = scale
+                mOuterMatrix = Matrix()
+                mOuterMatrix.postScale(mMapScale, mMapScale)
+                mOuterMatrix.postTranslate(
+                    (VIEW_WIDTH - mMapScale * iWidth) / 2, (VIEW_HEIGHT - mMapScale * iHeight) / 2
+                )
+                setMatrixWithScaleAndRotation(mOuterMatrix, mMapScale, 0f)
+            }
         }
     }
 
@@ -510,6 +546,13 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      */
 
     /**
+     * 手动处理手势事件（供子View调用，以支持特定模式下的地图缩放等）
+     */
+    fun processMapGestures(event: MotionEvent) {
+        mGestureDetector?.onTouchEvent(event, this)
+    }
+
+    /**
      * 设置工作模式
      */
     fun setWorkMode(mode: WorkMode) {
@@ -529,6 +572,39 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mCrossView?.setWorkMode(mode)
         mDragPositioningView?.setWorkMode(mode)
         mReflectMapView?.setWorkMode(mode)
+    }
+
+    /**
+     * 设置地图状态（固定缩放级别和固定位置）
+     * @param scale 缩放级别
+     * @param centerX 世界坐标X，将置于视图中心
+     * @param centerY 世界坐标Y，将置于视图中心
+     */
+    fun setMapStatus(scale: Float, centerX: Float, centerY: Float) {
+        if (VIEW_WIDTH == 0 || VIEW_HEIGHT == 0) return
+
+        var finalScale = scale
+        // 限制缩放范围
+        if (finalScale > mMaxMapScale) finalScale = mMaxMapScale
+        if (finalScale < mMinMapScale) finalScale = mMinMapScale
+
+        // 获取地图像素坐标
+        val mapPixelPoint = synchronized(mSrf.mapData) {
+            mSrf.worldToScreen(centerX, centerY)
+        }
+
+        // 计算平移量，使目标点位于视图中心
+        // ViewX = MapPixelX * scale + TranslateX
+        // TranslateX = ViewCenter - MapPixelX * scale
+        val tx = (VIEW_WIDTH / 2f) - (mapPixelPoint.x * finalScale)
+        val ty = (VIEW_HEIGHT / 2f) - (mapPixelPoint.y * finalScale)
+
+        val matrix = Matrix()
+        matrix.postScale(finalScale, finalScale)
+        matrix.postTranslate(tx, ty)
+
+        // 更新矩阵
+        setMatrixWithScale(matrix, finalScale)
     }
 
     /**
@@ -561,12 +637,35 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     }
 
     /**
+     * 加载地图
+     * pngPath png文件路径
+     * yamlPath yaml文件路径
+     */
+    fun loadMap(pngPath: String, yamlPath: String, scale: Float, centerX: Float, centerY: Float) {
+        val file = File(pngPath)
+        Glide.with(this).asBitmap().load(file).skipMemoryCache(true)
+            .diskCacheStrategy(DiskCacheStrategy.NONE).into(object : SimpleTarget<Bitmap?>() {
+                override fun onResourceReady(
+                    resource: Bitmap, transition: Transition<in Bitmap?>?
+                ) {
+                    val mPngMapData = YamlNew().loadYaml(
+                        yamlPath,
+                        resource.height.toFloat(),
+                        resource.width.toFloat(),
+                    )
+                    setBitmap(mPngMapData, resource, false)
+                    setMapStatus(scale, centerX, centerY)
+                }
+            })
+    }
+
+    /**
      * 设置地图数据信息
      * 设置地图
      *
      * @param bitmap
      */
-    private fun setBitmap(mapData: MapData, bitmap: Bitmap) {
+    private fun setBitmap(mapData: MapData, bitmap: Bitmap, isCentred: Boolean = true) {
         synchronized(mSrf.mapData) {
             mSrf.mapData.width = mapData.width
             mSrf.mapData.height = mapData.height
@@ -577,7 +676,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
 
         mPngMapView?.setBitmap(bitmap)
         // 设置地图后自动居中显示
-        setCentred()
+        setCentred(isCentred)
     }
 
     /**
@@ -943,13 +1042,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      */
     fun getRemoveNoiseRects(): List<RectF> {
         val rects = mRemoveNoiseView?.getRects() ?: ArrayList()
-        val worldRects = ArrayList<RectF>()
-        for (rect in rects) {
-            val leftTop = screenToWorld(rect.left, rect.top)
-            val rightBottom = screenToWorld(rect.right, rect.bottom)
-            worldRects.add(RectF(leftTop.x, leftTop.y, rightBottom.x, rightBottom.y))
-        }
-        return worldRects
+        return rects
     }
 
     /**
@@ -1051,6 +1144,13 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      */
     fun setOnCleanAreaEditListener(listener: PolygonEditView.OnCleanAreaEditListener?) {
         mPolygonEditView?.setOnCleanAreaEditListener(listener)
+    }
+
+    /**
+     * 确认删除清扫区域的顶点
+     */
+    fun performDeleteVertex(area: CleanAreaNew, vertexIndex: Int) {
+        mPolygonEditView?.performDeleteVertex(area, vertexIndex)
     }
 
     /**
@@ -1162,9 +1262,11 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mSingleTapListener = listener
     }
 
+
     interface ISingleTapListener {
-        fun onSingleTapListener(point: PointF)
+        fun onSingleTapListener(mMapScale: Float, point: PointF)
     }
+
 
 //    /**
 //     * 擦除噪点监听器接口

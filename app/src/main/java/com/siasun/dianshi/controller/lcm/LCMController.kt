@@ -2,6 +2,7 @@ package com.siasun.dianshi.controller.lcm
 
 import android.annotation.SuppressLint
 import android.graphics.PointF
+import android.graphics.RectF
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.jeremyliao.liveeventbus.LiveEventBus
@@ -1323,6 +1324,83 @@ class LCMController : AbsController(), LCMSubscriber {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun mSend3DUpdateMap(dParams: DoubleArray, mapId: Int) {
         send3DUpdateMap(dParams, mapId = mapId)
+    }
+
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun mSend3DRemoveNoise(
+        rectFs: List<RectF>,
+        mapId: Int,
+        minHigh: Float,
+        maxHigh: Float
+    ) {
+
+        val rect = rectFs[0]
+        val minX = rect.left.coerceAtMost(rect.right)
+        val minY = rect.top.coerceAtMost(rect.bottom)
+        val maxX = rect.left.coerceAtLeast(rect.right)
+        val maxY = rect.top.coerceAtLeast(rect.bottom)
+
+        val iParams = ByteArray(1)
+        iParams[0] = 1
+        val dParams = DoubleArray(6)
+        dParams[0] = minX.toDouble()
+        dParams[1] = maxY.toDouble()
+
+        dParams[2] = maxX.toDouble()
+        dParams[3] = minY.toDouble()
+
+        dParams[4] = minHigh.toDouble()
+        dParams[5] = maxHigh.toDouble()
+
+        val sParams = arrayOfNulls<String>(1)
+        sParams[0] = "$mapId"
+
+        LogUtil.i("pad发送数据 去除噪点 iParams[0]${iParams[0]}")
+        LogUtil.i("pad发送数据 去除噪点 dParams[0]${dParams[0]} ")
+        LogUtil.i("pad发送数据 去除噪点 dParams[1]${dParams[1]} ")
+        LogUtil.i("pad发送数据 去除噪点 dParams[2]${dParams[2]} ")
+        LogUtil.i("pad发送数据 去除噪点 dParams[3]${dParams[3]} ")
+        LogUtil.i("pad发送数据 去除噪点 dParams[4]${dParams[4]} ")
+        LogUtil.i("pad发送数据 去除噪点 dParams5]${dParams[5]} ")
+
+
+        sendRobotControlNew(40, dParams, iParams, sParams, null, NAVI_SERVICE_COMMAND)
+    }
+
+    /**
+     * 3D 去除噪点
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun mSend3DRemoveNoise(
+        poStart: PointF, poEnd: PointF, minHigh: Float, maxHigh: Float
+    ) {
+        val minX: Float = poStart.x.coerceAtMost(poEnd.x)
+        val minY: Float = poStart.y.coerceAtMost(poEnd.y)
+        val maxX: Float = poStart.x.coerceAtLeast(poEnd.x)
+        val maxY: Float = poStart.y.coerceAtLeast(poEnd.y)
+
+        val iParams = ByteArray(1)
+        iParams[0] = 1
+        val dParams = DoubleArray(6)
+        dParams[0] = minX.toDouble()
+        dParams[1] = maxY.toDouble()
+
+        dParams[2] = maxX.toDouble()
+        dParams[3] = minY.toDouble()
+
+        dParams[4] = minHigh.toDouble()
+        dParams[5] = maxHigh.toDouble()
+
+        LogUtil.i("pad发送数据 去除噪点 iParams[0]${iParams[0]}")
+        LogUtil.i("pad发送数据 去除噪点 dParams[0]${dParams[0]} ")
+        LogUtil.i("pad发送数据 去除噪点 dParams[1]${dParams[1]} ")
+        LogUtil.i("pad发送数据 去除噪点 dParams[2]${dParams[2]} ")
+        LogUtil.i("pad发送数据 去除噪点 dParams[3]${dParams[3]} ")
+        LogUtil.i("pad发送数据 去除噪点 dParams[4]${dParams[4]} ")
+        LogUtil.i("pad发送数据 去除噪点 dParams5]${dParams[5]} ")
+
+        sendRobotControlNew(40, dParams, iParams, null, null, NAVI_SERVICE_COMMAND)
     }
 
     /**
