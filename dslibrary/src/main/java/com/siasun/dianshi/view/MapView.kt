@@ -66,10 +66,12 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     var mSrf = CoordinateConversion()//坐标转化工具类
     private var mOuterMatrix = Matrix()
     private var VIEW_WIDTH = 0 //视图宽度
-    private var VIEW_HEIGHT = 0
+    private var VIEW_HEIGHT = 0 //视图高度
 
-    //视图高度
+
     var mMapScale = 1f //地图缩放级别
+    var mMapCenterX = 0f//地图真实世界的中线点X
+    var mMapCenterY = 0f//地图真实世界的中线点y
     private val mMaxMapScale = 5f //最大缩放级别
     private var mMinMapScale = 0.1f //最小缩放级别
 
@@ -332,7 +334,10 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     }
 
     private fun singleTap(event: MotionEvent) {
-        mSingleTapListener?.onSingleTapListener(mMapScale, screenToWorld(event.x, event.y))
+        val screenToWorld = screenToWorld(event.x, event.y)
+        mMapCenterX = screenToWorld.x
+        mMapCenterY = screenToWorld.y
+        mSingleTapListener?.onSingleTapListener(mMapScale, screenToWorld)
     }
 
     private fun setMatrix(matrix: Matrix) {
@@ -573,8 +578,14 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      * @param scale 缩放级别
      * @param centerX 世界坐标X，将置于视图中心
      * @param centerY 世界坐标Y，将置于视图中心
+     * @param rotation 旋转角度（度）
      */
-    fun setMapStatus(scale: Float, centerX: Float, centerY: Float) {
+    fun setMapStatus(
+        scale: Float = mMapScale,
+        centerX: Float = mMapCenterX,
+        centerY: Float = mMapCenterY,
+        rotation: Float = 0f
+    ) {
         if (VIEW_WIDTH == 0 || VIEW_HEIGHT == 0) return
 
         var finalScale = scale
@@ -582,23 +593,28 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         if (finalScale > mMaxMapScale) finalScale = mMaxMapScale
         if (finalScale < mMinMapScale) finalScale = mMinMapScale
 
+        // 更新成员变量
+        mMapScale = finalScale
+        mMapCenterX = centerX
+        mMapCenterY = centerY
+
         // 获取地图像素坐标
         val mapPixelPoint = synchronized(mSrf.mapData) {
-            mSrf.worldToScreen(centerX, centerY)
+            mSrf.worldToScreen(mMapCenterX, mMapCenterY)
         }
 
-        // 计算平移量，使目标点位于视图中心
-        // ViewX = MapPixelX * scale + TranslateX
-        // TranslateX = ViewCenter - MapPixelX * scale
-        val tx = (VIEW_WIDTH / 2f) - (mapPixelPoint.x * finalScale)
-        val ty = (VIEW_HEIGHT / 2f) - (mapPixelPoint.y * finalScale)
-
         val matrix = Matrix()
+        // 1. 将目标点移动到原点
+        matrix.postTranslate(-mapPixelPoint.x, -mapPixelPoint.y)
+        // 2. 缩放
         matrix.postScale(finalScale, finalScale)
-        matrix.postTranslate(tx, ty)
+        // 3. 旋转
+        matrix.postRotate(rotation)
+        // 4. 移动到视图中心
+        matrix.postTranslate(VIEW_WIDTH / 2f, VIEW_HEIGHT / 2f)
 
         // 更新矩阵
-        setMatrixWithScale(matrix, finalScale)
+        setMatrixWithScaleAndRotation(matrix, finalScale, rotation)
     }
 
     /**
@@ -635,20 +651,60 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      * pngPath png文件路径
      * yamlPath yaml文件路径
      */
-    fun loadMap(pngPath: String, yamlPath: String, scale: Float, centerX: Float, centerY: Float) {
+    fun reloadMap(pngPath: String, yamlPath: String) {
         val file = File(pngPath)
         Glide.with(this).asBitmap().load(file).skipMemoryCache(true)
             .diskCacheStrategy(DiskCacheStrategy.NONE).into(object : SimpleTarget<Bitmap?>() {
                 override fun onResourceReady(
                     resource: Bitmap, transition: Transition<in Bitmap?>?
                 ) {
+                    // 1. 保存当前视图状态
+                    var currentScale = mMapScale
+                    var currentCenterX = mMapCenterX
+                    var currentCenterY = mMapCenterY
+                    var currentRotation = 0f
+                    var hasSavedState = false
+                    val oldRes = synchronized(mSrf.mapData) { mSrf.mapData.resolution }
+
+                    if (VIEW_WIDTH > 0 && VIEW_HEIGHT > 0) {
+                        try {
+                            val center = screenToWorld(VIEW_WIDTH / 2f, VIEW_HEIGHT / 2f)
+                            currentCenterX = center.x
+                            currentCenterY = center.y
+
+                            val values = FloatArray(9)
+                            mOuterMatrix.getValues(values)
+                            // 计算旋转角度
+                            val skewY = values[Matrix.MSKEW_Y]
+                            val scaleX = values[Matrix.MSCALE_X]
+                            currentRotation = Math.toDegrees(Math.atan2(skewY.toDouble(), scaleX.toDouble())).toFloat()
+
+                            hasSavedState = true
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+
                     val mPngMapData = YamlNew().loadYaml(
                         yamlPath,
                         resource.height.toFloat(),
                         resource.width.toFloat(),
                     )
+
+                    // 2. 设置新地图数据
                     setBitmap(mPngMapData, resource, false)
-                    setMapStatus(scale, centerX, centerY)
+
+                    // 3. 恢复视图状态
+                    if (hasSavedState) {
+                        // 如果分辨率发生变化，调整缩放比例以保持视觉一致性
+                        val newRes = mPngMapData.resolution
+                        if (oldRes > 0 && newRes > 0 && oldRes != newRes) {
+                            currentScale = currentScale * (newRes / oldRes)
+                        }
+                        setMapStatus(currentScale, currentCenterX, currentCenterY, currentRotation)
+                    } else {
+                        setMapStatus()
+                    }
                 }
             })
     }
@@ -667,6 +723,9 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
             mSrf.mapData.originY = mapData.originY
             mSrf.mapData.resolution = mapData.resolution
         }
+
+        mMapCenterX = mapData.originX + (mapData.width * mapData.resolution) / 2
+        mMapCenterY = mapData.originY + (mapData.height * mapData.resolution) / 2
 
         mPngMapView?.setBitmap(bitmap)
         // 设置地图后自动居中显示
