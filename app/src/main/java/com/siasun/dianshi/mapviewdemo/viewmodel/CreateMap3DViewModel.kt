@@ -1,23 +1,32 @@
 package com.siasun.dianshi.mapviewdemo.viewmodel
 
+import android.os.Parcelable
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import androidx.room.MapInfo
 import com.jeremyliao.liveeventbus.LiveEventBus
+import com.pnc.core.network.callback.IApiErrorCallback
 import com.siasun.dianshi.ConstantBase.PAD_MAP_NAME_PNG
 import com.siasun.dianshi.ConstantBase.PAD_MAP_NAME_YAML
 import com.siasun.dianshi.ConstantBase.getFolderPath
 import com.siasun.dianshi.ConstantBase.getMRC05FolderPath
+import com.siasun.dianshi.bean.RequestSaveMap
+import com.siasun.dianshi.bean.SwitchMapBean
 import com.siasun.dianshi.bean.UpdateMapBean
 import com.siasun.dianshi.framework.log.LogUtil
 import com.siasun.dianshi.ftp.FTPManager
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_MAP
 import com.siasun.dianshi.mapviewdemo.TAG_NAV
 import com.siasun.dianshi.mapviewdemo.utils.FileUtil
+import com.siasun.dianshi.network.manager.ApiManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
 
 
 class CreateMap3DViewModel : BaseViewModel() {
+    val uploadMapInfoLiveData = MutableLiveData<MutableList<MapInfo>>()
+
     /**
      * 下载地图
      */
@@ -57,5 +66,40 @@ class CreateMap3DViewModel : BaseViewModel() {
         }
     }
 
+
+    /**
+     * 创建地图通知service
+     */
+    fun saveMapToService(mapId: Int, mapName: String, floorId: String) {
+        val requestMap = RequestSaveMap(mapId, mapName, floorId)
+
+        launchUIWithResult(responseBlock = {
+            ApiManager.api.upLoadMapInfo(requestMap)
+        }, errorCall = object : IApiErrorCallback {
+            override fun onError(code: Int?, error: String?) {
+                super.onError(code, error)
+                uploadMapInfoLiveData.value = mutableListOf()
+            }
+        }, successBlock = {
+            it?.let {
+                uploadMapInfoLiveData.value = it
+
+            }
+        })
+    }
+    /**
+     * 通知server切换地图
+     */
+    fun switchMapInfo(map: SwitchMapBean) {
+        launchUIWithResult(responseBlock = {
+            ApiManager.api.switchMap(map)
+        }, errorCall = object : IApiErrorCallback {
+            override fun onError(code: Int?, error: String?) {
+                super.onError(code, error)
+            }
+        }, successBlock = {
+
+        })
+    }
 
 }
