@@ -4,9 +4,7 @@ import android.graphics.PointF
 import android.graphics.RectF
 import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.ExpandArea
-import com.siasun.dianshi.bean.PartialUpdateArea
 import com.siasun.dianshi.bean.PositingArea
-import com.siasun.dianshi.bean.RobotCoordinateBean
 
 /**
  * @author xiaomingliang
