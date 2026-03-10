@@ -10,6 +10,7 @@
     <string name="area">区域</string>
     <string name="world_path">路线</string>
     <string name="stations">避让点</string>
+    <string name="rf_id">RFID</string>
     <string name="world_coordinate">世界坐标</string>
     <string name="screen_coordinate">屏幕->世界坐标</string>
     <string name="origin_point">原点</string>

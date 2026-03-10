@@ -86,6 +86,23 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
                 parentRef.get()?.mStationView?.setDrawingEnabled(false) // 禁用绘制
             }
         }
+
+        //rfId
+        mBinding.cbRfId.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                parentRef.get()?.mRFIDView?.setDrawingEnabled(true) // 启用绘制
+            } else {
+                parentRef.get()?.mRFIDView?.setDrawingEnabled(false) // 禁用绘制
+            }
+        }
+
+        mBinding.cbRfId.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                parentRef.get()?.mRFIDView?.setDrawingEnabled(true) // 启用绘制
+            } else {
+                parentRef.get()?.mRFIDView?.setDrawingEnabled(false) // 禁用绘制
+            }
+        }
         //上线点
         mBinding.cbOnlinePose.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
@@ -123,8 +140,10 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
         mBinding.cbArea.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
                 parentRef.get()?.mPolygonEditView?.setDrawingEnabled(true) // 启用绘制
+                parentRef.get()?.mSpPolygonEditView?.setDrawingEnabled(true)
             } else {
                 parentRef.get()?.mPolygonEditView?.setDrawingEnabled(false) // 禁用绘制
+                parentRef.get()?.mSpPolygonEditView?.setDrawingEnabled(false)
             }
         }
         //路径
@@ -217,6 +236,8 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
                 if (typedArray.getBoolean(R.styleable.MapView_showMixArea, false)) VISIBLE else GONE
 
 
+            mBinding.cbRfId.visibility =
+                if (typedArray.getBoolean(R.styleable.MapView_showRFID, false)) VISIBLE else GONE
             typedArray.recycle()
         }
     }
@@ -238,5 +259,6 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
         mBinding.cbChargeStation.setOnCheckedChangeListener(null)
         mBinding.cbElevator.setOnCheckedChangeListener(null)
         mBinding.cbPositingArea.setOnCheckedChangeListener(null)
+        mBinding.cbRfId.setOnCheckedChangeListener(null)
     }
 }

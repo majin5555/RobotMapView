@@ -4,10 +4,12 @@ import android.content.Context
 import android.graphics.*
 import android.view.GestureDetector
 import android.view.MotionEvent
+import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.ElevatorPoint
 import com.siasun.dianshi.bean.PassPoints
 import com.siasun.dianshi.bean.WorkAreasNew
 import com.siasun.dianshi.bean.PointNew
+import com.siasun.dianshi.bean.SpArea
 import java.lang.ref.WeakReference
 import kotlin.math.pow
 import kotlin.math.sqrt
@@ -30,6 +32,11 @@ class MixAreaView(context: Context?, val parent: WeakReference<MapView>) :
     private var selectedArea: WorkAreasNew? = null
     private var selectedPointIndex: Int = -1
     private var isDragging = false
+
+    private var isAreaDragging = false
+    private var lastTouchX = 0f
+    private var lastTouchY = 0f
+
     private val vertexRadius = 10f // 顶点半径
 
     // 控制是否绘制
@@ -86,6 +93,14 @@ class MixAreaView(context: Context?, val parent: WeakReference<MapView>) :
 
         private val passPointPain = Paint().apply {
             color = Color.GRAY
+        }
+
+        // 填充区域的画笔 - 透明蓝色
+        private val fillPaint = Paint().apply {
+            style = Paint.Style.FILL
+            // 设置透明蓝色 (ARGB: 128表示半透明，0, 0, 255表示蓝色)
+            color = Color.argb(50, 0, 0, 255)
+            isAntiAlias = true
         }
 
         const val BASE_RADIUS = 10f
@@ -460,6 +475,13 @@ class MixAreaView(context: Context?, val parent: WeakReference<MapView>) :
                         // 在边上添加新顶点
                         addVertexOnEdge(selectedArea!!, edgeIndex)
                         handled = true
+                    } else if (isPointInPolygon(selectedArea!!, x, y)) {
+                        // 检查是否在多边形内部，如果是则开启区域拖动
+                        isAreaDragging = true
+                        lastTouchX = x
+                        lastTouchY = y
+                        handled = true
+                        onCleanAreaEditListener?.onAreaDragStart(selectedArea!!)
                     }
                 }
 
@@ -492,6 +514,25 @@ class MixAreaView(context: Context?, val parent: WeakReference<MapView>) :
                     }
                     invalidate() // 触发重绘
                     handled = true
+                } else if (isAreaDragging && selectedArea != null) {
+                    val mapView = mapViewRef.get() ?: return false
+                    // 计算移动的偏移量（世界坐标系）
+                    val lastWorld = mapView.screenToWorld(lastTouchX, lastTouchY)
+                    val currWorld = mapView.screenToWorld(x, y)
+                    val dx = currWorld.x - lastWorld.x
+                    val dy = currWorld.y - lastWorld.y
+
+                    // 更新所有顶点
+                    selectedArea!!.areaVertexPnt.forEach { point ->
+                        point.X += dx
+                        point.Y += dy
+                    }
+
+                    lastTouchX = x
+                    lastTouchY = y
+                    invalidate()
+                    onCleanAreaEditListener?.onAreaDragging(selectedArea!!)
+                    handled = true
                 }
             }
 
@@ -500,8 +541,12 @@ class MixAreaView(context: Context?, val parent: WeakReference<MapView>) :
                     // 通知监听器顶点拖动结束
                     onCleanAreaEditListener?.onVertexDragEnd(selectedArea!!, selectedPointIndex)
                     handled = true
+                } else if (isAreaDragging && selectedArea != null) {
+                    onCleanAreaEditListener?.onAreaDragEnd(selectedArea!!)
+                    handled = true
                 }
                 isDragging = false
+                isAreaDragging = false
                 selectedPointIndex = -1
             }
         }
@@ -621,6 +666,9 @@ class MixAreaView(context: Context?, val parent: WeakReference<MapView>) :
 
         // 闭合路径
         path.close()
+
+        // 绘制填充区域（透明蓝色）
+        canvas.drawPath(path, fillPaint)
 
         // 绘制多边形轮廓，选中的区域使用不同的画笔
         canvas.drawPath(path, if (isSelected) selectedAreaPaint else areaPaint)
@@ -759,6 +807,29 @@ class MixAreaView(context: Context?, val parent: WeakReference<MapView>) :
         return distance <= clickThreshold
     }
 
+    /**
+     * 判断点是否在多边形内部（射线法）
+     */
+    private fun isPointInPolygon(area: WorkAreasNew, screenX: Float, screenY: Float): Boolean {
+        val mapView = mapViewRef.get() ?: return false
+        val worldPoint = mapView.screenToWorld(screenX, screenY)
+        val x = worldPoint.x
+        val y = worldPoint.y
+
+        var isInside = false
+        val points = area.areaVertexPnt
+        var j = points.size - 1
+        for (i in points.indices) {
+            if ((points[i].Y > y) != (points[j].Y > y) &&
+                (x < (points[j].X - points[i].X) * (y - points[i].Y) / (points[j].Y - points[i].Y) + points[i].X)
+            ) {
+                isInside = !isInside
+            }
+            j = i
+        }
+        return isInside
+    }
+
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
 
@@ -795,5 +866,15 @@ class MixAreaView(context: Context?, val parent: WeakReference<MapView>) :
         fun onAreaCreated(area: WorkAreasNew) {}
 
         fun onEditPassPoint(passPoints: PassPoints?) {}
+
+
+        // 区域开始拖动
+        fun onAreaDragStart(area: WorkAreasNew) {}
+
+        // 区域拖动中
+        fun onAreaDragging(area: WorkAreasNew) {}
+
+        // 区域拖动结束
+        fun onAreaDragEnd(area: WorkAreasNew) {}
     }
 }

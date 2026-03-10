@@ -5,6 +5,7 @@ import android.graphics.*
 import android.view.GestureDetector
 import android.view.MotionEvent
 import com.siasun.dianshi.AreaType
+import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.SpArea
 import com.siasun.dianshi.bean.PointNew
 import java.lang.ref.WeakReference
@@ -32,51 +33,68 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
     private var selectedArea: SpArea? = null
     private var selectedPointIndex: Int = -1
     private var isDragging = false
+    private var isAreaDragging = false
+    private var lastTouchX = 0f
+    private var lastTouchY = 0f
+
     private val vertexRadius = 10f // 顶点半径
 
-    // 绘制相关的画笔
-    private val areaPaint = Paint().apply {
-        style = Paint.Style.STROKE
-        color = Color.BLACK
-        strokeWidth = 2f
-        isAntiAlias = true
-    }
+    // 控制是否绘制
+    private var isDrawingEnabled: Boolean = true
 
-    private val selectedAreaPaint = Paint().apply {
-        style = Paint.Style.STROKE
-        color = Color.GREEN
-        strokeWidth = 4f
-        isAntiAlias = true
-    }
+    // 绘制相关的画笔 - 使用伴生对象创建静态实例，避免重复创建
+    companion object {
+        private val areaPaint = Paint().apply {
+            style = Paint.Style.STROKE
+            color = Color.BLACK
+            strokeWidth = 2f
+            isAntiAlias = true
+        }
 
-    private val vertexPaint = Paint().apply {
-        style = Paint.Style.FILL
-        color = Color.GREEN
-        isAntiAlias = true
-    }
+        private val selectedAreaPaint = Paint().apply {
+            style = Paint.Style.STROKE
+            color = Color.GREEN
+            strokeWidth = 4f
+            isAntiAlias = true
+        }
 
-    private val selectedVertexPaint = Paint().apply {
-        style = Paint.Style.FILL
-        color = Color.YELLOW
-        isAntiAlias = true
-    }
+        private val vertexPaint = Paint().apply {
+            style = Paint.Style.FILL
+            color = Color.GREEN
+            isAntiAlias = true
+        }
 
-    private val edgePointPaint = Paint().apply {
-        style = Paint.Style.FILL
-        color = Color.CYAN
-        isAntiAlias = true
-    }
+        private val selectedVertexPaint = Paint().apply {
+            style = Paint.Style.FILL
+            color = Color.YELLOW
+            isAntiAlias = true
+        }
 
-    private val edgePointTextPaint = Paint().apply {
-        color = Color.BLACK
-        textSize = 20f
-        isAntiAlias = true
-        textAlign = Paint.Align.CENTER
-    }
+        private val edgePointPaint = Paint().apply {
+            style = Paint.Style.FILL
+            color = Color.CYAN
+            isAntiAlias = true
+        }
 
-    private val textPaint = Paint().apply {
-        color = Color.BLACK
-        isAntiAlias = true
+        private val edgePointTextPaint = Paint().apply {
+            color = Color.BLACK
+            textSize = 20f
+            isAntiAlias = true
+            textAlign = Paint.Align.CENTER
+        }
+
+        private val textPaint = Paint().apply {
+            color = Color.BLACK
+            isAntiAlias = true
+        }
+
+        // 填充区域的画笔 - 透明蓝色
+        private val fillPaint = Paint().apply {
+            style = Paint.Style.FILL
+            // 设置透明蓝色 (ARGB: 128表示半透明，0, 0, 255表示蓝色)
+            color = Color.argb(50, 0, 0, 255)
+            isAntiAlias = true
+        }
     }
 
     // 边中点的半径
@@ -418,6 +436,13 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
                         // 在边上添加新顶点
                         addVertexOnEdge(selectedArea!!, edgeIndex)
                         handled = true
+                    } else if (isPointInPolygon(selectedArea!!, x, y)) {
+                        // 检查是否在多边形内部，如果是则开启区域拖动
+                        isAreaDragging = true
+                        lastTouchX = x
+                        lastTouchY = y
+                        handled = true
+                        onSpAreaEditListener?.onAreaDragStart(selectedArea!!)
                     }
                 }
             }
@@ -437,6 +462,25 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
                     }
                     invalidate() // 触发重绘
                     handled = true
+                } else if (isAreaDragging && selectedArea != null) {
+                    val mapView = mapViewRef?.get() ?: return false
+                    // 计算移动的偏移量（世界坐标系）
+                    val lastWorld = mapView.screenToWorld(lastTouchX, lastTouchY)
+                    val currWorld = mapView.screenToWorld(x, y)
+                    val dx = currWorld.x - lastWorld.x
+                    val dy = currWorld.y - lastWorld.y
+
+                    // 更新所有顶点
+                    selectedArea!!.m_VertexPnt.forEach { point ->
+                        point.X += dx
+                        point.Y += dy
+                    }
+
+                    lastTouchX = x
+                    lastTouchY = y
+                    invalidate()
+                    onSpAreaEditListener?.onAreaDragging(selectedArea!!)
+                    handled = true
                 }
             }
 
@@ -452,8 +496,12 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
                         isInsideMap
                     )
                     handled = true
+                } else if (isAreaDragging && selectedArea != null) {
+                    onSpAreaEditListener?.onAreaDragEnd(selectedArea!!)
+                    handled = true
                 }
                 isDragging = false
+                isAreaDragging = false
                 selectedPointIndex = -1
             }
         }
@@ -531,14 +579,17 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        canvas.save()
+        if (isDrawingEnabled) {
+            canvas.save()
 
-        // 绘制所有区域
-        list.forEach { area ->
-            drawPolygon(canvas, area, area == selectedArea)
+            // 绘制所有区域
+            list.forEach { area ->
+                drawPolygon(canvas, area, area == selectedArea)
+            }
+
+            canvas.restore()
         }
 
-        canvas.restore()
     }
 
     /**
@@ -563,6 +614,10 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
 
         // 闭合路径
         path.close()
+
+        // 绘制填充区域（透明蓝色）
+        canvas.drawPath(path, fillPaint)
+
         when (area.routeType) {
             AreaType.AREA_OBSTACLE_AVOIDANCE -> areaPaint.setColor(-0x6f000100)//黄色 避障屏蔽区
             AreaType.AREA_CAMERA_OFF -> areaPaint.setColor(-0x6fff0001)//蓝绿色 相机屏蔽区
@@ -627,6 +682,37 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
         }
     }
 
+    /**
+     * 设置是否启用绘制
+     */
+    fun setDrawingEnabled(enabled: Boolean) {
+        this.isDrawingEnabled = enabled
+        postInvalidate()
+    }
+
+    /**
+     * 判断点是否在多边形内部（射线法）
+     */
+    private fun isPointInPolygon(area: SpArea, screenX: Float, screenY: Float): Boolean {
+        val mapView = mapViewRef?.get() ?: return false
+        val worldPoint = mapView.screenToWorld(screenX, screenY)
+        val x = worldPoint.x
+        val y = worldPoint.y
+
+        var isInside = false
+        val points = area.m_VertexPnt
+        var j = points.size - 1
+        for (i in points.indices) {
+            if ((points[i].Y > y) != (points[j].Y > y) &&
+                (x < (points[j].X - points[i].X) * (y - points[i].Y) / (points[j].Y - points[i].Y) + points[i].X)
+            ) {
+                isInside = !isInside
+            }
+            j = i
+        }
+        return isInside
+    }
+
     fun getData() = list
 
     /**
@@ -666,5 +752,14 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
 
         // 创建了新区域
         fun onAreaCreated(area: SpArea) {}
+
+        // 区域开始拖动
+        fun onAreaDragStart(area: SpArea) {}
+
+        // 区域拖动中
+        fun onAreaDragging(area: SpArea) {}
+
+        // 区域拖动结束
+        fun onAreaDragEnd(area: SpArea) {}
     }
 }

@@ -48,6 +48,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import androidx.core.content.withStyledAttributes
 import com.hjq.shape.layout.ShapeFrameLayout
 import com.siasun.dianshi.bean.CrossDoor
+import com.siasun.dianshi.bean.RFID
 import com.siasun.dianshi.bean.ReflectorMapBean
 import com.siasun.dianshi.view.createMap.MapViewInterface
 
@@ -86,6 +87,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     var mHomeDockView: HomeDockView? = null//充电站
     var mElevatorView: ElevatorView? = null//乘梯点
     var mStationView: StationsView? = null//站点
+    var mRFIDView: RFIDView? = null //RFID
     var mOnlinePoseView: OnlinePoseView? = null//上线点
     var mUpLaserScanView: UpLaserScanView<MapView>? = null//上激光点云
     var mDownLaserScanView: DownLaserScanView? = null//下激光点云
@@ -202,6 +204,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mHomeDockView = HomeDockView(context, mMapView)
         mElevatorView = ElevatorView(context, mMapView)
         mStationView = StationsView(context, mMapView)
+        mRFIDView = RFIDView(context, mMapView)
         mOnlinePoseView = OnlinePoseView(context, mMapView)
         mUpLaserScanView = UpLaserScanView(context, mMapView)
         mDownLaserScanView = DownLaserScanView(context, mMapView)
@@ -230,6 +233,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         addMapLayers(mElevatorView)
         //显示避让点
         addMapLayers(mStationView)
+        //RFID
+        addMapLayers(mRFIDView)
         //上线点
         addMapLayers(mOnlinePoseView)
         //上激光点云
@@ -511,6 +516,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mHomeDockView = null
         mElevatorView = null
         mStationView = null
+        mRFIDView = null
         mOnlinePoseView = null
         mLegendView = null
         mUpLaserScanView = null
@@ -560,6 +566,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         // 安全地传递工作模式给各个视图，避免空指针异常
         mWallView?.setWorkMode(mode)
         mStationView?.setWorkMode(mode)
+        mRFIDView?.setWorkMode(mode)
         mRemoveNoiseView?.setWorkMode(mode)
         mPostingAreasView?.setEditMode(mode)
         mPolygonEditView?.setWorkMode(mode)
@@ -891,6 +898,10 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      */
     fun setCmsStations(list: MutableList<CmsStation>?) {
         mStationView?.setCmsStations(list)
+    }
+
+    fun setRFId(list: MutableList<RFID>) {
+        mRFIDView?.setRFIds(list)
     }
 
     /**
@@ -1231,6 +1242,18 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      */
     fun setOnStationDeleteListener(listener: StationsView.OnStationDeleteListener) =
         mStationView?.setOnStationDeleteListener(listener)
+
+    /**
+     * 设置RFId点击监听器
+     */
+    fun setOnRFIdClickListener(listener: RFIDView.OnRFIdClickListener) =
+        mRFIDView?.setOnRFIdClickListener(listener)
+
+    /**
+     * 设置RFId删除监听
+     */
+    fun setOnRFIdDeleteListener(listener: RFIDView.OnRFIdDeleteListener) =
+        mRFIDView?.setOnRFIdDeleteClickListener(listener)
 
     /**
      * 设置乘梯点编辑监听器
