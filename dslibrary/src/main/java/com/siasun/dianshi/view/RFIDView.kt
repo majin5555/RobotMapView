@@ -95,7 +95,7 @@ class RFIDView(context: Context?, var parent: WeakReference<MapView>) :
 
             rfIds.forEach { rfId ->
                 // 使用世界坐标转换为屏幕坐标
-                val locate = mapView.worldToScreen(rfId.tagX, rfId.tagY)
+                val locate = mapView.worldToScreen(rfId.tag_x, rfId.tag_y)
                 // 保存避让点的屏幕坐标，用于点击检测
                 rfIdScreenPositions[rfId] = Pair(locate.x, locate.y)
                 when (currentWorkMode) {

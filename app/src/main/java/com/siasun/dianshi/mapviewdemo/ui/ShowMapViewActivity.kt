@@ -1123,9 +1123,9 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             mBinding.mapView.loadMap(
                 ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_PNG),
                 ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_YAML),
-                mScle,
-                mX,
-                mY
+//                mScle,
+//                mX,
+//                mY
             )
         }
 
@@ -1284,7 +1284,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 
     private fun initRFId() {
         mBinding.btnSaveRfid.onClick {
-            val rfId = RFID("1", 3.0F, 4.2F)
+            val rfId = RFID( tag_x = 1.1F, tag_y = 2.2F)
             mBinding.mapView.setRFId(mutableListOf(rfId))
         }
 

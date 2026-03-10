@@ -9,7 +9,13 @@ package com.siasun.dianshi.bean
  ******************************************/
 
 data class RFID(
-    var tId: String? = null,
-    var tagX: Float = 0F,
-    var tagY: Float = 0F,
+    var robot_x: Float = 0.0F,
+    var robot_y: Float = 0.0F,
+    var robot_z: Float = 0.0F,
+    var robot_roll: Float = 0.0F,
+    var robot_pitch: Float = 0.0F,
+    var robot_yaw: Float = 0.0F,
+    var tag_x: Float = 0.0F,
+    var tag_y: Float = 0.0F,
+    var tId: Int = 0
 )
