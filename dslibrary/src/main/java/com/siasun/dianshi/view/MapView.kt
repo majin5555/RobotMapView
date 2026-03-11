@@ -73,7 +73,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     var mMapScale = 1f //地图缩放级别
     var mMapCenterX = 0f//地图真实世界的中线点X
     var mMapCenterY = 0f//地图真实世界的中线点y
-    private val mMaxMapScale = 5f //最大缩放级别
+    private val mMaxMapScale = 10f //最大缩放级别
     private var mMinMapScale = 0.1f //最小缩放级别
 
     private var mMapView: WeakReference<MapView> = WeakReference(this)
@@ -103,6 +103,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     var mWorkIngPathView: WorkIngPathView? = null //机器人工作路径
     var mDragPositioningView: DragPositioningView? = null //拖拽定位view
     var mReflectMapView: ReflectMapView? = null //反光板地图view
+    var mInspectionView: InspectionView? = null //巡检点
 
     /**
      * 获取地图位图宽度
@@ -222,6 +223,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mWorldPadView = WorldPadView(context, mMapView)
         mDragPositioningView = DragPositioningView(context, mMapView)
         mReflectMapView = ReflectMapView(context, mMapView)
+        mInspectionView = InspectionView(context, mMapView)
         //底图的View
         addView(mPngMapView, lp)
 
@@ -265,6 +267,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         addMapLayers(mCrossView)
         //反光板地图
         addMapLayers(mReflectMapView)
+        //巡检
+        addMapLayers(mInspectionView)
         //地图名称
         addView(mMapNameView)
         //机器人图标
@@ -578,6 +582,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mCrossView?.setWorkMode(mode)
         mDragPositioningView?.setWorkMode(mode)
         mReflectMapView?.setWorkMode(mode)
+        mInspectionView?.setWorkMode(mode)
     }
 
     /**
@@ -684,7 +689,9 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
                             // 计算旋转角度
                             val skewY = values[Matrix.MSKEW_Y]
                             val scaleX = values[Matrix.MSCALE_X]
-                            currentRotation = Math.toDegrees(Math.atan2(skewY.toDouble(), scaleX.toDouble())).toFloat()
+                            currentRotation =
+                                Math.toDegrees(Math.atan2(skewY.toDouble(), scaleX.toDouble()))
+                                    .toFloat()
 
                             hasSavedState = true
                         } catch (e: Exception) {
@@ -1146,6 +1153,10 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      */
     fun addCrossDoors(crossDoors: List<CrossDoor>) = mCrossView?.addCrossDoors(crossDoors)
 
+    /**
+     * 获取车体实时坐标
+     */
+    fun getAgvData(): DoubleArray? = mRobotView?.getAgvData()
 
     /**
      * 是否显示下点云
@@ -1242,6 +1253,19 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      */
     fun setOnStationDeleteListener(listener: StationsView.OnStationDeleteListener) =
         mStationView?.setOnStationDeleteListener(listener)
+
+
+    /**
+     * 设置巡检点点击监听器
+     */
+    fun setOnInspectionStationClickListener(listener: InspectionView.OnStationClickListener) =
+        mInspectionView?.setOnStationClickListener(listener)
+
+    /**
+     * 设置巡检点删除监听器
+     */
+    fun setOnInspectionStationDeleteListener(listener: InspectionView.OnStationDeleteListener) =
+        mInspectionView?.setOnStationDeleteListener(listener)
 
     /**
      * 设置RFId点击监听器

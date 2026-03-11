@@ -86,6 +86,11 @@ class RobotView(context: Context?, val parent: WeakReference<MapView>) :
     }
 
     /**
+     * 获取车体实时坐标
+     */
+    fun getAgvData(): DoubleArray? = agvPose
+
+    /**
      * 设置是否启用绘制
      */
     fun setDrawingEnabled(enabled: Boolean) {
