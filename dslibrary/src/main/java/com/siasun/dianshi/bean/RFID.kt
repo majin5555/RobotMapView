@@ -1,5 +1,7 @@
 package com.siasun.dianshi.bean
 
+import android.R
+
 
 /******************************************
  * 类描述：
@@ -17,5 +19,5 @@ data class RFID(
     var robot_yaw: Float = 0.0F,
     var tag_x: Float = 0.0F,
     var tag_y: Float = 0.0F,
-    var tId: Int = 0
+    var tId: String ? = null,
 )
