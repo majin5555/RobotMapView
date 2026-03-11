@@ -19,5 +19,8 @@ data class RFID(
     var robot_yaw: Float = 0.0F,
     var tag_x: Float = 0.0F,
     var tag_y: Float = 0.0F,
-    var tId: String ? = null,
-)
+    var tid: String? = null,
+    var area: Int = 0,
+    var channel: Int = 0,
+    var tag_index: Int = 0,
+    )
