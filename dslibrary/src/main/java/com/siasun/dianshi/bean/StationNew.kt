@@ -14,14 +14,9 @@ import com.jeremyliao.liveeventbus.core.LiveEvent
  * 一体机
  */
 data class MachineStation(
-    var id: String? = null,
-    var mapId: Int = 0,
-    @JvmField
-    var locate: Locate? = null, //一体机对接点
-    @JvmField
-    var gate: Gate? = null, //对接一体机 准备点
-    @JvmField
-    var wait: MachineWait? = null, //等待点
+    var id: String? = null, var mapId: Int = 0, @JvmField var locate: Locate? = null, //一体机对接点
+    @JvmField var gate: Gate? = null, //对接一体机 准备点
+    @JvmField var wait: MachineWait? = null, //等待点
     var finish: StationCoordinate? = null, //充电结束停放点
     var charge: Int = 2, // 充电类型 1:仅充电 2:充电加水
     var loraID: Int = 0
@@ -43,8 +38,7 @@ data class CmsStation(
  * 一体机等待点
  */
 data class MachineWait(
-    var time: Int = 0,
-    var coordinate: StationCoordinate? = null
+    var time: Int = 0, var coordinate: StationCoordinate? = null
 )
 
 /**
@@ -67,5 +61,15 @@ data class Gate(var x: Float = 0f, var y: Float = 0f, var theta: Float = 0f) : L
  */
 
 data class Locate(var x: Float = 0f, var y: Float = 0f, var theta: Float = 0f) : LiveEvent
+
+/***
+ * 巡检点
+ */
+data class Inspection(
+    var id: String, var name: String, var lift_rod: Boolean, var point: StationCoordinate
+) : LiveEvent
+
+
+
 
 

@@ -38,7 +38,8 @@ enum class WorkMode {
     MODE_EXTEND_MAP_ADD_REGION, // 扩展地图增加区域模式
     WORK_MODE_ADD_REFLECTOR_AREA,//添加反光区域
     WORK_MODE_EDIT_REFLECTOR, //编辑反光板模式
-
     WORK_MODE_EDIT_RF_ID, //编辑rfId
-    WORK_MODE_DELETE_RF_ID //删除rfId
+    WORK_MODE_DELETE_RF_ID, //删除rfId
+    MODE_INSPECTION_STATION_EDIT,  // 修改巡检点模式
+    MODE_INSPECTION_STATION_DELETE, // 删除巡检点模式
 }

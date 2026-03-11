@@ -23,6 +23,7 @@ import com.siasun.dianshi.bean.DragLocationBean
 import com.siasun.dianshi.bean.ElevatorPoint
 import com.siasun.dianshi.bean.Gate
 import com.siasun.dianshi.bean.GatePointBean
+import com.siasun.dianshi.bean.Inspection
 import com.siasun.dianshi.bean.PassPoints
 import com.siasun.dianshi.bean.PlanPathResult
 import com.siasun.dianshi.bean.PositingArea
@@ -30,6 +31,7 @@ import com.siasun.dianshi.bean.PstParkBean
 import com.siasun.dianshi.bean.RC.RCData
 import com.siasun.dianshi.bean.RFID
 import com.siasun.dianshi.bean.SpArea
+import com.siasun.dianshi.bean.StationCoordinate
 import com.siasun.dianshi.bean.TeachPoint
 import com.siasun.dianshi.bean.WaitPointBean
 import com.siasun.dianshi.bean.WorkAreasNew
@@ -58,6 +60,7 @@ import com.siasun.dianshi.mapviewdemo.viewmodel.ShowMapViewModel
 import com.siasun.dianshi.network.constant.KEY_NEY_IP
 import com.siasun.dianshi.utils.World
 import com.siasun.dianshi.view.HomeDockView
+import com.siasun.dianshi.view.InspectionView
 import com.siasun.dianshi.view.MapView
 import com.siasun.dianshi.view.MapView.ISingleTapListener
 import com.siasun.dianshi.view.MixAreaView
@@ -84,7 +87,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     private val mReflectorMaps = mutableListOf<com.siasun.dianshi.bean.ReflectorMapBean>()
 
 
-    val mapId = 3
+    val mapId = 1
     var cleanAreas: MutableList<CleanAreaNew> = mutableListOf()
     var mSpArea: MutableList<SpArea> = mutableListOf()
     var mMixArea: MutableList<WorkAreasNew> = mutableListOf()
@@ -187,10 +190,10 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initMergedPose()
 //        initStation()
 //        iniVirtualWall()
-          initRemoveNoise()
+//          initRemoveNoise()
 //        initPostingArea()
 //        initRemoveNoise()
-        initPostingArea()
+//        initPostingArea()
 //        initCleanArea()
 //        initElevator()
 //        initPose()
@@ -199,8 +202,11 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initSpAreas()
 //        initPath()
 //        initCrossDoor()
-        initRFId()
+//        initRFId()
+        initInspectionView()
 
+
+        //  事实上
         mBinding.btnAddGloblePath.onClick {
 
             //全局
@@ -245,6 +251,43 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 ToastUtils.showLong("全局路径规划失败")
             }
         }
+    }
+
+    private fun initInspectionView() {
+        val mInspection = mutableListOf<Inspection>()
+
+        mBinding.btnAddInspection.onClick {
+            mInspection.add(
+                Inspection(
+                    1, "巡检1", true, StationCoordinate(
+                        mBinding.mapView.getAgvData()?.get(0)!!.toFloat(),
+                        mBinding.mapView.getAgvData()?.get(1)!!.toFloat(),
+                        mBinding.mapView.getAgvData()?.get(2)!!.toFloat()
+                    )
+                )
+            )
+            mBinding.mapView.setInspectionViewStations(mInspection)
+        }
+        //编辑巡检点
+        mBinding.btnEditInspection.onClick {
+            mBinding.mapView.setWorkMode(WorkMode.MODE_INSPECTION_STATION_EDIT)
+        }
+        mBinding.mapView.setOnInspectionStationClickListener(object :
+            InspectionView.OnStationClickListener {
+            override fun onStationClick(station: Inspection) {
+                LogUtil.d("点击了巡检点 $station")
+            }
+        })
+        //编辑删除
+        mBinding.btnDeleteInspection.onClick {
+            mBinding.mapView.setWorkMode(WorkMode.MODE_INSPECTION_STATION_DELETE)
+        }
+        mBinding.mapView.setOnInspectionStationDeleteListener(object :
+            InspectionView.OnStationDeleteListener {
+            override fun onStationDelete(station: Inspection) {
+                LogUtil.d("删除了巡检点 $station")
+            }
+        })
     }
 
     //过门
@@ -339,7 +382,9 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 
             override fun onNodeDeleted(node: com.siasun.dianshi.bean.pp.world.Node) {
                 // 处理删除节点事件
-                Log.d("ShowMapViewActivity", "删除节点: id=${node.m_uId}, x=${node.x}, y=${node.y}")
+                Log.d(
+                    "ShowMapViewActivity", "删除节点: id=${node.m_uId}, x=${node.x}, y=${node.y}"
+                )
                 // 可以在这里添加删除节点后的业务逻辑
                 onPathDataChanged()
             }
@@ -922,7 +967,9 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 }
                 if (area.routeType == AreaType.AREA_AUTO) {
                     MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
-                    LogUtil.i("编辑区域onAreaDragEnd  申请路径规划 ${area.toJson()}", null, TAG_PP)
+                    LogUtil.i(
+                        "编辑区域onAreaDragEnd  申请路径规划 ${area.toJson()}", null, TAG_PP
+                    )
                 }
             }
         })
@@ -1147,14 +1194,14 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.btnCreateStation.onClick {
             XpopUtils(this).showCmsStationDialog(
                 onConfirmCall = { result ->
-                    result?.let {
-                        cmsStation.add(result)
-                        mBinding.mapView.setCmsStations(cmsStation)
-                    }
+                result?.let {
+                    cmsStation.add(result)
+                    mBinding.mapView.setCmsStations(cmsStation)
+                }
 
-                }, onDeleteCall = {
+            }, onDeleteCall = {
 
-                }, mapId
+            }, mapId
             )
         }
         //编辑避让点
@@ -1244,7 +1291,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 
     private fun initRFId() {
         mBinding.btnSaveRfid.onClick {
-            val rfId = RFID( tag_x = 1.1F, tag_y = 2.2F)
+            val rfId = RFID(tag_x = 1.1F, tag_y = 2.2F)
             mBinding.mapView.setRFId(mutableListOf(rfId))
         }
 
