@@ -14,8 +14,10 @@ import com.siasun.dianshi.bean.MachineStation
 import com.siasun.dianshi.bean.MergedPoseBean
 import com.siasun.dianshi.bean.RequestSaveArea
 import com.siasun.dianshi.bean.RequestSaveCmsWorkArea
+import com.siasun.dianshi.bean.RequestSaveMap
 import com.siasun.dianshi.bean.SpArea
 import com.siasun.dianshi.bean.SwitchMapBean
+import com.siasun.dianshi.mapviewdemo.viewmodel.CreateMap3DViewModel
 import com.siasun.dianshi.network.request.RequestGetSpecialArea
 import com.siasun.dianshi.network.request.RequestSaveSpecialArea
 import com.siasun.dianshi.network.request.RequestSaveVirtualWall
@@ -237,5 +239,13 @@ interface ApiInterface {
      */
     @POST("/switch_map")
     suspend fun switchMap(@Body mapInfo: SwitchMapBean): BaseResponse<MapInfo>
+
+
+    /**
+     * 上传地图信息
+     */
+    @POST("/save_map")
+    suspend fun upLoadMapInfo(@Body mapInfo: RequestSaveMap): BaseResponse<MutableList<MapInfo>>
+
 
 }

@@ -9,7 +9,6 @@ import android.graphics.PointF
 import android.graphics.RectF
 import android.os.Build
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
 import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import android.widget.ImageView
