@@ -202,7 +202,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initSpAreas()
 //        initPath()
 //        initCrossDoor()
-//        initRFId()
+        initRFId()
         initInspectionView()
 
 
@@ -259,7 +259,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.btnAddInspection.onClick {
             mInspection.add(
                 Inspection(
-                    1, "巡检1", true, StationCoordinate(
+                    "1", "巡检1", true, StationCoordinate(
                         mBinding.mapView.getAgvData()?.get(0)!!.toFloat(),
                         mBinding.mapView.getAgvData()?.get(1)!!.toFloat(),
                         mBinding.mapView.getAgvData()?.get(2)!!.toFloat()
@@ -1194,14 +1194,14 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.btnCreateStation.onClick {
             XpopUtils(this).showCmsStationDialog(
                 onConfirmCall = { result ->
-                result?.let {
-                    cmsStation.add(result)
-                    mBinding.mapView.setCmsStations(cmsStation)
-                }
+                    result?.let {
+                        cmsStation.add(result)
+                        mBinding.mapView.setCmsStations(cmsStation)
+                    }
 
-            }, onDeleteCall = {
+                }, onDeleteCall = {
 
-            }, mapId
+                }, mapId
             )
         }
         //编辑避让点
@@ -1291,8 +1291,10 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 
     private fun initRFId() {
         mBinding.btnSaveRfid.onClick {
-            val rfId = RFID(tag_x = 1.1F, tag_y = 2.2F)
-            mBinding.mapView.setRFId(mutableListOf(rfId))
+            val rfId1 = RFID(tag_x = 1.1F, tag_y = 2.2F, area = 1, channel = 2, tag_index = 3)
+            val rfId2 = RFID(tag_x = 2.1F, tag_y = 2.2F, area = 1, channel = 2, tag_index = 3)
+            val rfId3 = RFID(tag_x = 3.1F, tag_y = 2.2F, area = 1, channel = 2, tag_index = 3)
+            mBinding.mapView.setRFId(mutableListOf(rfId1,rfId2,rfId3))
         }
 
         mBinding.btnEditRfid.onClick {
