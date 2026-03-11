@@ -66,7 +66,7 @@ data class Locate(var x: Float = 0f, var y: Float = 0f, var theta: Float = 0f) :
  * 巡检点
  */
 data class Inspection(
-    var id: Int, var name: String, var lift_rod: Boolean, var point: StationCoordinate
+    var id: String, var name: String, var lift_rod: Boolean, var point: StationCoordinate
 ) : LiveEvent
 
 
