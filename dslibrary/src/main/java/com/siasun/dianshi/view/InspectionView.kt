@@ -40,6 +40,7 @@ class InspectionView(context: Context?, var parent: WeakReference<MapView>) :
 
     // 点击事件监听器
     private var onStationClickListener: OnStationClickListener? = null
+
     // 删除事件监听器
     private var onStationDeleteListener: OnStationDeleteListener? = null
 
@@ -104,6 +105,7 @@ class InspectionView(context: Context?, var parent: WeakReference<MapView>) :
                             mPaint.color = Color.RED
                             drawCircle(canvas, locate, radius, mPaint)
                         }
+
                         WorkMode.MODE_INSPECTION_STATION_DELETE -> {
                             // 删除避让点模式下，绘制红色边框和填充，增加删除视觉提示
                             mPaint.color = Color.RED
@@ -115,6 +117,7 @@ class InspectionView(context: Context?, var parent: WeakReference<MapView>) :
                             mPaint.style = Paint.Style.FILL
                             drawCircle(canvas, locate, radius, mPaint)
                         }
+
                         else -> {
                             // 普通模式下，保持原有的绘制样式
                             mPaint.color = Color.RED
@@ -157,6 +160,7 @@ class InspectionView(context: Context?, var parent: WeakReference<MapView>) :
                             // 删除模式下，调用删除监听器
                             onStationDeleteListener?.onStationDelete(station)
                         }
+
                         else -> {
                             // 其他模式下，调用点击监听器
                             onStationClickListener?.onStationClick(station)
@@ -198,6 +202,10 @@ class InspectionView(context: Context?, var parent: WeakReference<MapView>) :
         this.isDrawingEnabled = enabled
         postInvalidate()
     }
+    /**
+     * 获取巡检点数据源
+     */
+    fun getInspectionViewStations(): MutableList<Inspection> = mInspection
 
     /**
      * 清理资源，防止内存泄漏

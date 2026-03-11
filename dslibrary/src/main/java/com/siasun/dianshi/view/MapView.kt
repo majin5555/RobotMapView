@@ -48,6 +48,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import androidx.core.content.withStyledAttributes
 import com.hjq.shape.layout.ShapeFrameLayout
 import com.siasun.dianshi.bean.CrossDoor
+import com.siasun.dianshi.bean.Inspection
 import com.siasun.dianshi.bean.RFID
 import com.siasun.dianshi.bean.ReflectorMapBean
 import com.siasun.dianshi.view.createMap.MapViewInterface
@@ -1157,6 +1158,18 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      * 获取车体实时坐标
      */
     fun getAgvData(): DoubleArray? = mRobotView?.getAgvData()
+
+    /**
+     * 获取巡检点数据源
+     */
+    fun setInspectionViewStations(list: MutableList<Inspection>) =
+        mInspectionView?.setInspectionViewStations(list)
+
+    /**
+     * 获取巡检点数据源
+     */
+    fun getInspectionViewStations(): MutableList<Inspection> =
+        mInspectionView?.getInspectionViewStations()!!
 
     /**
      * 是否显示下点云

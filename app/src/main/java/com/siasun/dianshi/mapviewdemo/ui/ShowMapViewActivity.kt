@@ -266,7 +266,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                     )
                 )
             )
-            mBinding.mapView.mInspectionView?.setInspectionViewStations(mInspection)
+            mBinding.mapView.setInspectionViewStations(mInspection)
         }
         //编辑巡检点
         mBinding.btnEditInspection.onClick {
