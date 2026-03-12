@@ -51,6 +51,7 @@ import com.siasun.dianshi.bean.CrossDoor
 import com.siasun.dianshi.bean.Inspection
 import com.siasun.dianshi.bean.RFID
 import com.siasun.dianshi.bean.ReflectorMapBean
+import com.siasun.dianshi.bean.SameSwitchBean
 import com.siasun.dianshi.view.createMap.MapViewInterface
 
 /**
@@ -88,6 +89,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     var mHomeDockView: HomeDockView? = null//充电站
     var mElevatorView: ElevatorView? = null//乘梯点
     var mStationView: StationsView? = null//站点
+    var mSameSwitchView: SameSwitchView? = null //同层切换点
     var mRFIDView: RFIDView? = null //RFID
     var mOnlinePoseView: OnlinePoseView? = null//上线点
     var mUpLaserScanView: UpLaserScanView<MapView>? = null//上激光点云
@@ -206,6 +208,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mHomeDockView = HomeDockView(context, mMapView)
         mElevatorView = ElevatorView(context, mMapView)
         mStationView = StationsView(context, mMapView)
+        mSameSwitchView = SameSwitchView(context, mMapView)
         mRFIDView = RFIDView(context, mMapView)
         mOnlinePoseView = OnlinePoseView(context, mMapView)
         mUpLaserScanView = UpLaserScanView(context, mMapView)
@@ -236,6 +239,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         addMapLayers(mElevatorView)
         //显示避让点
         addMapLayers(mStationView)
+        //显示同层切换
+        addMapLayers(mSameSwitchView)
         //RFID
         addMapLayers(mRFIDView)
         //上线点
@@ -521,6 +526,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mHomeDockView = null
         mElevatorView = null
         mStationView = null
+        mSameSwitchView = null
         mRFIDView = null
         mOnlinePoseView = null
         mLegendView = null
@@ -571,6 +577,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         // 安全地传递工作模式给各个视图，避免空指针异常
         mWallView?.setWorkMode(mode)
         mStationView?.setWorkMode(mode)
+        mSameSwitchView?.setWorkMode(mode)
         mRFIDView?.setWorkMode(mode)
         mRemoveNoiseView?.setWorkMode(mode)
         mPostingAreasView?.setEditMode(mode)
@@ -1166,6 +1173,12 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mInspectionView?.setInspectionViewStations(list)
 
     /**
+     * 设置同层切换点
+     */
+    fun setSameSwitchStations(list: MutableList<SameSwitchBean>) =
+        mSameSwitchView?.setSameSwitchStations(list)
+
+    /**
      * 获取巡检点数据源
      */
     fun getInspectionViewStations(): MutableList<Inspection> =
@@ -1291,6 +1304,13 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      */
     fun setOnRFIdDeleteListener(listener: RFIDView.OnRFIdDeleteListener) =
         mRFIDView?.setOnRFIdDeleteClickListener(listener)
+
+
+    /**
+     * 设置同层切换点监听
+     */
+    fun setOnSameClickListener(listener: SameSwitchView.OnStationClickListener) =
+        mSameSwitchView?.setOnStationClickListener(listener)
 
     /**
      * 设置乘梯点编辑监听器

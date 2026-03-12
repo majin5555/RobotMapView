@@ -87,6 +87,15 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
             }
         }
 
+        //同层切换点
+        mBinding.cbSameSwitchStation.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                parentRef.get()?.mSameSwitchView?.setDrawingEnabled(true) // 启用绘制
+            } else {
+                parentRef.get()?.mSameSwitchView?.setDrawingEnabled(false) // 启用绘制
+            }
+        }
+
         //rfId
         mBinding.cbRfId.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
@@ -201,6 +210,12 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
                     )
                 ) VISIBLE else GONE
 
+            mBinding.cbSameSwitchStation.visibility = if (typedArray.getBoolean(
+                    R.styleable.MapView_showSameSwitch,
+                    false
+                )
+            ) VISIBLE else GONE
+
             mBinding.cbOnlinePose.visibility = if (typedArray.getBoolean(
                     R.styleable.MapView_showOnlinePose, false
                 )
@@ -255,6 +270,7 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
         mBinding.cbVirtualWall.setOnCheckedChangeListener(null)
         mBinding.cbTopViewPath.setOnCheckedChangeListener(null)
         mBinding.cbStations.setOnCheckedChangeListener(null)
+        mBinding.cbSameSwitchStation.setOnClickListener(null)
         mBinding.cbOnlinePose.setOnCheckedChangeListener(null)
         mBinding.cbChargeStation.setOnCheckedChangeListener(null)
         mBinding.cbElevator.setOnCheckedChangeListener(null)

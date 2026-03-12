@@ -20,6 +20,7 @@
         app:showOnlinePose="true"
         app:showPositingArea="true"
         app:showRFID="true"
+        app:showSameSwitch="true"
         app:showStations="true"
         app:showTopViewPath="true"
         app:showUpLaserPointCloud="true"
@@ -498,6 +499,18 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="编辑RFID" />
+
+            <Button
+                android:id="@+id/btn_add_same"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="添加同层切换点" />
+
+            <Button
+                android:id="@+id/btn_edit_same"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="编辑同层切换点" />
 
         </LinearLayout>
     </ScrollView>

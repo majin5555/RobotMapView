@@ -42,4 +42,6 @@ enum class WorkMode {
     WORK_MODE_DELETE_RF_ID, //删除rfId
     MODE_INSPECTION_STATION_EDIT,  // 修改巡检点模式
     MODE_INSPECTION_STATION_DELETE, // 删除巡检点模式
+
+    WORK_MODE_SAME_SWITCH_EDIT, //编辑同层切换点模式
 }

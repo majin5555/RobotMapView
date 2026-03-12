@@ -154,6 +154,15 @@
                     android:textColor="#003894" />
 
                 <CheckBox
+                    android:id="@+id/cb_same_switch_station"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="#003894"
+                    android:checked="true"
+                    android:text="@string/same_switch_station"
+                    android:textColor="#003894" />
+
+                <CheckBox
                     android:id="@+id/cb_rf_id"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

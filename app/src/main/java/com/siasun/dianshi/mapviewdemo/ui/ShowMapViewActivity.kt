@@ -30,6 +30,7 @@ import com.siasun.dianshi.bean.PositingArea
 import com.siasun.dianshi.bean.PstParkBean
 import com.siasun.dianshi.bean.RC.RCData
 import com.siasun.dianshi.bean.RFID
+import com.siasun.dianshi.bean.SameSwitchBean
 import com.siasun.dianshi.bean.SpArea
 import com.siasun.dianshi.bean.StationCoordinate
 import com.siasun.dianshi.bean.TeachPoint
@@ -61,12 +62,12 @@ import com.siasun.dianshi.network.constant.KEY_NEY_IP
 import com.siasun.dianshi.utils.World
 import com.siasun.dianshi.view.HomeDockView
 import com.siasun.dianshi.view.InspectionView
-import com.siasun.dianshi.view.MapView
 import com.siasun.dianshi.view.MapView.ISingleTapListener
 import com.siasun.dianshi.view.MixAreaView
 import com.siasun.dianshi.view.PolygonEditView
 import com.siasun.dianshi.view.PostingAreasView
 import com.siasun.dianshi.view.RFIDView
+import com.siasun.dianshi.view.SameSwitchView
 import com.siasun.dianshi.view.SpPolygonEditView
 import com.siasun.dianshi.view.VirtualWallView
 import com.siasun.dianshi.view.WorkMode
@@ -98,7 +99,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
-        MMKV.defaultMMKV().encode(KEY_NEY_IP, "192.168.1.198");
+        MMKV.defaultMMKV().encode(KEY_NEY_IP, "192.168.1.198")
 
         MainController.init()
         //加载地图
@@ -202,8 +203,9 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initSpAreas()
 //        initPath()
 //        initCrossDoor()
-        initRFId()
-        initInspectionView()
+//        initRFId()
+//        initInspectionView()
+        initSameSwitch()
 
 
         //  事实上
@@ -1294,7 +1296,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             val rfId1 = RFID(tag_x = 1.1F, tag_y = 2.2F, area = 1, channel = 2, tag_index = 3)
             val rfId2 = RFID(tag_x = 2.1F, tag_y = 2.2F, area = 1, channel = 2, tag_index = 3)
             val rfId3 = RFID(tag_x = 3.1F, tag_y = 2.2F, area = 1, channel = 2, tag_index = 3)
-            mBinding.mapView.setRFId(mutableListOf(rfId1,rfId2,rfId3))
+            mBinding.mapView.setRFId(mutableListOf(rfId1, rfId2, rfId3))
         }
 
         mBinding.btnEditRfid.onClick {
@@ -1304,6 +1306,28 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.mapView.setOnRFIdClickListener(object : RFIDView.OnRFIdClickListener {
             override fun onRFIdClick(rfId: RFID) {
                 LogUtil.i("点击的RFId = ${rfId}")
+            }
+
+        })
+    }
+
+    private fun initSameSwitch() {
+        mBinding.btnAddSame.onClick {
+            val same1 = SameSwitchBean(
+                id = 1,
+                name = "同层切换1",
+                coordinate = StationCoordinate(1.1F, 2.2F, 0F)
+            )
+            mBinding.mapView.setSameSwitchStations(mutableListOf(same1))
+        }
+
+        mBinding.btnEditSame.onClick {
+            mBinding.mapView.setWorkMode(WorkMode.WORK_MODE_SAME_SWITCH_EDIT)
+        }
+
+        mBinding.mapView.setOnSameClickListener(object : SameSwitchView.OnStationClickListener {
+            override fun onStationClick(station: SameSwitchBean) {
+                LogUtil.i("点击的station = ${station}")
             }
 
         })

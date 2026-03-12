@@ -31,5 +31,7 @@
         <attr name="showMixArea" default="false" format="boolean" />
         <!--        rfid-->
         <attr name="showRFID" default="false" format="boolean" />
+        <!--        同层切换-->
+        <attr name="showSameSwitch" default="false" format="boolean" />
     </declare-styleable>
 </resources>
