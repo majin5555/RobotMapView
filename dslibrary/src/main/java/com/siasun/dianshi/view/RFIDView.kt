@@ -137,7 +137,9 @@ class RFIDView(context: Context?, var parent: WeakReference<MapView>) :
 
                 drawLabel(
                     canvas,
-                    "${context.getString(R.string.rf_id)} : ${rfId.tid}",
+                    String.format(
+                        context.resources.getString(R.string.rf_id_content, rfId.area)
+                    ),
                     reusablePointF,
                     mTextPaint
                 )
