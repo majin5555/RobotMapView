@@ -38,6 +38,7 @@ import com.siasun.dianshi.view.PngMapView
 import com.siasun.dianshi.view.SlamWareBaseView
 import com.siasun.dianshi.view.UpLaserScanView
 import com.siasun.dianshi.view.createMap.RobotViewCreateMap
+import kotlin.math.atan2
 
 /**
  * 地图画布
@@ -83,7 +84,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     /**
      * 旋转弧度
      */
-    override var rotationRadians = 0f
+//    override var rotationRadians = 0f
 
     /**
      * *************** 监听器   start ***********************
@@ -177,7 +178,16 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     private fun setRotation(factor: Float, cx: Int, cy: Int) {
         mOuterMatrix.postRotate(RadianUtil.toAngel(factor), cx.toFloat(), cy.toFloat())
         setMatrixWithRotation(mOuterMatrix, factor)
-        rotationRadians += RadianUtil.toRadians(RadianUtil.toAngel(factor))
+//        rotationRadians += RadianUtil.toRadians(RadianUtil.toAngel(factor))
+    }
+
+    open fun getViewRotation(): Float {
+        val values = FloatArray(9)
+        mOuterMatrix.getValues(values)
+        return atan2(
+            values[Matrix.MSKEW_Y].toDouble(),
+            values[Matrix.MSCALE_X].toDouble()
+        ).toFloat()
     }
 
     private fun setTransition(dx: Int, dy: Int) {

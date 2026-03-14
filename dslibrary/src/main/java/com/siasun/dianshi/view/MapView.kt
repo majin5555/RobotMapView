@@ -52,6 +52,7 @@ import com.siasun.dianshi.bean.Inspection
 import com.siasun.dianshi.bean.RFID
 import com.siasun.dianshi.bean.ReflectorMapBean
 import com.siasun.dianshi.view.createMap.MapViewInterface
+import kotlin.math.atan2
 
 /**
  * 地图画布
@@ -153,7 +154,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     /**
      * 旋转弧度
      */
-    override var rotationRadians = 0f
+//    override var rotationRadians = 0f
 
     /**
      * *************** 监听器   end ***********************

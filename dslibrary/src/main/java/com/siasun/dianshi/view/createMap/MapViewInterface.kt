@@ -27,5 +27,5 @@ interface MapViewInterface {
      */
     val robotPose: FloatArray
 
-    val rotationRadians: Float
+//    val rotationRadians: Float
 }

@@ -256,11 +256,11 @@ class ExpandMap2DActivity :
         CommonWarnDialog.Builder(this).setMsg("保存地图").setOnCommonWarnDialogListener(object :
             CommonWarnDialog.Builder.CommonWarnDialogListener {
             override fun confirm() {
-                LogUtil.i("mBinding.mapView.mMapRotateRadians ${mBinding.mapView.rotationRadians}")
+                LogUtil.i("mBinding.mapView.mMapRotateRadians ${mBinding.mapView.getViewRotation()}")
                 //开始保存地图
                 MainController.saveEnvironment(
                     1,
-                    rotate = mBinding.mapView.rotationRadians,
+                    rotate = -mBinding.mapView.getViewRotation(),
                     mapId = mapID
                 )
                 GlobalVariable.SEND_NAVI_HEART = true
