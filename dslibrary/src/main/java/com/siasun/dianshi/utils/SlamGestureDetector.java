@@ -44,9 +44,9 @@ public class SlamGestureDetector {
         void onMapRotate(float factor, PointF centerPoint);
     }
 
-    private static int currTouchCount;
-    private static long currTouchTime;
-    private static long touchBeginTime;
+    private int currTouchCount;
+    private long currTouchTime;
+    private long touchBeginTime;
 
     private PointF currPrimaryPosition;
     private PointF prevPrimaryPosition;
@@ -180,7 +180,10 @@ public class SlamGestureDetector {
                 return MODE_NONE;
             }
         } else if (currTouchCount == 2) {
-            if (prevTouchCount == 1) {
+            if (prevTouchCount == 0) {
+                primaryPointerIndex = event.findPointerIndex(event.getPointerId(0));
+                secondaryPointerIndex = event.findPointerIndex(event.getPointerId(1));
+            } else if (prevTouchCount == 1) {
                 secondaryPointerIndex = event.findPointerIndex(event.getPointerId(1));
             }
 
@@ -190,7 +193,10 @@ public class SlamGestureDetector {
             currPrimaryPosition.set(event.getX(primaryPointerIndex), event.getY(primaryPointerIndex));
             currSecondaryPosition.set(event.getX(secondaryPointerIndex), event.getY(secondaryPointerIndex));
 
-            if (prevTouchCount == 1) {
+            if (prevTouchCount == 0) {
+                prevPrimaryPosition.set(currPrimaryPosition.x, currPrimaryPosition.y);
+                prevSecondaryPosition.set(currSecondaryPosition.x, currSecondaryPosition.y);
+            } else if (prevTouchCount == 1) {
                 prevSecondaryPosition.set(currSecondaryPosition.x, currSecondaryPosition.y);
             }
 

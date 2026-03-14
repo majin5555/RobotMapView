@@ -77,6 +77,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.anko.toast
 import java.io.File
+import java.util.UUID
 import kotlin.random.Random
 
 /**
@@ -259,7 +260,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.btnAddInspection.onClick {
             mInspection.add(
                 Inspection(
-                    "1", "巡检1", true, StationCoordinate(
+                    "1_${UUID.randomUUID()}", "巡检1", true, StationCoordinate(
                         mBinding.mapView.getAgvData()?.get(0)!!.toFloat(),
                         mBinding.mapView.getAgvData()?.get(1)!!.toFloat(),
                         mBinding.mapView.getAgvData()?.get(2)!!.toFloat()
@@ -267,6 +268,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 )
             )
             mBinding.mapView.setInspectionViewStations(mInspection)
+
+            LogUtil.i("获取json ${mBinding.mapView.getInspectionViewStations().toJson()} ")
         }
         //编辑巡检点
         mBinding.btnEditInspection.onClick {

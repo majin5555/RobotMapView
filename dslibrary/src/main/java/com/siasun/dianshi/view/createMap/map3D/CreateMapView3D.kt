@@ -10,33 +10,33 @@ import android.graphics.RectF
 import android.os.Build
 import android.util.AttributeSet
 import android.view.MotionEvent
+import android.view.SurfaceHolder
+import android.view.SurfaceView
 import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import android.widget.ImageView
 import androidx.annotation.RequiresApi
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
 import com.ngu.lcmtypes.laser_t
+import com.siasun.dianshi.bean.ConstraintNode
 import com.siasun.dianshi.bean.MapData
 import com.siasun.dianshi.utils.CoordinateConversion
 import com.siasun.dianshi.utils.MathUtils
 import com.siasun.dianshi.utils.RadianUtil
 import com.siasun.dianshi.utils.SlamGestureDetector
 import com.siasun.dianshi.utils.YamlNew
-import com.siasun.dianshi.view.WorkMode
-import com.siasun.dianshi.view.createMap.MapViewInterface
-import java.io.File
-import java.lang.ref.WeakReference
-import java.util.concurrent.CopyOnWriteArrayList
-import android.view.SurfaceHolder
-import android.view.SurfaceView
-import com.bumptech.glide.request.target.SimpleTarget
-import com.siasun.dianshi.bean.ConstraintNode
-import com.siasun.dianshi.view.createMap.ExpandAreaView
 import com.siasun.dianshi.view.PngMapView
 import com.siasun.dianshi.view.SlamWareBaseView
 import com.siasun.dianshi.view.UpLaserScanView
+import com.siasun.dianshi.view.WorkMode
+import com.siasun.dianshi.view.createMap.ExpandAreaView
+import com.siasun.dianshi.view.createMap.MapViewInterface
 import com.siasun.dianshi.view.createMap.RobotViewCreateMap
+import java.io.File
+import java.lang.ref.WeakReference
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * 地图画布
@@ -179,7 +179,7 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     private fun setRotation(factor: Float, cx: Int, cy: Int) {
         mOuterMatrix.postRotate(RadianUtil.toAngel(factor), cx.toFloat(), cy.toFloat())
         setMatrixWithRotation(mOuterMatrix, factor)
-        rotationRadians = RadianUtil.toRadians(mMapOutline3D!!.mRotation)
+        rotationRadians += RadianUtil.toRadians(RadianUtil.toAngel(factor))
     }
 
     private fun setTransition(dx: Int, dy: Int) {
@@ -244,7 +244,6 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
         mPngMapView?.setMatrix(matrixCopy)
         for (mapLayer in mapLayers) {
             mapLayer.setMatrixWithScale(matrixCopy, scale)
-            mapLayer.mRotation = rotation
         }
     }
 

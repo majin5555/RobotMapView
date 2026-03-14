@@ -177,7 +177,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     private fun setRotation(factor: Float, cx: Int, cy: Int) {
         mOuterMatrix.postRotate(RadianUtil.toAngel(factor), cx.toFloat(), cy.toFloat())
         setMatrixWithRotation(mOuterMatrix, factor)
-        rotationRadians = RadianUtil.toRadians(mMapOutline2D!!.mRotation)
+        rotationRadians += RadianUtil.toRadians(RadianUtil.toAngel(factor))
     }
 
     private fun setTransition(dx: Int, dy: Int) {
@@ -241,7 +241,6 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
         mPngMapView?.setMatrix(matrixCopy)
         for (mapLayer in mapLayers) {
             mapLayer.setMatrixWithScale(matrixCopy, scale)
-            mapLayer.mRotation = rotation
         }
     }
 

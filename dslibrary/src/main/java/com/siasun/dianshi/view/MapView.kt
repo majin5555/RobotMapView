@@ -373,7 +373,6 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mPngMapView?.setMatrix(matrix)
         for (mapLayer in mapLayers) {
             mapLayer.setMatrixWithScale(matrix, scale)
-            mapLayer.mRotation = rotation
         }
     }
 
