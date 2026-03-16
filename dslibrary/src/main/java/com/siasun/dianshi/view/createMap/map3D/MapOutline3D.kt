@@ -65,7 +65,6 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
             color = Color.GREEN
             style = Paint.Style.FILL
             strokeWidth = 5f
-            strokeCap = Paint.Cap.ROUND
         }
     }
 
@@ -112,7 +111,7 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
             val totalScale = mapView.mSrf.scale / resolution
             if (totalScale > 0) {
                 mPaint.strokeWidth = 3f / totalScale
-                mGreenDrawPaint.strokeWidth = 5f / totalScale
+//                mGreenDrawPaint.strokeWidth = 5f / totalScale
             }
 
             // 5. 准备点云数据 (仅在脏标记时更新)

@@ -26,7 +26,7 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
 
     companion object {
         private val paint: Paint = Paint().apply {
-            color = Color.GREEN
+            color = Color.RED
             strokeWidth = 5f
             style = Paint.Style.FILL
         }
@@ -41,6 +41,7 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
         currentWorkMode = mode
 
     }
+
     /**
      * 外部接口：更新关键帧数据 拓展地图时显示所有关键帧位置
      */
@@ -57,6 +58,7 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
             }
         }
     }
+
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
