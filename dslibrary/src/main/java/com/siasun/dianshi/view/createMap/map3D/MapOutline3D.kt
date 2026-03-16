@@ -64,7 +64,8 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
         val mGreenDrawPaint = Paint().apply {
             color = Color.GREEN
             style = Paint.Style.FILL
-            strokeWidth = 5f
+            strokeWidth = 0.5f
+            strokeCap = Paint.Cap.ROUND
         }
     }
 

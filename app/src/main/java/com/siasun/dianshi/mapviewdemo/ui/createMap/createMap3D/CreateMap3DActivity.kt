@@ -40,8 +40,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Timer
 import java.util.TimerTask
-import kotlin.math.asin
-import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -375,8 +373,8 @@ class CreateMap3DActivity :
 
             LogUtil.i(
                 "旋转前 x ${mBinding.mapView.robotPose[0]} y ${mBinding.mapView.robotPose[1]} 角度 t ${
-                    Math.toDegrees(
-                        mBinding.mapView.robotPose[2].toDouble()
+                    RadianUtil.toAngel(
+                        mBinding.mapView.robotPose[2]
                     )
                 }  z ${mBinding.mapView.robotPose[3]}  roll ${mBinding.mapView.robotPose[4]}  pitch ${mBinding.mapView.robotPose[5]}",
                 null,
@@ -402,8 +400,10 @@ class CreateMap3DActivity :
                 null,
                 TAG_NAV
             )
+
+
             LogUtil.i(
-                "计算后 3D建图后定位 旋转后 x $routeX y $routeY 角度 t ${Math.toDegrees(routeT.toDouble())} z $routeZ roll $routeRoll pitch$routePitch",
+                "计算后 3D建图后定位 旋转后 x $routeX y $routeY 角度 t ${RadianUtil.toAngel(routeT)} z $routeZ roll $routeRoll pitch$routePitch",
                 null,
                 TAG_NAV
             )
