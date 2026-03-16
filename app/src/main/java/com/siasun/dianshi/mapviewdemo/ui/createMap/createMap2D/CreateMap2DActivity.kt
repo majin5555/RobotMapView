@@ -48,9 +48,9 @@ class CreateMap2DActivity :
 
         mTimer.schedule(object : TimerTask() {
             override fun run() {
-                if (GlobalVariable.SEND_NAVI_HEART) {
+//                if (GlobalVariable.SEND_NAVI_HEART) {
                     MainController.myController.mSendNaviHeartBeat()
-                }
+//                }
             }
         }, 0, 500)
 
@@ -134,7 +134,7 @@ class CreateMap2DActivity :
                     mViewModel.downPngYaml(CREATE_MAP, mapID)
 
                     //从建图模式到定位模式 后恢复地图不可旋转
-                    GlobalVariable.SEND_NAVI_HEART = false
+//                    GlobalVariable.SEND_NAVI_HEART = false
 
                 }
                 mBinding.mapView.isMapping = false
@@ -167,7 +167,7 @@ class CreateMap2DActivity :
             //优化完成，询问pad是否保存地图
             2 -> {
                 if (mBinding.mapView.isStartRevSubMaps) {
-                    GlobalVariable.SEND_NAVI_HEART = false
+//                    GlobalVariable.SEND_NAVI_HEART = false
 
 //                    if (mBinding.mapView.isRouteMap) {
 //                        LogUtil.i("弹框---是否旋转地图", null, TAG_NAV)
@@ -207,7 +207,7 @@ class CreateMap2DActivity :
                         3, rotate = -mBinding.mapView.getViewRotation(), mapId = mapID
                     )
                 }
-                GlobalVariable.SEND_NAVI_HEART = true
+//                GlobalVariable.SEND_NAVI_HEART = true
 //                    showLoading("保存地图中")
                 LogUtil.i("确定要保存地图么...点击确定", null, TAG_NAV)
             }
@@ -215,7 +215,7 @@ class CreateMap2DActivity :
             override fun discard() {
                 mBinding.mapView.isMapping = false
                 MainController.saveEnvironment(2, mapId = mapID)
-                GlobalVariable.SEND_NAVI_HEART = false
+//                GlobalVariable.SEND_NAVI_HEART = false
                 LogUtil.i("确定要保存地图么...点击取消", null, TAG_NAV)
                 finish()
             }

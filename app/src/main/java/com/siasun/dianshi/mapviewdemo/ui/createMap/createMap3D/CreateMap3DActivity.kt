@@ -62,9 +62,9 @@ class CreateMap3DActivity :
 //        MMKV.defaultMMKV().encode(KEY_NEY_IP, "192.168.3.101");
         mTimer.schedule(object : TimerTask() {
             override fun run() {
-                if (GlobalVariable.SEND_NAVI_HEART) {
+//                if (GlobalVariable.SEND_NAVI_HEART) {
                     MainController.myController.mSendNaviHeartBeat()
-                }
+//                }
             }
         }, 0, 500)
 
@@ -273,7 +273,7 @@ class CreateMap3DActivity :
             //优化完成，询问pad是否保存地图
             2 -> {
                 if (mBinding.mapView.isStartRevSubMaps) {
-                    GlobalVariable.SEND_NAVI_HEART = false
+//                    GlobalVariable.SEND_NAVI_HEART = false
 
                     showSavaMapDialog()
 
@@ -309,7 +309,7 @@ class CreateMap3DActivity :
                     )
                 }
 
-                GlobalVariable.SEND_NAVI_HEART = true
+//                GlobalVariable.SEND_NAVI_HEART = true
                 showLoading("保存地图中")
                 LogUtil.i("确定要保存地图么...点击确定", null, TAG_NAV)
             }
@@ -317,7 +317,7 @@ class CreateMap3DActivity :
             override fun discard() {
                 mBinding.mapView.isMapping = false
                 MainController.saveEnvironment(2, mapId = mapID)
-                GlobalVariable.SEND_NAVI_HEART = false
+//                GlobalVariable.SEND_NAVI_HEART = false
                 LogUtil.i("确定要保存地图么...点击取消", null, TAG_NAV)
                 finish()
             }

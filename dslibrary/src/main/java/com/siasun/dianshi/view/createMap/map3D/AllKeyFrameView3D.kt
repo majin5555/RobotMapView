@@ -27,7 +27,8 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
     companion object {
         private val paint: Paint = Paint().apply {
             color = Color.parseColor("#800080")
-            strokeWidth = 5f
+            strokeWidth = 10f
+            strokeCap = Paint.Cap.ROUND
             style = Paint.Style.FILL
         }
     }

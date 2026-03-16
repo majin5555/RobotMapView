@@ -2,7 +2,6 @@ package com.siasun.dianshi.controller
 
 import android.graphics.PointF
 import android.graphics.RectF
-import com.siasun.dianshi.GlobalVariable.SEND_NAVI_HEART
 import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.ExpandArea
 import com.siasun.dianshi.bean.PositingArea
@@ -95,7 +94,7 @@ object MainController {
      * 开始建立地图
      */
     fun startCreateEnvironment() {
-        SEND_NAVI_HEART = true
+//        SEND_NAVI_HEART = true
         myController.mMapStartCreate()
     }
 
@@ -110,7 +109,7 @@ object MainController {
      */
 
     fun startExtendMap(extendType: Int, robotPose: DoubleArray, mapId: Int) {
-        SEND_NAVI_HEART = true
+//        SEND_NAVI_HEART = true
         myController.mSendExtendMap(extendType, robotPose, mapId)
     }
 
@@ -119,7 +118,7 @@ object MainController {
      * pad向导航发送更新3d地图
      */
     fun send3DUpdateMap(dParams: DoubleArray, mapId: Int) {
-        SEND_NAVI_HEART = true
+//        SEND_NAVI_HEART = true
         myController.mSend3DUpdateMap(dParams, mapId)
     }
 
@@ -200,7 +199,7 @@ object MainController {
      * 3D 发送删除噪点
      */
     fun send3DRemoveNoise(rectFs: List<RectF>, mapId: Int, minHigh: Float = 0f, maxHigh: Float) {
-       myController.mSend3DRemoveNoise(rectFs, mapId, minHigh, maxHigh)
+        myController.mSend3DRemoveNoise(rectFs, mapId, minHigh, maxHigh)
     }
 
     /**
@@ -428,7 +427,7 @@ object MainController {
      * 2D 局部更新\扩展地图用同一个命令
      */
     fun sendStartPartialUpdate(mList: MutableList<ExpandArea>, mapID: Int = 0) {
-        SEND_NAVI_HEART = true
+//        SEND_NAVI_HEART = true
         myController.mSendStartPartialUpdate(mList, mapID)
     }
 
@@ -551,4 +550,9 @@ object MainController {
      * 相机USB是否合理
      */
     fun sendCameraUSBReasonable() = myController.sendCameraUSBReasonable()
+
+    /**
+     *向导航所要所有关键帧
+     */
+    fun sendGetNavKeyframe() = myController.mSendNavKeyframe()
 }

@@ -23,6 +23,7 @@ import com.siasun.dianshi.framework.log.LogUtil
 import com.siasun.dianshi.mapviewdemo.CREATE_MAP
 import com.siasun.dianshi.mapviewdemo.KEY_AGV_COORDINATE
 import com.siasun.dianshi.mapviewdemo.KEY_CURRENT_POINT_CLOUD
+import com.siasun.dianshi.mapviewdemo.KEY_FRAME_POSE
 import com.siasun.dianshi.mapviewdemo.KEY_LOCATION
 import com.siasun.dianshi.mapviewdemo.KEY_NAV_HEARTBEAT_STATE
 import com.siasun.dianshi.mapviewdemo.KEY_OPT_POSE
@@ -56,9 +57,9 @@ class ExpandMap3DActivity :
 
         mTimer.schedule(object : TimerTask() {
             override fun run() {
-                if (GlobalVariable.SEND_NAVI_HEART) {
+//                if (GlobalVariable.SEND_NAVI_HEART) {
                     MainController.myController.mSendNaviHeartBeat()
-                }
+//                }
             }
         }, 0, 500)
 
@@ -210,6 +211,11 @@ class ExpandMap3DActivity :
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initData() {
         super.initData()
+        MainController.sendGetNavKeyframe()
+        //接收导航发送所有关键帧
+        LiveEventBus.get<laser_t>(KEY_FRAME_POSE).observe(this) {
+            mBinding.mapView.parseKeyFramePose(it)
+        }
 
         //上激光点云
         LiveEventBus.get<laser_t>(KEY_CURRENT_POINT_CLOUD).observe(this) {
@@ -275,7 +281,7 @@ class ExpandMap3DActivity :
                     mViewModel.downPngYaml(CREATE_MAP, 1)
 
                     //从建图模式到定位模式 后恢复地图不可旋转
-                    GlobalVariable.SEND_NAVI_HEART = false
+//                    GlobalVariable.SEND_NAVI_HEART = false
                     MainController.sendOnlinePoint(
                         100, mBinding.mapView.robotPose
                     )
@@ -311,7 +317,7 @@ class ExpandMap3DActivity :
             //优化完成，询问pad是否保存地图
             2 -> {
                 if (mBinding.mapView.isStartRevSubMaps) {
-                    GlobalVariable.SEND_NAVI_HEART = false
+//                    GlobalVariable.SEND_NAVI_HEART = false
 
 //                    if (mBinding.mapView.isRouteMap) {
 //                        LogUtil.i("弹框---是否旋转地图", null, TAG_NAV)
@@ -345,7 +351,7 @@ class ExpandMap3DActivity :
                 MainController.saveEnvironment(
                     1, rotate = -mBinding.mapView.getViewRotation(), mapId = mapID
                 )
-                GlobalVariable.SEND_NAVI_HEART = true
+//                GlobalVariable.SEND_NAVI_HEART = true
 //                    showLoading("保存地图中")
                 LogUtil.i("确定要保存地图么...点击确定", null, TAG_NAV)
             }
@@ -353,7 +359,7 @@ class ExpandMap3DActivity :
             override fun discard() {
                 mBinding.mapView.isMapping = false
                 MainController.saveEnvironment(2, mapId = mapID)
-                GlobalVariable.SEND_NAVI_HEART = false
+//                GlobalVariable.SEND_NAVI_HEART = false
                 LogUtil.i("确定要保存地图么...点击取消", null, TAG_NAV)
                 finish()
             }
