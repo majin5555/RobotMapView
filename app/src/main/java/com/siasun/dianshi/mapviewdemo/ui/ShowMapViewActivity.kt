@@ -202,9 +202,9 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initMixArea()
 //        initSpAreas()
 //        initPath()
-//        initCrossDoor()
-        initRFId()
-        initInspectionView()
+        initCrossDoor()
+//        initRFId()
+//        initInspectionView()
 
 
         //  事实上
@@ -301,6 +301,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             override fun onCrossDoorLineClick(crossDoor: com.siasun.dianshi.bean.CrossDoor) {
                 // 点击了过门线，弹框显示信息
                 showCrossDoorDialog(crossDoor)
+                LogUtil.d("999 点击了过门线 ${ mBinding.mapView.getCrossDoors()}")
             }
         })
 
@@ -1470,6 +1471,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             // 删除选中的过门
             mBinding.mapView.mCrossView?.removeCrossDoor(crossDoor)
             ToastUtils.showLong("已删除过门: ${crossDoor.door_msg.door_sn}")
+            LogUtil.d("999 点击了过门线 ${ mBinding.mapView.getCrossDoors()}")
+
         }.show()
     }
 }

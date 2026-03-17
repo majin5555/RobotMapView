@@ -75,11 +75,7 @@
             android:name=".ui.createMap.createMap3D.CreateMap3DActivity"
             android:exported="true">
 
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
 
         <activity
@@ -93,7 +89,11 @@
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.MapViewDemo">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
 
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
         </activity>
 
         <activity

@@ -66,6 +66,7 @@ class CrossDoorView(
 
     // 线点击事件监听器
     private var onCrossDoorLineClickListener: OnCrossDoorLineClickListener? = null
+
     // 删除过门监听器
     private var onCrossDoorDeleteClickListener: OnCrossDoorDeleteClickListener? = null
 
@@ -181,8 +182,10 @@ class CrossDoorView(
             MotionEvent.ACTION_DOWN -> {
                 // 检查是否点击了某个过门的端点
                 for (crossDoor in crossDoorList) {
-                    val startScreenPoint = mapView.worldToScreen(crossDoor.start_point.x, crossDoor.start_point.y)
-                    val endScreenPoint = mapView.worldToScreen(crossDoor.end_point.x, crossDoor.end_point.y)
+                    val startScreenPoint =
+                        mapView.worldToScreen(crossDoor.start_point.x, crossDoor.start_point.y)
+                    val endScreenPoint =
+                        mapView.worldToScreen(crossDoor.end_point.x, crossDoor.end_point.y)
 
                     // 检查是否点击了起点
                     val dxStart = x - startScreenPoint.x
@@ -235,9 +238,11 @@ class CrossDoorView(
                         SelectedPointType.START_POINT -> {
                             selectedCrossDoor!!.start_point = PointF(worldPoint.x, worldPoint.y)
                         }
+
                         SelectedPointType.END_POINT -> {
                             selectedCrossDoor!!.end_point = PointF(worldPoint.x, worldPoint.y)
                         }
+
                         SelectedPointType.NONE -> {}
                     }
 
@@ -262,15 +267,22 @@ class CrossDoorView(
      * @param endPoint 直线终点
      * @return 点到直线的距离
      */
-    private fun pointToLineDistance(x: Float, y: Float, startPoint: PointF, endPoint: PointF): Float {
+    private fun pointToLineDistance(
+        x: Float,
+        y: Float,
+        startPoint: PointF,
+        endPoint: PointF
+    ): Float {
         val dx = endPoint.x - startPoint.x
         val dy = endPoint.y - startPoint.y
         val denominator = Math.sqrt((dx * dx + dy * dy).toDouble()).toFloat()
         if (denominator == 0f) {
             // 起点和终点重合，返回点到起点的距离
-            return Math.sqrt(((x - startPoint.x) * (x - startPoint.x) + (y - startPoint.y) * (y - startPoint.y)).toDouble()).toFloat()
+            return Math.sqrt(((x - startPoint.x) * (x - startPoint.x) + (y - startPoint.y) * (y - startPoint.y)).toDouble())
+                .toFloat()
         }
-        val numerator = Math.abs(dy * x - dx * y + endPoint.x * startPoint.y - endPoint.y * startPoint.x)
+        val numerator =
+            Math.abs(dy * x - dx * y + endPoint.x * startPoint.y - endPoint.y * startPoint.x)
         return numerator / denominator
     }
 
@@ -325,6 +337,13 @@ class CrossDoorView(
     fun addCrossDoors(crossDoors: List<CrossDoor>) {
         crossDoorList.addAll(crossDoors)
         postInvalidate()
+    }
+
+    /**
+     * 获取过门
+     */
+    fun getCrossDoors(): MutableList<CrossDoor> {
+        return crossDoorList;
     }
 
     /**

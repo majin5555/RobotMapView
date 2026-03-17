@@ -1155,6 +1155,11 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     fun addCrossDoors(crossDoors: List<CrossDoor>) = mCrossView?.addCrossDoors(crossDoors)
 
     /**
+     * 获取过门
+     */
+    fun getCrossDoors() = mCrossView?.getCrossDoors()
+
+    /**
      * 获取车体实时坐标
      */
     fun getAgvData(): DoubleArray? = mRobotView?.getAgvData()
