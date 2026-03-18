@@ -45,7 +45,7 @@ class ExpandMap3DActivity :
     //建图心跳定时器
     private val mTimer = Timer()
 
-    val mapID = 100
+    val mapID = 18
 
     //    val list: MutableList<ExpandArea> = mutableListOf()
     var mExpandArea: ExpandArea = ExpandArea(PointF(0f, 0f), PointF(0f, 0f))
@@ -86,6 +86,7 @@ class ExpandMap3DActivity :
             LogUtil.i("停止扫描")
             ToastUtils.showShort("停止扫描")
         }
+        mBinding.mapView.setRotate(false)
 
         //扩展地图
         expandMap()

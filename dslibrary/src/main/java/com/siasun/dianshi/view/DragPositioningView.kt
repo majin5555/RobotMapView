@@ -59,7 +59,7 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
 
     // 控制是否绘制
     private var isDrawingEnabled: Boolean = false
-    
+
     // 是否正在缩放地图（2个或以上手指）
     private var isMapScaling = false
 
@@ -135,9 +135,9 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
                     // 设置变换矩阵：
                     // 1. 先平移到原点（以图标中心为锚点）
                     onRobotMatrix.postTranslate(offsetX, offsetY)
-                    // 2. 然后应用旋转（以图标中心为轴心）
+                    // 2. 然后应用旋转（以图标中心为轴心，需将弧度转为角度）
                     onRobotMatrix.postRotate(
-                        -pose.theta, 0f, 0f // 旋转轴心为图标中心
+                        -Math.toDegrees(pose.theta.toDouble()).toFloat(), 0f, 0f // 旋转轴心为图标中心
                     )
                     // 3. 最后平移到屏幕目标位置
                     onRobotMatrix.postTranslate(screenPos.x, screenPos.y)
@@ -153,32 +153,34 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
      * 上激光点云
      */
     fun updateUpLaserScan(laser: laser_t) {
-        cloudList.clear()
-        val robotX = laser.ranges[0]
-        val robotY = laser.ranges[1]
-        val robotT = laser.ranges[2]
+        if (laser.ranges.isNotEmpty()) {
+            cloudList.clear()
+            val robotX = laser.ranges[0]
+            val robotY = laser.ranges[1]
+            val robotT = laser.ranges[2]
 
-        // 保存初始机器人中心
-        robotCenter.set(robotX, robotY)
-        initialRobotTheta = robotT
+            // 保存初始机器人中心
+            robotCenter.set(robotX, robotY)
+            initialRobotTheta = robotT
 
-        if (laser.ranges.size > 3) {
-            // 预分配容量
-            val expectedSize = (laser.ranges.size / 3) - 1
-            cloudList.ensureCapacity(expectedSize)
+            if (laser.ranges.size > 3) {
+                // 预分配容量
+                val expectedSize = (laser.ranges.size / 3) - 1
+                cloudList.ensureCapacity(expectedSize)
 
-            for (i in 1 until laser.ranges.size / 3) {
-                val laserX = laser.ranges[3 * i]
-                val laserY = laser.ranges[3 * i + 1]
-                cloudList.add(
-                    PointF(
-                        laserX * cos(robotT) - laserY * sin(robotT) + robotX,
-                        laserX * sin(robotT) + laserY * cos(robotT) + robotY
+                for (i in 1 until laser.ranges.size / 3) {
+                    val laserX = laser.ranges[3 * i]
+                    val laserY = laser.ranges[3 * i + 1]
+                    cloudList.add(
+                        PointF(
+                            laserX * cos(robotT) - laserY * sin(robotT) + robotX,
+                            laserX * sin(robotT) + laserY * cos(robotT) + robotY
+                        )
                     )
-                )
+                }
             }
+            updateDragRobotPose()
         }
-        updateDragRobotPose()
         postInvalidate()
     }
 
@@ -316,6 +318,8 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
                         isRotating = false
                         needResetAnchor = true
                     }
+                    // 即使屏蔽了旋转，多指抬起时也重置一下拖拽锚点防止跳动
+                    needResetAnchor = true
                 } else {
                     if (event.pointerCount <= 2) { // 当前抬起一个手指后，剩下1个手指或更少
                         isMapScaling = false
