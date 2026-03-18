@@ -61,7 +61,6 @@ import com.siasun.dianshi.network.constant.KEY_NEY_IP
 import com.siasun.dianshi.utils.World
 import com.siasun.dianshi.view.HomeDockView
 import com.siasun.dianshi.view.InspectionView
-import com.siasun.dianshi.view.MapView
 import com.siasun.dianshi.view.MapView.ISingleTapListener
 import com.siasun.dianshi.view.MixAreaView
 import com.siasun.dianshi.view.PolygonEditView

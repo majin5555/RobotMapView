@@ -59,6 +59,9 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
 
     // 控制是否绘制
     private var isDrawingEnabled: Boolean = false
+    
+    // 是否正在缩放地图（2个或以上手指）
+    private var isMapScaling = false
 
 
     /**
@@ -86,6 +89,9 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val mapView = parent.get() ?: return
+
+        // 如果正在缩放地图，不重新绘制点云和车体，避免卡顿
+        if (isMapScaling) return
 
         // 只有在绘制启用状态下才绘制点云
         if (cloudList.isNotEmpty()) {
@@ -137,9 +143,7 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
                     onRobotMatrix.postTranslate(screenPos.x, screenPos.y)
 
                     // 绘制机器人图标
-                    robotPaint?.let {
-                        canvas.drawBitmap(bitmap, onRobotMatrix, it)
-                    }
+                    canvas.drawBitmap(bitmap, onRobotMatrix, robotPaint)
                 }
             }
         }
@@ -216,6 +220,7 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
 
         when (event.action and MotionEvent.ACTION_MASK) {
             MotionEvent.ACTION_DOWN -> {
+                isMapScaling = false
                 // 判断点击位置是否在机器人附近
                 val screenPos = mapView.worldToScreen(dragRobotPose.x, dragRobotPose.y)
                 val dist = hypot(event.x - screenPos.x, event.y - screenPos.y)
@@ -242,6 +247,10 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
                         lastFingerRotation = rotation(event)
                     }
                 } else {
+                    if (event.pointerCount >= 2) {
+                        isMapScaling = true
+                        postInvalidate() // 触发隐藏
+                    }
                     mapView.processMapGestures(event)
                 }
                 return true
@@ -290,12 +299,14 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                isMapScaling = false
                 if (isDragging) {
                     isDragging = false
                     isRotating = false
                 } else {
                     mapView.processMapGestures(event)
                 }
+                postInvalidate() // 确保手指抬起时触发重绘
                 return true
             }
 
@@ -306,6 +317,10 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
                         needResetAnchor = true
                     }
                 } else {
+                    if (event.pointerCount <= 2) { // 当前抬起一个手指后，剩下1个手指或更少
+                        isMapScaling = false
+                        postInvalidate() // 触发重绘
+                    }
                     mapView.processMapGestures(event)
                 }
                 return true
