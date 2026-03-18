@@ -437,11 +437,6 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
      * 设置工作模式
      */
     fun setWorkMode(mode: WorkMode) {
-//        //保持居中
-//        if (currentWorkMode == WorkMode.MODE_CREATE_MAP) {
-//            rotationRadians = 0f
-//        }
-
         currentWorkMode = mode
         mMapOutline3D?.setWorkMode(mode)
         mCreatingUpLaserScanView?.setWorkMode(mode)
@@ -615,6 +610,13 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
      */
     fun parseKeyFramePose(mLaserT: laser_t) {
         mAllKeyFrames?.parseKeyFramePose(mLaserT)
+    }
+
+    /**
+     * 是否旋转地图
+     */
+    fun setRotate(boolean: Boolean) {
+        mGestureDetector?.isRotate = boolean
     }
 
     /**

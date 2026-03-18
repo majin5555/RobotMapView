@@ -70,6 +70,16 @@ public class SlamGestureDetector {
     private OnRPGestureListener mListener;
     View view;
 
+    public boolean isRotate() {
+        return isRotate;
+    }
+
+    public void setRotate(boolean rotate) {
+        isRotate = rotate;
+    }
+
+    private boolean isRotate = true;
+
     public SlamGestureDetector(OnRPGestureListener mListener, View view) {
         this.mListener = mListener;
         this.view = view;
@@ -112,13 +122,14 @@ public class SlamGestureDetector {
                     mListener.onMapPinch(scale, center);
 
                     //建图旋转地图
-                    if (view instanceof CreateMapView2D || view instanceof CreateMapView3D) {
-                        // 旋转地图
-                        PointF na = getNormalized(currPrimaryPosition, currSecondaryPosition);
-                        PointF nb = getNormalized(prevPrimaryPosition, prevSecondaryPosition);
-                        float rotate = (float) (Math.atan2(na.y, na.x) - Math.atan2(nb.y, nb.x));
-                        mListener.onMapRotate(rotate, center);
-                    }
+                    if (isRotate)
+                        if (view instanceof CreateMapView2D || view instanceof CreateMapView3D) {
+                            // 旋转地图
+                            PointF na = getNormalized(currPrimaryPosition, currSecondaryPosition);
+                            PointF nb = getNormalized(prevPrimaryPosition, prevSecondaryPosition);
+                            float rotate = (float) (Math.atan2(na.y, na.x) - Math.atan2(nb.y, nb.x));
+                            mListener.onMapRotate(rotate, center);
+                        }
                 }
                 break;
             case MotionEvent.ACTION_POINTER_UP:

@@ -528,7 +528,12 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
         robotPose[5] = convertScientificToDecimal(pitch)
     }
 
-
+    /**
+     * 是否旋转地图
+     */
+    fun setRotate(boolean: Boolean) {
+        mGestureDetector?.isRotate = boolean
+    }
     /**
      * 辅助方法：将科学计数法表示的float值转换为普通小数表示的float值
      * 解决激光数据中theta值（laserData.ranges[2]）可能以科学计数法形式存在的问题
