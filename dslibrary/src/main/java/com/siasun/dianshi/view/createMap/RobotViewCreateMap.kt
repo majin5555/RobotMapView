@@ -58,7 +58,7 @@ class RobotViewCreateMap<T : MapViewInterface>(context: Context?, val parent: We
 
         canvas.translate(p.x, p.y)
         canvas.rotate(
-            -Math.toDegrees(mapView.robotPose[2].toDouble() - mapView.rotationRadians.toDouble())
+            -Math.toDegrees(mapView.robotPose[2].toDouble() - getViewRotation().toDouble())
                 .toFloat()
         )
         canvas.drawBitmap(bitmap, -bitmap.width / 2f, -bitmap.height / 2f, robotPaint)

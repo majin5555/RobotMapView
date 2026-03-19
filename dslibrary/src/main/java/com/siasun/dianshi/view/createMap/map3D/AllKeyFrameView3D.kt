@@ -9,7 +9,7 @@ import com.ngu.lcmtypes.laser_t
 import com.siasun.dianshi.view.SlamWareBaseView
 import com.siasun.dianshi.view.WorkMode
 import java.lang.ref.WeakReference
-import android.graphics.PointF
+import com.siasun.dianshi.bean.OldKeyFrame
 
 /**
  * 扩展地图定位模式 所有关键帧
@@ -20,14 +20,15 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
     private val TAG = this::class.java.simpleName
 
     //定位模式地图关键帧地图路线
-    private val mMapPath: MutableList<PointF> = mutableListOf()
+    private val mMapPath: MutableList<OldKeyFrame> = mutableListOf()
 
     private var currentWorkMode = WorkMode.MODE_SHOW_MAP
 
     companion object {
         private val paint: Paint = Paint().apply {
-            color = Color.GREEN
-            strokeWidth = 5f
+            color = Color.parseColor("#800080")
+            strokeWidth = 10f
+            strokeCap = Paint.Cap.ROUND
             style = Paint.Style.FILL
         }
     }
@@ -41,6 +42,7 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
         currentWorkMode = mode
 
     }
+
     /**
      * 外部接口：更新关键帧数据 拓展地图时显示所有关键帧位置
      */
@@ -53,10 +55,11 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
                 val radX: Float = mLaserT.ranges[2 * i]
                 //关键帧  y
                 val radY: Float = mLaserT.ranges[2 * i + 1]
-                mMapPath.add(PointF(radX, radY))
+                mMapPath.add(OldKeyFrame(radX, radY, 0f, 0))
             }
         }
     }
+
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)

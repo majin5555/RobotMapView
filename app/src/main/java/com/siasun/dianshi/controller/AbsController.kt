@@ -77,6 +77,7 @@ abstract class AbsController {
 
     abstract fun mSendPlsArea(onOffSonar: Byte, onOffLaser: Byte, onOffPLS: Byte)
     abstract fun mSendUpload(file: String)
+    abstract fun mSendNavKeyframe()
     abstract fun mSendEraseEvPoint(start: PointF, end: PointF, mapId: Int)
     abstract fun mSendLoadSubMapForExtendMap()
     abstract fun mSendReLoadSubMapForExtendMap(ids: ByteArray)

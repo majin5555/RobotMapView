@@ -104,7 +104,7 @@ object GlobalVariable {
     var MANUAL_PUSH_ROD_STATUS = 0
 
     //与导航心跳开关
-    var SEND_NAVI_HEART = false
+//    var SEND_NAVI_HEART = false
 
     /**
      * 车体运行状态

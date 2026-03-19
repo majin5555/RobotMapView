@@ -74,7 +74,7 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
                 val leftTop = mapView.worldToScreen(subMap.leftTop.x, subMap.leftTop.y)
 
                 // 1. 先应用旋转
-                canvas.rotate(mRotation, leftTop.x, leftTop.y)
+                canvas.rotate(getViewRotation(), leftTop.x, leftTop.y)
                 // 2. 后应用缩放（地图缩放）
                 canvas.scale(scale, scale, leftTop.x, leftTop.y)
 

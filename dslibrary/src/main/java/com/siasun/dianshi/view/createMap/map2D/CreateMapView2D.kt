@@ -38,6 +38,7 @@ import com.siasun.dianshi.view.PngMapView
 import com.siasun.dianshi.view.SlamWareBaseView
 import com.siasun.dianshi.view.UpLaserScanView
 import com.siasun.dianshi.view.createMap.RobotViewCreateMap
+import kotlin.math.atan2
 
 /**
  * 地图画布
@@ -83,7 +84,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     /**
      * 旋转弧度
      */
-    override var rotationRadians = 0f
+//    override var rotationRadians = 0f
 
     /**
      * *************** 监听器   start ***********************
@@ -177,7 +178,16 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     private fun setRotation(factor: Float, cx: Int, cy: Int) {
         mOuterMatrix.postRotate(RadianUtil.toAngel(factor), cx.toFloat(), cy.toFloat())
         setMatrixWithRotation(mOuterMatrix, factor)
-        rotationRadians = RadianUtil.toRadians(mMapOutline2D!!.mRotation)
+//        rotationRadians += RadianUtil.toRadians(RadianUtil.toAngel(factor))
+    }
+
+    open fun getViewRotation(): Float {
+        val values = FloatArray(9)
+        mOuterMatrix.getValues(values)
+        return atan2(
+            values[Matrix.MSKEW_Y].toDouble(),
+            values[Matrix.MSCALE_X].toDouble()
+        ).toFloat()
     }
 
     private fun setTransition(dx: Int, dy: Int) {
@@ -241,7 +251,6 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
         mPngMapView?.setMatrix(matrixCopy)
         for (mapLayer in mapLayers) {
             mapLayer.setMatrixWithScale(matrixCopy, scale)
-            mapLayer.mRotation = rotation
         }
     }
 
@@ -519,7 +528,12 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
         robotPose[5] = convertScientificToDecimal(pitch)
     }
 
-
+    /**
+     * 是否旋转地图
+     */
+    fun setRotate(boolean: Boolean) {
+        mGestureDetector?.isRotate = boolean
+    }
     /**
      * 辅助方法：将科学计数法表示的float值转换为普通小数表示的float值
      * 解决激光数据中theta值（laserData.ranges[2]）可能以科学计数法形式存在的问题

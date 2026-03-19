@@ -9,40 +9,42 @@ import android.graphics.PointF
 import android.graphics.RectF
 import android.os.Build
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
+import android.view.SurfaceHolder
+import android.view.SurfaceView
 import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import android.widget.ImageView
 import androidx.annotation.RequiresApi
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
 import com.ngu.lcmtypes.laser_t
+import com.siasun.dianshi.bean.ConstraintNode
 import com.siasun.dianshi.bean.MapData
 import com.siasun.dianshi.utils.CoordinateConversion
 import com.siasun.dianshi.utils.MathUtils
 import com.siasun.dianshi.utils.RadianUtil
 import com.siasun.dianshi.utils.SlamGestureDetector
 import com.siasun.dianshi.utils.YamlNew
-import com.siasun.dianshi.view.WorkMode
-import com.siasun.dianshi.view.createMap.MapViewInterface
-import java.io.File
-import java.lang.ref.WeakReference
-import java.util.concurrent.CopyOnWriteArrayList
-import android.view.SurfaceHolder
-import android.view.SurfaceView
-import com.bumptech.glide.request.target.SimpleTarget
-import com.siasun.dianshi.bean.ConstraintNode
-import com.siasun.dianshi.view.createMap.ExpandAreaView
 import com.siasun.dianshi.view.PngMapView
 import com.siasun.dianshi.view.SlamWareBaseView
 import com.siasun.dianshi.view.UpLaserScanView
+import com.siasun.dianshi.view.WorkMode
+import com.siasun.dianshi.view.createMap.ExpandAreaView
+import com.siasun.dianshi.view.createMap.MapViewInterface
 import com.siasun.dianshi.view.createMap.RobotViewCreateMap
+import java.io.File
+import java.lang.ref.WeakReference
+import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.math.atan2
 
 /**
  * 地图画布
  * 3D 建图View
  */
-class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(context, attrs),
+open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(context, attrs),
     SlamGestureDetector.OnRPGestureListener, MapViewInterface, SurfaceHolder.Callback {
     private val TAG = this::class.java.simpleName
 
@@ -89,7 +91,7 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     /**
      * 旋转弧度
      */
-    override var rotationRadians = 0f
+//    override var rotationRadians = 0f
 
     /**
      * *************** 监听器   start ***********************
@@ -179,7 +181,21 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     private fun setRotation(factor: Float, cx: Int, cy: Int) {
         mOuterMatrix.postRotate(RadianUtil.toAngel(factor), cx.toFloat(), cy.toFloat())
         setMatrixWithRotation(mOuterMatrix, factor)
-        rotationRadians = RadianUtil.toRadians(mMapOutline3D!!.mRotation)
+
+        val viewRotation = getViewRotation()
+        Log.e("CreateMapView3D", "矩阵弧度:${viewRotation}")
+        Log.i("CreateMapView3D", "弧度->角度 :${RadianUtil.toAngel(viewRotation)}")
+    }
+
+    /**
+     * 获取当前视图的旋转弧度
+     */
+    open fun getViewRotation(): Float {
+        val values = FloatArray(9)
+        mOuterMatrix.getValues(values)
+        return atan2(
+            values[Matrix.MSKEW_Y].toDouble(), values[Matrix.MSCALE_X].toDouble()
+        ).toFloat()
     }
 
     private fun setTransition(dx: Int, dy: Int) {
@@ -244,7 +260,6 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
         mPngMapView?.setMatrix(matrixCopy)
         for (mapLayer in mapLayers) {
             mapLayer.setMatrixWithScale(matrixCopy, scale)
-            mapLayer.mRotation = rotation
         }
     }
 
@@ -595,6 +610,13 @@ class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(conte
      */
     fun parseKeyFramePose(mLaserT: laser_t) {
         mAllKeyFrames?.parseKeyFramePose(mLaserT)
+    }
+
+    /**
+     * 是否旋转地图
+     */
+    fun setRotate(boolean: Boolean) {
+        mGestureDetector?.isRotate = boolean
     }
 
     /**

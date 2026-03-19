@@ -6,8 +6,6 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PointF
 import android.view.MotionEvent
-import com.siasun.dianshi.R
-import com.siasun.dianshi.bean.CmsStation
 import com.siasun.dianshi.bean.SameSwitchBean
 import java.lang.ref.WeakReference
 import kotlin.math.sqrt
@@ -104,10 +102,10 @@ class SameSwitchView(context: Context?, var parent: WeakReference<MapView>) :
                     }
 
                     // 复用PointF对象
-                    reusablePointF.set(locate.x, locate.y)
+                    reusablePointF.set(locate.x + 15, locate.y - 10)
                     drawLabel(
                         canvas,
-                        station.name ?: "",
+                        station.point_name ?: "",
                         reusablePointF,
                         mPaint
                     )

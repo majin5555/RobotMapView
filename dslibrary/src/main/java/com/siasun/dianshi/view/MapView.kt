@@ -53,6 +53,7 @@ import com.siasun.dianshi.bean.RFID
 import com.siasun.dianshi.bean.ReflectorMapBean
 import com.siasun.dianshi.bean.SameSwitchBean
 import com.siasun.dianshi.view.createMap.MapViewInterface
+import kotlin.math.atan2
 
 /**
  * 地图画布
@@ -155,7 +156,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     /**
      * 旋转弧度
      */
-    override var rotationRadians = 0f
+//    override var rotationRadians = 0f
 
     /**
      * *************** 监听器   end ***********************
@@ -378,7 +379,6 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mPngMapView?.setMatrix(matrix)
         for (mapLayer in mapLayers) {
             mapLayer.setMatrixWithScale(matrix, scale)
-            mapLayer.mRotation = rotation
         }
     }
 
@@ -1160,6 +1160,11 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      * 设置多个过门
      */
     fun addCrossDoors(crossDoors: List<CrossDoor>) = mCrossView?.addCrossDoors(crossDoors)
+
+    /**
+     * 获取过门
+     */
+    fun getCrossDoors() = mCrossView?.getCrossDoors()
 
     /**
      * 获取车体实时坐标

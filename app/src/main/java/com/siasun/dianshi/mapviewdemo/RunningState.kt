@@ -341,6 +341,8 @@ const val KET_CREATE_REFLECT_MAP_RESULT = "ket_create_reflect_map_result"
 //导航返回 更新/扩展地图后地图发生较大变化
 const val KET_MAP_UNDERGO_SIGNIFICANT_CHANGES_RESULT = "ket_map_undergo_significant_changes_result"
 
+const val KEY_FRAME_POSE = "key_frame_pose"
+
 /**
  * ------------------LCM常量 End----------------
  */

@@ -78,6 +78,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.anko.toast
 import java.io.File
+import java.util.UUID
 import kotlin.random.Random
 
 /**
@@ -261,7 +262,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.btnAddInspection.onClick {
             mInspection.add(
                 Inspection(
-                    "1", "巡检1", true, StationCoordinate(
+                    "1_${UUID.randomUUID()}", "巡检1", true, StationCoordinate(
                         mBinding.mapView.getAgvData()?.get(0)!!.toFloat(),
                         mBinding.mapView.getAgvData()?.get(1)!!.toFloat(),
                         mBinding.mapView.getAgvData()?.get(2)!!.toFloat()
@@ -269,6 +270,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 )
             )
             mBinding.mapView.setInspectionViewStations(mInspection)
+
+            LogUtil.i("获取json ${mBinding.mapView.getInspectionViewStations().toJson()} ")
         }
         //编辑巡检点
         mBinding.btnEditInspection.onClick {
@@ -300,6 +303,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             override fun onCrossDoorLineClick(crossDoor: com.siasun.dianshi.bean.CrossDoor) {
                 // 点击了过门线，弹框显示信息
                 showCrossDoorDialog(crossDoor)
+                LogUtil.d("999 点击了过门线 ${ mBinding.mapView.getCrossDoors()}")
             }
         })
 
@@ -1314,8 +1318,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     private fun initSameSwitch() {
         mBinding.btnAddSame.onClick {
             val same1 = SameSwitchBean(
-                id = 1,
-                name = "同层切换1",
+                point_id = "1",
+                point_name = "同层切换1",
                 coordinate = StationCoordinate(1.1F, 2.2F, 0F)
             )
             mBinding.mapView.setSameSwitchStations(mutableListOf(same1))
@@ -1491,6 +1495,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             // 删除选中的过门
             mBinding.mapView.mCrossView?.removeCrossDoor(crossDoor)
             ToastUtils.showLong("已删除过门: ${crossDoor.door_msg.door_sn}")
+            LogUtil.d("999 点击了过门线 ${ mBinding.mapView.getCrossDoors()}")
+
         }.show()
     }
 }

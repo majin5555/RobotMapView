@@ -48,7 +48,7 @@ data class StationCoordinate(
     var x: Float = 0F,
     var y: Float = 0F,
     var theta: Float = 0F,
-)
+) : LiveEvent
 
 /**
  * 准备点

@@ -17,6 +17,7 @@ import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.CMS_SERVICE_COMMAND
 import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.CMS_UI_COMMAND
 import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.CTRL_COMMAND
 import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.CURRENT_POINTCLOUD
+import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.KEYFRAME_POSE
 import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.LOCINFO_COMMAND
 import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.LP_COMMAND
 import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.LP_CTRL_RESPONSE_COMMAND
@@ -77,6 +78,7 @@ import com.siasun.dianshi.mapviewdemo.KEY_CROSS_FLOOR_STAGE
 import com.siasun.dianshi.mapviewdemo.KEY_CURRENT_POINT_CLOUD
 import com.siasun.dianshi.mapviewdemo.KEY_EXTEND_LOAD_SUB_MAP
 import com.siasun.dianshi.mapviewdemo.KEY_FINISH_CLEAN_AREA_ID
+import com.siasun.dianshi.mapviewdemo.KEY_FRAME_POSE
 import com.siasun.dianshi.mapviewdemo.KEY_HIGHLIGHT_RESULT
 import com.siasun.dianshi.mapviewdemo.KEY_LOCATION
 import com.siasun.dianshi.mapviewdemo.KEY_NAV_HEARTBEAT_STATE
@@ -276,6 +278,9 @@ class LCMController : AbsController(), LCMSubscriber {
                 BOTTOM_POINTCLOUD -> receiveBottomCurrentPointCloud(laser_t(lcmDataInputStream))
                 //导航->pad  顶视建图步数
                 RECORD_IMAGE -> receiveTopScanSteps(robot_control_t_new(lcmDataInputStream))
+                //导航->pad
+                KEYFRAME_POSE -> recNavKeyFramePose(laser_t(lcmDataInputStream))
+
                 //路径规划器->pad
                 PLAN_PATH_RESULT -> {
                     val result = PlanPathResult(
@@ -361,6 +366,15 @@ class LCMController : AbsController(), LCMSubscriber {
      * pad—>所有
      */
     override fun mSendUpload(file: String) = sendUpload(file)
+    override fun mSendNavKeyframe() =sendGetNavKeyframe()
+
+    /**
+     * 获取所有关键帧
+     */
+    @SuppressLint("NewApi")
+    private fun sendGetNavKeyframe() {
+        sendRobotControlNew(31, null, null, null, null, NAVI_SERVICE_COMMAND)
+    }
 
     /**
      * pad—>发送更新文件指令
@@ -3368,6 +3382,13 @@ class LCMController : AbsController(), LCMSubscriber {
 //        stepNumber = value
 //        LiveEventBus.get(KEY_NAV_TOP_SCAN_STEPS_VALUE, Int::class.java).post(value)
 //    }
+    }
+    /**
+     * nav->pad
+     * nav 所有关键帧车体位置
+     */
+    private fun recNavKeyFramePose(lt: laser_t) {
+        LiveEventBus.get(KEY_FRAME_POSE, laser_t::class.java).post(lt)
     }
 
     /**

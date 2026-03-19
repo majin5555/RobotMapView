@@ -1,5 +1,7 @@
 package com.siasun.dianshi.bean
 
+import org.apache.commons.math3.stat.inference.TestUtils.t
+
 /******************************************
  * 类描述：
  *
@@ -8,7 +10,9 @@ package com.siasun.dianshi.bean
  ******************************************/
 
 data class SameSwitchBean(
-    var id: Int,
-    var name: String ? = null,
+    var point_id: String ,
+    var point_name: String ? = null,
+    var target_map_id: Int ? = null,
     var coordinate: StationCoordinate ? = null,
+    var is_bound: Boolean = false,
 )

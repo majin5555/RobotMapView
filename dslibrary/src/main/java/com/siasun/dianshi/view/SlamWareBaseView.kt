@@ -8,15 +8,16 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PointF
 import android.view.ViewGroup
-import com.siasun.dianshi.utils.RadianUtil
 import java.lang.ref.WeakReference
+import kotlin.math.atan2
 
 abstract class SlamWareBaseView<T>(context: Context?, parent: WeakReference<T>) :
     ViewGroup(context) {
 
     var mParent: WeakReference<T>
     var scale: Float protected set
-    var mRotation: Float//旋转角度
+
+    //    var mRotation: Float//旋转角度
     var mMatrix: Matrix//矩阵
 
     // 复用的Path对象，避免频繁创建
@@ -27,7 +28,6 @@ abstract class SlamWareBaseView<T>(context: Context?, parent: WeakReference<T>) 
         setWillNotDraw(false)
         mParent = parent
         scale = 1.0f
-        mRotation = 0f
         mMatrix = Matrix()
     }
 
@@ -35,8 +35,6 @@ abstract class SlamWareBaseView<T>(context: Context?, parent: WeakReference<T>) 
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        //不能增加
-//        canvas.concat(mMatrix)
     }
 
     open fun setMatrix(mMatrix: Matrix) {
@@ -52,8 +50,16 @@ abstract class SlamWareBaseView<T>(context: Context?, parent: WeakReference<T>) 
 
     open fun setMatrixWithRotation(matrix: Matrix, rotation: Float) {
         mMatrix = matrix
-        mRotation += RadianUtil.toAngel(rotation)
         postInvalidate()
+    }
+
+    open fun getViewRotation(): Float {
+        val values = FloatArray(9)
+        mMatrix.getValues(values)
+        return atan2(
+            values[Matrix.MSKEW_Y].toDouble(),
+            values[Matrix.MSCALE_X].toDouble()
+        ).toFloat()
     }
 
     /**

@@ -44,9 +44,9 @@ public class SlamGestureDetector {
         void onMapRotate(float factor, PointF centerPoint);
     }
 
-    private static int currTouchCount;
-    private static long currTouchTime;
-    private static long touchBeginTime;
+    private int currTouchCount;
+    private long currTouchTime;
+    private long touchBeginTime;
 
     private PointF currPrimaryPosition;
     private PointF prevPrimaryPosition;
@@ -69,6 +69,16 @@ public class SlamGestureDetector {
 
     private OnRPGestureListener mListener;
     View view;
+
+    public boolean isRotate() {
+        return isRotate;
+    }
+
+    public void setRotate(boolean rotate) {
+        isRotate = rotate;
+    }
+
+    private boolean isRotate = true;
 
     public SlamGestureDetector(OnRPGestureListener mListener, View view) {
         this.mListener = mListener;
@@ -112,13 +122,14 @@ public class SlamGestureDetector {
                     mListener.onMapPinch(scale, center);
 
                     //建图旋转地图
-                    if (view instanceof CreateMapView2D || view instanceof CreateMapView3D) {
-                        // 旋转地图
-                        PointF na = getNormalized(currPrimaryPosition, currSecondaryPosition);
-                        PointF nb = getNormalized(prevPrimaryPosition, prevSecondaryPosition);
-                        float rotate = (float) (Math.atan2(na.y, na.x) - Math.atan2(nb.y, nb.x));
-                        mListener.onMapRotate(rotate, center);
-                    }
+                    if (isRotate)
+                        if (view instanceof CreateMapView2D || view instanceof CreateMapView3D) {
+                            // 旋转地图
+                            PointF na = getNormalized(currPrimaryPosition, currSecondaryPosition);
+                            PointF nb = getNormalized(prevPrimaryPosition, prevSecondaryPosition);
+                            float rotate = (float) (Math.atan2(na.y, na.x) - Math.atan2(nb.y, nb.x));
+                            mListener.onMapRotate(rotate, center);
+                        }
                 }
                 break;
             case MotionEvent.ACTION_POINTER_UP:
@@ -180,7 +191,10 @@ public class SlamGestureDetector {
                 return MODE_NONE;
             }
         } else if (currTouchCount == 2) {
-            if (prevTouchCount == 1) {
+            if (prevTouchCount == 0) {
+                primaryPointerIndex = event.findPointerIndex(event.getPointerId(0));
+                secondaryPointerIndex = event.findPointerIndex(event.getPointerId(1));
+            } else if (prevTouchCount == 1) {
                 secondaryPointerIndex = event.findPointerIndex(event.getPointerId(1));
             }
 
@@ -190,7 +204,10 @@ public class SlamGestureDetector {
             currPrimaryPosition.set(event.getX(primaryPointerIndex), event.getY(primaryPointerIndex));
             currSecondaryPosition.set(event.getX(secondaryPointerIndex), event.getY(secondaryPointerIndex));
 
-            if (prevTouchCount == 1) {
+            if (prevTouchCount == 0) {
+                prevPrimaryPosition.set(currPrimaryPosition.x, currPrimaryPosition.y);
+                prevSecondaryPosition.set(currSecondaryPosition.x, currSecondaryPosition.y);
+            } else if (prevTouchCount == 1) {
                 prevSecondaryPosition.set(currSecondaryPosition.x, currSecondaryPosition.y);
             }
 

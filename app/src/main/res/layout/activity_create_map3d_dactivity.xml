@@ -15,6 +15,13 @@
         app:layout_constraintStart_toStartOf="parent" />
 
     <TextView
+        android:id="@+id/tv_location"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textColor="@color/black" />
+
+    <TextView
         android:id="@+id/tvMapSteps"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

@@ -64,7 +64,7 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
         val mGreenDrawPaint = Paint().apply {
             color = Color.GREEN
             style = Paint.Style.FILL
-            strokeWidth = 5f
+            strokeWidth = 10f
             strokeCap = Paint.Cap.ROUND
         }
     }
@@ -112,7 +112,7 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
             val totalScale = mapView.mSrf.scale / resolution
             if (totalScale > 0) {
                 mPaint.strokeWidth = 3f / totalScale
-                mGreenDrawPaint.strokeWidth = 5f / totalScale
+                mGreenDrawPaint.strokeWidth = 10f / totalScale
             }
 
             // 5. 准备点云数据 (仅在脏标记时更新)
@@ -158,8 +158,11 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
 
             // 6. 批量绘制关键帧位置 (也使用世界坐标)
             synchronized(keyFrames3D) {
+
                 keyFrames3D.values.forEach { frame ->
-                    canvas.drawPoint(frame.robotPos[0], frame.robotPos[1], mGreenDrawPaint)
+                    // 使用局部变量减少重复计算
+                    val mPoints = floatArrayOf(frame.robotPos[0], frame.robotPos[1])
+                    canvas.drawPoints(mPoints, mGreenDrawPaint)
                 }
             }
         }

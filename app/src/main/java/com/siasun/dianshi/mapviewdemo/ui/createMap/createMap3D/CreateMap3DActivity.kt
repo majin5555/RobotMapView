@@ -24,6 +24,7 @@ import com.siasun.dianshi.mapviewdemo.KEY_CONFIGURATION_PARAMETERS
 import com.siasun.dianshi.mapviewdemo.KEY_CONFIGURATION_PARAMETERS_RESULT
 import com.siasun.dianshi.mapviewdemo.KEY_CONSTRAINT_CONSTRAINT_NODE_RESULT
 import com.siasun.dianshi.mapviewdemo.KEY_CONSTRAINT_NODE
+import com.siasun.dianshi.mapviewdemo.KEY_LOCATION
 import com.siasun.dianshi.mapviewdemo.KEY_NAV_HEARTBEAT_STATE
 import com.siasun.dianshi.mapviewdemo.KEY_OPT_POSE
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_MAP
@@ -32,14 +33,13 @@ import com.siasun.dianshi.mapviewdemo.TAG_NAV
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityCreateMap3dDactivityBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.CreateMap3DViewModel
 import com.siasun.dianshi.network.constant.KEY_NEY_IP
+import com.siasun.dianshi.utils.RadianUtil
 import com.siasun.dianshi.view.WorkMode
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Timer
 import java.util.TimerTask
-import kotlin.math.asin
-import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -56,12 +56,15 @@ class CreateMap3DActivity :
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
         MainController.init()
-        MMKV.defaultMMKV().encode(KEY_NEY_IP, "192.168.3.101");
+        MMKV.defaultMMKV().encode(KEY_NEY_IP, "192.168.1.198");
+        mBinding.mapView.setWorkMode(WorkMode.MODE_CREATE_MAP)
+
+//        MMKV.defaultMMKV().encode(KEY_NEY_IP, "192.168.3.101");
         mTimer.schedule(object : TimerTask() {
             override fun run() {
-                if (GlobalVariable.SEND_NAVI_HEART) {
+//                if (GlobalVariable.SEND_NAVI_HEART) {
                     MainController.myController.mSendNaviHeartBeat()
-                }
+//                }
             }
         }, 0, 500)
 
@@ -193,7 +196,18 @@ class CreateMap3DActivity :
                 }
             }
         }
+        //接收定位信息
+        LiveEventBus.get<Int>(KEY_LOCATION).observeSticky(this) {
+            dismissLoading()
+            if (it == 1) {
+                LogUtil.e("接收定位信息s ${it}")
+                mBinding.tvLocation.text = "定位成功"
+            } else {
+                mBinding.tvLocation.text = "定位失败"
+                LogUtil.e("接收定位信息e ${it}")
 
+            }
+        }
         mViewModel.uploadMapInfoLiveData.observe(this) {
             lifecycleScope.launch {
                 delay(2000)
@@ -221,9 +235,9 @@ class CreateMap3DActivity :
 
                     mBinding.mapView.isMapping = false
 
-                    MainController.sendOnlinePoint(
-                        100, mBinding.mapView.robotPose
-                    )
+//                    MainController.sendOnlinePoint(
+//                        mapID, mBinding.mapView.robotPose
+//                    )
                 }
             }
 
@@ -259,7 +273,7 @@ class CreateMap3DActivity :
             //优化完成，询问pad是否保存地图
             2 -> {
                 if (mBinding.mapView.isStartRevSubMaps) {
-                    GlobalVariable.SEND_NAVI_HEART = false
+//                    GlobalVariable.SEND_NAVI_HEART = false
 
                     showSavaMapDialog()
 
@@ -282,19 +296,20 @@ class CreateMap3DActivity :
         CommonWarnDialog.Builder(this).setMsg("保存地图").setOnCommonWarnDialogListener(object :
             CommonWarnDialog.Builder.CommonWarnDialogListener {
             override fun confirm() {
-                LogUtil.i("mBinding.mapView.mMapRotate ${mBinding.mapView.rotationRadians}")
                 //开始保存地图 mBinding.mapView.rotationRadians就是弧度
-                if (mBinding.mapView.rotationRadians == 0f) {
+                if (mBinding.mapView.getViewRotation() == 0f) {
                     MainController.saveEnvironment(
                         1, mapId = mapID
                     )
+                    LogUtil.e("未旋转地图 ${mBinding.mapView.getViewRotation()}")
                 } else {
+//                    LogUtil.e("旋转了地图 ${mBinding.mapView.rotationRadians}")
                     MainController.saveEnvironment(
-                        3, rotate = -mBinding.mapView.rotationRadians, mapId = mapID
+                        3, rotate = -mBinding.mapView.getViewRotation(), mapId = mapID
                     )
                 }
 
-                GlobalVariable.SEND_NAVI_HEART = true
+//                GlobalVariable.SEND_NAVI_HEART = true
                 showLoading("保存地图中")
                 LogUtil.i("确定要保存地图么...点击确定", null, TAG_NAV)
             }
@@ -302,7 +317,7 @@ class CreateMap3DActivity :
             override fun discard() {
                 mBinding.mapView.isMapping = false
                 MainController.saveEnvironment(2, mapId = mapID)
-                GlobalVariable.SEND_NAVI_HEART = false
+//                GlobalVariable.SEND_NAVI_HEART = false
                 LogUtil.i("确定要保存地图么...点击取消", null, TAG_NAV)
                 finish()
             }
@@ -312,7 +327,7 @@ class CreateMap3DActivity :
     private fun updateMap(it: UpdateMapBean) {
         dismissLoading()
         if (it.isSuccess && it.type == CREATE_MAP) {
-            mViewModel.saveMapToService(mapID, "mapName", "2")
+            mViewModel.saveMapToService(mapID, "200", "2")
 
         } else if (!it.isSuccess && it.type == CREATE_MAP) {
 
@@ -325,7 +340,7 @@ class CreateMap3DActivity :
      */
     private fun sendLastPose() {
         //发送建图最后一帧的坐标 判断是否旋转
-        if (mBinding.mapView.rotationRadians == 0f) {
+        if (mBinding.mapView.getViewRotation() == 0f) {
 
             mViewModel.switchMapInfo(
                 SwitchMapBean(
@@ -341,7 +356,7 @@ class CreateMap3DActivity :
             )
 
 
-            LogUtil.i("地图无旋转", null, TAG_NAV)
+            LogUtil.e("地图无旋转", null, TAG_NAV)
             LogUtil.i(
                 "3D建图后定位 ======x ${mBinding.mapView.robotPose[0]} y ${mBinding.mapView.robotPose[1]}  t ${mBinding.mapView.robotPose[2]} z${mBinding.mapView.robotPose[3]} roll${mBinding.mapView.robotPose[4]} pitch${mBinding.mapView.robotPose[5]}",
                 null,
@@ -349,6 +364,7 @@ class CreateMap3DActivity :
             )
 
         } else {
+            LogUtil.e("地图有旋转", null, TAG_NAV)
             LogUtil.i(
                 "旋转前 x ${mBinding.mapView.robotPose[0]} y ${mBinding.mapView.robotPose[1]} 弧度 t ${mBinding.mapView.robotPose[2]}  z ${mBinding.mapView.robotPose[3]}  roll ${mBinding.mapView.robotPose[4]}  pitch ${mBinding.mapView.robotPose[5]}",
                 null,
@@ -357,28 +373,20 @@ class CreateMap3DActivity :
 
             LogUtil.i(
                 "旋转前 x ${mBinding.mapView.robotPose[0]} y ${mBinding.mapView.robotPose[1]} 角度 t ${
-                    Math.toDegrees(
-                        mBinding.mapView.robotPose[2].toDouble()
+                    RadianUtil.toAngel(
+                        mBinding.mapView.robotPose[2]
                     )
                 }  z ${mBinding.mapView.robotPose[3]}  roll ${mBinding.mapView.robotPose[4]}  pitch ${mBinding.mapView.robotPose[5]}",
                 null,
                 TAG_NAV
             )
-            //地图旋转的角度
-            val calculate = calculate(mBinding.mapView.robotPose, -mBinding.mapView.rotationRadians)
-//
-//            val routeT =
-//                (mBinding.mapView.rotationRadians / 180 * Math.PI).toFloat()
-//            val s = sin(routeT)
-//            val c = cos(routeT)
-//            val routeX =
-//                (mBinding.mapView.robotPose[0] * c - mBinding.mapView.robotPose[1] * s)
-//            val routeY =
-//                (mBinding.mapView.robotPose[0] * s + mBinding.mapView.robotPose[1] * c)
-//
-//            val routeZ = mBinding.mapView.robotPose[3]
-//            val routeRoll = mBinding.mapView.robotPose[4]
-//            val routePitch = mBinding.mapView.robotPose[5]
+
+            LogUtil.e("旋转的弧度 旋转了 ${mBinding.mapView.getViewRotation()} 弧度")
+            LogUtil.i("旋转的角度 旋转了 ${RadianUtil.toAngel(mBinding.mapView.getViewRotation())} 角度")
+
+            //地图旋转的弧度
+            val calculate =
+                calculate(mBinding.mapView.robotPose, -mBinding.mapView.getViewRotation())
 
             val routeX = calculate[0]
             val routeY = calculate[1]
@@ -387,7 +395,18 @@ class CreateMap3DActivity :
             val routeZ = calculate[3]
             val routeRoll = calculate[4]
             val routePitch = calculate[5]
+            LogUtil.w(
+                "计算后 3D建图后定位 旋转后 x $routeX y $routeY 弧度 t $routeT z $routeZ roll $routeRoll pitch$routePitch",
+                null,
+                TAG_NAV
+            )
 
+
+            LogUtil.i(
+                "计算后 3D建图后定位 旋转后 x $routeX y $routeY 角度 t ${RadianUtil.toAngel(routeT)} z $routeZ roll $routeRoll pitch$routePitch",
+                null,
+                TAG_NAV
+            )
             mViewModel.switchMapInfo(
                 SwitchMapBean(
                     mapID,
@@ -400,18 +419,6 @@ class CreateMap3DActivity :
                     10,
                 )
             )
-
-            LogUtil.i("地图发生了旋转 旋转了 ${mBinding.mapView.mMapOutline3D!!.mRotation} 度")
-            LogUtil.i(
-                "3D建图后定位 旋转后 x $routeX y $routeY 弧度 t $routeT z $routeZ roll $routeRoll pitch$routePitch",
-                null,
-                TAG_NAV
-            )
-            LogUtil.i(
-                "3D建图后定位 旋转后 x $routeX y $routeY 角度 t ${Math.toDegrees(routeT.toDouble())} z $routeZ roll $routeRoll pitch$routePitch",
-                null,
-                TAG_NAV
-            )
         }
     }
 
@@ -421,34 +428,24 @@ class CreateMap3DActivity :
         val c = cos(rotationRadians)
 
         // t' = Rz(d) * t
+        // 原始坐标
         val x: Float = array[0]
         val y: Float = array[1]
+        // 旋转后的坐标
         arr[0] = c * x - s * y
         arr[1] = s * x + c * y
 
         // R' = Rz(d) * R  (ZYX Euler)
-        val cr = cos(array[4])
-        val sr = sin(array[4])
-        val cp = cos(array[5])
-        val sp = sin(array[5])
-        val cy = cos(array[2])
-        val sy = sin(array[2])
+        // 原始欧拉角
+        val yaw = array[2] // Z轴旋转
+        val roll = array[4] // X轴旋转
+        val pitch = array[5] // Y轴旋转
 
-        // 原始旋转矩阵关键元素
-        val R00 = cy * cp
-        val R10 = sy * cp
-        val R20 = -sp
-        val R21 = cp * sr
-        val R22 = cp * cr
-
-        // 左乘后更新 row0, row1
-        val R00n = c * R00 - s * R10
-        val R10n = s * R00 + c * R10
-
-        // 重新提取 ZYX 欧拉角
-        arr[5] = asin(-R20)
-        arr[2] = atan2(R10n, R00n)
-        arr[4] = atan2(R21, R22)
+        // 旋转后的欧拉角
+        arr[2] = yaw + rotationRadians // 只更新 yaw
+        arr[3] = array[3] // z 坐标不变
+        arr[4] = roll
+        arr[5] = pitch
         return arr
     }
 }
