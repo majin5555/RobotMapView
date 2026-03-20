@@ -10,9 +10,10 @@ import org.apache.commons.math3.stat.inference.TestUtils.t
  ******************************************/
 
 data class SameSwitchBean(
-    var point_id: String ,
-    var point_name: String ? = null,
-    var target_map_id: Int ? = null,
-    var coordinate: StationCoordinate ? = null,
+    var point_id: String,
+    var point_name: String? = null,
+    var target_map_id: Int? = null,
+    var target_point_id: String? = null,
+    var coordinate: StationCoordinate? = null,
     var is_bound: Boolean = false,
 )
