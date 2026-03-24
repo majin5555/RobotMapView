@@ -43,7 +43,7 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
     private val touchSlop: Int
 
     // 是否是3D模式
-    private var is3D = true
+    private var is3D = false
 
     init {
         val configuration = ViewConfiguration.get(context!!)
