@@ -227,7 +227,7 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
                 val screenPos = mapView.worldToScreen(dragRobotPose.x, dragRobotPose.y)
                 val dist = hypot(event.x - screenPos.x, event.y - screenPos.y)
                 // 阈值设为80像素，可根据屏幕密度调整
-                if (dist < 80) {
+                if (dist < 50) {
                     isDragging = true
                     needResetAnchor = false
                     val worldPoint = mapView.screenToWorld(event.x, event.y)
@@ -245,8 +245,25 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
             MotionEvent.ACTION_POINTER_DOWN -> {
                 if (isDragging) {
                     if (event.pointerCount == 2) {
-                        isRotating = true
-                        lastFingerRotation = rotation(event)
+                        val screenPos = mapView.worldToScreen(dragRobotPose.x, dragRobotPose.y)
+                        val dx0 = event.getX(0) - screenPos.x
+                        val dy0 = event.getY(0) - screenPos.y
+                        val dx1 = event.getX(1) - screenPos.x
+                        val dy1 = event.getY(1) - screenPos.y
+                        val dist0 = hypot(dx0, dy0)
+                        val dist1 = hypot(dx1, dy1)
+                        val threshold = 50f
+                        if (dist0 < threshold || dist1 < threshold) {
+                            isRotating = true
+                            lastFingerRotation = rotation(event)
+                            isMapScaling = false
+                        } else {
+                            isDragging = false
+                            isRotating = false
+                            needResetAnchor = true
+                            isMapScaling = true
+                            mapView.processMapGestures(event)
+                        }
                     }
                 } else {
                     if (event.pointerCount >= 2) {
