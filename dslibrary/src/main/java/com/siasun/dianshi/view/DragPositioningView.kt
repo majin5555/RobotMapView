@@ -199,8 +199,6 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
     fun setWorkMode(mode: WorkMode) {
         currentWorkMode = mode
         if (mode == WorkMode.MODE_DRAG_POSITION) {
-            // 禁用机器人图标绘制
-            parent.get()?.mRobotView?.setDrawingEnabled(false)
             setDrawingEnabled(true)
         }
 
