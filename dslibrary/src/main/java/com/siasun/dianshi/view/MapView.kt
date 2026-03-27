@@ -942,6 +942,13 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     }
 
     /**
+     * 智能示教返回的区域
+     */
+    fun setSmartCleanAreaData( flatPoints: List<Double>, newArea: CleanAreaNew,) {
+        mPolygonEditView?.createAreaFromFlatPointsDouble(flatPoints,newArea)
+    }
+
+    /**
      * 设置选中的清扫区域
      */
     fun setSelectedArea(area: CleanAreaNew?) {

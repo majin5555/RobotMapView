@@ -207,6 +207,45 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
         invalidate()
     }
 
+    fun createAreaFromFlatPointsDouble(
+        flatPoints: List<Double>,
+        newArea: CleanAreaNew,
+    ) {
+        createAreaFromFlatPoints(flatPoints.map { it.toFloat() }, newArea)
+    }
+
+    private fun createAreaFromFlatPoints(flatPoints: List<Float>, newArea: CleanAreaNew) {
+        if (flatPoints.size < 6 || flatPoints.size % 2 != 0) {
+            // 至少3个点（6个值），且必须成对
+            return
+        }
+
+        val points = mutableListOf<PointNew>()
+
+        var i = 0
+        while (i < flatPoints.size) {
+            val x = flatPoints[i]
+            val y = flatPoints[i + 1]
+            points.add(PointNew(x, y))
+            i += 2
+        }
+
+        // 填充数据
+        newArea.m_VertexPnt.apply {
+            clear()
+            addAll(points)
+        }
+
+        synchronized(list) {
+            list.add(newArea)
+        }
+
+        // 通知创建完成
+        onCleanAreaEditListener?.onAreaCreated(newArea)
+
+        invalidate()
+    }
+
     /**
      * 设置编辑监听器
      */
@@ -478,7 +517,7 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
     fun performDeleteVertex(area: CleanAreaNew, vertexIndex: Int) {
         val points = area.m_VertexPnt
         if (points.size <= 3) return
-        
+
         if (vertexIndex >= 0 && vertexIndex < points.size) {
             points.removeAt(vertexIndex)
             invalidate()
@@ -822,7 +861,7 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
         fun onEdgeRemoved(area: CleanAreaNew, edgeIndex: Int)
 
         // 删除了顶点
-        fun onVertexRemoved(area: CleanAreaNew, vertexIndex: Int) 
+        fun onVertexRemoved(area: CleanAreaNew, vertexIndex: Int)
 
         // 创建了新区域
         fun onAreaCreated(area: CleanAreaNew) {}

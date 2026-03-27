@@ -196,7 +196,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initPostingArea()
 //        initRemoveNoise()
 //        initPostingArea()
-//        initCleanArea()
+        initCleanArea()
 //        initElevator()
 //        initPose()
 //        initMachineStation()
@@ -206,7 +206,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initCrossDoor()
 //        initRFId()
 //        initInspectionView()
-        initSameSwitch()
+//        initSameSwitch()
 
 
         //  事实上
@@ -984,18 +984,27 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.btnAddArea.onClick {
             // 设置地图的工作模式为添加清扫区域模式
             mBinding.mapView.setWorkMode(WorkMode.MODE_CLEAN_AREA_ADD)
-            // 创建一个新的清扫区域
-            val newArea = CleanAreaNew().apply {
-                sub_name = "清扫区域${cleanAreas.size + 1}"
-                regId = cleanAreas.size + 1//随机申城
-                layer_id = mapId
-                routeType = 0 // 自动生成
-                areaType = 1
-                cleanShape = 3 // 回字型
-                areaPathType = 0 // 普通清扫区域
+//            // 创建一个新的清扫区域
+//            val newArea = CleanAreaNew().apply {
+//                sub_name = "清扫区域${cleanAreas.size + 1}"
+//                regId = cleanAreas.size + 1//随机申城
+//                layer_id = mapId
+//                routeType = 0 // 自动生成
+//                areaType = 1
+//                cleanShape = 3 // 回字型
+//                areaPathType = 0 // 普通清扫区域
+//            }
+//            cleanAreas.add(newArea)
+//            mBinding.mapView.createCleanArea(newArea)
+
+            val points = listOf(6.622922, 2.3767788, 8.178481, -4.147859, 12.56447, -4.355299, 14.053481, -3.3443854, 14.37065, 0.22211342, 8.566684, 2.7157185)
+
+            val area = CleanAreaNew().apply {
+                sub_name = "新区域"
+                regId = System.currentTimeMillis().toInt()
             }
-            cleanAreas.add(newArea)
-            mBinding.mapView.createCleanArea(newArea)
+
+            mBinding.mapView.setSmartCleanAreaData(points, area)
         }
 
         //删除清扫区域
