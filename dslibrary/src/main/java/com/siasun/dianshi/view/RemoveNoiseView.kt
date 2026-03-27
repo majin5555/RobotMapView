@@ -189,6 +189,11 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
         startPoint.set(x, y)
         endPoint.set(x, y)
         isDrawing = true
+
+        // 3D模式下只支持绘制1个框
+        if (is3D) {
+            rectList.clear()
+        }
     }
 
     /**
@@ -241,10 +246,6 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
                 val leftTop = mapView.screenToWorld(rectLeft, rectTop)
                 val rightBottom = mapView.screenToWorld(rectRight, rectBottom)
 
-                // 3D模式下只支持绘制1个框
-                if (is3D) {
-                    rectList.clear()
-                }
                 rectList.add(RectF(leftTop.x, leftTop.y, rightBottom.x, rightBottom.y))
             }
         }

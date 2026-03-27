@@ -108,6 +108,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     var mDragPositioningView: DragPositioningView? = null //拖拽定位view
     var mReflectMapView: ReflectMapView? = null //反光板地图view
     var mInspectionView: InspectionView? = null //巡检点
+    // TEACH模式下是否跟随车体，保持可见
+    private var followRobotInTeach: Boolean = false
 
     /**
      * 获取地图位图宽度
@@ -591,6 +593,12 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mDragPositioningView?.setWorkMode(mode)
         mReflectMapView?.setWorkMode(mode)
         mInspectionView?.setWorkMode(mode)
+        mPathView?.setWorkMode(mode)
+        // 禁用机器人图标绘制
+        if (mode == WorkMode.MODE_DRAG_POSITION) {
+            mRobotView?.setDrawingEnabled(false)
+        }
+        followRobotInTeach = (mode == WorkMode.TEACH)
     }
 
     /**
@@ -856,6 +864,34 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
             mMapNameView?.setAgvZ(dParams[8])
         }
         mRobotView?.setAgvData(dParams)
+        // 更新全局robotPose，供其他视图使用
+        if (robotPose.size >= 6) {
+            robotPose[0] = dParams[0].toFloat()
+            robotPose[1] = dParams[1].toFloat()
+            robotPose[2] = dParams[2].toFloat()
+        }
+        // TEACH模式下确保车体始终可见：越界则居中
+        if (followRobotInTeach) {
+            ensureWorldPointVisible(dParams[0].toFloat(), dParams[1].toFloat())
+        }
+    }
+
+    /**
+     * 若世界坐标转换后的屏幕坐标接近或超出屏幕边界，则将其居中以保持可见
+     */
+    private fun ensureWorldPointVisible(x: Float, y: Float, padding: Float = 48f) {
+        val screen = worldToScreen(x, y)
+        val vw = VIEW_WIDTH.toFloat()
+        val vh = VIEW_HEIGHT.toFloat()
+        val needCenter =
+            screen.x < padding || screen.y < padding || screen.x > vw - padding || screen.y > vh - padding
+        if (needCenter) {
+            val values = FloatArray(9)
+            mOuterMatrix.getValues(values)
+            val currentRotation =
+                Math.toDegrees(Math.atan2(values[Matrix.MSKEW_Y].toDouble(), values[Matrix.MSCALE_X].toDouble())).toFloat()
+            setMapStatus(mMapScale, x, y, currentRotation)
+        }
     }
 
 

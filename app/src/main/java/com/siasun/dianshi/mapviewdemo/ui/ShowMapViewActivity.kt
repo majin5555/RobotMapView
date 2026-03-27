@@ -139,11 +139,13 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 
         //开始试教
         mBinding.btnStartTeach.onClick {
+          mBinding.mapView.setWorkMode(WorkMode.TEACH)
             MainController.sendStartTeachRoute()
             ToastUtils.showLong("开始试教")
         }
         //结束试教
         mBinding.btnEndTeach.onClick {
+            mBinding.mapView.setWorkMode(WorkMode.MODE_SHOW_MAP)
             MainController.sendSopTeachRoute()
             ToastUtils.showLong("结束试教")
         }
@@ -1504,7 +1506,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             // 删除选中的过门
             mBinding.mapView.mCrossView?.removeCrossDoor(crossDoor)
             ToastUtils.showLong("已删除过门: ${crossDoor.door_msg.door_sn}")
-            LogUtil.d("999 点击了过门线 ${ mBinding.mapView.getCrossDoors()}")
+            LogUtil.d("999 点击了过门线 ${mBinding.mapView.getCrossDoors()}")
 
         }.show()
     }

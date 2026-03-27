@@ -6,7 +6,6 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
-import android.util.Log
 import com.siasun.dianshi.R
 import com.siasun.dianshi.bean.LineNew
 import com.siasun.dianshi.bean.PointNew
@@ -35,7 +34,7 @@ class PathView @SuppressLint("ViewConstructor") constructor(
         }
         private val mGreenPaint: Paint by lazy {
             Paint().apply {
-                color = Color.GREEN // 修复：将颜色从RED改为GREEN
+                color = Color.GREEN
                 strokeWidth = 1f
                 isAntiAlias = true
                 style = Paint.Style.FILL
@@ -51,29 +50,23 @@ class PathView @SuppressLint("ViewConstructor") constructor(
         }
         private val mLinePaint: Paint by lazy {
             Paint().apply {
-                color = Color.BLACK
-                strokeWidth = 1f
                 isAntiAlias = true
+                isDither = true
+                color = Color.BLACK
+                strokeWidth = 3f
                 style = Paint.Style.STROKE
+                strokeCap = Paint.Cap.ROUND
+                strokeJoin = Paint.Join.ROUND
             }
         }
         private val mBezierPaint: Paint by lazy {
             Paint().apply {
-                color = Color.BLACK
-                strokeWidth = 1f
                 isAntiAlias = true
+                color = Color.BLACK
+                strokeWidth = 3f
                 style = Paint.Style.STROKE
             }
         }
-
-        private val mPaint = Paint().apply {
-            isAntiAlias = true
-            style = Paint.Style.STROKE
-            color = Color.BLACK
-        }
-
-        // 采样率，减少绘制点数以提高性能
-        private const val SAMPLE_RATE = 1
     }
 
     //试教中的绿色的点的集合 - 使用同步集合确保线程安全
@@ -87,10 +80,21 @@ class PathView @SuppressLint("ViewConstructor") constructor(
 
     // 优化：创建可复用的Path对象，避免在onDraw中频繁创建
     private val bezierPath = Path()
+    private var currentWorkMode = WorkMode.MODE_SHOW_MAP
+
+    /**
+     * 设置工作模式
+     */
+    fun setWorkMode(mode: WorkMode) {
+        currentWorkMode = mode
+        // 根据工作模式调整绘制和交互行为
+        postInvalidate()
+    }
 
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+
         // 绘制试教中的点 - 使用副本避免并发修改
         val pointListCopy = synchronized(teachPointList) {
             teachPointList.toList()
@@ -124,18 +128,12 @@ class PathView @SuppressLint("ViewConstructor") constructor(
             }
 
             // 创建世界系坐标点
-            if (globalPath.startPoint != null && globalPath.startPoint.size >= 3 &&
-                globalPath.endPoint != null && globalPath.endPoint.size >= 3
-            ) {
+            if (globalPath.startPoint != null && globalPath.startPoint.size >= 3 && globalPath.endPoint != null && globalPath.endPoint.size >= 3) {
                 val startPoint2d = PointNew(globalPath.startPoint[0], globalPath.startPoint[1])
                 val endPoint2d = PointNew(globalPath.endPoint[0], globalPath.endPoint[1])
 
                 drawStartAndEndPoint(
-                    canvas,
-                    startPoint2d,
-                    endPoint2d,
-                    startPointText,
-                    endPointText
+                    canvas, startPoint2d, endPoint2d, startPointText, endPointText
                 )
             }
         }

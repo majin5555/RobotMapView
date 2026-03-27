@@ -20,7 +20,7 @@ import com.siasun.dianshi.view.WorkMode
  */
 class DragPositionViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMapViewModel>() {
 
-    val mapId = 10
+    val mapId = 19
     var mDragBean: DragLocationBean? = null
     private var mLasertData: laser_t = laser_t()
 
