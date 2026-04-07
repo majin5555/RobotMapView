@@ -108,6 +108,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     var mDragPositioningView: DragPositioningView? = null //拖拽定位view
     var mReflectMapView: ReflectMapView? = null //反光板地图view
     var mInspectionView: InspectionView? = null //巡检点
+
     // TEACH模式下是否跟随车体，保持可见
     private var followRobotInTeach: Boolean = false
 
@@ -888,14 +889,15 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         if (needCenter) {
             val values = FloatArray(9)
             mOuterMatrix.getValues(values)
-            val currentRotation =
-                Math.toDegrees(Math.atan2(values[Matrix.MSKEW_Y].toDouble(), values[Matrix.MSCALE_X].toDouble())).toFloat()
+            val currentRotation = Math.toDegrees(
+                Math.atan2(
+                    values[Matrix.MSKEW_Y].toDouble(), values[Matrix.MSCALE_X].toDouble()
+                )
+            ).toFloat()
             setMapStatus(mMapScale, x, y, currentRotation)
         }
     }
 
-
-    private var num = 0
 
     // 重用PointF对象，减少内存抖动
     private val mCarPoint = PointF()
@@ -905,14 +907,10 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      */
     @SuppressLint("DefaultLocale")
     fun setWorkingPath(array: DoubleArray) {
-        num++
-        if (num % 3 == 0) {
-            // 重用对象，避免频繁创建新对象
-            mCarPoint.x = String.format("%.1f", array[0]).toFloat()
-            mCarPoint.y = String.format("%.1f", array[1]).toFloat()
-            mWorkIngPathView?.setData(mCarPoint)
-            num = 0
-        }
+        // 重用对象，避免频繁创建新对象
+        mCarPoint.x = String.format("%.1f", array[0]).toFloat()
+        mCarPoint.y = String.format("%.1f", array[1]).toFloat()
+        mWorkIngPathView?.setData(mCarPoint)
     }
 
     /**
@@ -980,8 +978,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     /**
      * 智能示教返回的区域
      */
-    fun setSmartCleanAreaData( flatPoints: List<Double>, newArea: CleanAreaNew,) {
-        mPolygonEditView?.createAreaFromFlatPointsDouble(flatPoints,newArea)
+    fun setSmartCleanAreaData(flatPoints: List<Double>, newArea: CleanAreaNew) {
+        mPolygonEditView?.createAreaFromFlatPointsDouble(flatPoints, newArea)
     }
 
     /**
