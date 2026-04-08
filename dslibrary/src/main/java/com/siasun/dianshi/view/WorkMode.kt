@@ -44,4 +44,5 @@ enum class WorkMode {
     MODE_INSPECTION_STATION_DELETE, // 删除巡检点模式
     WORK_MODE_SAME_SWITCH_EDIT, //编辑同层切换点模式
     TEACH, //示教模式
+    EDIT_START_POINT, //编辑开始点模式
 }

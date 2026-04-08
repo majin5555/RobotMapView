@@ -87,6 +87,13 @@
                 app:layout_constraintTop_toBottomOf="@+id/btn_posting_area_commit" />
 
             <Button
+                android:id="@+id/btn_edit_area_start_point"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="编辑清扫区域开始点"
+                app:layout_constraintTop_toBottomOf="@+id/btn_posting_area_commit" />
+
+            <Button
                 android:id="@+id/btn_edit_area"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

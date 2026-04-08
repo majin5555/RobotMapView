@@ -27,7 +27,7 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
 
     // 编辑模式相关变量
     private var currentWorkMode = WorkMode.MODE_SHOW_MAP
-    private var selectedArea: CleanAreaNew? = null
+    open var selectedArea: CleanAreaNew? = null
     private var selectedPointIndex: Int = -1
     private var isDragging = false
     private var isAreaDragging = false
@@ -197,6 +197,8 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
             add(PointNew(bottomLeft.x, bottomLeft.y))
 
         }
+        //初始化开始点是含糊计算的(世界坐标)
+        newArea.areaStartPoint.set(topLeft.x + 0.5f, topLeft.y - 0.5f)
 
         list.add(newArea)
         selectedArea = newArea
@@ -256,12 +258,16 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
     /**
      * 设置要编辑的区域
      */
-    fun setSelectedArea(area: CleanAreaNew?) {
+    fun setSelectedCleanArea(area: CleanAreaNew?) {
         this.selectedArea = area
         selectedPointIndex = -1
         isDragging = false
-        // 通知监听器选中区域变化
         onCleanAreaEditListener?.onSelectedAreaChanged(area)
+        invalidate()
+    }
+
+    fun updateAreaStartPoint(newX: Float, newY: Float) {
+        selectedArea?.areaStartPoint?.set(newX, newY)
         invalidate()
     }
 
@@ -304,9 +310,7 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
         val points = area.m_VertexPnt
         var j = points.size - 1
         for (i in points.indices) {
-            if ((points[i].Y > y) != (points[j].Y > y) &&
-                (x < (points[j].X - points[i].X) * (y - points[i].Y) / (points[j].Y - points[i].Y) + points[i].X)
-            ) {
+            if ((points[i].Y > y) != (points[j].Y > y) && (x < (points[j].X - points[i].X) * (y - points[i].Y) / (points[j].Y - points[i].Y) + points[i].X)) {
                 isInside = !isInside
             }
             j = i
@@ -320,13 +324,11 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
     private fun isPointInVertex(screenX: Float, screenY: Float, vertex: PointNew): Boolean {
         val mapView = mapViewRef.get() ?: return false
         tempPoint.set(
-            mapView.worldToScreen(vertex.X, vertex.Y).x,
-            mapView.worldToScreen(vertex.X, vertex.Y).y
+            mapView.worldToScreen(vertex.X, vertex.Y).x, mapView.worldToScreen(vertex.X, vertex.Y).y
         )
         val distance = Math.sqrt(
             Math.pow(
-                (screenX - tempPoint.x).toDouble(),
-                2.0
+                (screenX - tempPoint.x).toDouble(), 2.0
             ) + Math.pow((screenY - tempPoint.y).toDouble(), 2.0)
         )
         return distance <= vertexRadius * 2
@@ -423,12 +425,7 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
 
         // 检查距离是否在容忍范围内，并且点在线段的延长线上
         return distance <= lineClickTolerance && isPointBetween(
-            screenX,
-            screenY,
-            screenP1.x,
-            screenP1.y,
-            screenP2.x,
-            screenP2.y
+            screenX, screenY, screenP1.x, screenP1.y, screenP2.x, screenP2.y
         )
     }
 
@@ -612,9 +609,7 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
                     val isInsideMap = mapView.isInsideMap(x, y)
                     // 通知监听器顶点拖动结束
                     onCleanAreaEditListener?.onVertexDragEnd(
-                        selectedArea!!,
-                        selectedPointIndex,
-                        isInsideMap
+                        selectedArea!!, selectedPointIndex, isInsideMap
                     )
                     handled = true
                 } else if (isAreaDragging && selectedArea != null) {

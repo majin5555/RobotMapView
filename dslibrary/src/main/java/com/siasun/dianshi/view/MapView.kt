@@ -99,6 +99,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     var mRemoveNoiseView: RemoveNoiseView? = null//噪点擦出
     var mPostingAreasView: PostingAreasView? = null//定位区域
     var mPolygonEditView: PolygonEditView? = null//区域
+    var mPolygonEditViewPoint: PolygonEditViewPoint? = null//区域开始点
     var mSpPolygonEditView: SpPolygonEditView? = null//特殊区域
     var mMixAreaView: MixAreaView? = null//混行区域
     var mWorldPadView: WorldPadView? = null//路线PP
@@ -225,6 +226,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mRemoveNoiseView = RemoveNoiseView(context, mMapView)
         mPostingAreasView = PostingAreasView(context, mMapView)
         mPolygonEditView = PolygonEditView(context, mMapView)
+        mPolygonEditViewPoint = PolygonEditViewPoint(context, mMapView)
         mSpPolygonEditView = SpPolygonEditView(context, mMapView)
         mMixAreaView = MixAreaView(context, mMapView)
         mPathView = PathView(context, mMapView)
@@ -237,6 +239,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
 
         //清扫区域
         addMapLayers(mPolygonEditView)
+        //清扫区域点
+        addMapLayers(mPolygonEditViewPoint)
         //充电站
         addMapLayers(mHomeDockView)
         //乘梯点
@@ -539,6 +543,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mRemoveNoiseView = null
         mPostingAreasView = null
         mPolygonEditView = null
+        mPolygonEditViewPoint = null
         mSpPolygonEditView = null
         mMixAreaView = null
         mPathView = null
@@ -585,6 +590,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mRemoveNoiseView?.setWorkMode(mode)
         mPostingAreasView?.setEditMode(mode)
         mPolygonEditView?.setWorkMode(mode)
+        mPolygonEditViewPoint?.setWorkMode(mode)
         mSpPolygonEditView?.setWorkMode(mode)
         mMixAreaView?.setWorkMode(mode)
         mElevatorView?.setWorkMode(mode)
@@ -976,6 +982,11 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     }
 
     /**
+     * 清除区域数据源
+     */
+    fun cleanAreaStartPoint() = mPolygonEditViewPoint?.cleanAreaStartPoint()
+
+    /**
      * 智能示教返回的区域
      */
     fun setSmartCleanAreaData(flatPoints: List<Double>, newArea: CleanAreaNew) {
@@ -986,7 +997,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      * 设置选中的清扫区域
      */
     fun setSelectedArea(area: CleanAreaNew?) {
-        mPolygonEditView?.setSelectedArea(area)
+        mPolygonEditView?.setSelectedCleanArea(area)
     }
 
     /**
@@ -1291,6 +1302,13 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      */
     fun setOnCleanAreaEditListener(listener: PolygonEditView.OnCleanAreaEditListener?) {
         mPolygonEditView?.setOnCleanAreaEditListener(listener)
+    }
+
+    /**
+     * 设置清扫区域开始点编辑监听器
+     */
+    fun setOnStartPointEditListener(listener: PolygonEditViewPoint.OnStartPointEditListener?) {
+        mPolygonEditViewPoint?.setOnStartPointEditListener(listener)
     }
 
     /**

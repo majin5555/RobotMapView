@@ -65,6 +65,7 @@ import com.siasun.dianshi.view.InspectionView
 import com.siasun.dianshi.view.MapView.ISingleTapListener
 import com.siasun.dianshi.view.MixAreaView
 import com.siasun.dianshi.view.PolygonEditView
+import com.siasun.dianshi.view.PolygonEditViewPoint
 import com.siasun.dianshi.view.PostingAreasView
 import com.siasun.dianshi.view.RFIDView
 import com.siasun.dianshi.view.SameSwitchView
@@ -89,7 +90,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     private val mReflectorMaps = mutableListOf<com.siasun.dianshi.bean.ReflectorMapBean>()
 
 
-    val mapId = 1
+    val mapId = 3
     var cleanAreas: MutableList<CleanAreaNew> = mutableListOf()
     var mSpArea: MutableList<SpArea> = mutableListOf()
     var mMixArea: MutableList<WorkAreasNew> = mutableListOf()
@@ -100,7 +101,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
-        MMKV.defaultMMKV().encode(KEY_NEY_IP, "192.168.1.198")
+        MMKV.defaultMMKV().encode(KEY_NEY_IP, "192.168.3.101")
 
         MainController.init()
         //加载地图
@@ -139,7 +140,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 
         //开始试教
         mBinding.btnStartTeach.onClick {
-          mBinding.mapView.setWorkMode(WorkMode.TEACH)
+            mBinding.mapView.setWorkMode(WorkMode.TEACH)
             MainController.sendStartTeachRoute()
             ToastUtils.showLong("开始试教")
         }
@@ -305,7 +306,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             override fun onCrossDoorLineClick(crossDoor: com.siasun.dianshi.bean.CrossDoor) {
                 // 点击了过门线，弹框显示信息
                 showCrossDoorDialog(crossDoor)
-                LogUtil.d("999 点击了过门线 ${ mBinding.mapView.getCrossDoors()}")
+                LogUtil.d("999 点击了过门线 ${mBinding.mapView.getCrossDoors()}")
             }
         })
 
@@ -892,6 +893,33 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 mBinding.mapView.setCleanAreaData(cleanAreas)
             }
         })
+
+        mBinding.btnEditAreaStartPoint.onClick {
+            if (mBinding.mapView.getCleanAreaData().toMutableList().isNotEmpty()) {
+                // 生成0到positingAreas.size-1之间的随机索引
+                val randomIndex =
+                    Random.nextInt(mBinding.mapView.getCleanAreaData().toMutableList().size)
+
+                // 通过随机索引获取要删除的定位区域
+                val randomArea = mBinding.mapView.getCleanAreaData().toMutableList()[randomIndex]
+                mBinding.mapView.setWorkMode(WorkMode.EDIT_START_POINT)
+
+                LogUtil.d("随机选择的区域为: $randomArea")
+                // 将选中的区域设置到PolygonEditView中进行编辑
+                mBinding.mapView.setSelectedArea(randomArea)
+            }
+        }
+        //开始点回调舰艇
+        mBinding.mapView.setOnStartPointEditListener(object :
+            PolygonEditViewPoint.OnStartPointEditListener {
+            override fun onStartPointDragEnd(
+                area: CleanAreaNew,
+            ) {
+                LogUtil.d("拖动结束区域的开始点坐标为: $area")
+            }
+        })
+
+
         //编辑清扫区域
         mBinding.btnEditArea.onClick {
             if (mBinding.mapView.getCleanAreaData().toMutableList().isNotEmpty()) {
@@ -987,26 +1015,39 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             // 设置地图的工作模式为添加清扫区域模式
             mBinding.mapView.setWorkMode(WorkMode.MODE_CLEAN_AREA_ADD)
 //            // 创建一个新的清扫区域
-//            val newArea = CleanAreaNew().apply {
-//                sub_name = "清扫区域${cleanAreas.size + 1}"
-//                regId = cleanAreas.size + 1//随机申城
-//                layer_id = mapId
-//                routeType = 0 // 自动生成
-//                areaType = 1
-//                cleanShape = 3 // 回字型
-//                areaPathType = 0 // 普通清扫区域
-//            }
-//            cleanAreas.add(newArea)
-//            mBinding.mapView.createCleanArea(newArea)
-
-            val points = listOf(6.622922, 2.3767788, 8.178481, -4.147859, 12.56447, -4.355299, 14.053481, -3.3443854, 14.37065, 0.22211342, 8.566684, 2.7157185)
-
-            val area = CleanAreaNew().apply {
-                sub_name = "新区域"
-                regId = System.currentTimeMillis().toInt()
+            val newArea = CleanAreaNew().apply {
+                sub_name = "清扫区域${cleanAreas.size + 1}"
+                regId = cleanAreas.size + 1//随机申城
+                layer_id = mapId
+                routeType = 0 // 自动生成
+                areaType = 1
+                cleanShape = 3 // 回字型
+                areaPathType = 0 // 普通清扫区域
             }
+            cleanAreas.add(newArea)
+            mBinding.mapView.createCleanArea(newArea)
 
-            mBinding.mapView.setSmartCleanAreaData(points, area)
+//            val points = listOf(
+//                6.622922,
+//                2.3767788,
+//                8.178481,
+//                -4.147859,
+//                12.56447,
+//                -4.355299,
+//                14.053481,
+//                -3.3443854,
+//                14.37065,
+//                0.22211342,
+//                8.566684,
+//                2.7157185
+//            )
+//
+//            val area = CleanAreaNew().apply {
+//                sub_name = "新区域"
+//                regId = System.currentTimeMillis().toInt()
+//            }
+//
+//            mBinding.mapView.setSmartCleanAreaData(points, area)
         }
 
         //删除清扫区域

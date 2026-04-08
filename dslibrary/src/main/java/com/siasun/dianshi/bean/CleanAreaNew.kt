@@ -1,3 +1,4 @@
+
 package com.siasun.dianshi.bean
 
 import android.graphics.PointF
