@@ -68,8 +68,8 @@ class PolygonEditViewPoint(context: Context?, val parent: WeakReference<MapView>
      * 开始点编辑回调接口
      */
     interface OnStartPointEditListener {
-        //        fun onStartPointDragStart(area: CleanAreaNew) {}
-//        fun onStartPointDragging(area: CleanAreaNew, newX: Float, newY: Float) {}
+        //fun onStartPointDragStart(area: CleanAreaNew) {}
+        //fun onStartPointDragging(area: CleanAreaNew, newX: Float, newY: Float) {}
         fun onStartPointDragEnd(area: CleanAreaNew)
     }
 
@@ -108,9 +108,8 @@ class PolygonEditViewPoint(context: Context?, val parent: WeakReference<MapView>
                 if (isStartPointDragging) {
                     val mapView = mapViewRef.get() ?: return false
                     val worldPoint = mapView.screenToWorld(x, y)
-                    mapView.mPolygonEditView?.selectedArea?.let { area ->
+                    if (mapView.mPolygonEditView?.isStartPointInArea(worldPoint.x, worldPoint.y) == true) {
                         mapView.mPolygonEditView?.updateAreaStartPoint(worldPoint.x, worldPoint.y)
-//                        onStartPointEditListener?.onStartPointDragging(area, worldPoint.x, worldPoint.y)
                     }
                     lastTouchX = x
                     lastTouchY = y
@@ -124,6 +123,7 @@ class PolygonEditViewPoint(context: Context?, val parent: WeakReference<MapView>
                 if (isStartPointDragging) {
                     val mapView = mapViewRef.get() ?: return false
                     mapView.mPolygonEditView?.selectedArea?.let { area ->
+                        mapView.mPolygonEditView?.validateStartPoint()
                         onStartPointEditListener?.onStartPointDragEnd(
                             area
                         )

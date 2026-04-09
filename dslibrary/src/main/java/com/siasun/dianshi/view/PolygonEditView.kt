@@ -198,7 +198,7 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
 
         }
         //初始化开始点是含糊计算的(世界坐标)
-        newArea.areaStartPoint.set(topLeft.x + 0.5f, topLeft.y - 0.5f)
+        newArea.areaStartPoint.set(topLeft.x, topLeft.y)
 
         list.add(newArea)
         selectedArea = newArea
@@ -260,6 +260,18 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
      */
     fun setSelectedCleanArea(area: CleanAreaNew?) {
         this.selectedArea = area
+        //兼容之前的区域开始点为0
+        area?.let {
+            if (it.areaStartPoint.x == 0f && it.areaStartPoint.y == 0f) {
+                if (it.m_VertexPnt.isNotEmpty()) {
+                    val topLeftVertex = it.m_VertexPnt.minByOrNull { point -> point.X + point.Y }
+                    topLeftVertex?.let { point ->
+                        it.areaStartPoint.set(point.X, point.Y)
+                    }
+                }
+            }
+        }
+
         selectedPointIndex = -1
         isDragging = false
         onCleanAreaEditListener?.onSelectedAreaChanged(area)
@@ -269,6 +281,10 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
     fun updateAreaStartPoint(newX: Float, newY: Float) {
         selectedArea?.areaStartPoint?.set(newX, newY)
         invalidate()
+    }
+
+    fun validateStartPoint() {
+        selectedArea?.let { validateAndFixStartPoint(it) }
     }
 
     /**
@@ -319,6 +335,23 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
     }
 
     /**
+     * 判断世界坐标点是否在区域内
+     */
+    fun isStartPointInArea(worldX: Float, worldY: Float): Boolean {
+        val area = selectedArea ?: return false
+        var isInside = false
+        val points = area.m_VertexPnt
+        var j = points.size - 1
+        for (i in points.indices) {
+            if ((points[i].Y > worldY) != (points[j].Y > worldY) && (worldX < (points[j].X - points[i].X) * (worldY - points[i].Y) / (points[j].Y - points[i].Y) + points[i].X)) {
+                isInside = !isInside
+            }
+            j = i
+        }
+        return isInside
+    }
+
+    /**
      * 检查点是否在顶点的可点击范围内
      */
     private fun isPointInVertex(screenX: Float, screenY: Float, vertex: PointNew): Boolean {
@@ -332,6 +365,26 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
             ) + Math.pow((screenY - tempPoint.y).toDouble(), 2.0)
         )
         return distance <= vertexRadius * 2
+    }
+
+    /**
+     * 获取区域的左上角顶点
+     */
+    private fun getTopLeftVertex(points: List<PointNew>): PointNew? {
+        if (points.isEmpty()) return null
+        return points.minByOrNull { it.X + it.Y }
+    }
+
+    /**
+     * 检查并修正开始点位置，确保其在多边形内部
+     */
+    private fun validateAndFixStartPoint(area: CleanAreaNew) {
+        if (!isStartPointInArea(area.areaStartPoint.x, area.areaStartPoint.y)) {
+            val topLeft = getTopLeftVertex(area.m_VertexPnt)
+            topLeft?.let {
+                area.areaStartPoint.set(it.X, it.Y)
+            }
+        }
     }
 
     /**
@@ -611,6 +664,7 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
                     onCleanAreaEditListener?.onVertexDragEnd(
                         selectedArea!!, selectedPointIndex, isInsideMap
                     )
+                    validateAndFixStartPoint(selectedArea!!)
                     handled = true
                 } else if (isAreaDragging && selectedArea != null) {
                     val mapView = mapViewRef.get() ?: return false
@@ -623,6 +677,7 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
                             break
                         }
                     }
+                    validateAndFixStartPoint(selectedArea!!)
                     onCleanAreaEditListener?.onAreaDragEnd(selectedArea!!, isAllInside)
                     handled = true
                 }
