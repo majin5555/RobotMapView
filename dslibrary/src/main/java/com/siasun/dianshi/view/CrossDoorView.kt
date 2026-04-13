@@ -37,6 +37,10 @@ class CrossDoorView(
     private var isDragging = false
     private val dragThreshold = 30f // 点击检测阈值（像素）
 
+    // 防连点机制：记录上次点击的时间戳
+    private var lastClickTime: Long = 0
+    private val clickInterval: Long = 500 // 点击间隔（毫秒）
+
     // 选中点类型枚举
     enum class SelectedPointType {
         NONE, START_POINT, END_POINT
@@ -212,11 +216,16 @@ class CrossDoorView(
                     // 检查是否点击了线（使用点到直线的距离公式）
                     val distanceToLine = pointToLineDistance(x, y, startScreenPoint, endScreenPoint)
                     if (distanceToLine <= dragThreshold) {
-                        // 根据当前模式触发不同的回调
-                        if (isDeleting) {
-                            onCrossDoorDeleteClickListener?.onCrossDoorDeleteClick(crossDoor)
-                        } else {
-                            onCrossDoorLineClickListener?.onCrossDoorLineClick(crossDoor)
+                        val currentTime = System.currentTimeMillis()
+                        // 判断是否处于防连点保护期内
+                        if (currentTime - lastClickTime >= clickInterval) {
+                            lastClickTime = currentTime
+                            // 根据当前模式触发不同的回调
+                            if (isDeleting) {
+                                onCrossDoorDeleteClickListener?.onCrossDoorDeleteClick(crossDoor)
+                            } else {
+                                onCrossDoorLineClickListener?.onCrossDoorLineClick(crossDoor)
+                            }
                         }
                         return true
                     }
