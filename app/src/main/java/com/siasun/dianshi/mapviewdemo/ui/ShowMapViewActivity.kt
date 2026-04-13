@@ -325,7 +325,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 id = 1,
                 map_id = 2,
                 door_msg = com.siasun.dianshi.bean.DoorMsg(
-                    door_sn = "DOOR_001", type = "cross_door"
+                    type = "DOOR_001"
                 ),
             )
             mBinding.mapView.addCrossDoor(crossDoor)
@@ -1252,14 +1252,14 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.btnCreateStation.onClick {
             XpopUtils(this).showCmsStationDialog(
                 onConfirmCall = { result ->
-                    result?.let {
-                        cmsStation.add(result)
-                        mBinding.mapView.setCmsStations(cmsStation)
-                    }
+                result?.let {
+                    cmsStation.add(result)
+                    mBinding.mapView.setCmsStations(cmsStation)
+                }
 
-                }, onDeleteCall = {
+            }, onDeleteCall = {
 
-                }, mapId
+            }, mapId
             )
         }
         //编辑避让点
@@ -1534,7 +1534,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
      */
     private fun showCrossDoorDialog(crossDoor: com.siasun.dianshi.bean.CrossDoor) {
         android.app.AlertDialog.Builder(this).setTitle("过门信息").setMessage(
-            "ID: ${crossDoor.id}\n" + "地图ID: ${crossDoor.map_id}\n" + "门编号: ${crossDoor.door_msg.door_sn}\n" + "类型: ${crossDoor.door_msg.type}\n" + "起点: (${
+            "ID: ${crossDoor.id}\n" + "地图ID: ${crossDoor.map_id}\n" + "类型: ${crossDoor.door_msg.type}\n" + "起点: (${
                 String.format(
                     "%.2f", crossDoor.start_point.x
                 )
@@ -1546,7 +1546,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         ).setPositiveButton("确定", null).setNegativeButton("删除") { _, _ ->
             // 删除选中的过门
             mBinding.mapView.mCrossView?.removeCrossDoor(crossDoor)
-            ToastUtils.showLong("已删除过门: ${crossDoor.door_msg.door_sn}")
+//            ToastUtils.showLong("已删除过门: ${crossDoor.door_msg.door_sn}")
             LogUtil.d("999 点击了过门线 ${mBinding.mapView.getCrossDoors()}")
 
         }.show()

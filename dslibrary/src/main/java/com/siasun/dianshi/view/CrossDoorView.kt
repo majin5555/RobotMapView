@@ -162,7 +162,7 @@ class CrossDoorView(
             val centerY = (startScreenPoint.y + endScreenPoint.y) / 2f
             drawLabel(
                 canvas,
-                crossDoor.door_msg.door_sn,
+                crossDoor.door_msg.type,
                 PointF(centerX, centerY - 15f),
                 doorMsgPaint
             )
