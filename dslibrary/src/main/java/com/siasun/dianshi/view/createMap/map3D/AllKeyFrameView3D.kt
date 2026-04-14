@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
 import com.ngu.lcmtypes.laser_t
 import com.siasun.dianshi.view.SlamWareBaseView
 import com.siasun.dianshi.view.WorkMode
@@ -31,6 +32,26 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
             strokeCap = Paint.Cap.ROUND
             style = Paint.Style.FILL
         }
+
+        private val textPaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.BLUE
+            textSize = 20f
+            textAlign = Paint.Align.CENTER
+        }
+
+        private val arrowPaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.BLUE
+            style = Paint.Style.FILL
+        }
+
+        private const val RAD_TO_DEG = 57.29578f
+
+        private val arrowPath: Path = Path().apply {
+            moveTo(26f, 0f)
+            lineTo(14f, -6f)
+            lineTo(14f, 6f)
+            close()
+        }
     }
 
     /**
@@ -49,18 +70,20 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
     fun parseKeyFramePose(mLaserT: laser_t) {
         mMapPath.clear()
         if (mLaserT.ranges.isNotEmpty()) {
-
-            for (i in 0 until mLaserT.ranges.size / 2) {
+            // 每3个数据为一组: x, y, theta
+            for (i in 0 until mLaserT.ranges.size / 3) {
                 //关键帧  x
-                val radX: Float = mLaserT.ranges[2 * i]
+                val radX: Float = mLaserT.ranges[3 * i]
                 //关键帧  y
-                val radY: Float = mLaserT.ranges[2 * i + 1]
-                mMapPath.add(OldKeyFrame(radX, radY, 0f, 0))
+                val radY: Float = mLaserT.ranges[3 * i + 1]
+                //关键帧角度 theta
+                val theta: Float = mLaserT.ranges[3 * i + 2]
+                mMapPath.add(OldKeyFrame(radX, radY, theta, i))
             }
         }
     }
 
-    @SuppressLint("DrawAllocation")
+    @SuppressLint("DrawAllocation", "DefaultLocale")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val mapView = parent.get() ?: return
@@ -70,6 +93,15 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
             // 使用局部变量减少重复计算
             val mPoints = floatArrayOf(worldToScreen.x, worldToScreen.y)
             canvas.drawPoints(mPoints, paint)
+
+            val rotation = -point.theta * RAD_TO_DEG
+            canvas.save()
+            canvas.translate(worldToScreen.x, worldToScreen.y)
+            canvas.rotate(rotation)
+            canvas.drawPath(arrowPath, arrowPaint)
+            canvas.restore()
+
+            canvas.drawText("ID:${point.id}", worldToScreen.x, worldToScreen.y + 25f, textPaint)
         }
         canvas.restore()
     }
