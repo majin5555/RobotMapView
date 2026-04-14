@@ -19,6 +19,7 @@ import com.siasun.dianshi.dialog.CommonEditDialog
 import com.siasun.dianshi.dialog.CommonWarnDialog
 import com.siasun.dianshi.framework.ext.onClick
 import com.siasun.dianshi.framework.log.LogUtil
+import com.siasun.dianshi.mapviewdemo.BuildConfig
 import com.siasun.dianshi.mapviewdemo.CREATE_MAP
 import com.siasun.dianshi.mapviewdemo.KEY_CONFIGURATION_PARAMETERS
 import com.siasun.dianshi.mapviewdemo.KEY_CONFIGURATION_PARAMETERS_RESULT
@@ -36,6 +37,7 @@ import com.siasun.dianshi.network.constant.KEY_NEY_IP
 import com.siasun.dianshi.utils.RadianUtil
 import com.siasun.dianshi.view.WorkMode
 import com.tencent.mmkv.MMKV
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Timer
@@ -63,7 +65,7 @@ class CreateMap3DActivity :
         mTimer.schedule(object : TimerTask() {
             override fun run() {
 //                if (GlobalVariable.SEND_NAVI_HEART) {
-                    MainController.myController.mSendNaviHeartBeat()
+                MainController.myController.mSendNaviHeartBeat()
 //                }
             }
         }, 0, 500)
@@ -117,6 +119,9 @@ class CreateMap3DActivity :
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initData() {
         super.initData()
+        if (BuildConfig.DEBUG) {
+            startMockPosStream()
+        }
         //下载地图结果
         LiveEventBus.get(KEY_UPDATE_MAP, UpdateMapBean::class.java).observe(this) {
 //            ToastUtils.showLong("PM.yaml  && PM.png 下载成功")
@@ -448,4 +453,58 @@ class CreateMap3DActivity :
         arr[5] = pitch
         return arr
     }
+
+    private var mockJob: Job? = null
+
+    private fun startMockPosStream() {
+        if (mockJob != null) return
+        mockJob = lifecycleScope.launch {
+            val targetKeyframes = 100
+            var step = 0f
+            var angle = 0f
+            while (step < targetKeyframes) {
+                val lt = laser_t()
+                val numPoints = 720
+                val ranges = FloatArray(6 + numPoints * 6)
+                val r = 2f
+                val x = cos(angle) * 5f
+                val y = sin(angle) * 5f
+                val theta = angle
+                ranges[0] = x
+                ranges[1] = y
+                ranges[2] = theta
+                ranges[3] = 0f
+                ranges[4] = 0f
+                ranges[5] = 0f
+                var idx = 6
+                for (i in 0 until numPoints) {
+                    val a = i * (2f * Math.PI.toFloat() / numPoints)
+                    val px = cos(a) * r
+                    val py = sin(a) * r
+                    ranges[idx] = px
+                    ranges[idx + 1] = py
+                    ranges[idx + 2] = 0f
+                    ranges[idx + 3] = 0f
+                    ranges[idx + 4] = 0f
+                    ranges[idx + 5] = 0f
+                    idx += 6
+                }
+                lt.ranges = ranges
+                lt.intensities = floatArrayOf(1000f, 1000f, 0f, 0f, 0.05f)
+                lt.rad0 = step
+                LiveEventBus.get(KEY_UPDATE_POS, laser_t::class.java).post(lt)
+                step += 1f
+                angle += 0.05f
+                if (angle > (2f * Math.PI.toFloat())) angle -= (2f * Math.PI.toFloat())
+                delay(5)
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        mockJob?.cancel()
+        mockJob = null
+        super.onDestroy()
+    }
+
 }
