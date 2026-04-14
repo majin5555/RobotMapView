@@ -67,6 +67,14 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
             strokeWidth = 10f
             strokeCap = Paint.Cap.ROUND
         }
+
+        val mKeyFrameIdPaint = Paint().apply {
+            color = Color.MAGENTA
+            style = Paint.Style.FILL
+            isAntiAlias = true
+            textSize = 10f
+            isFakeBoldText = true
+        }
     }
 
 
@@ -157,12 +165,26 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
             }
 
             // 6. 批量绘制关键帧位置 (也使用世界坐标)
+            var keyFrameIdTextSize = 12f
+            var keyFrameIdOffset = 5f
             synchronized(keyFrames3D) {
+                val pointBuffer = FloatArray(2)
+                if (totalScale > 0) {
+                    keyFrameIdTextSize /= totalScale
+                    keyFrameIdOffset /= totalScale
+                }
+                mKeyFrameIdPaint.textSize = keyFrameIdTextSize
 
-                keyFrames3D.values.forEach { frame ->
-                    // 使用局部变量减少重复计算
-                    val mPoints = floatArrayOf(frame.robotPos[0], frame.robotPos[1])
-                    canvas.drawPoints(mPoints, mGreenDrawPaint)
+                keyFrames3D.forEach { (id, frame) ->
+                    pointBuffer[0] = frame.robotPos[0]
+                    pointBuffer[1] = frame.robotPos[1]
+                    canvas.drawPoints(pointBuffer, mGreenDrawPaint)
+                    canvas.drawText(
+                        id.toString(),
+                        pointBuffer[0] + keyFrameIdOffset,
+                        pointBuffer[1] - keyFrameIdOffset,
+                        mKeyFrameIdPaint
+                    )
                 }
             }
         }
