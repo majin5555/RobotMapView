@@ -16,7 +16,7 @@ import com.jeremyliao.liveeventbus.core.LiveEvent
 },
 {
 "name": "海康过门模块",
-"type": "door_hik"
+"type": "door_hk"
 }
 ]
  */
@@ -31,9 +31,9 @@ data class CrossDoor(
 
 data class DoorMsg(
     var type: String,
-    var door_lora: DoorLora = DoorLora(),
-    var door_hk: DoorHk = DoorHk(),
-    var door_siasun: DoorSiaSun = DoorSiaSun(),
+    var door_lora: DoorLora? = DoorLora(),
+    var door_hk: DoorHk? = DoorHk(),
+    var door_siasun: DoorSiaSun? = DoorSiaSun(),
 ) : LiveEvent
 
 data class DoorLora(
