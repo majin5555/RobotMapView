@@ -197,9 +197,9 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        iniVirtualWall()
 //          initRemoveNoise()
 //        initPostingArea()
-//        initRemoveNoise()
+        initRemoveNoise()
 //        initPostingArea()
-        initCleanArea()
+//        initCleanArea()
 //        initElevator()
 //        initPose()
 //        initMachineStation()
@@ -1175,6 +1175,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        var mScle = 0f
 //        var mX = 0f
 //        var mY = 0f
+        mBinding.mapView.set3D(true)
         //删除噪点
         mBinding.btnRemoveNoise.setOnClickListener {
             mBinding.mapView.setWorkMode(WorkMode.MODE_REMOVE_NOISE)
