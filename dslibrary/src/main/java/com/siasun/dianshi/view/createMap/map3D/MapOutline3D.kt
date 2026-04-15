@@ -64,16 +64,14 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
         val mGreenDrawPaint = Paint().apply {
             color = Color.GREEN
             style = Paint.Style.FILL
-            strokeWidth = 10f
+            strokeWidth = 15f
             strokeCap = Paint.Cap.ROUND
         }
 
-        val mKeyFrameIdPaint = Paint().apply {
-            color = Color.MAGENTA
-            style = Paint.Style.FILL
-            isAntiAlias = true
+        val mTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.BLACK
             textSize = 10f
-            isFakeBoldText = true
+            textAlign = Paint.Align.CENTER
         }
     }
 
@@ -165,32 +163,50 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
             }
 
             // 6. 批量绘制关键帧位置 (也使用世界坐标)
-            var keyFrameIdTextSize = 12f
-            var keyFrameIdOffset = 5f
             synchronized(keyFrames3D) {
-                val pointBuffer = FloatArray(2)
-                if (totalScale > 0) {
-                    keyFrameIdTextSize /= totalScale
-                    keyFrameIdOffset /= totalScale
-                }
-                mKeyFrameIdPaint.textSize = keyFrameIdTextSize
+                drawKeyFrame(canvas)
 
-                keyFrames3D.forEach { (id, frame) ->
-                    pointBuffer[0] = frame.robotPos[0]
-                    pointBuffer[1] = frame.robotPos[1]
-                    canvas.drawPoints(pointBuffer, mGreenDrawPaint)
-                    canvas.drawText(
-                        id.toString(),
-                        pointBuffer[0] + keyFrameIdOffset,
-                        pointBuffer[1] - keyFrameIdOffset,
-                        mKeyFrameIdPaint
-                    )
-                }
+                // 7. 绘制关键帧ID
+                drawKeyFrameIds(canvas, totalMatrix)
             }
         }
         canvas.restore()
     }
 
+    private fun drawKeyFrame(canvas: Canvas) {
+        keyFrames3D.values.forEach { frame ->
+            // 使用局部变量减少重复计算
+            val mPoints = floatArrayOf(frame.robotPos[0], frame.robotPos[1])
+            canvas.drawPoints(mPoints, mGreenDrawPaint)
+        }
+    }
+
+    /**
+     * 绘制关键帧ID，防重叠、防镜像，显示在正下方
+     */
+    private fun drawKeyFrameIds(canvas: Canvas, totalMatrix: Matrix) {
+        val mapView = parent.get() ?: return
+        canvas.save()
+
+        // 逆变换，使画布回到屏幕坐标系，从而保证文字大小恒定且不被镜像
+        val inverseMatrix = Matrix()
+        totalMatrix.invert(inverseMatrix)
+        canvas.concat(inverseMatrix)
+
+        keyFrames3D.forEach { (id, frame) ->
+            // 使用 worldToScreen 确保精确映射到屏幕坐标系
+            val screenPt = mapView.worldToScreen(frame.robotPos[0], frame.robotPos[1])
+            val text = "$id"
+
+            val textX = screenPt.x
+            // Y 坐标：关键帧中心。使得文字在Y轴上也居中对齐于关键帧中心点
+            val textY = screenPt.y - (mTextPaint.descent() + mTextPaint.ascent()) / 2f
+
+            canvas.drawText(text, textX, textY + 10, mTextPaint)
+        }
+
+        canvas.restore()
+    }
 
     /***
      * 添加关键帧
