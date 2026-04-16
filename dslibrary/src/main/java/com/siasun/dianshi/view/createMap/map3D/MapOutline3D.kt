@@ -200,17 +200,21 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
         }
     }
 
+    // 预分配对象，避免 onDraw 中频繁 GC 和对象创建
+    private val mInverseMatrix = Matrix()
+    private val mTempPts = FloatArray(2)
+
     /**
      * 绘制关键帧角度
      */
     private fun drawKeyFrameAngles(canvas: Canvas, totalScale: Float) {
         if (totalScale <= 0) return
         val inverseScale = 1f / totalScale
-        keyFrames3D.values.forEach { frame ->
+        for ((_, frame) in keyFrames3D) {
             canvas.save()
             canvas.translate(frame.robotPos[0], frame.robotPos[1])
-            // frame.robotPos[2] 为弧度，转换为角度
-            canvas.rotate(frame.robotPos[2] * 57.29578f)
+            // frame.robotPos[2] 为弧度，转换为角度（在翻转的Y轴坐标系中，正角度会自动逆时针旋转即向上）
+            canvas.rotate(Math.toDegrees(frame.robotPos[2].toDouble()).toFloat())
             // 缩放以保持屏幕上的恒定大小
             canvas.scale(inverseScale, inverseScale)
             canvas.drawPath(mArrowPath, mGreenDrawPaint)
@@ -222,24 +226,24 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
      * 绘制关键帧ID，防重叠、防镜像，显示在正下方
      */
     private fun drawKeyFrameIds(canvas: Canvas, totalMatrix: Matrix) {
-        val mapView = parent.get() ?: return
+        if (keyFrames3D.isEmpty()) return
         canvas.save()
 
         // 逆变换，使画布回到屏幕坐标系，从而保证文字大小恒定且不被镜像
-        val inverseMatrix = Matrix()
-        totalMatrix.invert(inverseMatrix)
-        canvas.concat(inverseMatrix)
+        totalMatrix.invert(mInverseMatrix)
+        canvas.concat(mInverseMatrix)
 
-        keyFrames3D.forEach { (id, frame) ->
-            // 使用 worldToScreen 确保精确映射到屏幕坐标系
-            val screenPt = mapView.worldToScreen(frame.robotPos[0], frame.robotPos[1])
-            val text = "$id"
+        // 提前计算文字 Y 轴偏移量，避免在循环中重复计算
+        val textOffset = -(mTextPaint.descent() + mTextPaint.ascent()) / 2f + 10f
 
-            val textX = screenPt.x
-            // Y 坐标：关键帧中心。使得文字在Y轴上也居中对齐于关键帧中心点
-            val textY = screenPt.y - (mTextPaint.descent() + mTextPaint.ascent()) / 2f
+        for ((id, frame) in keyFrames3D) {
+            // 使用 totalMatrix.mapPoints 替代 worldToScreen，避免在循环内分配 PointF 和数组对象
+            mTempPts[0] = frame.robotPos[0]
+            mTempPts[1] = frame.robotPos[1]
+            totalMatrix.mapPoints(mTempPts)
 
-            canvas.drawText(text, textX, textY + 10, mTextPaint)
+            val text = id.toString()
+            canvas.drawText(text, mTempPts[0], mTempPts[1] + textOffset, mTextPaint)
         }
 
         canvas.restore()

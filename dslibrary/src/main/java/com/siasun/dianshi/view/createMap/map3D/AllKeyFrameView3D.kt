@@ -25,6 +25,10 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
 
     private var currentWorkMode = WorkMode.MODE_SHOW_MAP
 
+    // 预分配对象以避免在 onDraw 中高频创建
+    private val mWorldToPixelMatrix = android.graphics.Matrix()
+    private val mTotalMatrix = android.graphics.Matrix()
+
     companion object {
         private val paint: Paint = Paint().apply {
             color = Color.parseColor("#800080")
@@ -70,6 +74,7 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
                 val radY: Float = mLaserT.ranges[3 * i + 1]
                 //关键帧角度 theta
                 val theta: Float = mLaserT.ranges[3 * i + 2]
+//                Log.d(TAG, "parseKeyFramePose: x: $radX, y: $radY, theta: $theta")
                 mMapPath.add(OldKeyFrame(radX, radY, theta, i))
             }
         }
@@ -82,7 +87,7 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
         canvas.save()
 
         var resolution = 0.05f
-        val mWorldToPixelMatrix = android.graphics.Matrix()
+        mWorldToPixelMatrix.reset()
         synchronized(mapView.mSrf.mapData) {
             val mapData = mapView.mSrf.mapData
             resolution = mapData.resolution
@@ -92,9 +97,9 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
             mWorldToPixelMatrix.postScale(1f / resolution, -1f / resolution)
             mWorldToPixelMatrix.postTranslate(0f, mapData.height.toFloat())
         }
-        val totalMatrix = android.graphics.Matrix(mapView.outerMatrix)
-        totalMatrix.preConcat(mWorldToPixelMatrix)
-        canvas.concat(totalMatrix)
+        mTotalMatrix.set(mapView.outerMatrix)
+        mTotalMatrix.preConcat(mWorldToPixelMatrix)
+        canvas.concat(mTotalMatrix)
 
 //           drawKeyFrame(this)
         drawKeyFrameAngles(canvas, mapView.mSrf.scale / resolution)
@@ -125,8 +130,8 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
         for (frame in mMapPath) {
             canvas.save()
             canvas.translate(frame.x, frame.y)
-            // frame.robotPos[2] 为弧度，转换为角度
-            canvas.rotate(frame.theta * 57.29578f)
+            // frame.theta 为弧度，转换为角度，加上90度偏移使箭头尖端朝向正确的机器人正前方向
+            canvas.rotate(Math.toDegrees(frame.theta.toDouble()).toFloat() + 90f)
             // 缩放以保持屏幕上的恒定大小
             canvas.scale(inverseScale, inverseScale)
             canvas.drawPath(mArrowPath, paint)
