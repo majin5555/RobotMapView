@@ -9,7 +9,6 @@ import com.blankj.utilcode.util.ToastUtils
 import com.jeremyliao.liveeventbus.LiveEventBus
 import com.jxd.jxd_core.intent.startActivity
 import com.ngu.lcmtypes.laser_t
-import com.siasun.dianshi.GlobalVariable
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.bean.ConstraintNode
 import com.siasun.dianshi.bean.SwitchMapBean
@@ -120,7 +119,7 @@ class CreateMap3DActivity :
     override fun initData() {
         super.initData()
         if (BuildConfig.DEBUG) {
-            startMockPosStream()
+//            startMockPosStream()
         }
         //下载地图结果
         LiveEventBus.get(KEY_UPDATE_MAP, UpdateMapBean::class.java).observe(this) {

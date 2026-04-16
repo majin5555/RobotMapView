@@ -5,13 +5,12 @@ import android.graphics.PointF
 import android.os.Build
 import android.os.Bundle
 import androidx.annotation.RequiresApi
-import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.blankj.utilcode.util.ToastUtils
 import com.jeremyliao.liveeventbus.LiveEventBus
 import com.ngu.lcmtypes.laser_t
 import com.ngu.lcmtypes.robot_control_t
 import com.siasun.dianshi.ConstantBase
-import com.siasun.dianshi.GlobalVariable
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.bean.ExpandArea
 import com.siasun.dianshi.bean.SwitchMapBean
@@ -28,14 +27,18 @@ import com.siasun.dianshi.mapviewdemo.KEY_LOCATION
 import com.siasun.dianshi.mapviewdemo.KEY_NAV_HEARTBEAT_STATE
 import com.siasun.dianshi.mapviewdemo.KEY_OPT_POSE
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_POS
-import com.siasun.dianshi.mapviewdemo.R
 import com.siasun.dianshi.mapviewdemo.TAG_NAV
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityExpandMap3dDactivityBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.CreateMap2DViewModel
 import com.siasun.dianshi.view.WorkMode
 import com.siasun.dianshi.view.createMap.ExpandAreaView
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Timer
 import java.util.TimerTask
+import kotlin.math.cos
+import kotlin.math.sin
 
 /**
  * 扩展3D地图
@@ -45,7 +48,7 @@ class ExpandMap3DActivity :
     //建图心跳定时器
     private val mTimer = Timer()
 
-    val mapID = 18
+    val mapID = 100
 
     //    val list: MutableList<ExpandArea> = mutableListOf()
     var mExpandArea: ExpandArea = ExpandArea(PointF(0f, 0f), PointF(0f, 0f))
@@ -58,7 +61,7 @@ class ExpandMap3DActivity :
         mTimer.schedule(object : TimerTask() {
             override fun run() {
 //                if (GlobalVariable.SEND_NAVI_HEART) {
-                    MainController.myController.mSendNaviHeartBeat()
+                MainController.myController.mSendNaviHeartBeat()
 //                }
             }
         }, 0, 500)
@@ -212,9 +215,13 @@ class ExpandMap3DActivity :
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initData() {
         super.initData()
+//        if (BuildConfig.DEBUG) {
+//            startMockPosStream()
+//        }
         MainController.sendGetNavKeyframe()
         //接收导航发送所有关键帧
         LiveEventBus.get<laser_t>(KEY_FRAME_POSE).observe(this) {
+            LogUtil.i("接收导航发送所有关键帧 ${it.ranges.size}")
             mBinding.mapView.parseKeyFramePose(it)
         }
 
@@ -365,5 +372,54 @@ class ExpandMap3DActivity :
                 finish()
             }
         }).create().show()
+    }
+
+    private var mockJob: Job? = null
+
+    private fun startMockPosStream() {
+        if (mockJob != null) return
+        mockJob = lifecycleScope.launch {
+            val targetKeyframes = 100
+            var step = 0f
+            var angle = 0f
+            while (step < targetKeyframes) {
+                val lt = laser_t()
+                val numPoints = 720
+                val ranges = FloatArray(3 + numPoints * 3)
+                val r = 2f
+                val x = cos(angle) * 5f
+                val y = sin(angle) * 5f
+                val theta = angle
+                ranges[0] = x
+                ranges[1] = y
+                ranges[2] = theta
+
+                var idx = 3
+                for (i in 0 until numPoints) {
+                    val a = i * (2f * Math.PI.toFloat() / numPoints)
+                    val px = cos(a) * r
+                    val py = sin(a) * r
+                    ranges[idx] = px
+                    ranges[idx + 1] = py
+                    ranges[idx + 2] = 0f
+
+                    idx += 3
+                }
+                lt.ranges = ranges
+                lt.intensities = floatArrayOf(1000f, 1000f, 0f, 0f, 0.05f)
+                lt.rad0 = step
+                LiveEventBus.get(KEY_FRAME_POSE, laser_t::class.java).post(lt)
+                step += 1f
+                angle += 0.05f
+                if (angle > (2f * Math.PI.toFloat())) angle -= (2f * Math.PI.toFloat())
+                delay(5)
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        mockJob?.cancel()
+        mockJob = null
+        super.onDestroy()
     }
 }
