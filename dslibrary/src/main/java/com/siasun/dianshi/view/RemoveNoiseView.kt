@@ -191,9 +191,9 @@ class RemoveNoiseView(context: Context?, parent: WeakReference<MapView>) :
         isDrawing = true
 
         // 3D模式下只支持绘制1个框
-        if (is3D) {
-            rectList.clear()
-        }
+//        if (is3D) {
+//            rectList.clear()
+//        }
     }
 
     /**
