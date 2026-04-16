@@ -1253,14 +1253,14 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.btnCreateStation.onClick {
             XpopUtils(this).showCmsStationDialog(
                 onConfirmCall = { result ->
-                result?.let {
-                    cmsStation.add(result)
-                    mBinding.mapView.setCmsStations(cmsStation)
-                }
+                    result?.let {
+                        cmsStation.add(result)
+                        mBinding.mapView.setCmsStations(cmsStation)
+                    }
 
-            }, onDeleteCall = {
+                }, onDeleteCall = {
 
-            }, mapId
+                }, mapId
             )
         }
         //编辑避让点
@@ -1405,8 +1405,6 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 
         //上激光点云
         LiveEventBus.get<laser_t>(KEY_CURRENT_POINT_CLOUD).observe(this) {
-//            upRCData.ranges = it!!.ranges
-
             rcData.f_create_map_data = it.ranges
             mDragBean.upRCData = rcData
             mBinding.mapView.setUpLaserScan(it)
@@ -1414,8 +1412,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 
         //下激光点云
         LiveEventBus.get<laser_t>(KEY_BOTTOM_CURRENT_POINT_CLOUD).observe(this) {
-
-//            mBinding.mapView.setDownLaserScan(it)
+            mBinding.mapView.setDownLaserScan(it)
         }
 
         //接收车体坐标 AGV->PAD
