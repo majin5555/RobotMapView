@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
 import com.ngu.lcmtypes.laser_t
 import com.siasun.dianshi.bean.ConstraintNode
 import com.siasun.dianshi.view.SlamWareBaseView
@@ -64,8 +65,21 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
         val mGreenDrawPaint = Paint().apply {
             color = Color.GREEN
             style = Paint.Style.FILL
-            strokeWidth = 15f
+            strokeWidth = 8f
             strokeCap = Paint.Cap.ROUND
+            strokeJoin = Paint.Join.ROUND
+        }
+
+//        val mArrowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+//            color = Color.GREEN
+//            style = Paint.Style.FILL
+//        }
+
+        val mArrowPath = Path().apply {
+            moveTo(12f, 0f)
+            lineTo(-6f, -4f)
+            lineTo(-6f, 4f)
+            close()
         }
 
         val mTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -118,7 +132,7 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
             val totalScale = mapView.mSrf.scale / resolution
             if (totalScale > 0) {
                 mPaint.strokeWidth = 3f / totalScale
-                mGreenDrawPaint.strokeWidth = 10f / totalScale
+                mGreenDrawPaint.strokeWidth = 8f / totalScale
             }
 
             // 5. 准备点云数据 (仅在脏标记时更新)
@@ -162,12 +176,17 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
                 canvas.drawPoints(pointArray, 0, index, mPaint)
             }
 
-            // 6. 批量绘制关键帧位置 (也使用世界坐标)
             synchronized(keyFrames3D) {
-                drawKeyFrame(canvas)
+                // 6. 批量绘制关键帧位置 (也使用世界坐标)
 
-                // 7. 绘制关键帧ID
+                //drawKeyFrame(canvas)
+
+                // 7. 绘制关键帧角度
+                drawKeyFrameAngles(canvas, totalScale)
+
+                // 8. 绘制关键帧ID
                 drawKeyFrameIds(canvas, totalMatrix)
+
             }
         }
         canvas.restore()
@@ -178,6 +197,24 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
             // 使用局部变量减少重复计算
             val mPoints = floatArrayOf(frame.robotPos[0], frame.robotPos[1])
             canvas.drawPoints(mPoints, mGreenDrawPaint)
+        }
+    }
+
+    /**
+     * 绘制关键帧角度
+     */
+    private fun drawKeyFrameAngles(canvas: Canvas, totalScale: Float) {
+        if (totalScale <= 0) return
+        val inverseScale = 1f / totalScale
+        keyFrames3D.values.forEach { frame ->
+            canvas.save()
+            canvas.translate(frame.robotPos[0], frame.robotPos[1])
+            // frame.robotPos[2] 为弧度，转换为角度
+            canvas.rotate(frame.robotPos[2] * 57.29578f)
+            // 缩放以保持屏幕上的恒定大小
+            canvas.scale(inverseScale, inverseScale)
+            canvas.drawPath(mArrowPath, mGreenDrawPaint)
+            canvas.restore()
         }
     }
 
