@@ -33,24 +33,16 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
             style = Paint.Style.FILL
         }
 
-        private val textPaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.BLUE
-            textSize = 20f
-            textAlign = Paint.Align.CENTER
-        }
-
-        private val arrowPaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.BLUE
-            style = Paint.Style.FILL
-        }
-
-        private const val RAD_TO_DEG = 57.29578f
-
-        private val arrowPath: Path = Path().apply {
-            moveTo(26f, 0f)
-            lineTo(14f, -6f)
-            lineTo(14f, 6f)
+        val mArrowPath = Path().apply {
+            moveTo(12f, 0f)
+            lineTo(-6f, -4f)
+            lineTo(-6f, 4f)
             close()
+        }
+        val mTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.BLACK
+            textSize = 10f
+            textAlign = Paint.Align.CENTER
         }
     }
 
@@ -88,24 +80,78 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
         super.onDraw(canvas)
         val mapView = parent.get() ?: return
         canvas.save()
+
+        var resolution = 0.05f
+        val mWorldToPixelMatrix = android.graphics.Matrix()
+        synchronized(mapView.mSrf.mapData) {
+            val mapData = mapView.mSrf.mapData
+            resolution = mapData.resolution
+            if (resolution <= 0) resolution = 0.05f
+
+            mWorldToPixelMatrix.postTranslate(-mapData.originX, -mapData.originY)
+            mWorldToPixelMatrix.postScale(1f / resolution, -1f / resolution)
+            mWorldToPixelMatrix.postTranslate(0f, mapData.height.toFloat())
+        }
+        val totalMatrix = android.graphics.Matrix(mapView.outerMatrix)
+        totalMatrix.preConcat(mWorldToPixelMatrix)
+        canvas.concat(totalMatrix)
+
+//           drawKeyFrame(this)
+        drawKeyFrameAngles(canvas, mapView.mSrf.scale / resolution)
+        canvas.restore()
+        drawKeyFrameId(canvas)
+    }
+
+    private fun drawKeyFrame(canvas: Canvas) {
+        val mapView = parent.get() ?: return
+
         for (point in mMapPath) {
             val worldToScreen = mapView.worldToScreen(point.x, point.y)
             // 使用局部变量减少重复计算
             val mPoints = floatArrayOf(worldToScreen.x, worldToScreen.y)
             canvas.drawPoints(mPoints, paint)
-
-            val rotation = -point.theta * RAD_TO_DEG
-            canvas.save()
-            canvas.translate(worldToScreen.x, worldToScreen.y)
-            canvas.rotate(rotation)
-            canvas.drawPath(arrowPath, arrowPaint)
-            canvas.restore()
-
-            canvas.drawText("ID:${point.id}", worldToScreen.x, worldToScreen.y + 25f, textPaint)
         }
-        canvas.restore()
     }
 
+    /**
+     * 绘制关键帧角度
+     */
+    private fun drawKeyFrameAngles(canvas: Canvas, totalScale: Float) {
+        if (totalScale <= 0) return
+        val inverseScale = 1f / totalScale
+
+        paint.strokeWidth = 8f / totalScale
+
+        for (frame in mMapPath) {
+            canvas.save()
+            canvas.translate(frame.x, frame.y)
+            // frame.robotPos[2] 为弧度，转换为角度
+            canvas.rotate(frame.theta * 57.29578f)
+            // 缩放以保持屏幕上的恒定大小
+            canvas.scale(inverseScale, inverseScale)
+            canvas.drawPath(mArrowPath, paint)
+            canvas.restore()
+        }
+    }
+
+    private fun drawKeyFrameId(canvas: Canvas) {
+        val mapView = parent.get() ?: return
+        canvas.save()
+
+        for (frame in mMapPath) {
+            // 使用 worldToScreen 确保精确映射到屏幕坐标系
+            val screenPt = mapView.worldToScreen(frame.x, frame.y)
+            val text = "${frame.id}"
+
+            val textX = screenPt.x
+            // Y 坐标：关键帧中心。使得文字在Y轴上也居中对齐于关键帧中心点
+            val textY = screenPt.y - (mTextPaint.descent() + mTextPaint.ascent()) / 2f
+
+            canvas.drawText(text, textX, textY + 10, mTextPaint)
+        }
+        canvas.restore()
+
+    }
 
     /**
      * 清理资源，防止内存泄漏
