@@ -22,8 +22,19 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
     // 机器人有任务 实时路径，限制最大长度防止内存溢出
     private val MAX_PATH_POINTS = 50000 // 可根据实际需求调整
 
-    // 机器人实时位置 有任务状态下
-    private val cartPosList = Collections.synchronizedList(mutableListOf<PointF>())
+    // 使用一维FloatArray存储世界坐标，防止内存抖动
+    private var worldPosArray = FloatArray(MAX_PATH_POINTS * 2)
+    // 预分配屏幕坐标数组用于批量转换
+    private var screenPosArray = FloatArray(MAX_PATH_POINTS * 2)
+    private var pointCount = 0
+
+    // 锁对象，保护坐标数组
+    private val lock = Any()
+
+    // 矩阵映射相关预分配对象，防止内存抖动
+    private val mTransformMatrix = android.graphics.Matrix()
+    private val srcPoints = floatArrayOf(0f, 0f, 1f, 0f, 0f, 1f)
+    private val dstPoints = FloatArray(6)
 
     // 绘制画笔 - 移至伴生对象，避免重复创建
     companion object {
@@ -32,6 +43,8 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
             isAntiAlias = true
             style = Paint.Style.STROKE
             color = Color.GREEN
+            strokeJoin = Paint.Join.ROUND // 设置线段连接处为圆角，使过弯更加平滑
+            strokeCap = Paint.Cap.ROUND // 设置线帽为圆形，让线段端点平滑
         }
     }
 
@@ -43,36 +56,55 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
         val mapView = parent.get() ?: return
 
         mCarPath.reset()
-        synchronized(cartPosList) {
-            if (cartPosList.isNotEmpty()) {
-                // 构建完整的路径
-                cartPosList.forEachIndexed { index, pointF ->
-                    val screenPoint = mapView.worldToScreen(pointF.x, pointF.y)
-                    if (index == 0) {
-                        mCarPath.moveTo(screenPoint.x, screenPoint.y)
-                    } else {
-                        mCarPath.lineTo(screenPoint.x, screenPoint.y)
-                    }
-                }
-                // 一次性绘制完整路径
-                canvas.drawPath(mCarPath, mPaint)
-            }
+        
+        var currentCount = 0
+        synchronized(lock) {
+            currentCount = pointCount
+            if (currentCount == 0) return
+            
+            // 拷贝出当前需要绘制的世界坐标点
+            System.arraycopy(worldPosArray, 0, screenPosArray, 0, currentCount * 2)
         }
+        
+        // 计算仿射变换矩阵，映射三个参考点
+        val p0 = mapView.worldToScreen(0f, 0f)
+        val p1 = mapView.worldToScreen(1f, 0f)
+        val p2 = mapView.worldToScreen(0f, 1f)
+        
+        dstPoints[0] = p0.x; dstPoints[1] = p0.y
+        dstPoints[2] = p1.x; dstPoints[3] = p1.y
+        dstPoints[4] = p2.x; dstPoints[5] = p2.y
+        
+        mTransformMatrix.setPolyToPoly(srcPoints, 0, dstPoints, 0, 3)
+        
+        // 批量转换所有世界坐标到屏幕坐标，避免创建海量 PointF 对象
+        mTransformMatrix.mapPoints(screenPosArray, 0, screenPosArray, 0, currentCount)
+        
+        // 构建完整路径
+        mCarPath.moveTo(screenPosArray[0], screenPosArray[1])
+        for (i in 1 until currentCount) {
+            mCarPath.lineTo(screenPosArray[i * 2], screenPosArray[i * 2 + 1])
+        }
+        
+        // 一次性绘制完整路径
+        canvas.drawPath(mCarPath, mPaint)
     }
 
     /**
      * 机器人有任务实时路径
      */
     fun setData(mCarPoint: PointF) {
-        synchronized(cartPosList) {
+        synchronized(lock) {
             // 验证坐标的有效性
             if (mCarPoint.x.isFinite() && mCarPoint.y.isFinite()) {
-                cartPosList.add(PointF(mCarPoint.x, mCarPoint.y))
-                // 限制路径点数量，防止内存溢出
-                if (cartPosList.size > MAX_PATH_POINTS) {
-                    cartPosList.removeAt(0)
+                if (pointCount >= MAX_PATH_POINTS) {
+                    // 数组已满，移除最旧的一个点（前移所有数据）
+                    System.arraycopy(worldPosArray, 2, worldPosArray, 0, (MAX_PATH_POINTS - 1) * 2)
+                    pointCount--
                 }
-            } else {
+                worldPosArray[pointCount * 2] = mCarPoint.x
+                worldPosArray[pointCount * 2 + 1] = mCarPoint.y
+                pointCount++
             }
         }
         postInvalidate()
@@ -80,8 +112,8 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
 
 
     fun clearCarPath() {
-        synchronized(cartPosList) {
-            cartPosList.clear()
+        synchronized(lock) {
+            pointCount = 0
         }
         postInvalidate()
     }
@@ -92,8 +124,8 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         // 清空机器人位置列表
-        synchronized(cartPosList) {
-            cartPosList.clear()
+        synchronized(lock) {
+            pointCount = 0
         }
     }
 
