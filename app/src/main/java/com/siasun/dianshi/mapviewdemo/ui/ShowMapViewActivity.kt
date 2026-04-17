@@ -192,6 +192,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             mBinding.mapView.setWorkMode(WorkMode.MODE_SHOW_MAP)
         }
 
+        mBinding.mapView.laserDrawingEnabled(false)
+
 //        initMergedPose()
 //        initStation()
 //        iniVirtualWall()

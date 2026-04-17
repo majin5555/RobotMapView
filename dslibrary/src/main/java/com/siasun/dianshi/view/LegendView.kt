@@ -262,6 +262,12 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
         mBinding.cbLowerLaserPointCloud.isChecked = isShow
     }
 
+    fun setLaserPointCloudEnabled(isShow: Boolean) {
+        mBinding.cbLowerLaserPointCloud.isChecked = isShow
+        mBinding.cbUpLaserPointCloud.isChecked = isShow
+    }
+
+
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         // 清理所有监听器，防止内存泄漏

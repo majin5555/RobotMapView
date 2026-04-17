@@ -1259,6 +1259,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      */
     fun showBottomLaser(isShow: Boolean) {
         mLegendView?.setShowBottomLaser(isShow)
+        mDownLaserScanView?.setDrawingEnabled(isShow)
     }
 
     /**
@@ -1436,6 +1437,15 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      */
     fun set3D(is3D: Boolean) {
         mRemoveNoiseView?.set3D(is3D)
+    }
+
+    /**
+     * 设置点云显示
+     */
+    fun laserDrawingEnabled(isEnabled: Boolean) {
+        mUpLaserScanView?.setDrawingEnabled(isEnabled)
+        mDownLaserScanView?.setDrawingEnabled(isEnabled)
+        mLegendView?.setLaserPointCloudEnabled(isEnabled)
     }
 
 //    /**
