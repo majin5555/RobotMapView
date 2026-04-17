@@ -7,9 +7,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PointF
-import androidx.core.graphics.green
 import java.lang.ref.WeakReference
-import java.util.Collections
 
 /**
  *  工作路径
@@ -80,10 +78,32 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
         // 批量转换所有世界坐标到屏幕坐标，避免创建海量 PointF 对象
         mTransformMatrix.mapPoints(screenPosArray, 0, screenPosArray, 0, currentCount)
         
-        // 构建完整路径
+        // 构建完整平滑路径，防止连线出现直角（使用二阶贝塞尔曲线）
         mCarPath.moveTo(screenPosArray[0], screenPosArray[1])
-        for (i in 1 until currentCount) {
-            mCarPath.lineTo(screenPosArray[i * 2], screenPosArray[i * 2 + 1])
+        if (currentCount > 2) {
+            for (i in 0 until currentCount - 1) {
+                val curX = screenPosArray[i * 2]
+                val curY = screenPosArray[i * 2 + 1]
+                val nextX = screenPosArray[(i + 1) * 2]
+                val nextY = screenPosArray[(i + 1) * 2 + 1]
+                
+                val midX = (curX + nextX) / 2f
+                val midY = (curY + nextY) / 2f
+                
+                if (i == 0) {
+                    // 第一条线段，先画直线到中点
+                    mCarPath.lineTo(midX, midY)
+                } else {
+                    // 后续线段，使用二次贝塞尔曲线平滑过弯，以当前点为控制点连接到下一个中点
+                    mCarPath.quadTo(curX, curY, midX, midY)
+                }
+            }
+            // 最后一条线段，从中点画直线到终点
+            val lastIdx = currentCount - 1
+            mCarPath.lineTo(screenPosArray[lastIdx * 2], screenPosArray[lastIdx * 2 + 1])
+        } else if (currentCount == 2) {
+            // 只有两个点，直接连线
+            mCarPath.lineTo(screenPosArray[2], screenPosArray[3])
         }
         
         // 一次性绘制完整路径
