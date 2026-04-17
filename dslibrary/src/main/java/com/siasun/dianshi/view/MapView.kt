@@ -920,6 +920,19 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     }
 
     /**
+     * 机器人有任务状态下行走的路径 (接收导航信息)
+     */
+    @SuppressLint("DefaultLocale")
+    fun setWorkingPath(laser: laser_t) {
+        val robotX = laser.ranges[0]
+        val robotY = laser.ranges[1]
+        // 重用对象，避免频繁创建新对象
+        mCarPoint.x = String.format("%.1f", robotX).toFloat()
+        mCarPoint.y = String.format("%.1f", robotY).toFloat()
+        mWorkIngPathView?.setData(mCarPoint)
+    }
+
+    /**
      * 设置顶视路线
      */
     fun setTopViewPathDada(data: MutableList<MergedPoseItem>) {
