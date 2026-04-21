@@ -5,7 +5,6 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.Path
 import android.graphics.PointF
 import java.lang.ref.WeakReference
 
@@ -17,14 +16,21 @@ import java.lang.ref.WeakReference
 class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
     SlamWareBaseView<MapView>(context, parent) {
 
-    // 机器人有任务 实时路径，限制最大长度防止内存溢出
-    private val MAX_PATH_POINTS = 50000 // 可根据实际需求调整
+    // 机器人有任务 实时路径，最大点数限制
+    private val MAX_PATH_POINTS = 8000
 
     // 使用一维FloatArray存储世界坐标，防止内存抖动
     private var worldPosArray = FloatArray(MAX_PATH_POINTS * 2)
     // 预分配屏幕坐标数组用于批量转换
     private var screenPosArray = FloatArray(MAX_PATH_POINTS * 2)
+    
+    // 环形缓冲区指针与计数
+    private var headIndex = 0
     private var pointCount = 0
+    
+    // 记录上一个点，用于过滤过近的冗余点
+    private var lastX = Float.NaN
+    private var lastY = Float.NaN
 
     // 锁对象，保护坐标数组
     private val lock = Any()
@@ -37,31 +43,37 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
     // 绘制画笔 - 移至伴生对象，避免重复创建
     companion object {
         private val mPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            strokeWidth = 3f
+            strokeWidth = 6f
             isAntiAlias = true
-            style = Paint.Style.STROKE
+            style = Paint.Style.FILL
             color = Color.GREEN
-            strokeJoin = Paint.Join.ROUND // 设置线段连接处为圆角，使过弯更加平滑
             strokeCap = Paint.Cap.ROUND // 设置线帽为圆形，让线段端点平滑
         }
     }
 
-    //绘制车实时路径
-    private val mCarPath = Path()
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
         val mapView = parent.get() ?: return
 
-        mCarPath.reset()
-        
         var currentCount = 0
+        var currentHead = 0
+        var localScreenPosArray: FloatArray
         synchronized(lock) {
             currentCount = pointCount
+            currentHead = headIndex
             if (currentCount == 0) return
             
-            // 拷贝出当前需要绘制的世界坐标点
-            System.arraycopy(worldPosArray, 0, screenPosArray, 0, currentCount * 2)
+            localScreenPosArray = screenPosArray
+            
+            // 从环形缓冲区中提取数据，按顺序放入连续的 localScreenPosArray
+            val firstPartCount = minOf(currentCount, MAX_PATH_POINTS - currentHead)
+            System.arraycopy(worldPosArray, currentHead * 2, localScreenPosArray, 0, firstPartCount * 2)
+            
+            val secondPartCount = currentCount - firstPartCount
+            if (secondPartCount > 0) {
+                System.arraycopy(worldPosArray, 0, localScreenPosArray, firstPartCount * 2, secondPartCount * 2)
+            }
         }
         
         // 计算仿射变换矩阵，映射三个参考点
@@ -76,38 +88,10 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
         mTransformMatrix.setPolyToPoly(srcPoints, 0, dstPoints, 0, 3)
         
         // 批量转换所有世界坐标到屏幕坐标，避免创建海量 PointF 对象
-        mTransformMatrix.mapPoints(screenPosArray, 0, screenPosArray, 0, currentCount)
+        mTransformMatrix.mapPoints(localScreenPosArray, 0, localScreenPosArray, 0, currentCount)
         
-        // 构建完整平滑路径，防止连线出现直角（使用二阶贝塞尔曲线）
-        mCarPath.moveTo(screenPosArray[0], screenPosArray[1])
-        if (currentCount > 2) {
-            for (i in 0 until currentCount - 1) {
-                val curX = screenPosArray[i * 2]
-                val curY = screenPosArray[i * 2 + 1]
-                val nextX = screenPosArray[(i + 1) * 2]
-                val nextY = screenPosArray[(i + 1) * 2 + 1]
-                
-                val midX = (curX + nextX) / 2f
-                val midY = (curY + nextY) / 2f
-                
-                if (i == 0) {
-                    // 第一条线段，先画直线到中点
-                    mCarPath.lineTo(midX, midY)
-                } else {
-                    // 后续线段，使用二次贝塞尔曲线平滑过弯，以当前点为控制点连接到下一个中点
-                    mCarPath.quadTo(curX, curY, midX, midY)
-                }
-            }
-            // 最后一条线段，从中点画直线到终点
-            val lastIdx = currentCount - 1
-            mCarPath.lineTo(screenPosArray[lastIdx * 2], screenPosArray[lastIdx * 2 + 1])
-        } else if (currentCount == 2) {
-            // 只有两个点，直接连线
-            mCarPath.lineTo(screenPosArray[2], screenPosArray[3])
-        }
-        
-        // 一次性绘制完整路径
-        canvas.drawPath(mCarPath, mPaint)
+        // 一次性绘制所有点
+        canvas.drawPoints(localScreenPosArray, 0, currentCount * 2, mPaint)
     }
 
     /**
@@ -117,14 +101,28 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
         synchronized(lock) {
             // 验证坐标的有效性
             if (mCarPoint.x.isFinite() && mCarPoint.y.isFinite()) {
-                if (pointCount >= MAX_PATH_POINTS) {
-                    // 数组已满，移除最旧的一个点（前移所有数据）
-                    System.arraycopy(worldPosArray, 2, worldPosArray, 0, (MAX_PATH_POINTS - 1) * 2)
-                    pointCount--
+                // 优化：过滤掉距离过近的点（如小于0.02米），减少冗余点
+                if (!lastX.isNaN() && !lastY.isNaN()) {
+                    val dx = mCarPoint.x - lastX
+                    val dy = mCarPoint.y - lastY
+                    if (dx * dx + dy * dy < 0.0004f) {
+                        return
+                    }
                 }
-                worldPosArray[pointCount * 2] = mCarPoint.x
-                worldPosArray[pointCount * 2 + 1] = mCarPoint.y
-                pointCount++
+                lastX = mCarPoint.x
+                lastY = mCarPoint.y
+
+                // 计算环形缓冲区的插入位置
+                val insertIndex = (headIndex + pointCount) % MAX_PATH_POINTS
+                worldPosArray[insertIndex * 2] = mCarPoint.x
+                worldPosArray[insertIndex * 2 + 1] = mCarPoint.y
+                
+                if (pointCount < MAX_PATH_POINTS) {
+                    pointCount++
+                } else {
+                    // 数组已满，覆盖最老的数据，头部指针后移
+                    headIndex = (headIndex + 1) % MAX_PATH_POINTS
+                }
             }
         }
         postInvalidate()
@@ -134,6 +132,9 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
     fun clearCarPath() {
         synchronized(lock) {
             pointCount = 0
+            headIndex = 0
+            lastX = Float.NaN
+            lastY = Float.NaN
         }
         postInvalidate()
     }
@@ -146,6 +147,9 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
         // 清空机器人位置列表
         synchronized(lock) {
             pointCount = 0
+            headIndex = 0
+            lastX = Float.NaN
+            lastY = Float.NaN
         }
     }
 
