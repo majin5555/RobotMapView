@@ -67,14 +67,13 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
         mMapPath.clear()
         if (mLaserT.ranges.isNotEmpty()) {
             // 每3个数据为一组: x, y, theta
-            for (i in 0 until mLaserT.ranges.size / 3) {
+            for (i in 0 until mLaserT.ranges.size) {
                 //关键帧  x
                 val radX: Float = mLaserT.ranges[3 * i]
                 //关键帧  y
                 val radY: Float = mLaserT.ranges[3 * i + 1]
                 //关键帧角度 theta
                 val theta: Float = mLaserT.ranges[3 * i + 2]
-//                Log.d(TAG, "parseKeyFramePose: x: $radX, y: $radY, theta: $theta")
                 mMapPath.add(OldKeyFrame(radX, radY, theta, i))
             }
         }
@@ -130,8 +129,8 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
         for (frame in mMapPath) {
             canvas.save()
             canvas.translate(frame.x, frame.y)
-            // frame.theta 为弧度，转换为角度，加上90度偏移使箭头尖端朝向正确的机器人正前方向
-            canvas.rotate(Math.toDegrees(frame.theta.toDouble()).toFloat() + 90f)
+            // frame.theta 为弧度，转换为角度（在翻转的Y轴坐标系中，正角度会自动逆时针旋转即向上）
+            canvas.rotate(Math.toDegrees(frame.theta.toDouble()).toFloat() )
             // 缩放以保持屏幕上的恒定大小
             canvas.scale(inverseScale, inverseScale)
             canvas.drawPath(mArrowPath, paint)
