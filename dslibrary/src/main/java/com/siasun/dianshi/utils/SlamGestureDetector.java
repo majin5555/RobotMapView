@@ -80,6 +80,24 @@ public class SlamGestureDetector {
 
     private boolean isRotate = true;
 
+    /**
+     * 恢复视图旋转到0度
+     */
+    public void resetRotation() {
+        if (view != null && mListener != null) {
+            float currentRotation = 0f;
+            if (view instanceof CreateMapView2D) {
+                currentRotation = ((CreateMapView2D) view).getViewRotation();
+            } else if (view instanceof CreateMapView3D) {
+                currentRotation = ((CreateMapView3D) view).getViewRotation();
+            }
+            if (currentRotation != 0f) {
+                PointF center = new PointF(view.getWidth() / 2f, view.getHeight() / 2f);
+                mListener.onMapRotate(-currentRotation, center);
+            }
+        }
+    }
+
     public SlamGestureDetector(OnRPGestureListener mListener, View view) {
         this.mListener = mListener;
         this.view = view;

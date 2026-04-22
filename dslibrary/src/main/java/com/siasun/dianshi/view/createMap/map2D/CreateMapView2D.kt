@@ -181,13 +181,22 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
 //        rotationRadians += RadianUtil.toRadians(RadianUtil.toAngel(factor))
     }
 
+    /**
+     * 恢复旋转角度
+     */
+    fun resetRotation() = mGestureDetector?.resetRotation()
+
     open fun getViewRotation(): Float {
         val values = FloatArray(9)
         mOuterMatrix.getValues(values)
-        return atan2(
-            values[Matrix.MSKEW_Y].toDouble(),
-            values[Matrix.MSCALE_X].toDouble()
+        var angle = atan2(
+            values[Matrix.MSKEW_Y].toDouble(), values[Matrix.MSCALE_X].toDouble()
         ).toFloat()
+        // 解决精度丢失导致角度不为0的问题
+        if (Math.abs(angle) < 0.001f) {
+            angle = 0f
+        }
+        return angle
     }
 
     private fun setTransition(dx: Int, dy: Int) {
@@ -534,6 +543,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     fun setRotate(boolean: Boolean) {
         mGestureDetector?.isRotate = boolean
     }
+
     /**
      * 辅助方法：将科学计数法表示的float值转换为普通小数表示的float值
      * 解决激光数据中theta值（laserData.ranges[2]）可能以科学计数法形式存在的问题

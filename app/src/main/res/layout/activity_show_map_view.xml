@@ -12,8 +12,6 @@
         app:shape_radius="20dp"
         app:shape_solidColor="@color/white"
         app:showArea="true"
-        app:showChshowElevatorargeStation="true"
-        app:="true"
         app:showLowerLaserPointCloud="true"
         app:showMapNameView="false"
         app:showMixArea="true"

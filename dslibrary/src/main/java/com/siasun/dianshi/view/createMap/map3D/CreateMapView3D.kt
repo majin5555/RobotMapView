@@ -181,11 +181,16 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     private fun setRotation(factor: Float, cx: Int, cy: Int) {
         mOuterMatrix.postRotate(RadianUtil.toAngel(factor), cx.toFloat(), cy.toFloat())
         setMatrixWithRotation(mOuterMatrix, factor)
-
-        val viewRotation = getViewRotation()
-        Log.e("CreateMapView3D", "矩阵弧度:${viewRotation}")
-        Log.i("CreateMapView3D", "弧度->角度 :${RadianUtil.toAngel(viewRotation)}")
+//        val viewRotation = getViewRotation()
+//        Log.e("CreateMapView3D", "矩阵弧度:${viewRotation}")
+//        Log.i("CreateMapView3D", "弧度->角度 :${RadianUtil.toAngel(viewRotation)}")
     }
+
+
+    /**
+     * 恢复旋转角度
+     */
+    fun resetRotation() = mGestureDetector?.resetRotation()
 
     /**
      * 获取当前视图的旋转弧度
@@ -193,9 +198,14 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     open fun getViewRotation(): Float {
         val values = FloatArray(9)
         mOuterMatrix.getValues(values)
-        return atan2(
+        var angle = atan2(
             values[Matrix.MSKEW_Y].toDouble(), values[Matrix.MSCALE_X].toDouble()
         ).toFloat()
+        // 解决精度丢失导致角度不为0的问题
+        if (Math.abs(angle) < 0.001f) {
+            angle = 0f
+        }
+        return angle
     }
 
     private fun setTransition(dx: Int, dy: Int) {

@@ -52,15 +52,15 @@ class CreateMap3DActivity :
     //建图心跳定时器
     private val mTimer = Timer()
 
-    val mapID = 100
+    val mapID = 11
 
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
         MainController.init()
-        MMKV.defaultMMKV().encode(KEY_NEY_IP, "192.168.1.198");
+//        MMKV.defaultMMKV().encode(KEY_NEY_IP, "192.168.1.198");
         mBinding.mapView.setWorkMode(WorkMode.MODE_CREATE_MAP)
 
-//        MMKV.defaultMMKV().encode(KEY_NEY_IP, "192.168.3.101");
+        MMKV.defaultMMKV().encode(KEY_NEY_IP, "192.168.3.101");
         mTimer.schedule(object : TimerTask() {
             override fun run() {
 //                if (GlobalVariable.SEND_NAVI_HEART) {
@@ -112,6 +112,15 @@ class CreateMap3DActivity :
         mBinding.tvExpend.onClick {
             startActivity<ExpandMap3DActivity>()
         }
+
+        mBinding.btnResetRotation.onClick {
+            LogUtil.e("恢复前 旋转的弧度 旋转了 ${mBinding.mapView.getViewRotation()} 弧度")
+            LogUtil.i("恢复前 旋转的角度 旋转了 ${RadianUtil.toAngel(mBinding.mapView.getViewRotation())} 角度")
+            LogUtil.i("----------------")
+            mBinding.mapView.resetRotation()
+            LogUtil.e("恢复后 旋转的弧度 旋转了 ${mBinding.mapView.getViewRotation()} 弧度")
+            LogUtil.i("恢复后 旋转的角度 旋转了 ${RadianUtil.toAngel(mBinding.mapView.getViewRotation())} 角度")
+        }
     }
 
     @SuppressLint("SetTextI18n")
@@ -119,7 +128,8 @@ class CreateMap3DActivity :
     override fun initData() {
         super.initData()
         if (BuildConfig.DEBUG) {
-//            startMockPosStream()
+            mBinding.mapView.setWorkMode(WorkMode.MODE_CREATE_MAP)
+            startMockPosStream()
         }
         //下载地图结果
         LiveEventBus.get(KEY_UPDATE_MAP, UpdateMapBean::class.java).observe(this) {

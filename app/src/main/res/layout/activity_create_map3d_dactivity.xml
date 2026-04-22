@@ -38,6 +38,12 @@
         app:layout_constraintEnd_toEndOf="parent">
 
         <Button
+            android:id="@+id/btn_reset_rotation"
+            android:layout_width="160dp"
+            android:layout_height="60dp"
+            android:gravity="center"
+            android:text="恢复旋转角度" />
+        <Button
             android:id="@+id/btn_add_node"
             android:layout_width="160dp"
             android:layout_height="60dp"

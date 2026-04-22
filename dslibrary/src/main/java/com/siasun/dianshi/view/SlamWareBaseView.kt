@@ -56,10 +56,15 @@ abstract class SlamWareBaseView<T>(context: Context?, parent: WeakReference<T>) 
     open fun getViewRotation(): Float {
         val values = FloatArray(9)
         mMatrix.getValues(values)
-        return atan2(
+        var angle = atan2(
             values[Matrix.MSKEW_Y].toDouble(),
             values[Matrix.MSCALE_X].toDouble()
         ).toFloat()
+        // 解决精度丢失导致角度不为0的问题
+        if (Math.abs(angle) < 0.001f) {
+            angle = 0f
+        }
+        return angle
     }
 
     /**
