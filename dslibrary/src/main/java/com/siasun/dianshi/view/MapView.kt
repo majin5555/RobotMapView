@@ -53,6 +53,7 @@ import com.siasun.dianshi.bean.RFID
 import com.siasun.dianshi.bean.ReflectorMapBean
 import com.siasun.dianshi.bean.SameSwitchBean
 import com.siasun.dianshi.view.createMap.MapViewInterface
+import java.util.Locale
 import kotlin.math.atan2
 
 /**
@@ -914,8 +915,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     @SuppressLint("DefaultLocale")
     fun setWorkingPath(array: DoubleArray) {
         // 重用对象，避免频繁创建新对象
-        mCarPoint.x = String.format("%.1f", array[0]).toFloat()
-        mCarPoint.y = String.format("%.1f", array[1]).toFloat()
+        mCarPoint.x = String.format(Locale.US, "%.1f", array[0]).toFloat()
+        mCarPoint.y = String.format(Locale.US, "%.1f", array[1]).toFloat()
         mWorkIngPathView?.setData(mCarPoint)
     }
 
@@ -927,8 +928,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         val robotX = laser.ranges[0]
         val robotY = laser.ranges[1]
         // 重用对象，避免频繁创建新对象
-        mCarPoint.x = String.format("%.1f", robotX).toFloat()
-        mCarPoint.y = String.format("%.1f", robotY).toFloat()
+        mCarPoint.x = String.format(Locale.US, "%.1f", robotX).toFloat()
+        mCarPoint.y = String.format(Locale.US, "%.1f", robotY).toFloat()
         mWorkIngPathView?.setData(mCarPoint)
     }
 

@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.widget.LinearLayout
 import com.siasun.dianshi.databinding.MapViewMapInfoBinding
 import java.lang.ref.WeakReference
+import java.util.Locale
 
 /**
  * 图例 地图名称
@@ -61,13 +62,13 @@ class MapNameView(context: Context, parent: WeakReference<MapView>) :
     @SuppressLint("SetTextI18n")
     fun setAgvT(theta: Double) {
         mBinding.tvPointTheta.text =
-            "${pointTText}${String.format("%.3f", Math.toRadians(theta).toFloat())}"
+            "${pointTText}${String.format(Locale.US, "%.3f", Math.toRadians(theta).toFloat())}"
     }
 
     @SuppressLint("SetTextI18n")
     fun setAgvZ(z: Double) {
         mBinding.tvPointZ.text =
-            "${pointZText}${String.format("%.3f", Math.toRadians(z).toFloat())}"
+            "${pointZText}${String.format(Locale.US, "%.3f", Math.toRadians(z).toFloat())}"
     }
 
     /**
@@ -75,8 +76,10 @@ class MapNameView(context: Context, parent: WeakReference<MapView>) :
      */
     @SuppressLint("SetTextI18n")
     fun setScreen(point: PointF) {
-        mBinding.tvScreenPointX.text = "${screenPointXText}${String.format("%.3f", point.x)}"
-        mBinding.tvScreenPointY.text = "${screenPointYText}${String.format("%.3f", point.y)}"
+        mBinding.tvScreenPointX.text =
+            "${screenPointXText}${String.format(Locale.US, "%.3f", point.x)}"
+        mBinding.tvScreenPointY.text =
+            "${screenPointYText}${String.format("Locale.US, %.3f", point.y)}"
     }
 
     override fun onDetachedFromWindow() {
