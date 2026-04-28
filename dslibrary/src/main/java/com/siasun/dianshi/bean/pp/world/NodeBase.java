@@ -31,6 +31,9 @@ public class NodeBase {
      * @return 节点ID
      */
     int GetNodeID(short uIndex) {
+        if (m_paNode == null || uIndex < 0 || uIndex >= m_paNode.length || m_paNode[uIndex] == null) {
+            return -1;
+        }
         return m_paNode[uIndex].m_uId;
     }
 
@@ -54,8 +57,6 @@ public class NodeBase {
      * -2: 未找到指定ID的节点
      */
     public short RemoveNode(int uId) {
-        short i;
-
         // 检查节点是否存在
         if (GetNode(uId) == null) return -2;
 
@@ -63,22 +64,24 @@ public class NodeBase {
         Node[] pTemp = new Node[m_uCount - 1];
         if (pTemp == null) return -1;
 
-        // 从旧数据库复制数据，跳过要删除的节点
-        for (i = 0; i < m_uCount; i++)
-            if (m_paNode[i].m_uId != uId) pTemp[i] = m_paNode[i];
-            else break;
-
-        // 复制剩余节点
-        for (; i < m_uCount - 1; i++)
-            pTemp[i] = m_paNode[i + 1];
+        int pTempIndex = 0;
+        boolean found = false;
+        for (int i = 0; i < m_uCount; i++) {
+            if (m_paNode[i] != null && m_paNode[i].m_uId == uId && !found) {
+                found = true;
+                continue;
+            }
+            if (pTempIndex < pTemp.length) {
+                pTemp[pTempIndex++] = m_paNode[i];
+            }
+        }
 
         short uCount = m_uCount;
         // 清空当前节点集合
         Clear();
         // 使用新节点数组替换旧数组
         m_paNode = pTemp;
-        m_uCount = uCount;
-        m_uCount--;
+        m_uCount = (short) (uCount - 1);
         return 0;
     }
 
@@ -124,8 +127,11 @@ public class NodeBase {
         if (m_paNode == null) return null;
 
         // 遍历查找指定ID的节点
-        for (int i = 0; i < m_uCount; i++)
-            if (m_paNode[i].m_uId == uId) return m_paNode[i];
+        for (int i = 0; i < m_uCount; i++) {
+            if (m_paNode[i] != null && m_paNode[i].m_uId == uId) {
+                return m_paNode[i];
+            }
+        }
 
         return null;
     }
@@ -142,50 +148,50 @@ public class NodeBase {
 
     // Get the X coordinate of the left-most point
     public float LeftMost() {
-        if (m_uCount == 0) return 0.0f;
+        if (m_uCount == 0 || m_paNode == null) return 0.0f;
 
-        float fMost = m_paNode[0].x;
+        float fMost = Float.MAX_VALUE;
         for (short i = 0; i < m_uCount; i++) {
-            if (fMost > m_paNode[i].x) fMost = m_paNode[i].x;
+            if (m_paNode[i] != null && fMost > m_paNode[i].x) fMost = m_paNode[i].x;
         }
 
-        return fMost;
+        return fMost == Float.MAX_VALUE ? 0.0f : fMost;
     }
 
     // Get the Y coordinate of the top-most point
     public float TopMost() {
-        if (m_uCount == 0) return 0.0f;
+        if (m_uCount == 0 || m_paNode == null) return 0.0f;
 
-        float fMost = m_paNode[0].y;
+        float fMost = -Float.MAX_VALUE;
         for (short i = 0; i < m_uCount; i++) {
-            if (fMost < m_paNode[i].y) fMost = m_paNode[i].y;
+            if (m_paNode[i] != null && fMost < m_paNode[i].y) fMost = m_paNode[i].y;
         }
 
-        return fMost;
+        return fMost == -Float.MAX_VALUE ? 0.0f : fMost;
     }
 
     // Get the X coordinate of the right-most point
     public float RightMost() {
-        if (m_uCount == 0) return 0.0f;
+        if (m_uCount == 0 || m_paNode == null) return 0.0f;
 
-        float fMost = m_paNode[0].x;
+        float fMost = -Float.MAX_VALUE;
         for (short i = 0; i < m_uCount; i++) {
-            if (fMost < m_paNode[i].x) fMost = m_paNode[i].x;
+            if (m_paNode[i] != null && fMost < m_paNode[i].x) fMost = m_paNode[i].x;
         }
 
-        return fMost;
+        return fMost == -Float.MAX_VALUE ? 0.0f : fMost;
     }
 
     // Get the Y coordinate of the bottom-most point
     public float BottomMost() {
-        if (m_uCount == 0) return 0.0f;
+        if (m_uCount == 0 || m_paNode == null) return 0.0f;
 
-        float fMost = m_paNode[0].y;
+        float fMost = Float.MAX_VALUE;
         for (short i = 0; i < m_uCount; i++) {
-            if (fMost > m_paNode[i].y) fMost = m_paNode[i].y;
+            if (m_paNode[i] != null && fMost > m_paNode[i].y) fMost = m_paNode[i].y;
         }
 
-        return fMost;
+        return fMost == Float.MAX_VALUE ? 0.0f : fMost;
     }
 
     //
@@ -213,9 +219,10 @@ public class NodeBase {
     }
 
     public int NextID() {
+        if (m_paNode == null) return 1;
         int nNextID = 0;
         for (int i = 0; i < m_uCount; i++) {
-            if (m_paNode[i].m_uId > nNextID) nNextID = m_paNode[i].m_uId;
+            if (m_paNode[i] != null && m_paNode[i].m_uId > nNextID) nNextID = m_paNode[i].m_uId;
         }
 
         return nNextID + 1;
@@ -223,8 +230,9 @@ public class NodeBase {
 
 
     public int PointHitNodeTest(Point pnt, CoordinateConversion ScrnRef) {
+        if (m_paNode == null) return -1;
         for (int i = 0; i < m_uCount; i++) {
-            if (m_paNode[i].PointHitTest(pnt, ScrnRef)) return m_paNode[i].m_uId;
+            if (m_paNode[i] != null && m_paNode[i].PointHitTest(pnt, ScrnRef)) return m_paNode[i].m_uId;
         }
         return -1;
     }
@@ -236,8 +244,11 @@ public class NodeBase {
         Node[] pTemp = new Node[m_uCount + 1];
         if (pTemp == null) return -1;
 
-        for (short i = 0; i < m_uCount; i++)
-            pTemp[i] = m_paNode[i];
+        for (short i = 0; i < m_uCount; i++) {
+            if (m_paNode != null && i < m_paNode.length) {
+                pTemp[i] = m_paNode[i];
+            }
+        }
         pTemp[m_uCount] = nd;
         short uCount = (short) (m_uCount + 1);
 
@@ -313,20 +324,28 @@ public class NodeBase {
      */
     public void SaveParm(DataOutputStream dis) {
         try {
+            short actualCount = 0;
+            if (this.m_paNode != null) {
+                for (int i = 0; i < this.m_uCount; i++) {
+                    if (i < this.m_paNode.length && this.m_paNode[i] != null) {
+                        actualCount++;
+                    }
+                }
+            }
+
             // 准备节点数量的小端字节序数据
-            int ch1 = this.m_uCount;
-            int ch2 = this.m_uCount;
-            int a1 = (ch1 & 0xff) << 8;
-            int a2 = (ch2 >> 8);
-            int a3 = a1 + a2;
-            short sT = (short) ((ch2 >> 8) + (ch1 & 0xff) << 8);
-            sT = (short) a3;
+            int ch1 = actualCount;
+            int ch2 = actualCount;
             dis.write((ch1 & 0xff));
             dis.write((ch2 >> 8));
 
             // 逐个保存节点数据
-            for (int i = 0; i < this.m_uCount; i++) {
-                this.m_paNode[i].Save(dis);
+            if (this.m_paNode != null) {
+                for (int i = 0; i < this.m_uCount; i++) {
+                    if (i < this.m_paNode.length && this.m_paNode[i] != null) {
+                        this.m_paNode[i].Save(dis);
+                    }
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
