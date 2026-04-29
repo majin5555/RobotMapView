@@ -79,7 +79,7 @@ class MapNameView(context: Context, parent: WeakReference<MapView>) :
         mBinding.tvScreenPointX.text =
             "${screenPointXText}${String.format(Locale.US, "%.3f", point.x)}"
         mBinding.tvScreenPointY.text =
-            "${screenPointYText}${String.format("Locale.US, %.3f", point.y)}"
+            "${screenPointYText}${String.format(Locale.US, "%.3f", point.y)}"
     }
 
     override fun onDetachedFromWindow() {
