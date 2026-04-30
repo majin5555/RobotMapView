@@ -114,8 +114,17 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
     private val screenP2 = PointF()
     private val worldPoint = PointF()
 
+    // 触摸滑动判断相关
+    private var touchSlop: Int = 0
+    private var downX = 0f
+    private var downY = 0f
+    private var isDraggingStartDelayed = false
+    private var isAreaDraggingStartDelayed = false
+
     init {
         gestureDetector.setOnDoubleTapListener(this)
+        val configuration = android.view.ViewConfiguration.get(context!!)
+        touchSlop = configuration.scaledTouchSlop
     }
 
     /**
@@ -352,6 +361,46 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
     }
 
     /**
+     * 检查点A, B, C的走向是否为逆时针
+     */
+    private fun ccw(A: PointNew, B: PointNew, C: PointNew): Boolean {
+        return (C.Y - A.Y) * (B.X - A.X) > (B.Y - A.Y) * (C.X - A.X)
+    }
+
+    /**
+     * 检查线段AB和CD是否相交
+     */
+    private fun segmentsIntersect(A: PointNew, B: PointNew, C: PointNew, D: PointNew): Boolean {
+        return ccw(A, C, D) != ccw(B, C, D) && ccw(A, B, C) != ccw(A, B, D)
+    }
+
+    /**
+     * 检查多边形是否自交
+     */
+    private fun isPolygonSelfIntersecting(points: List<PointNew>): Boolean {
+        val n = points.size
+        if (n < 4) return false
+
+        for (i in 0 until n) {
+            val p1 = points[i]
+            val p2 = points[(i + 1) % n]
+
+            for (j in i + 2 until n) {
+                // 忽略相邻的边（包括起点和终点相邻的边）
+                if (i == 0 && j == n - 1) continue
+
+                val p3 = points[j]
+                val p4 = points[(j + 1) % n]
+
+                if (segmentsIntersect(p1, p2, p3, p4)) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
+    /**
      * 检查点是否在顶点的可点击范围内
      */
     private fun isPointInVertex(screenX: Float, screenY: Float, vertex: PointNew): Boolean {
@@ -454,6 +503,12 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
         // 在edgeIndex + 1位置插入新顶点
         val newIndex = edgeIndex + 1
         points.add(newIndex, midPoint)
+        
+        if (isPolygonSelfIntersecting(points)) {
+            points.removeAt(newIndex)
+            return
+        }
+
         // 通知监听器添加了新顶点
         onCleanAreaEditListener?.onVertexAdded(area, newIndex, midPoint.X, midPoint.Y)
         invalidate()
@@ -543,7 +598,14 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
         if (points.size <= 3) return
 
         // 删除边上的第二个点（即edgeIndex位置的点），这样就删除了edgeIndex对应的边
-        points.removeAt((edgeIndex) % points.size)
+        val removedIndex = edgeIndex % points.size
+        val removedPoint = points.removeAt(removedIndex)
+        
+        if (isPolygonSelfIntersecting(points)) {
+            points.add(removedIndex, removedPoint)
+            return
+        }
+
         // 通知监听器删除了边
         onCleanAreaEditListener?.onEdgeRemoved(area, edgeIndex)
         invalidate()
@@ -569,7 +631,11 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
         if (points.size <= 3) return
 
         if (vertexIndex >= 0 && vertexIndex < points.size) {
-            points.removeAt(vertexIndex)
+            val removedPoint = points.removeAt(vertexIndex)
+            if (isPolygonSelfIntersecting(points)) {
+                points.add(vertexIndex, removedPoint)
+                return
+            }
             invalidate()
         }
     }
@@ -590,14 +656,14 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
 
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
+                downX = x
+                downY = y
                 // 查找点击位置附近的顶点
                 selectedPointIndex = findNearbyVertexIndex(selectedArea!!, x, y)
 
                 if (selectedPointIndex != -1) {
-                    isDragging = true
+                    isDraggingStartDelayed = true
                     handled = true
-                    // 通知监听器顶点开始拖动
-                    onCleanAreaEditListener?.onVertexDragStart(selectedArea!!, selectedPointIndex)
                 } else {
                     // 如果没有点击到顶点，检查是否点击到边中点
                     val edgeIndex = findNearbyEdgeIndex(selectedArea!!, x, y)
@@ -607,29 +673,66 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
                         handled = true
                     } else if (isPointInPolygon(selectedArea!!, x, y)) {
                         // 检查是否在多边形内部，如果是则开启区域拖动
-                        isAreaDragging = true
-                        lastTouchX = x
-                        lastTouchY = y
+                        isAreaDraggingStartDelayed = true
                         handled = true
-                        onCleanAreaEditListener?.onAreaDragStart(selectedArea!!)
                     }
                 }
             }
 
             MotionEvent.ACTION_MOVE -> {
+                if (isDraggingStartDelayed) {
+                    val dx = Math.abs(x - downX)
+                    val dy = Math.abs(y - downY)
+                    if (dx > touchSlop || dy > touchSlop) {
+                        isDraggingStartDelayed = false
+                        isDragging = true
+                        // 通知监听器顶点开始拖动
+                        onCleanAreaEditListener?.onVertexDragStart(selectedArea!!, selectedPointIndex)
+                    } else {
+                        handled = true
+                    }
+                }
+
+                if (isAreaDraggingStartDelayed) {
+                    val dx = Math.abs(x - downX)
+                    val dy = Math.abs(y - downY)
+                    if (dx > touchSlop || dy > touchSlop) {
+                        isAreaDraggingStartDelayed = false
+                        isAreaDragging = true
+                        lastTouchX = downX // Use downX to avoid jump, or x? Actually lastTouchX is used for delta, so we can use downX initially.
+                        lastTouchY = downY
+                        onCleanAreaEditListener?.onAreaDragStart(selectedArea!!)
+                    } else {
+                        handled = true
+                    }
+                }
+
                 if (isDragging && selectedPointIndex != -1) {
                     // 将屏幕坐标转换为世界坐标
                     val mapView = mapViewRef.get() ?: return false
                     val screenToWorldPoint = mapView.screenToWorld(x, y)
                     worldPoint.set(screenToWorldPoint.x, screenToWorldPoint.y)
-                    // 更新选中顶点的坐标
-                    selectedArea?.m_VertexPnt?.get(selectedPointIndex)?.apply {
-                        X = worldPoint.x
-                        Y = worldPoint.y
-                        // 通知监听器顶点拖动中
-                        onCleanAreaEditListener?.onVertexDragging(
-                            selectedArea!!, selectedPointIndex, worldPoint.x, worldPoint.y
-                        )
+                    
+                    val selectedPoint = selectedArea?.m_VertexPnt?.get(selectedPointIndex)
+                    if (selectedPoint != null) {
+                        val oldX = selectedPoint.X
+                        val oldY = selectedPoint.Y
+                        
+                        // 更新为新坐标
+                        selectedPoint.X = worldPoint.x
+                        selectedPoint.Y = worldPoint.y
+                        
+                        // 检查是否交叉
+                        if (isPolygonSelfIntersecting(selectedArea!!.m_VertexPnt)) {
+                            // 恢复旧坐标，禁止穿过边界
+                            selectedPoint.X = oldX
+                            selectedPoint.Y = oldY
+                        } else {
+                            // 通知监听器顶点拖动中
+                            onCleanAreaEditListener?.onVertexDragging(
+                                selectedArea!!, selectedPointIndex, selectedPoint.X, selectedPoint.Y
+                            )
+                        }
                     }
                     invalidate() // 触发重绘
                     handled = true
@@ -656,7 +759,10 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                if (isDragging && selectedPointIndex != -1) {
+                if (isDraggingStartDelayed) {
+                    isDraggingStartDelayed = false
+                    handled = true
+                } else if (isDragging && selectedPointIndex != -1) {
                     val mapView = mapViewRef.get() ?: return false
                     // 检查是否在地图范围内
                     val isInsideMap = mapView.isInsideMap(x, y)
@@ -665,6 +771,11 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
                         selectedArea!!, selectedPointIndex, isInsideMap
                     )
                     validateAndFixStartPoint(selectedArea!!)
+                    handled = true
+                }
+
+                if (isAreaDraggingStartDelayed) {
+                    isAreaDraggingStartDelayed = false
                     handled = true
                 } else if (isAreaDragging && selectedArea != null) {
                     val mapView = mapViewRef.get() ?: return false
