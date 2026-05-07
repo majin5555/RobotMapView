@@ -209,94 +209,120 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         val lp =
             LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         mPngMapView = PngMapView(context)
-        mWallView = VirtualWallView(context, mMapView)
-        mCrossView = CrossDoorView(context, mMapView)
-        mHomeDockView = HomeDockView(context, mMapView)
-        mElevatorView = ElevatorView(context, mMapView)
-        mStationView = StationsView(context, mMapView)
-        mSameSwitchView = SameSwitchView(context, mMapView)
-        mRFIDView = RFIDView(context, mMapView)
-        mOnlinePoseView = OnlinePoseView(context, mMapView)
-        mUpLaserScanView = UpLaserScanView(context, mMapView)
-        mDownLaserScanView = DownLaserScanView(context, mMapView)
-        mTopViewPathView = TopViewPathView(context, mMapView)
-        mLegendView = LegendView(context, attrs, mMapView)
-        mMapNameView = MapNameView(context, mMapView)
-        mRobotView = RobotView(context, mMapView)
-        mWorkIngPathView = WorkIngPathView(context, mMapView)
-        mRemoveNoiseView = RemoveNoiseView(context, mMapView)
-        mPostingAreasView = PostingAreasView(context, mMapView)
-        mPolygonEditView = PolygonEditView(context, mMapView)
-        mPolygonEditViewPoint = PolygonEditViewPoint(context, mMapView)
-        mSpPolygonEditView = SpPolygonEditView(context, mMapView)
-        mMixAreaView = MixAreaView(context, mMapView)
-        mPathView = PathView(context, mMapView)
-        mWorldPadView = WorldPadView(context, mMapView)
-        mDragPositioningView = DragPositioningView(context, mMapView)
-        mReflectMapView = ReflectMapView(context, mMapView)
-        mInspectionView = InspectionView(context, mMapView)
         //底图的View
         addView(mPngMapView, lp)
 
-        //清扫区域
-        addMapLayers(mPolygonEditView)
-        //清扫区域点
-        addMapLayers(mPolygonEditViewPoint)
-        //充电站
-        addMapLayers(mHomeDockView)
-        //乘梯点
-        addMapLayers(mElevatorView)
-        //显示避让点
-        addMapLayers(mStationView)
-        //显示同层切换
-        addMapLayers(mSameSwitchView)
-        //RFID
-        addMapLayers(mRFIDView)
-        //上线点
-        addMapLayers(mOnlinePoseView)
-        //上激光点云
-        addMapLayers(mUpLaserScanView)
-        //下激光点云
-        addMapLayers(mDownLaserScanView)
-        //拖拽定位
-        addMapLayers(mDragPositioningView)
-        //顶视路线
-        addMapLayers(mTopViewPathView)
-        //显示虚拟墙
-        addMapLayers(mWallView)
-        //噪点擦除去
-        addMapLayers(mRemoveNoiseView)
-        //定位区域
-        addMapLayers(mPostingAreasView)
-        //特殊区域
-        addMapLayers(mSpPolygonEditView)
-        //混行区域
-        addMapLayers(mMixAreaView)
-        //显示路线
-        addMapLayers(mPathView)
-        //显示路线PP
-        addMapLayers(mWorldPadView)
-        //显示工作路径
-        addMapLayers(mWorkIngPathView)
-        //新过门
-        addMapLayers(mCrossView)
-        //反光板地图
-        addMapLayers(mReflectMapView)
-        //巡检
-        addMapLayers(mInspectionView)
-        //地图名称
-        addView(mMapNameView)
-        //机器人图标
-        addMapLayers(mRobotView)
-        //修改LegendView的布局参数，使其显示在右上角（在地图名称下边）
-        addView(
-            mLegendView, LayoutParams(
-                LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT
-            ).apply {
-                gravity = android.view.Gravity.TOP or android.view.Gravity.END
-                setMargins(16, 16, 16, 16)
-            })
-
+        context.withStyledAttributes(attrs, R.styleable.MapView) {
+            if (getBoolean(R.styleable.MapView_showVirtualWall, false)) {
+                mWallView = VirtualWallView(context, mMapView)
+                addMapLayers(mWallView)
+            }
+            if (getBoolean(R.styleable.MapView_showCrossDoor, false)) {
+                mCrossView = CrossDoorView(context, mMapView)
+                addMapLayers(mCrossView)
+            }
+            if (getBoolean(R.styleable.MapView_showChargeStation, false)) {
+                mHomeDockView = HomeDockView(context, mMapView)
+                addMapLayers(mHomeDockView)
+            }
+            if (getBoolean(R.styleable.MapView_showElevator, false)) {
+                mElevatorView = ElevatorView(context, mMapView)
+                addMapLayers(mElevatorView)
+            }
+            if (getBoolean(R.styleable.MapView_showStations, false)) {
+                mStationView = StationsView(context, mMapView)
+                addMapLayers(mStationView)
+            }
+            if (getBoolean(R.styleable.MapView_showSameSwitch, false)) {
+                mSameSwitchView = SameSwitchView(context, mMapView)
+                addMapLayers(mSameSwitchView)
+            }
+            if (getBoolean(R.styleable.MapView_showRFID, false)) {
+                mRFIDView = RFIDView(context, mMapView)
+                addMapLayers(mRFIDView)
+            }
+            if (getBoolean(R.styleable.MapView_showOnlinePose, false)) {
+                mOnlinePoseView = OnlinePoseView(context, mMapView)
+                addMapLayers(mOnlinePoseView)
+            }
+            if (getBoolean(R.styleable.MapView_showUpLaserPointCloud, false)) {
+                mUpLaserScanView = UpLaserScanView(context, mMapView)
+                addMapLayers(mUpLaserScanView)
+            }
+            if (getBoolean(R.styleable.MapView_showLowerLaserPointCloud, false)) {
+                mDownLaserScanView = DownLaserScanView(context, mMapView)
+                addMapLayers(mDownLaserScanView)
+            }
+            if (getBoolean(R.styleable.MapView_showTopViewPath, false)) {
+                mTopViewPathView = TopViewPathView(context, mMapView)
+                addMapLayers(mTopViewPathView)
+            }
+            if (getBoolean(R.styleable.MapView_showMapNameView, false)) {
+                mMapNameView = MapNameView(context, mMapView)
+                addView(mMapNameView)
+            }
+            if (getBoolean(R.styleable.MapView_showRobot, false)) {
+                mRobotView = RobotView(context, mMapView)
+                addMapLayers(mRobotView)
+            }
+            if (getBoolean(R.styleable.MapView_showWorkingPath, false)) {
+                mWorkIngPathView = WorkIngPathView(context, mMapView)
+                addMapLayers(mWorkIngPathView)
+            }
+            if (getBoolean(R.styleable.MapView_showRemoveNoise, false)) {
+                mRemoveNoiseView = RemoveNoiseView(context, mMapView)
+                addMapLayers(mRemoveNoiseView)
+            }
+            if (getBoolean(R.styleable.MapView_showPositingArea, false)) {
+                mPostingAreasView = PostingAreasView(context, mMapView)
+                addMapLayers(mPostingAreasView)
+            }
+            if (getBoolean(R.styleable.MapView_showArea, false)) {
+                mPolygonEditView = PolygonEditView(context, mMapView)
+                addMapLayers(mPolygonEditView)
+            }
+            if (getBoolean(R.styleable.MapView_showAreaPoint, false)) {
+                mPolygonEditViewPoint = PolygonEditViewPoint(context, mMapView)
+                addMapLayers(mPolygonEditViewPoint)
+            }
+            if (getBoolean(R.styleable.MapView_showSpArea, false)) {
+                mSpPolygonEditView = SpPolygonEditView(context, mMapView)
+                addMapLayers(mSpPolygonEditView)
+            }
+            if (getBoolean(R.styleable.MapView_showMixArea, false)) {
+                mMixAreaView = MixAreaView(context, mMapView)
+                addMapLayers(mMixAreaView)
+            }
+            if (getBoolean(R.styleable.MapView_showPath, false)) {
+                mPathView = PathView(context, mMapView)
+                addMapLayers(mPathView)
+            }
+            if (getBoolean(R.styleable.MapView_showWorldPath, false)) {
+                mWorldPadView = WorldPadView(context, mMapView)
+                addMapLayers(mWorldPadView)
+            }
+            if (getBoolean(R.styleable.MapView_showDragPositioning, false)) {
+                mDragPositioningView = DragPositioningView(context, mMapView)
+                addMapLayers(mDragPositioningView)
+            }
+            if (getBoolean(R.styleable.MapView_showReflectMap, false)) {
+                mReflectMapView = ReflectMapView(context, mMapView)
+                addMapLayers(mReflectMapView)
+            }
+            if (getBoolean(R.styleable.MapView_showInspection, false)) {
+                mInspectionView = InspectionView(context, mMapView)
+                addMapLayers(mInspectionView)
+            }
+            mLegendView = LegendView(context, attrs, mMapView)
+            //修改LegendView的布局参数，使其显示在右上角（在地图名称下边）
+            addView(
+                mLegendView, LayoutParams(
+                    LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT
+                ).apply {
+                    gravity = android.view.Gravity.TOP or android.view.Gravity.END
+                    setMargins(16, 16, 16, 16)
+                })
+        }
 
         setCentred()
     }
@@ -1119,9 +1145,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      */
 
     fun createContinuousPathTeach(
-        pptKeyList: List<Array<Point2d>>,
-        pathParam: Short,
-        uExtType: Int
+        pptKeyList: List<Array<Point2d>>, pathParam: Short, uExtType: Int
     ) {
         var lastEndNodeId = -1
         for (pptKey in pptKeyList) {
@@ -1135,14 +1159,9 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
                     m_KeyPst.AddPst(pst)
                 }
                 // 使用前一条路径的终点作为当前路径的起点
-                lastEndNodeId =
-                    mWorldPadView?.createTeachPath(
-                        pptKey,
-                        m_KeyPst,
-                        pathParam,
-                        lastEndNodeId,
-                        uExtType
-                    ) ?: -1
+                lastEndNodeId = mWorldPadView?.createTeachPath(
+                    pptKey, m_KeyPst, pathParam, lastEndNodeId, uExtType
+                ) ?: -1
             }
         }
     }

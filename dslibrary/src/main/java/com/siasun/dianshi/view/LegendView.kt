@@ -183,12 +183,12 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
 
             // 从XML属性中读取各CheckBox的显示状态
             mBinding.cbUpLaserPointCloud.visibility = if (typedArray.getBoolean(
-                    R.styleable.MapView_showUpLaserPointCloud, true
+                    R.styleable.MapView_showUpLaserPointCloud, false
                 )
             ) VISIBLE else GONE
 
             mBinding.cbLowerLaserPointCloud.visibility = if (typedArray.getBoolean(
-                    R.styleable.MapView_showLowerLaserPointCloud, true
+                    R.styleable.MapView_showLowerLaserPointCloud, false
                 )
             ) VISIBLE else GONE
 
