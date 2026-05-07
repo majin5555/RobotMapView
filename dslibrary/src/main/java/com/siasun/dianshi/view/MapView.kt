@@ -1117,7 +1117,12 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     /**
      * 外部接口: 创建连续的示教路径
      */
-    fun createContinuousPathTeach(pptKeyList: List<Array<Point2d>>, pathParam: Short) {
+
+    fun createContinuousPathTeach(
+        pptKeyList: List<Array<Point2d>>,
+        pathParam: Short,
+        uExtType: Int
+    ) {
         var lastEndNodeId = -1
         for (pptKey in pptKeyList) {
             if (pptKey.isNotEmpty()) {
@@ -1131,7 +1136,13 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
                 }
                 // 使用前一条路径的终点作为当前路径的起点
                 lastEndNodeId =
-                    mWorldPadView?.createTeachPath(pptKey, m_KeyPst, pathParam, lastEndNodeId) ?: -1
+                    mWorldPadView?.createTeachPath(
+                        pptKey,
+                        m_KeyPst,
+                        pathParam,
+                        lastEndNodeId,
+                        uExtType
+                    ) ?: -1
             }
         }
     }

@@ -5,15 +5,15 @@ package com.siasun.dianshi
  */
 object GlobalVariable {
 
-    val KEY_CH ="ch"    //汉语
-    val KEY_EN ="en"    //英语
-    val KEY_TH ="th"    //泰语
-    val KEY_RU ="ru"    //俄语
-    val KEY_ES ="es"    //西班牙语
-    val KEY_PT ="pt"    //葡萄牙语
-    val KEY_KO ="ko"    //韩语
-    val KEY_JA ="ja"    //日语
-    val KEY_PL ="pl"    //波兰语
+    val KEY_CH = "ch"    //汉语
+    val KEY_EN = "en"    //英语
+    val KEY_TH = "th"    //泰语
+    val KEY_RU = "ru"    //俄语
+    val KEY_ES = "es"    //西班牙语
+    val KEY_PT = "pt"    //葡萄牙语
+    val KEY_KO = "ko"    //韩语
+    val KEY_JA = "ja"    //日语
+    val KEY_PL = "pl"    //波兰语
 
     /***1-起点到终点 3-双向通行*/
 
@@ -141,6 +141,7 @@ object GlobalVariable {
 
     var LANGUAGE = ""
 
+    var uExtType = 0
 
 
 }

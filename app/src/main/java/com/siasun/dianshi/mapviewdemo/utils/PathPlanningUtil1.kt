@@ -1,8 +1,9 @@
 package com.siasun.dianshi.mapviewdemo.utils
 
-import android.graphics.PointF
 import android.os.Build
 import androidx.annotation.RequiresApi
+import com.siasun.dianshi.GlobalVariable
+import com.siasun.dianshi.GlobalVariable.uExtType
 import com.siasun.dianshi.bean.LineNew
 import com.siasun.dianshi.bean.PlanPathResult
 import com.siasun.dianshi.bean.Point2d
@@ -16,8 +17,6 @@ import com.siasun.dianshi.mapviewdemo.PATH_BEZIER
 import com.siasun.dianshi.mapviewdemo.PATH_LINE
 import com.siasun.dianshi.mapviewdemo.PATH_MODE
 import com.siasun.dianshi.mapviewdemo.TEACH_PATH_PLAN
-import com.siasun.dianshi.mapviewdemo.utils.PathPlanningUtil.MAX_PATH_SEGMENTS
-import com.siasun.dianshi.mapviewdemo.utils.PathPlanningUtil.obtainPoint2d
 import com.siasun.dianshi.view.MapView
 
 /**
@@ -143,7 +142,7 @@ object PathPlanningUtil1 {
                 // 路段模式
                 if (result.m_iPlanResultMode == PATH_MODE) {
                     // 限制路段数量，防止内存溢出
-                    val maxSegments = minOf(result.m_iPathSum, MAX_PATH_SEGMENTS)
+                    val maxSegments = minOf(result.m_iPathSum, 1000000)
                     LogUtil.i("PAD解析PP数据 示教路径路段个数：${result.m_iPathSum}")
                     LogUtil.i("PAD解析PP数据 示教路径点位个数：${result.m_fElementBuffer.size}")
                     // 收集所有路径段的关键点数组
@@ -154,10 +153,7 @@ object PathPlanningUtil1 {
                     for (i in 0 until maxSegments) {
                         // 使用对象池获取Point2d对象
                         val pptKey = arrayOf(
-                            obtainPoint2d(),
-                            obtainPoint2d(),
-                            obtainPoint2d(),
-                            obtainPoint2d()
+                            Point2d(), Point2d(), Point2d(), Point2d()
                         )
 
                         pptKey[0].x = result.m_fElementBuffer[j++]
@@ -169,13 +165,16 @@ object PathPlanningUtil1 {
                         pptKey[3].x = result.m_fElementBuffer[j++]
                         pptKey[3].y = result.m_fElementBuffer[j++]
 
+                        // 移除这一行，因为会导致重复绘制路径
                         val bezier = Bezier(4, pptKey)
                         pathPlanResultBean.m_vecBezierOfPathPlan.add(bezier)
 
                         // 将当前路径段添加到列表中
                         pathSegments.add(pptKey)
                     }
-                    mMapView?.createContinuousPathTeach(pathSegments,2)
+                    mMapView?.createContinuousPathTeach(
+                        pathSegments, GlobalVariable.pathParam, uExtType
+                    )
                 }
             }
         } else {

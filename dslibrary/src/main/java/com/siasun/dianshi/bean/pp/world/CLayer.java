@@ -183,7 +183,7 @@ public class CLayer extends NodeBase {
      * @param endNode   结束节点
      * @return 创建的路径对象
      */
-    public Path CreatePPLine(Node startNode, Node endNode) {
+    public Path CreatePPLine(Node startNode, Node endNode, int uExtType) {
         if (startNode == null || endNode == null) {
             return null;
         }
@@ -207,7 +207,7 @@ public class CLayer extends NodeBase {
 
         GenericPath pPath = new GenericPath(nNextID, startNode.m_uId, endNode.m_uId,
                 pstStart, pstEnd, defaultControlPointDistance, defaultControlPointDistance,
-                new float[2], (short) 0, (short) 0, (short) 0, (short) 3, m_PathBase.m_MyNode);
+                new float[2], (short) 0, (short) 0, (short) 0, (short) uExtType, m_PathBase.m_MyNode);
 
         // 将路径添加到路径数据库中
         if (m_PathBase.AddPath(pPath)) {
@@ -376,7 +376,7 @@ public class CLayer extends NodeBase {
      * @param pathParam    路径参数
      * @return 是否成功添加路径
      */
-    public boolean AddGenericPath_PPteach(Posture pstStart, Posture pstEnd, Point2d[] pptCtrl, int nStartNodeId, int nEndNodeId, short pathParam) {
+    public boolean AddGenericPath_PPteach(Posture pstStart, Posture pstEnd, Point2d[] pptCtrl, int nStartNodeId, int nEndNodeId, short pathParam, int uExtType) {
         Node pStartNode = new Node();
         Node pEndNode = new Node();
 
@@ -412,7 +412,7 @@ public class CLayer extends NodeBase {
         // �����·��
         int nNextID = m_PathBase.NextID();
 
-        GenericPath pPath = new GenericPath(nNextID, nStartNodeId, nEndNodeId, pstStart, pstEnd, pptCtrl, new float[2], (short) 0, (short) 0, (short) 0, (short) 3, m_PathBase.m_MyNode, pathParam);
+        GenericPath pPath = new GenericPath(nNextID, nStartNodeId, nEndNodeId, pstStart, pstEnd, pptCtrl, new float[2], (short) 0, (short) 0, (short) 0, (short) uExtType, m_PathBase.m_MyNode, pathParam);
 
         return m_PathBase.AddPath(pPath);
     }
@@ -502,9 +502,9 @@ public class CLayer extends NodeBase {
 //                Line ln1 = new Line(ptS, pnt);
 //                angT.m_fRad = ln1.m_angSlant.m_fRad;
 ////				if(pPathT.GetHeading(pNode) == pPath.GetHeading(pNode))
-////				{
+////                {
 ////					angLen.m_fRad = (float) (angT.m_fRad + Math.PI);
-////				}
+////                }
 ////				else
 //                angLen.m_fRad = angT.m_fRad;
 //                Line ln = new Line(ptS, angLen, fTotalLen);
@@ -518,9 +518,9 @@ public class CLayer extends NodeBase {
 //                Line ln1 = new Line(ptS, pnt);
 //                angT.m_fRad = ln1.m_angSlant.m_fRad;
 ////				if(pPathT.GetHeading(pNode) == pPath.GetHeading(pNode))
-////				{
+////                {
 ////					angLen.m_fRad = angT.m_fRad;
-////				}
+////                }
 ////				else
 //                angLen.m_fRad = (float) (angT.m_fRad + Math.PI);
 //                Line ln = new Line(ptS, angLen, fTotalLen);

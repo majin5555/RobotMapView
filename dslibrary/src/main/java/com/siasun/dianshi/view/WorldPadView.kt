@@ -15,6 +15,7 @@ import com.siasun.dianshi.bean.pp.world.CLayer
 import com.siasun.dianshi.bean.pp.world.GenericPath
 import com.siasun.dianshi.bean.pp.world.Node
 import java.lang.ref.WeakReference
+import kotlin.Int
 import kotlin.math.sqrt
 
 /**
@@ -56,6 +57,9 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
 
     // 保存parent引用以便安全访问
     private val mapViewRef: WeakReference<MapView> = parent
+
+    private var uExtType: Int = 0//扩展类型
+
 
     // 优化：使用伴生对象创建静态Paint实例，避免重复创建
     companion object {
@@ -585,7 +589,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                     // 已经选择了起点，现在选择终点（必须在不同路径上）
                                     selectedMergeEndNode = startNode
                                     // 起点和终点都已选择，执行连接
-                                    connectSelectedNodes()
+                                    connectSelectedNodes(uExtType)
                                 } else {
                                     // 重置选择，重新开始
                                     selectedMergeStartNode = startNode
@@ -636,7 +640,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                     // 已经选择了起点，现在选择终点（必须在不同路径上）
                                     selectedMergeEndNode = endNode
                                     // 起点和终点都已选择，执行连接
-                                    connectSelectedNodes()
+                                    connectSelectedNodes(uExtType)
                                 } else {
                                     // 重置选择，重新开始
                                     selectedMergeStartNode = endNode
@@ -1171,7 +1175,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
     /**
      * 连接选中的起点和终点
      */
-    private fun connectSelectedNodes() {
+    private fun connectSelectedNodes(uExtType: Int) {
         // 确保起点和终点都已选择，并且在不同的路径上
         if (selectedMergeStartNode == null || selectedMergeEndNode == null || selectedMergeStartPath == null) {
             return
@@ -1181,7 +1185,8 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
         val mapView = mapViewRef.get() ?: return
 
         // 创建一个新的路径来连接两个节点
-        val newPath = cLayer.CreatePPLine(selectedMergeStartNode!!, selectedMergeEndNode!!)
+        val newPath =
+            cLayer.CreatePPLine(selectedMergeStartNode!!, selectedMergeEndNode!!, uExtType)
 
         if (newPath != null) {
             // 触发路段创建回调
@@ -1233,9 +1238,14 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
      * @param pathParam 路径参数
      * @param startNodeId 起点节点ID，如果为-1则创建新节点
      * @return 新创建的路径的终点节点ID，如果创建失败则返回-1
+     * @uExtType 是否贴边
      */
     fun createTeachPath(
-        point2ds: Array<Point2d>, m_KeyPst: DefPosture, pathParam: Short, startNodeId: Int = -1
+        point2ds: Array<Point2d>,
+        m_KeyPst: DefPosture,
+        pathParam: Short,
+        startNodeId: Int = -1,
+        uExtType: Int
     ): Int {
         val startPst: Posture = m_KeyPst.m_PstV.get(0)
         val endPst: Posture = m_KeyPst.m_PstV.get(3)
@@ -1251,7 +1261,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
         pptCtrl[1] = point2ds[2]
 
         val success = cLayer?.AddGenericPath_PPteach(
-            startPst, endPst, pptCtrl, startNodeId, -1, pathParam
+            startPst, endPst, pptCtrl, startNodeId, -1, pathParam, uExtType
         )
 
         // 获取刚创建的路径的终点节点ID并返回
