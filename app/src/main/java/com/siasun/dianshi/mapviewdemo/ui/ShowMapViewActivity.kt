@@ -90,7 +90,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     private val mReflectorMaps = mutableListOf<com.siasun.dianshi.bean.ReflectorMapBean>()
 
 
-    val mapId = 5
+    val mapId = 100
     var cleanAreas: MutableList<CleanAreaNew> = mutableListOf()
     var mSpArea: MutableList<SpArea> = mutableListOf()
     var mMixArea: MutableList<WorkAreasNew> = mutableListOf()
@@ -370,8 +370,14 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 // 处理选中路段事件
                 val startNode = path.GetStartNode()
                 val endNode = path.GetEndNode()
-                Log.d("ShowMapViewActivity", "选中路段: ${startNode?.m_uId}->${endNode?.m_uId}")
-                toast("选中路段: ${startNode?.m_uId}->${endNode?.m_uId}")
+                Log.d(
+                    "ShowMapViewActivity",
+                    "选中路段: ${startNode?.m_uId}->${endNode?.m_uId} 路段扩展属性 ${path.m_uExtType}"
+                )
+
+                path.m_uExtType = 1
+
+                toast("选中路段: ${startNode?.m_uId}->${endNode?.m_uId} 路段扩展属性: ${path.m_uExtType}")
 
                 mBinding.mapView.getLayer()?.updatePathAttr(path)
             }
@@ -394,6 +400,17 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 // 可以在这里添加删除节点后的业务逻辑
                 onPathDataChanged()
             }
+
+            override fun onMultiplePathsSelected(paths: List<com.siasun.dianshi.bean.pp.world.Path>) {
+                paths.forEach { item ->
+                    Log.d(
+                        "ShowMapViewActivity",
+                        "选中路段: ${item.m_uId}路段扩展属性 ${item.m_uExtType}"
+                    )
+                    item.m_uExtType = 1
+                }
+            }
+
         })
 
         // 编辑路线
@@ -438,6 +455,13 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         // 保存路线
         mBinding.btnSavePath.onClick {
             savePathsToFile()
+        }
+
+        // 保存路线
+        mBinding.btnEditPathMangyConfig.onClick {
+            mBinding.mapView.setWorkMode(WorkMode.MODE_PATH_SEGMENT_MULTIPLE_ATTR_EDIT)
+
+
         }
 
     }

@@ -35,6 +35,13 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- 路线编辑控件 -->
+            <Button
+                android:id="@+id/btn_edit_path_mangy_config"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="编辑多个路线属性" />
+
             <Button
                 android:id="@+id/btn_move"
                 android:layout_width="wrap_content"

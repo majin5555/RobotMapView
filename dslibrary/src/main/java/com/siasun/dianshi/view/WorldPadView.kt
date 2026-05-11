@@ -51,6 +51,10 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
     private val selectedPathsForDeletion: MutableSet<com.siasun.dianshi.bean.pp.world.Path> =
         mutableSetOf() // 待删除的路线集合
 
+    // 编辑多条路线属性模式相关属性
+    private val selectedPathsForEdit: MutableSet<com.siasun.dianshi.bean.pp.world.Path> =
+        mutableSetOf() // 待编辑的路线集合
+
     // 创建路线模式相关属性
     private var pathCreateStartNode: Node? = null // 创建路线的起点
     private var tempPath: GenericPath? = null // 临时创建的路径（用于绘制）
@@ -81,17 +85,18 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
     fun setWorkMode(mode: WorkMode) {
         currentWorkMode = mode
         // 如果退出路径编辑模式、节点属性编辑模式、路段属性编辑模式、删除模式和创建模式，重置选择状态
-        if (mode != WorkMode.MODE_PATH_EDIT && mode != WorkMode.MODE_PATH_NODE_ATTR_EDIT && mode != WorkMode.MODE_PATH_SEGMENT_ATTR_EDIT && mode != WorkMode.MODE_PATH_DELETE && mode != WorkMode.MODE_PATH_DELETE_MULTIPLE && mode != WorkMode.MODE_PATH_MERGE && mode != WorkMode.MODE_PATH_CREATE) {
+        if (mode != WorkMode.MODE_PATH_EDIT && mode != WorkMode.MODE_PATH_NODE_ATTR_EDIT && mode != WorkMode.MODE_PATH_SEGMENT_ATTR_EDIT && mode != WorkMode.MODE_PATH_DELETE && mode != WorkMode.MODE_PATH_DELETE_MULTIPLE && mode != WorkMode.MODE_PATH_MERGE && mode != WorkMode.MODE_PATH_CREATE && mode != WorkMode.MODE_PATH_SEGMENT_MULTIPLE_ATTR_EDIT) {
             selectedPath = null
             selectedNode = null
             draggingNode = null
             draggingControlPoint = null
             dragStartPoint = null
-            // 重置删除多条路线模式的属性
+            // 重置删除多条路线模式和编辑多条路线属性模式的属性
             isBoxSelecting = false
             boxSelectStartPoint = null
             boxSelectEndPoint = null
             selectedPathsForDeletion.clear()
+            selectedPathsForEdit.clear()
             // 重置路线合并模式的属性
             selectedMergeStartNode = null
             selectedMergeStartPath = null
@@ -100,8 +105,8 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
             // 重置创建路线模式的属性
             pathCreateStartNode = null
             tempPath = null
-        } else if (mode == WorkMode.MODE_PATH_DELETE_MULTIPLE) {
-            // 进入删除多条路线模式，重置相关属性
+        } else if (mode == WorkMode.MODE_PATH_DELETE_MULTIPLE || mode == WorkMode.MODE_PATH_SEGMENT_MULTIPLE_ATTR_EDIT) {
+            // 进入删除多条路线模式或编辑多条路线属性模式，重置相关属性
             selectedPath = null
             selectedNode = null
             draggingNode = null
@@ -111,6 +116,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
             boxSelectStartPoint = null
             boxSelectEndPoint = null
             selectedPathsForDeletion.clear()
+            selectedPathsForEdit.clear()
             // 重置路线合并模式的属性
             selectedMergeStartNode = null
             selectedMergeStartPath = null
@@ -338,7 +344,11 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
         val cLayer = this.cLayer ?: return
 
         // 清空当前选中的路线
-        selectedPathsForDeletion.clear()
+        if (currentWorkMode == WorkMode.MODE_PATH_DELETE_MULTIPLE) {
+            selectedPathsForDeletion.clear()
+        } else if (currentWorkMode == WorkMode.MODE_PATH_SEGMENT_MULTIPLE_ATTR_EDIT) {
+            selectedPathsForEdit.clear()
+        }
 
         // 获取框选区域的边界
         val minX = Math.min(boxSelectStartPoint!!.x, boxSelectEndPoint!!.x)
@@ -351,7 +361,11 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
             for (i in 0 until cLayer.m_PathBase.m_uCount) {
                 val path = cLayer.m_PathBase.m_pPathIdx[i].m_ptr
                 if (isPathInBox(path, minX, minY, maxX, maxY)) {
-                    selectedPathsForDeletion.add(path)
+                    if (currentWorkMode == WorkMode.MODE_PATH_DELETE_MULTIPLE) {
+                        selectedPathsForDeletion.add(path)
+                    } else if (currentWorkMode == WorkMode.MODE_PATH_SEGMENT_MULTIPLE_ATTR_EDIT) {
+                        selectedPathsForEdit.add(path)
+                    }
                 }
             }
         }
@@ -461,7 +475,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
      */
     override fun onTouchEvent(event: MotionEvent): Boolean {
         // 在路径编辑模式、节点属性编辑模式、路段属性编辑模式、删除模式、合并模式和创建模式下都处理触摸事件
-        if (currentWorkMode != WorkMode.MODE_PATH_EDIT && currentWorkMode != WorkMode.MODE_PATH_NODE_ATTR_EDIT && currentWorkMode != WorkMode.MODE_PATH_SEGMENT_ATTR_EDIT && currentWorkMode != WorkMode.MODE_PATH_DELETE && currentWorkMode != WorkMode.MODE_PATH_DELETE_MULTIPLE && currentWorkMode != WorkMode.MODE_PATH_MERGE && currentWorkMode != WorkMode.MODE_PATH_CREATE) {
+        if (currentWorkMode != WorkMode.MODE_PATH_EDIT && currentWorkMode != WorkMode.MODE_PATH_NODE_ATTR_EDIT && currentWorkMode != WorkMode.MODE_PATH_SEGMENT_ATTR_EDIT && currentWorkMode != WorkMode.MODE_PATH_DELETE && currentWorkMode != WorkMode.MODE_PATH_DELETE_MULTIPLE && currentWorkMode != WorkMode.MODE_PATH_MERGE && currentWorkMode != WorkMode.MODE_PATH_CREATE && currentWorkMode != WorkMode.MODE_PATH_SEGMENT_MULTIPLE_ATTR_EDIT) {
             return super.onTouchEvent(event)
         }
 
@@ -486,8 +500,8 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
             return true
         }
 
-        // 删除多条路线模式下的处理
-        if (currentWorkMode == WorkMode.MODE_PATH_DELETE_MULTIPLE) {
+        // 删除多条路线模式和编辑多条路线属性模式下的处理
+        if (currentWorkMode == WorkMode.MODE_PATH_DELETE_MULTIPLE || currentWorkMode == WorkMode.MODE_PATH_SEGMENT_MULTIPLE_ATTR_EDIT) {
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     // 开始框选
@@ -838,16 +852,24 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
             selectedPath?.let {
                 deletePath(it)
             }
-        } else if (currentWorkMode == WorkMode.MODE_PATH_DELETE_MULTIPLE) {
+        } else if (currentWorkMode == WorkMode.MODE_PATH_DELETE_MULTIPLE || currentWorkMode == WorkMode.MODE_PATH_SEGMENT_MULTIPLE_ATTR_EDIT) {
 
             // 结束框选
             if (isBoxSelecting) {
                 isBoxSelecting = false
                 // 根据最终框选区域更新选中的路线
                 updateBoxSelection()
-                // 如果有选中的路线，执行删除操作
-                if (selectedPathsForDeletion.isNotEmpty()) {
-                    deleteSelectedPaths()
+                
+                if (currentWorkMode == WorkMode.MODE_PATH_DELETE_MULTIPLE) {
+                    // 如果有选中的路线，执行删除操作
+                    if (selectedPathsForDeletion.isNotEmpty()) {
+                        deleteSelectedPaths()
+                    }
+                } else if (currentWorkMode == WorkMode.MODE_PATH_SEGMENT_MULTIPLE_ATTR_EDIT) {
+                    // 如果有选中的路线，触发回调
+                    if (selectedPathsForEdit.isNotEmpty()) {
+                        onPathAttributeEditListener?.onMultiplePathsSelected(selectedPathsForEdit.toList())
+                    }
                 }
                 // 清空框选区域
                 boxSelectStartPoint = null
@@ -1020,9 +1042,9 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                         )
                                     }
                                 }
-                                //删除多条
-                                WorkMode.MODE_PATH_DELETE_MULTIPLE -> {
-                                    // 删除多条路线模式：先正常绘制所有路线
+                                //删除多条和多条属性编辑
+                                WorkMode.MODE_PATH_DELETE_MULTIPLE, WorkMode.MODE_PATH_SEGMENT_MULTIPLE_ATTR_EDIT -> {
+                                    // 先正常绘制所有路线
                                     path.Draw(mapView.mSrf, canvas, Color.BLACK, mPaint)
                                     // 绘制路段编号
                                     path.DrawID(mapView.mSrf, canvas, Color.BLACK, mPaint)
@@ -1111,13 +1133,16 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                 // 恢复画布状态
                 canvas.restore()
 
-                // 在删除多条路线模式下，绘制选中的路线为红色
-                if (currentWorkMode == WorkMode.MODE_PATH_DELETE_MULTIPLE) {
-                    // 绘制所有选中的路线为红色（应用矩阵变换）
+                // 在删除多条路线模式或编辑多条路线属性模式下，绘制选中的路线
+                if (currentWorkMode == WorkMode.MODE_PATH_DELETE_MULTIPLE || currentWorkMode == WorkMode.MODE_PATH_SEGMENT_MULTIPLE_ATTR_EDIT) {
+                    // 绘制所有选中的路线（应用矩阵变换）
                     canvas.save()
                     canvas.concat(mMatrix)
-                    for (path in selectedPathsForDeletion) {
-                        path.Draw(mapView.mSrf, canvas, Color.RED, mPaint)
+                    val highlightColor = if (currentWorkMode == WorkMode.MODE_PATH_DELETE_MULTIPLE) Color.RED else Color.GREEN
+                    val selectedPaths = if (currentWorkMode == WorkMode.MODE_PATH_DELETE_MULTIPLE) selectedPathsForDeletion else selectedPathsForEdit
+                    
+                    for (path in selectedPaths) {
+                        path.Draw(mapView.mSrf, canvas, highlightColor, mPaint)
                     }
                     canvas.restore()
 
@@ -1295,6 +1320,9 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
 
         // 当创建路段时触发
         fun onPathCreated(path: com.siasun.dianshi.bean.pp.world.Path) {}
+
+        // 当选中多条路段时触发
+        fun onMultiplePathsSelected(paths: List<com.siasun.dianshi.bean.pp.world.Path>)
     }
 
     // 回调监听器

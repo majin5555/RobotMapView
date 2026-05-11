@@ -30,6 +30,7 @@ enum class WorkMode {
     MODE_PATH_CONVERT_TO_LINE, // 曲线转直线模式 //暂时没有
     MODE_PATH_NODE_ATTR_EDIT, // 节点属性编辑模式
     MODE_PATH_SEGMENT_ATTR_EDIT, // 路段属性编辑模式
+    MODE_PATH_SEGMENT_MULTIPLE_ATTR_EDIT, // 编辑多条路段属性模式
     MODE_PATH_CREATE, // 创建路线模式
     MODE_CROSS_DOOR_EDIT, // 编辑过门模式
     MODE_CROSS_DOOR_DELETE,// 删除过门模式

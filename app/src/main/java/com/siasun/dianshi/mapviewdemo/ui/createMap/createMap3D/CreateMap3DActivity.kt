@@ -57,10 +57,10 @@ class CreateMap3DActivity :
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
         MainController.init()
-//        MMKV.defaultMMKV().encode(KEY_NEY_IP, "192.168.1.198");
+        MMKV.defaultMMKV().encode(KEY_NEY_IP, "192.168.1.198");
+//        MMKV.defaultMMKV().encode(KEY_NEY_IP, "192.168.3.101")
         mBinding.mapView.setWorkMode(WorkMode.MODE_CREATE_MAP)
 
-        MMKV.defaultMMKV().encode(KEY_NEY_IP, "192.168.3.101");
         mTimer.schedule(object : TimerTask() {
             override fun run() {
 //                if (GlobalVariable.SEND_NAVI_HEART) {
@@ -129,7 +129,7 @@ class CreateMap3DActivity :
         super.initData()
         if (BuildConfig.DEBUG) {
             mBinding.mapView.setWorkMode(WorkMode.MODE_CREATE_MAP)
-            startMockPosStream()
+//            startMockPosStream()
         }
         //下载地图结果
         LiveEventBus.get(KEY_UPDATE_MAP, UpdateMapBean::class.java).observe(this) {
