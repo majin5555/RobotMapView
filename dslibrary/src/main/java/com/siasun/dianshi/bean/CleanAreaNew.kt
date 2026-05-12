@@ -33,7 +33,10 @@ class CleanAreaNew : LiveEvent {
      */
     var routeType = 0
     var areaType = 1
-
+    //是否参考设置PAD设置的清扫起点，0：不参考   1：参考
+    var m_bIsAccountCleanStartPoint = 0
+    //当前区域的贴边路线贴边类型 0：不需要  1：普通贴边  2 极限贴边
+    var m_iCleanAreaEdgeType = 0
 
 
     override fun toString(): String {
