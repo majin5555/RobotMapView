@@ -22,6 +22,7 @@
         app:showSameSwitch="true"
         app:showStations="true"
         app:showTopViewPath="true"
+        app:showAreaPoint="true"
         app:showUpLaserPointCloud="true"
         app:showVirtualWall="true"
         app:showWorldPath="true" />
