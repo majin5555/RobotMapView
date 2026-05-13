@@ -18,6 +18,7 @@
         app:showOnlinePose="true"
         app:showPositingArea="true"
         app:showRFID="true"
+        app:showPath="true"
         app:showSameSwitch="true"
         app:showStations="true"
         app:showTopViewPath="true"

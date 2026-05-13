@@ -13,6 +13,7 @@ import com.siasun.dianshi.bean.TeachPoint
 import com.siasun.dianshi.bean.pp.Bezier
 import com.siasun.dianshi.bean.pp.PathPlanResultBean
 import java.lang.ref.WeakReference
+import androidx.core.graphics.toColorInt
 
 /**
  * 路线
@@ -155,7 +156,11 @@ class PathView @SuppressLint("ViewConstructor") constructor(
      * 绘制直线
      */
     private fun drawPPLinePath(canvas: Canvas, line: LineNew) {
+
         val mapView = mParent.get() ?: return
+        mapView.mPolygonEditView?.selectedArea?.let {
+            applyEdgeColor(it.m_iCleanAreaEdgeType)
+        }
         val startPoint = mapView.worldToScreen(line.ptStart.X, line.ptStart.Y)
         val endPoint = mapView.worldToScreen(line.ptEnd.X, line.ptEnd.Y)
         drawLine(canvas, startPoint, endPoint, mLinePaint)
@@ -171,6 +176,9 @@ class PathView @SuppressLint("ViewConstructor") constructor(
         if (bezier.m_ptKey.size < 4) return
 
         // 复用Path对象，避免每次绘制都创建新的Path
+        mapView.mPolygonEditView?.selectedArea?.let {
+            applyEdgeColor(it.m_iCleanAreaEdgeType)
+        }
         bezierPath.reset()
         val mStart = mapView.worldToScreen(bezier.m_ptKey[0].x, bezier.m_ptKey[0].y)
         val mControl1 = mapView.worldToScreen(bezier.m_ptKey[1].x, bezier.m_ptKey[1].y)
@@ -262,5 +270,16 @@ class PathView @SuppressLint("ViewConstructor") constructor(
     fun clearSelection() {
 
         invalidate()
+    }
+
+    private fun applyEdgeColor(edgeType: Int) {
+        val color = when (edgeType) {
+            1 -> "#FFCC00".toColorInt()
+            2 -> "#EA0A0A".toColorInt()
+            else -> "#333333".toColorInt()
+        }
+
+        mLinePaint.color = color
+        mBezierPaint.color = color
     }
 }

@@ -80,6 +80,7 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.anko.toast
 import java.io.File
 import java.util.UUID
+import kotlin.collections.get
 import kotlin.random.Random
 
 /**
@@ -90,7 +91,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     private val mReflectorMaps = mutableListOf<com.siasun.dianshi.bean.ReflectorMapBean>()
 
 
-    val mapId = 100
+    val mapId = 1
     var cleanAreas: MutableList<CleanAreaNew> = mutableListOf()
     var mSpArea: MutableList<SpArea> = mutableListOf()
     var mMixArea: MutableList<WorkAreasNew> = mutableListOf()
@@ -127,7 +128,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initPostingArea()
 //        initRemoveNoise()
 //        initPostingArea()
-//        initCleanArea()
+        initCleanArea()
 //        initElevator()
 //        initPose()
 //        initMachineStation()
@@ -137,8 +138,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initRFId()
 //        initInspectionView()
 //        initSameSwitch()
-        initTeach()
-        initPath()
+//        initTeach()
+//        initPath()
     }
 
     private fun initTeach() {
@@ -1021,6 +1022,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                     ToastUtils.showLong("区域超出地图范围")
                 }
                 if (area.routeType == AreaType.AREA_AUTO) {
+                    area.m_iCleanAreaEdgeType = 1
                     MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
                     LogUtil.i(
                         "编辑区域onAreaDragEnd  申请路径规划 ${area.toJson()}", null, TAG_PP
@@ -1064,6 +1066,37 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         //保存清扫区域
         mBinding.btnSaveArea.onClick {
             mViewModel.saveArea(mapId, cleanAreas)
+        }
+
+        //接收路径规划结果
+        LiveEventBus.get<PlanPathResult>(KEY_UPDATE_PLAN_PATH_RESULT).observe(this) { result ->
+            try {
+                if (result.m_iPathSum == 0) {
+                    LogUtil.i("展示路径规划失败弹窗, 路径类型:${result.m_iPathPlanType}, 路段个数:${result.m_iPathSum}")
+                }
+                if (result.m_iPathPlanType == CLEAN_PATH_PLAN) {
+                    // 接收Pad申请的示教径规划结果
+                    // 路段模式
+                    if (result.m_strTo == "pad") {
+                        if (result.m_iPlanResultMode == PATH_MODE) {
+                            LogUtil.i(
+                                "CustomPathActivity1接收示教路径规划", null, TAG_PP
+                            )
+
+                            lifecycleScope.launch(Dispatchers.Default) {
+                                val bean = PathPlanningUtil1.getPathPlanResultBean(result)
+                                withContext(Dispatchers.Main) {
+                                    mBinding.mapView.setCleanPathPlanResultBean(bean)
+                                    dismissLoading()
+                                }
+                            }
+                        }
+                    }
+
+                }
+            } catch (e: Exception) {
+
+            }
         }
     }
 
