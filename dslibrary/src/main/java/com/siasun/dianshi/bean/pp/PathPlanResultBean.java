@@ -18,7 +18,8 @@ public class PathPlanResultBean {
     public Vector<Bezier>m_vecBezierOfPathPlan = new Vector<>();
     public float[] startPoint = new float[3];
     public float[] endPoint = new float[3];
-
+    //当前区域的贴边路线贴边类型 0：不需要  1：普通贴边  2 极限贴边
+    public int[] m_iCleanAreaEdgeType;
 
 
     @Override

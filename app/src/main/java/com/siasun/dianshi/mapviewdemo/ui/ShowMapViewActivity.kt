@@ -973,6 +973,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             ) {
                 LogUtil.d("onVertexDragEnd area $area isInsideMap $isInsideMap")
                 if (area?.routeType == AreaType.AREA_AUTO) {
+                    area.m_iCleanAreaEdgeType = 2
                     MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
                     LogUtil.i(
                         "编辑区域onVertexDragEnd  申请路径规划 ${area.toJson()}", null, TAG_PP

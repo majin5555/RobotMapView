@@ -117,6 +117,7 @@ object PathPlanningUtil1 {
                                 ptEnd.Y = result.m_fElementBuffer[j++]
                                 val line = LineNew(ptStart, ptEnd)
                                 pathPlanResultBean.m_vecLineOfPathPlan.add(line)
+
                             } else if (result.m_cPathTypeBuffer[i].toInt() == PATH_BEZIER) {
                                 // 贝塞尔
                                 val pptKey = arrayOf(
@@ -134,6 +135,7 @@ object PathPlanningUtil1 {
                                 pathPlanResultBean.m_vecBezierOfPathPlan.add(bezier)
                             }
                         }
+                        pathPlanResultBean.m_iCleanAreaEdgeType = result.lparams
                     }
                 }
             } else if (result.m_iPathPlanType == TEACH_PATH_PLAN) {
@@ -172,6 +174,7 @@ object PathPlanningUtil1 {
                         // 将当前路径段添加到列表中
                         pathSegments.add(pptKey)
                     }
+                    pathPlanResultBean.m_iCleanAreaEdgeType = result.lparams
                     mMapView?.createContinuousPathTeach(
                         pathSegments, GlobalVariable.pathParam, uExtType
                     )

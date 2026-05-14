@@ -11,13 +11,16 @@ import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.PLAN_PATH_CONTROL_C
 import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.SERVICE_COMMAND
 import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.SERVICE_CONTROL_COMMAND
 import com.pnc.software.siasun.cleanrobot.crl.controller.lcm.SUBSCRIBE_CHANNEL
+import com.siasun.dianshi.bean.CleanPathPlanParam
 import com.siasun.dianshi.bean.CmsPadInteraction_
+import com.siasun.dianshi.bean.LcmStrToPPBean
 import com.siasun.dianshi.bean.PlanPathControlCommand
 import com.siasun.dianshi.bean.PointNew
 import com.siasun.dianshi.bean.robot_control_t_new
 import com.siasun.dianshi.framework.log.LogUtil
 import com.siasun.dianshi.mapviewdemo.CLEAN_PATH_PLAN
 import com.siasun.dianshi.mapviewdemo.TAG_LCM
+import com.siasun.dianshi.mapviewdemo.utils.GsonUtil
 import lcm.lcm.LCM
 import lcm.lcm.LCMEncodable
 import lcm.lcm.LCMSubscriber
@@ -54,10 +57,16 @@ class ULCMHelper internal constructor() {
         mVertexPnt: MutableList<PointNew>,
         mLayerId: Int,
         mRegID: Int,
-        mCleanShape: Int
+        mCleanShape: Int,
+        weltType: Int,
     ) {
         mPlanPathControlCommand?.m_strFrom = "pad";
-        mPlanPathControlCommand?.m_strTo = "PathPlanSet";
+        mPlanPathControlCommand?.m_strTo = GsonUtil.toJsonString(
+            LcmStrToPPBean(
+                strTo = "PP",
+                CleanPathPlanParam = CleanPathPlanParam(weltType)
+            )
+        )
         mPlanPathControlCommand?.m_iPathPlanPublicId = mIPathPlanPublicId++
         mPlanPathControlCommand?.m_iPathPlanType = mIPathPlanType
         if (mIPathPlanType != 100) {

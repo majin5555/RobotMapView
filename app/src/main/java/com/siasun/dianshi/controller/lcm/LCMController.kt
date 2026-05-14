@@ -407,7 +407,8 @@ class LCMController : AbsController(), LCMSubscriber {
             mCleanArea.m_VertexPnt,
             mCleanArea.layer_id,
             mCleanArea.regId,
-            mCleanArea.cleanShape
+            mCleanArea.cleanShape,
+            mCleanArea.m_iCleanAreaEdgeType
         )
         mULCMHelper.sendLcmMsg(PLAN_PATH_CONTROL_COMMAND)
     }
