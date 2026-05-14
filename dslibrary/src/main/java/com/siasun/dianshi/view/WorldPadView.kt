@@ -8,6 +8,7 @@ import android.graphics.Paint
 import android.graphics.PointF
 import android.util.Log
 import android.view.MotionEvent
+import androidx.core.graphics.toColorInt
 import com.siasun.dianshi.bean.Point2d
 import com.siasun.dianshi.bean.pp.DefPosture
 import com.siasun.dianshi.bean.pp.Posture
@@ -859,7 +860,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                 isBoxSelecting = false
                 // 根据最终框选区域更新选中的路线
                 updateBoxSelection()
-                
+
                 if (currentWorkMode == WorkMode.MODE_PATH_DELETE_MULTIPLE) {
                     // 如果有选中的路线，执行删除操作
                     if (selectedPathsForDeletion.isNotEmpty()) {
@@ -988,8 +989,13 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                         endNode?.Draw(mapView.mSrf, canvas, Color.RED, 3, mPaint)
 
                                     } else {
+                                        val color = when (path.m_uExtType.toInt()) {
+                                            1 -> "#FFCC00".toColorInt()
+                                            2 -> "#EA0A0A".toColorInt()
+                                            else -> "#333333".toColorInt()
+                                        }
                                         // 未选中的路段，正常绘制
-                                        path.Draw(mapView.mSrf, canvas, Color.BLACK, mPaint)
+                                        path.Draw(mapView.mSrf, canvas, color, mPaint)
                                         // 绘制路段编号
                                         path.DrawID(mapView.mSrf, canvas, Color.BLACK, mPaint)
                                         // 绘制节点包括节点 和编号（开始红色、结束灰色）
@@ -1044,8 +1050,13 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                 }
                                 //删除多条和多条属性编辑
                                 WorkMode.MODE_PATH_DELETE_MULTIPLE, WorkMode.MODE_PATH_SEGMENT_MULTIPLE_ATTR_EDIT -> {
+                                    val color = when (path.m_uExtType.toInt()) {
+                                        1 -> "#FFCC00".toColorInt()
+                                        2 -> "#EA0A0A".toColorInt()
+                                        else -> "#333333".toColorInt()
+                                    }
                                     // 先正常绘制所有路线
-                                    path.Draw(mapView.mSrf, canvas, Color.BLACK, mPaint)
+                                    path.Draw(mapView.mSrf, canvas, color, mPaint)
                                     // 绘制路段编号
                                     path.DrawID(mapView.mSrf, canvas, Color.BLACK, mPaint)
                                     // 显示所有节点
@@ -1058,8 +1069,13 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                 }
                                 //路段合并
                                 WorkMode.MODE_PATH_MERGE -> {
+                                    val color = when (path.m_uExtType.toInt()) {
+                                        1 -> "#FFCC00".toColorInt()
+                                        2 -> "#EA0A0A".toColorInt()
+                                        else -> "#333333".toColorInt()
+                                    }
                                     // 路线合并模式：正常绘制路段，放大显示选中的节点
-                                    path.Draw(mapView.mSrf, canvas, Color.BLACK, mPaint)
+                                    path.Draw(mapView.mSrf, canvas, color, mPaint)
                                     // 绘制路段编号
                                     path.DrawID(mapView.mSrf, canvas, Color.BLACK, mPaint)
                                     // 检查并绘制起点节点
@@ -1116,8 +1132,14 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                 }
 
                                 else -> {
+                                    val color = when (path.m_uExtType.toInt()) {
+                                        1 -> "#FFCC00".toColorInt()
+                                        2 -> "#EA0A0A".toColorInt()
+                                        else -> "#333333".toColorInt()
+                                    }
+
                                     // 非编辑模式，正常绘制
-                                    path.Draw(mapView.mSrf, canvas, Color.BLACK, mPaint)
+                                    path.Draw(mapView.mSrf, canvas, color, mPaint)
                                     // 绘制路段编号
                                     path.DrawID(mapView.mSrf, canvas, Color.BLACK, mPaint)
                                     // 绘制节点包括节点 和编号（开始红色、结束灰色）
@@ -1138,9 +1160,11 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                     // 绘制所有选中的路线（应用矩阵变换）
                     canvas.save()
                     canvas.concat(mMatrix)
-                    val highlightColor = if (currentWorkMode == WorkMode.MODE_PATH_DELETE_MULTIPLE) Color.RED else Color.GREEN
-                    val selectedPaths = if (currentWorkMode == WorkMode.MODE_PATH_DELETE_MULTIPLE) selectedPathsForDeletion else selectedPathsForEdit
-                    
+                    val highlightColor =
+                        if (currentWorkMode == WorkMode.MODE_PATH_DELETE_MULTIPLE) Color.RED else Color.GREEN
+                    val selectedPaths =
+                        if (currentWorkMode == WorkMode.MODE_PATH_DELETE_MULTIPLE) selectedPathsForDeletion else selectedPathsForEdit
+
                     for (path in selectedPaths) {
                         path.Draw(mapView.mSrf, canvas, highlightColor, mPaint)
                     }

@@ -135,7 +135,7 @@ public class PathBase {
                         }
 
                         uType = (short) ((ch2 << 8) + (ch1 << 0));
-                        Log.e("readWorld", "uType == " + uType);
+//                        Log.e("readWorld", "uType == " + uType);
                         switch (uType) {
                             case 0:
                                 pPath = new LinePath();

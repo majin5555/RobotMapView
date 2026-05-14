@@ -94,7 +94,7 @@ public class Node extends Point2d {
             int ch2 = dis.read();
             if ((ch1 | ch2) < 0) throw new EOFException();
             this.m_uId = ((ch2 << 8) + (ch1 << 0));
-            Log.w("readWorld", "节点ID  m_uId " + this.m_uId);
+//            Log.w("readWorld", "节点ID  m_uId " + this.m_uId);
 
 
             ch1 = dis.read();
