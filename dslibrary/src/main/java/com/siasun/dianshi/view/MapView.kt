@@ -101,6 +101,9 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     var mPostingAreasView: PostingAreasView? = null//定位区域
     var mPolygonEditView: PolygonEditView? = null//区域
     var mPolygonEditViewPoint: PolygonEditViewPoint? = null//区域开始点
+
+    var mTaskPolygonEditView: TaskPolygonEditView? = null//任务清扫区域层
+
     var mSpPolygonEditView: SpPolygonEditView? = null//特殊区域
     var mMixAreaView: MixAreaView? = null//混行区域
     var mWorldPadView: WorldPadView? = null//路线PP
@@ -284,6 +287,10 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
             if (getBoolean(R.styleable.MapView_showAreaPoint, false)) {
                 mPolygonEditViewPoint = PolygonEditViewPoint(context, mMapView)
                 addMapLayers(mPolygonEditViewPoint)
+            }
+            if (getBoolean(R.styleable.MapView_showTaskArea, false)) {
+                mTaskPolygonEditView = TaskPolygonEditView(context, mMapView)
+                addMapLayers(mTaskPolygonEditView)
             }
             if (getBoolean(R.styleable.MapView_showSpArea, false)) {
                 mSpPolygonEditView = SpPolygonEditView(context, mMapView)
@@ -1022,6 +1029,32 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     }
 
     /**
+     * 设置任务清扫区域数据源
+     */
+    fun setTaskAreaData(data: MutableList<CleanAreaNew>) {
+        mTaskPolygonEditView?.setCleanAreaData(data)
+    }
+
+    /**
+     * 获取任务清扫区域
+     */
+    fun getTaskAreaData(): List<CleanAreaNew> = mTaskPolygonEditView?.getData() ?: mutableListOf()
+
+    /**
+     * 设置选中的任务清扫区域
+     */
+    fun setSelectedTaskArea(area: CleanAreaNew?) {
+        mTaskPolygonEditView?.setSelectedCleanArea(area)
+    }
+
+    /**
+     * 清除任务清扫区域
+     */
+    fun cleanTaskArea() {
+        mTaskPolygonEditView?.cleanData()
+    }
+
+    /**
      * 清除区域数据源
      */
     fun cleanAreaStartPoint() = mPolygonEditViewPoint?.cleanAreaStartPoint()
@@ -1347,6 +1380,13 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      */
     fun setOnCleanAreaEditListener(listener: PolygonEditView.OnCleanAreaEditListener?) {
         mPolygonEditView?.setOnCleanAreaEditListener(listener)
+    }
+
+    /**
+     * 设置任务清扫区域选中监听器
+     */
+    fun setOnTaskAreaSelectedListener(listener: TaskPolygonEditView.OnTaskAreaSelectedListener?) {
+        mTaskPolygonEditView?.setOnTaskAreaSelectedListener(listener)
     }
 
     /**

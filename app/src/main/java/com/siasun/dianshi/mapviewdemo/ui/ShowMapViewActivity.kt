@@ -70,6 +70,7 @@ import com.siasun.dianshi.view.PostingAreasView
 import com.siasun.dianshi.view.RFIDView
 import com.siasun.dianshi.view.SameSwitchView
 import com.siasun.dianshi.view.SpPolygonEditView
+import com.siasun.dianshi.view.TaskPolygonEditView
 import com.siasun.dianshi.view.VirtualWallView
 import com.siasun.dianshi.view.WorkMode
 import com.siasun.dianshi.xpop.XpopUtils
@@ -127,7 +128,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initPostingArea()
 //        initRemoveNoise()
 //        initPostingArea()
-//        initCleanArea()
+        initCleanArea()
 //        initElevator()
 //        initPose()
 //        initMachineStation()
@@ -137,8 +138,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initRFId()
 //        initInspectionView()
 //        initSameSwitch()
-        initTeach()
-        initPath()
+//        initTeach()
+//        initPath()
     }
 
     private fun initTeach() {
@@ -407,7 +408,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                         "ShowMapViewActivity",
                         "选中路段: ${item.m_uId}路段扩展属性 ${item.m_uExtType}"
                     )
-                    item.m_uExtType = 1
+                    item.m_uExtType = 2
                 }
             }
 
@@ -911,7 +912,14 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mViewModel.getAreaList(mapId, onComplete = { cleanAreasRoot ->
             cleanAreasRoot?.let {
                 cleanAreas.addAll(it.cleanAreas)
-                mBinding.mapView.setCleanAreaData(cleanAreas)
+//                mBinding.mapView.setCleanAreaData(cleanAreas)
+                mBinding.mapView.setTaskAreaData(cleanAreas)
+            }
+        })
+        mBinding.mapView.setOnTaskAreaSelectedListener(object :
+            TaskPolygonEditView.OnTaskAreaSelectedListener {
+            override fun onSelectedAreaChanged(area: CleanAreaNew?) {
+                LogUtil.d("选中了 ${area} ")
             }
         })
 
@@ -1250,14 +1258,14 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.btnCreateStation.onClick {
             XpopUtils(this).showCmsStationDialog(
                 onConfirmCall = { result ->
-                    result?.let {
-                        cmsStation.add(result)
-                        mBinding.mapView.setCmsStations(cmsStation)
-                    }
+                result?.let {
+                    cmsStation.add(result)
+                    mBinding.mapView.setCmsStations(cmsStation)
+                }
 
-                }, onDeleteCall = {
+            }, onDeleteCall = {
 
-                }, mapId
+            }, mapId
             )
         }
         //编辑避让点

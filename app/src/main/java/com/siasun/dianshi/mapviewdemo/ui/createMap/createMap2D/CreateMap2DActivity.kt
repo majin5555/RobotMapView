@@ -38,7 +38,7 @@ class CreateMap2DActivity :
     //建图心跳定时器
     private val mTimer = Timer()
 
-    val mapID = 1
+    val mapID = 300
 
 
     @RequiresApi(Build.VERSION_CODES.R)

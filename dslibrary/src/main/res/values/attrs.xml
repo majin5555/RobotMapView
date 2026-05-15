@@ -27,6 +27,8 @@
         <attr name="showArea" default="false" format="boolean" />
         <!--清扫区域点-->
         <attr name="showAreaPoint" default="false" format="boolean" />
+        <!--任务清扫区域-->
+        <attr name="showTaskArea" default="false" format="boolean" />
         <!--特殊区域-->
         <attr name="showSpArea" default="false" format="boolean" />
         <!--路线-->
