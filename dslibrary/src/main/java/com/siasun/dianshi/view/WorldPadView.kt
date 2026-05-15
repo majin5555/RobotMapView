@@ -218,7 +218,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
 
         if (cLayer.m_PathBase != null && cLayer.m_PathBase.m_pPathIdx != null) {
             for (i in 0 until cLayer.m_PathBase.m_uCount) {
-                if (cLayer.m_PathBase.m_pPathIdx[i].m_ptr === path) {
+                if (cLayer.m_PathBase.m_pPathIdx[i] != null && cLayer.m_PathBase.m_pPathIdx[i].m_ptr === path) {
                     return i
                 }
             }

@@ -1,7 +1,5 @@
 package com.siasun.dianshi.bean.pp.world;
 
-import android.graphics.Canvas;
-import android.graphics.Paint;
 import android.graphics.Point;
 import android.util.Log;
 
@@ -31,14 +29,16 @@ public class PathBase {
     }
 
     private void CleanUp() {
-        for (short i = 0; i < m_uCount; i++) {
-            if (m_pPathIdx[i].m_ptr != null) m_pPathIdx[i].m_ptr = null;
+        if (m_pPathIdx != null) {
+            for (short i = 0; i < m_uCount; i++) {
+                if (m_pPathIdx[i] != null && m_pPathIdx[i].m_ptr != null) {
+                    m_pPathIdx[i].m_ptr = null;
+                }
+            }
+            m_pPathIdx = null;
         }
 
-        if (m_pPathIdx != null) m_pPathIdx = null;
-
         m_uCount = 0;
-        m_pPathIdx = null;
     }
 
     PathBase GetPathBaseObject() {
@@ -46,7 +46,9 @@ public class PathBase {
     }
 
     public Path GetPathPointer(short uPath) {
+        if (m_pPathIdx == null) return null;
         for (short i = 0; i < m_uCount; i++) {
+            if (m_pPathIdx[i] == null || m_pPathIdx[i].m_ptr == null) continue;
             Path pPath = m_pPathIdx[i].m_ptr;
 
             if (pPath.m_uId == uPath) return pPath;
@@ -56,7 +58,9 @@ public class PathBase {
     }
 
     public Path GetPathPointer(int uNode1, int uNode2) {
+        if (m_pPathIdx == null) return null;
         for (short i = 0; i < m_uCount; i++) {
+            if (m_pPathIdx[i] == null || m_pPathIdx[i].m_ptr == null) continue;
             Path pPath = m_pPathIdx[i].m_ptr;
 
             int uStartNode = pPath.m_uStartNode;
@@ -81,7 +85,10 @@ public class PathBase {
         ret[0] = -1;
         ret[1] = -1;
 
+        if (m_pPathIdx == null) return ret;
+
         for (int i = 0; i < m_uCount; i++) {
+            if (m_pPathIdx[i] == null || m_pPathIdx[i].m_ptr == null) continue;
             Path pPath = m_pPathIdx[i].m_ptr;
 
             if (nPathType >= 0 && pPath.m_uType != nPathType) continue;
@@ -173,15 +180,18 @@ public class PathBase {
             dis.write((ch1 & 0xff));
             dis.write((ch2 >> 8));
 
-            for (short i = 0; i < this.m_uCount; i++) {
-                Path pPath;
-                pPath = this.m_pPathIdx[i].m_ptr;
-                ch1 = pPath.m_uType;
-                ch2 = pPath.m_uType;
-                short sT = (short) ((ch2 >> 8) + (ch1 & 0xff) << 8);
-                dis.writeShort(sT);
-                if (!pPath.Save(dis)) {
-                    //assert (false); 
+            if (this.m_pPathIdx != null) {
+                for (short i = 0; i < this.m_uCount; i++) {
+                    if (this.m_pPathIdx[i] == null || this.m_pPathIdx[i].m_ptr == null) continue;
+                    Path pPath;
+                    pPath = this.m_pPathIdx[i].m_ptr;
+                    ch1 = pPath.m_uType;
+                    ch2 = pPath.m_uType;
+                    short sT = (short) ((ch2 >> 8) + (ch1 & 0xff) << 8);
+                    dis.writeShort(sT);
+                    if (!pPath.Save(dis)) {
+                        //assert (false); 
+                    }
                 }
             }
             //dis.flush();
@@ -192,20 +202,22 @@ public class PathBase {
         }
     }
 
-
     public short GetNeighborNode(int uNode) {
         short nCount = 0;
-        for (short i = 0; i < m_uCount; i++) {
-            Path pPath = m_pPathIdx[i].m_ptr;
+        if (m_pPathIdx != null) {
+            for (short i = 0; i < m_uCount; i++) {
+                if (m_pPathIdx[i] == null || m_pPathIdx[i].m_ptr == null) continue;
+                Path pPath = m_pPathIdx[i].m_ptr;
 
-            int uStartNode = pPath.m_uStartNode;
-            int uEndNode = pPath.m_uEndNode;
+                int uStartNode = pPath.m_uStartNode;
+                int uEndNode = pPath.m_uEndNode;
 
-            if (uNode == uStartNode) nCount++;
-            //return uEndNode;
+                if (uNode == uStartNode) nCount++;
+                //return uEndNode;
 
-            if (uNode == uEndNode) nCount++;
-            //return uStartNode;
+                if (uNode == uEndNode) nCount++;
+                //return uStartNode;
+            }
         }
         if (nCount == 1) {
             return -1;
@@ -215,6 +227,7 @@ public class PathBase {
     }
 
     public boolean ISInRect(int pathID, double minx, double miny, double maxx, double maxy) {
+        if (m_pPathIdx == null || pathID < 0 || pathID >= m_uCount || m_pPathIdx[pathID] == null || m_pPathIdx[pathID].m_ptr == null) return false;
         Path pPath = m_pPathIdx[pathID].m_ptr;
         return pPath.ISInRect(minx, miny, maxx, maxy);
     }
@@ -222,9 +235,12 @@ public class PathBase {
 
     public int NextID() {
         int nNextID = 0;
-        for (int i = 0; i < m_uCount; i++) {
-            Path pPath = m_pPathIdx[i].m_ptr;
-            if (pPath.m_uId > nNextID) nNextID = pPath.m_uId;
+        if (m_pPathIdx != null) {
+            for (int i = 0; i < m_uCount; i++) {
+                if (m_pPathIdx[i] == null || m_pPathIdx[i].m_ptr == null) continue;
+                Path pPath = m_pPathIdx[i].m_ptr;
+                if (pPath.m_uId > nNextID) nNextID = pPath.m_uId;
+            }
         }
         return (nNextID + 1);
     }
@@ -239,8 +255,10 @@ public class PathBase {
         for (short i = 0; i < m_uCount + 1; i++)
             pTemp[i] = new PathIndex();
 
-        for (short i = 0; i < m_uCount; i++)
-            pTemp[i] = m_pPathIdx[i];
+        if (m_pPathIdx != null) {
+            for (short i = 0; i < m_uCount; i++)
+                pTemp[i] = m_pPathIdx[i];
+        }
 
         pTemp[m_uCount++].m_ptr = pPath;
 
@@ -255,31 +273,32 @@ public class PathBase {
         Vector<Integer> Node = new Vector();
         short i;
 
-        if (uId >= m_uCount) return Node;
+        if (m_pPathIdx == null || uId >= m_uCount) return Node;
 
         // Allocate memory for the path indexes
         PathIndex[] pTemp = new PathIndex[m_uCount - 1];
         if (pTemp == null) return Node;
 
-        for (i = 0; i < m_uCount; i++)
-            if (i != uId) pTemp[i] = m_pPathIdx[i];
-            else {
-                int uNode1 = m_pPathIdx[uId].m_ptr.m_uStartNode;
-                int uNode2 = m_pPathIdx[uId].m_ptr.m_uEndNode;
+        for (i = 0; i < m_uCount; i++) {
+            if (i != uId) {
+                pTemp[i] = m_pPathIdx[i];
+            } else {
+                if (m_pPathIdx[uId] != null && m_pPathIdx[uId].m_ptr != null) {
+                    int uNode1 = m_pPathIdx[uId].m_ptr.m_uStartNode;
+                    int uNode2 = m_pPathIdx[uId].m_ptr.m_uEndNode;
 
-                // 如果删除路径后它的节点变为孤立节点，则需要将节点也删除
-                if (GetNeighborNode(uNode1) == -1) {
-                    m_MyNode.RemoveNode(uNode1);
-//					Node.add((int)uNode1);
+                    // 如果删除路径后它的节点变为孤立节点，则需要将节点也删除
+                    if (GetNeighborNode(uNode1) == -1) {
+                        m_MyNode.RemoveNode(uNode1);
+                    }
+                    if (GetNeighborNode(uNode2) == -1) {
+                        m_MyNode.RemoveNode(uNode2);
+                    }
+                    m_pPathIdx[uId].m_ptr = null;
                 }
-                if (GetNeighborNode(uNode2) == -1) {
-                    m_MyNode.RemoveNode(uNode2);
-//					Node.add((int)uNode2);
-                }
-                //delete m_pPathIdx[uId].m_ptr;
-                m_pPathIdx[uId].m_ptr = null;
                 break;
             }
+        }
 
         m_uCount--;
         for (int j = i; j < m_uCount; j++) {

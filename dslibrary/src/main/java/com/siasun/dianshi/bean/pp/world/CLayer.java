@@ -936,15 +936,17 @@ public class CLayer extends NodeBase {
      * @param PathAttr 包含新属性的路径属性对象
      */
     public void updatePathAttr(Path PathAttr) {
+        if (m_PathBase == null || m_PathBase.m_pPathIdx == null) return;
         Path pPath = null;
         for (int i = 0; i < m_PathBase.m_uCount; i++) {
+            if (m_PathBase.m_pPathIdx[i] == null || m_PathBase.m_pPathIdx[i].m_ptr == null) continue;
             pPath = m_PathBase.m_pPathIdx[i].m_ptr;
             if (pPath.m_uId == PathAttr.m_uId) {
                 break;
             }
         }
 
-        assert pPath != null;
+        if (pPath == null) return;
         pPath.m_uExtType = PathAttr.m_uExtType;
 
         pPath.m_fVeloLimit[0] = PathAttr.m_fVeloLimit[0];

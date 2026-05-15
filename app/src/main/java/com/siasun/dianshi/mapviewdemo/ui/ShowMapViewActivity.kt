@@ -93,7 +93,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     private val mReflectorMaps = mutableListOf<com.siasun.dianshi.bean.ReflectorMapBean>()
 
 
-    val mapId = 1
+    val mapId = 100
     var cleanAreas: MutableList<CleanAreaNew> = mutableListOf()
     var mSpArea: MutableList<SpArea> = mutableListOf()
     var mMixArea: MutableList<WorkAreasNew> = mutableListOf()
@@ -139,8 +139,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initRFId()
 //        initInspectionView()
 //        initSameSwitch()
-//        initTeach()
-//        initPath()
+        initTeach()
+        initPath()
     }
 
 
@@ -463,7 +463,6 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         // 保存路线
         mBinding.btnEditPathMangyConfig.onClick {
             mBinding.mapView.setWorkMode(WorkMode.MODE_PATH_SEGMENT_MULTIPLE_ATTR_EDIT)
-
 
         }
 
@@ -1049,6 +1048,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             override fun onAreaClick(area: CleanAreaNew?) {
                 LogUtil.i("点击了区域 ${area}")
             }
+
         })
 
         //添加清扫区域
