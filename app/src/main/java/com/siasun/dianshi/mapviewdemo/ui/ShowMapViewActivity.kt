@@ -81,17 +81,19 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.anko.toast
 import java.io.File
 import java.util.UUID
+import kotlin.collections.get
 import kotlin.random.Random
 
 /**
  * 显示地图
  */
+@RequiresApi(Build.VERSION_CODES.R)
 class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMapViewModel>() {
     private val mDragBean = DragLocationBean()
     private val mReflectorMaps = mutableListOf<com.siasun.dianshi.bean.ReflectorMapBean>()
 
 
-    val mapId = 100
+    val mapId = 1
     var cleanAreas: MutableList<CleanAreaNew> = mutableListOf()
     var mSpArea: MutableList<SpArea> = mutableListOf()
     var mMixArea: MutableList<WorkAreasNew> = mutableListOf()
@@ -100,7 +102,6 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     // 创建World对象并读取文件
     val world = World()
 
-    @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
         MMKV.defaultMMKV().encode(KEY_NEY_IP, "192.168.3.101")
 
@@ -141,6 +142,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initTeach()
 //        initPath()
     }
+
 
     private fun initTeach() {
         mBinding.btnAddTeachPath888.onClick {
@@ -908,6 +910,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
      * 清扫区域
      */
     private fun initCleanArea() {
+
+
         //获取区域
         mViewModel.getAreaList(mapId, onComplete = { cleanAreasRoot ->
             cleanAreasRoot?.let {
@@ -922,6 +926,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 LogUtil.d("选中了 ${area} ")
             }
         })
+
 
         mBinding.btnEditAreaStartPoint.onClick {
             if (mBinding.mapView.getCleanAreaData().toMutableList().isNotEmpty()) {
@@ -972,10 +977,11 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             PolygonEditView.OnCleanAreaEditListener {
 
             override fun onVertexDragEnd(
-                area: CleanAreaNew, vertexIndex: Int, isInsideMap: Boolean
+                area: CleanAreaNew?, vertexIndex: Int, isInsideMap: Boolean
             ) {
                 LogUtil.d("onVertexDragEnd area $area isInsideMap $isInsideMap")
-                if (area.routeType == AreaType.AREA_AUTO) {
+                if (area?.routeType == AreaType.AREA_AUTO) {
+                    area.m_iCleanAreaEdgeType = 2
                     MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
                     LogUtil.i(
                         "编辑区域onVertexDragEnd  申请路径规划 ${area.toJson()}", null, TAG_PP
@@ -984,9 +990,9 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             }
 
             override fun onVertexAdded(
-                area: CleanAreaNew, vertexIndex: Int, x: Float, y: Float
+                area: CleanAreaNew?, vertexIndex: Int, x: Float, y: Float
             ) {
-                if (area.routeType == AreaType.AREA_AUTO) {
+                if (area?.routeType == AreaType.AREA_AUTO) {
                     MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
                     LogUtil.i(
                         "编辑区域onVertexAdded  申请路径规划 ${area.toJson()}", null, TAG_PP
@@ -994,8 +1000,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 }
             }
 
-            override fun onEdgeRemoved(area: CleanAreaNew, edgeIndex: Int) {
-                if (area.routeType == AreaType.AREA_AUTO) {
+            override fun onEdgeRemoved(area: CleanAreaNew?, edgeIndex: Int) {
+                if (area?.routeType == AreaType.AREA_AUTO) {
                     MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
                     LogUtil.i(
                         "编辑区域onEdgeRemoved  申请路径规划 ${area.toJson()}", null, TAG_PP
@@ -1003,37 +1009,45 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 }
             }
 
-            override fun onVertexRemoved(area: CleanAreaNew, vertexIndex: Int) {
+            override fun onVertexRemoved(area: CleanAreaNew?, vertexIndex: Int) {
                 LogUtil.i("编辑区域onVertexRemoved  删除了定点 $vertexIndex")
                 CommonWarnDialog.Builder(this@ShowMapViewActivity).setTitle("提示")
                     .setMsg("确定要删除该顶点吗？").setOnCommonWarnDialogListener(object :
                         CommonWarnDialog.Builder.CommonWarnDialogListener {
                         override fun confirm() {
-                            mBinding.mapView.performDeleteVertex(area, vertexIndex)
+                            area?.let {
+                                mBinding.mapView.performDeleteVertex(it, vertexIndex)
+                            }
+
                         }
                     }).create().show()
             }
 
-            override fun onAreaCreated(area: CleanAreaNew) {
+            override fun onAreaCreated(area: CleanAreaNew?) {
                 // 将新创建的清扫区域添加到本地列表
-                LogUtil.d("创建了新的清扫区域: ${area.sub_name}, ID: ${area.regId}")
-                if (area.routeType == AreaType.AREA_AUTO) {
+                LogUtil.d("创建了新的清扫区域: ${area?.sub_name}, ID: ${area?.regId}")
+                if (area?.routeType == AreaType.AREA_AUTO) {
                     MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
                     LogUtil.i("创建了新的清扫区域  申请路径规划 ${area.toJson()}", null, TAG_PP)
                 }
             }
 
-            override fun onAreaDragEnd(area: CleanAreaNew, isInsideMap: Boolean) {
+            override fun onAreaDragEnd(area: CleanAreaNew?, isInsideMap: Boolean) {
                 LogUtil.d("onAreaDragEnd area $area isInsideMap $isInsideMap")
                 if (!isInsideMap) {
                     ToastUtils.showLong("区域超出地图范围")
                 }
-                if (area.routeType == AreaType.AREA_AUTO) {
+                if (area?.routeType == AreaType.AREA_AUTO) {
+                    area.m_iCleanAreaEdgeType = 1
                     MainController.sendRoutePathCommand(CLEAN_PATH_PLAN, area)
                     LogUtil.i(
                         "编辑区域onAreaDragEnd  申请路径规划 ${area.toJson()}", null, TAG_PP
                     )
                 }
+            }
+
+            override fun onAreaClick(area: CleanAreaNew?) {
+                LogUtil.i("点击了区域 ${area}")
             }
         })
 
@@ -1072,6 +1086,37 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         //保存清扫区域
         mBinding.btnSaveArea.onClick {
             mViewModel.saveArea(mapId, cleanAreas)
+        }
+
+        //接收路径规划结果
+        LiveEventBus.get<PlanPathResult>(KEY_UPDATE_PLAN_PATH_RESULT).observe(this) { result ->
+            try {
+                if (result.m_iPathSum == 0) {
+                    LogUtil.i("展示路径规划失败弹窗, 路径类型:${result.m_iPathPlanType}, 路段个数:${result.m_iPathSum}")
+                }
+                if (result.m_iPathPlanType == CLEAN_PATH_PLAN) {
+                    // 接收Pad申请的示教径规划结果
+                    // 路段模式
+                    if (result.m_strTo == "pad") {
+                        if (result.m_iPlanResultMode == PATH_MODE) {
+                            LogUtil.i(
+                                "CustomPathActivity1接收示教路径规划", null, TAG_PP
+                            )
+
+                            lifecycleScope.launch(Dispatchers.Default) {
+                                val bean = PathPlanningUtil1.getPathPlanResultBean(result)
+                                withContext(Dispatchers.Main) {
+                                    mBinding.mapView.setCleanPathPlanResultBean(bean)
+                                    dismissLoading()
+                                }
+                            }
+                        }
+                    }
+
+                }
+            } catch (e: Exception) {
+
+            }
         }
     }
 

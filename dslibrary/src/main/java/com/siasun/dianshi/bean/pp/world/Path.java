@@ -280,7 +280,7 @@ public abstract class Path {
             ch2 = dis.read();
             if ((ch1 | ch2) < 0) throw new EOFException();
             this.m_uExtType = (short) ((ch2 << 8) + (ch1));  // 读取扩展类型
-//            Log.d("readWorld", "扩展类型 m_uExtType" + m_uExtType);
+            Log.d("readWorld", "扩展类型 m_uExtType" + m_uExtType);
 
 
             ch1 = dis.read();

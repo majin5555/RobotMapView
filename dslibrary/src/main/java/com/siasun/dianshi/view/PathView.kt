@@ -13,6 +13,7 @@ import com.siasun.dianshi.bean.TeachPoint
 import com.siasun.dianshi.bean.pp.Bezier
 import com.siasun.dianshi.bean.pp.PathPlanResultBean
 import java.lang.ref.WeakReference
+import androidx.core.graphics.toColorInt
 
 /**
  * 路线
@@ -108,10 +109,16 @@ class PathView @SuppressLint("ViewConstructor") constructor(
 //            Log.d("mCleanPathPlanResultBean","绘制清扫路线 ${mCleanPathPlanResultBean.toString()}")
             // 采样绘制直线
             for (i in cleanPath.m_vecLineOfPathPlan.indices) {
+                if (cleanPath.m_iCleanAreaEdgeType != null && cleanPath.m_iCleanAreaEdgeType.size > 0) {
+                    applyEdgeColor(cleanPath.m_iCleanAreaEdgeType[i])
+                }
                 drawPPLinePath(canvas, cleanPath.m_vecLineOfPathPlan[i])
             }
             // 采样绘制贝塞尔曲线
             for (i in cleanPath.m_vecBezierOfPathPlan.indices) {
+                if (cleanPath.m_iCleanAreaEdgeType != null && cleanPath.m_iCleanAreaEdgeType.size > 0) {
+                    applyEdgeColor(cleanPath.m_iCleanAreaEdgeType[i])
+                }
                 drawPPBezierPath(canvas, cleanPath.m_vecBezierOfPathPlan[i])
             }
         }
@@ -170,7 +177,6 @@ class PathView @SuppressLint("ViewConstructor") constructor(
         // 确保贝塞尔曲线有足够的控制点
         if (bezier.m_ptKey.size < 4) return
 
-        // 复用Path对象，避免每次绘制都创建新的Path
         bezierPath.reset()
         val mStart = mapView.worldToScreen(bezier.m_ptKey[0].x, bezier.m_ptKey[0].y)
         val mControl1 = mapView.worldToScreen(bezier.m_ptKey[1].x, bezier.m_ptKey[1].y)
@@ -262,5 +268,16 @@ class PathView @SuppressLint("ViewConstructor") constructor(
     fun clearSelection() {
 
         invalidate()
+    }
+
+    private fun applyEdgeColor(edgeType: Int) {
+        val color = when (edgeType) {
+            1 -> "#FFC107".toColorInt()
+            2 -> "#E53935".toColorInt()
+            else -> "#1C1C1C".toColorInt()
+        }
+
+        mLinePaint.color = color
+        mBezierPaint.color = color
     }
 }

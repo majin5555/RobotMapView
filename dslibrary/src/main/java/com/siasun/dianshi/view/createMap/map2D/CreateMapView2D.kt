@@ -68,6 +68,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
     private var mapLayers: MutableList<SlamWareBaseView<CreateMapView2D>> = CopyOnWriteArrayList()
     private var mPngMapView: PngMapView? = null //png地图
     private var mMapOutline2D: MapOutline2D? = null //地图轮廓
+    private var mMapCreatingKeyFramView2D: MapCreatingKeyFramView2D? = null //地图建图过程中关键帧id
     private var mExpandAreaView: ExpandAreaView<CreateMapView2D>? = null //地图更新区域
     private var mCreatingUpLaserScanView: UpLaserScanView2D? = null//上激光点云
     private var mUpLaserScanView: UpLaserScanView<CreateMapView2D>? = null//上激光点云
@@ -127,11 +128,14 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
         mMapOutline2D = MapOutline2D(context, mMapView)
         mCreateMapRobotView = RobotViewCreateMap(context, mMapView)
         mExpandAreaView = ExpandAreaView(context, mMapView)
+        mMapCreatingKeyFramView2D = MapCreatingKeyFramView2D(context, mMapView)
 
         //扩展区域
         addMapLayers(mExpandAreaView)
         //地图轮廓
         addMapLayers(mMapOutline2D)
+        //地图建图过程中关键帧
+        addMapLayers(mMapCreatingKeyFramView2D)
         //建图上激光点云
         addMapLayers(mCreatingUpLaserScanView)
         //上激光点云
@@ -442,6 +446,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
         mCreatingUpLaserScanView?.setWorkMode(mode)
         mCreateMapRobotView?.setWorkMode(mode)
         mExpandAreaView?.setWorkMode(mode)
+        mMapCreatingKeyFramView2D?.setWorkMode(mode)
     }
 
     /**
@@ -514,6 +519,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
         // 更新机器人位置（始终需要处理，不参与降采样）
         updateRobotPose(laserData.ranges[0], laserData.ranges[1], laserData.ranges[2])
         mCreatingUpLaserScanView?.updateUpLaserScan(laserData)
+        mMapCreatingKeyFramView2D?.updateData(laserData)
     }
 
     /**
