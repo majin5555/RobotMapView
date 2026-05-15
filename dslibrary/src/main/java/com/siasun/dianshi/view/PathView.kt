@@ -109,12 +109,16 @@ class PathView @SuppressLint("ViewConstructor") constructor(
 //            Log.d("mCleanPathPlanResultBean","绘制清扫路线 ${mCleanPathPlanResultBean.toString()}")
             // 采样绘制直线
             for (i in cleanPath.m_vecLineOfPathPlan.indices) {
-                applyEdgeColor(cleanPath.m_iCleanAreaEdgeType[i])
+                if (cleanPath.m_iCleanAreaEdgeType != null && cleanPath.m_iCleanAreaEdgeType.size > 0) {
+                    applyEdgeColor(cleanPath.m_iCleanAreaEdgeType[i])
+                }
                 drawPPLinePath(canvas, cleanPath.m_vecLineOfPathPlan[i])
             }
             // 采样绘制贝塞尔曲线
             for (i in cleanPath.m_vecBezierOfPathPlan.indices) {
-                applyEdgeColor(cleanPath.m_iCleanAreaEdgeType[i])
+                if (cleanPath.m_iCleanAreaEdgeType != null && cleanPath.m_iCleanAreaEdgeType.size > 0) {
+                    applyEdgeColor(cleanPath.m_iCleanAreaEdgeType[i])
+                }
                 drawPPBezierPath(canvas, cleanPath.m_vecBezierOfPathPlan[i])
             }
         }

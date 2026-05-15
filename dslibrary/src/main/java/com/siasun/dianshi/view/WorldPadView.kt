@@ -989,11 +989,8 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                         endNode?.Draw(mapView.mSrf, canvas, Color.RED, 3, mPaint)
 
                                     } else {
-                                        val color = when (path.m_uExtType.toInt()) {
-                                            1 -> "#FFCC00".toColorInt()
-                                            2 -> "#EA0A0A".toColorInt()
-                                            else -> "#333333".toColorInt()
-                                        }
+                                        val color = applyEdgeColor(path.m_uExtType.toInt())
+
                                         // 未选中的路段，正常绘制
                                         path.Draw(mapView.mSrf, canvas, color, mPaint)
                                         // 绘制路段编号
@@ -1050,11 +1047,8 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                 }
                                 //删除多条和多条属性编辑
                                 WorkMode.MODE_PATH_DELETE_MULTIPLE, WorkMode.MODE_PATH_SEGMENT_MULTIPLE_ATTR_EDIT -> {
-                                    val color = when (path.m_uExtType.toInt()) {
-                                        1 -> "#FFCC00".toColorInt()
-                                        2 -> "#EA0A0A".toColorInt()
-                                        else -> "#333333".toColorInt()
-                                    }
+                                    val color = applyEdgeColor(path.m_uExtType.toInt())
+
                                     // 先正常绘制所有路线
                                     path.Draw(mapView.mSrf, canvas, color, mPaint)
                                     // 绘制路段编号
@@ -1069,11 +1063,8 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                 }
                                 //路段合并
                                 WorkMode.MODE_PATH_MERGE -> {
-                                    val color = when (path.m_uExtType.toInt()) {
-                                        1 -> "#FFCC00".toColorInt()
-                                        2 -> "#EA0A0A".toColorInt()
-                                        else -> "#333333".toColorInt()
-                                    }
+                                    val color = applyEdgeColor(path.m_uExtType.toInt())
+
                                     // 路线合并模式：正常绘制路段，放大显示选中的节点
                                     path.Draw(mapView.mSrf, canvas, color, mPaint)
                                     // 绘制路段编号
@@ -1132,12 +1123,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                                 }
 
                                 else -> {
-                                    val color = when (path.m_uExtType.toInt()) {
-                                        1 -> "#FFCC00".toColorInt()
-                                        2 -> "#EA0A0A".toColorInt()
-                                        else -> "#333333".toColorInt()
-                                    }
-
+                                    val color = applyEdgeColor(path.m_uExtType.toInt())
                                     // 非编辑模式，正常绘制
                                     path.Draw(mapView.mSrf, canvas, color, mPaint)
                                     // 绘制路段编号
@@ -1327,6 +1313,13 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
         return endNodeId
     }
 
+    private fun applyEdgeColor(edgeType: Int): Int {
+        return when (edgeType) {
+            1 -> "#FFC107".toColorInt()
+            2 -> "#E53935".toColorInt()
+            else -> "#1C1C1C".toColorInt()
+        }
+    }
 
     // 节点和路段属性编辑回调接口
     interface OnPathAttributeEditListener {
