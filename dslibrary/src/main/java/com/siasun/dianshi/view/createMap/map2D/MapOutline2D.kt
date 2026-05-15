@@ -74,7 +74,7 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
                 val leftTop = mapView.worldToScreen(subMap.leftTop.x, subMap.leftTop.y)
 
                 // 1. 先应用旋转
-                canvas.rotate(getViewRotation(), leftTop.x, leftTop.y)
+                canvas.rotate(Math.toDegrees(getViewRotation().toDouble()).toFloat(), leftTop.x, leftTop.y)
                 // 2. 后应用缩放（地图缩放）
                 canvas.scale(scale, scale, leftTop.x, leftTop.y)
 
@@ -134,8 +134,8 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
         keyFrames2d[subMapData.id] = subMapData
         mapView.isStartRevSubMaps = true
 
-        Log.e(TAG, "整张 地图的信息  keyFrames2d keyFrames2d.size ${keyFrames2d.size}")
-        Log.w(TAG, "整张 地图的信息  mSrf.mapData ${mapView.mSrf.mapData}")
+//        Log.e(TAG, "整张 地图的信息  keyFrames2d keyFrames2d.size ${keyFrames2d.size}")
+//        Log.w(TAG, "整张 地图的信息  mSrf.mapData ${mapView.mSrf.mapData}")
         postInvalidate()
     }
 
@@ -230,8 +230,8 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
             mapView.mSrf.mapData.width = width
             mapView.mSrf.mapData.height = height
         }
-        Log.d(TAG, "整张地图的宽度 ${mapView.mSrf.mapData.width}")
-        Log.d(TAG, "整张地图的高度 ${mapView.mSrf.mapData.height}")
+//        Log.d(TAG, "整张地图的宽度 ${mapView.mSrf.mapData.width}")
+//        Log.d(TAG, "整张地图的高度 ${mapView.mSrf.mapData.height}")
     }
 
     /**
