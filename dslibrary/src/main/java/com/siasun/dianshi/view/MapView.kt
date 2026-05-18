@@ -1051,6 +1051,12 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     fun setSelectedTaskArea(area: CleanAreaNew?) {
         mTaskPolygonEditView?.setSelectedCleanArea(area)
     }
+   /**
+     * 设置选中的任务清扫区域
+     */
+    fun setCleanAreaHighlight(area: CleanAreaNew?) {
+        mTaskPolygonEditView?.setCleanAreaHighlight(area)
+    }
 
     /**
      * 清除任务清扫区域
