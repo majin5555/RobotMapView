@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.PointF
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.LinearLayout
 import com.siasun.dianshi.databinding.MapViewMapInfoBinding
 import java.lang.ref.WeakReference
@@ -13,8 +14,7 @@ import java.util.Locale
  * 图例 地图名称
  */
 @SuppressLint("ViewConstructor")
-class MapNameView(context: Context, parent: WeakReference<MapView>) :
-    LinearLayout(context) {
+class MapNameView(context: Context, parent: WeakReference<MapView>) : LinearLayout(context) {
     private lateinit var mBinding: MapViewMapInfoBinding
 
 
@@ -80,6 +80,13 @@ class MapNameView(context: Context, parent: WeakReference<MapView>) :
             "${screenPointXText}${String.format(Locale.US, "%.3f", point.x)}"
         mBinding.tvScreenPointY.text =
             "${screenPointYText}${String.format(Locale.US, "%.3f", point.y)}"
+    }
+
+    /**
+     * 设置显示隐藏坐标
+     */
+    fun showCoordinates(boolean: Boolean) {
+        mBinding.shaCoordinates.visibility = if (boolean) View.VISIBLE else View.INVISIBLE
     }
 
     override fun onDetachedFromWindow() {

@@ -893,6 +893,11 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     fun cleanReflector() = mReflectMapView?.cleanReflector()
 
     /**
+     * 设置显示隐藏坐标
+     */
+    fun showCoordinates(boolean: Boolean) = mMapNameView?.showCoordinates(boolean)
+
+    /**
      * 设置AGV 位姿 机器人图标的实时位置
      */
     @SuppressLint("SuspiciousIndentation")
