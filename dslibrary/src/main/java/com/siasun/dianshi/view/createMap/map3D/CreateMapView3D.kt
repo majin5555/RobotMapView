@@ -517,7 +517,6 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
      */
     fun parseLaserData(laserData: laser_t, type: Int) {
 
-        if (laserData.ranges.size <= 6) return // 最少包含机器人位置数据
 
         // 更新机器人位置（始终需要处理，不参与降采样）
         updateRobotPose(
@@ -528,6 +527,9 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
             laserData.ranges[4],
             laserData.ranges[5]
         )
+
+        if (laserData.ranges.size <= 6) return // 最少包含机器人位置数据
+
         //保持居中
         if (currentWorkMode == WorkMode.MODE_CREATE_MAP) {
             keepRobotCentered()
