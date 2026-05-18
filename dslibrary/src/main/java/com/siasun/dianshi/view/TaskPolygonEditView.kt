@@ -104,11 +104,19 @@ class TaskPolygonEditView(context: Context?, val parent: WeakReference<MapView>)
     }
 
     /**
-     * 设置要高亮选中的区域
+     * 设置要高亮选中的区域（带回调）
      */
     fun setSelectedCleanArea(area: CleanAreaNew?) {
         this.selectedArea = area
         onTaskAreaSelectedListener?.onSelectedAreaChanged(area)
+        invalidate()
+    }
+
+    /**
+     * 设置要高亮选中的区域（不回调的）
+     */
+    fun setCleanAreaHighlight(area: CleanAreaNew?) {
+        this.selectedArea = area
         invalidate()
     }
 
@@ -124,10 +132,12 @@ class TaskPolygonEditView(context: Context?, val parent: WeakReference<MapView>)
                 downY = y
                 isMultiTouch = false
             }
+
             MotionEvent.ACTION_POINTER_DOWN -> {
                 // 标记为多指操作（缩放等），取消单指点击判定
                 isMultiTouch = true
             }
+
             MotionEvent.ACTION_UP -> {
                 if (!isMultiTouch) {
                     val dx = Math.abs(x - downX)
@@ -139,7 +149,7 @@ class TaskPolygonEditView(context: Context?, val parent: WeakReference<MapView>)
                 }
             }
         }
-        
+
         // 主动将手势事件传递给MapView处理，以支持原生的底图缩放（Pinch）与平移（Drag）操作
         mapViewRef.get()?.processMapGestures(event)
 
@@ -175,9 +185,7 @@ class TaskPolygonEditView(context: Context?, val parent: WeakReference<MapView>)
         var isInside = false
         var j = points.size - 1
         for (i in points.indices) {
-            if ((points[i].Y > worldY) != (points[j].Y > worldY) &&
-                (worldX < (points[j].X - points[i].X) * (worldY - points[i].Y) / (points[j].Y - points[i].Y) + points[i].X)
-            ) {
+            if ((points[i].Y > worldY) != (points[j].Y > worldY) && (worldX < (points[j].X - points[i].X) * (worldY - points[i].Y) / (points[j].Y - points[i].Y) + points[i].X)) {
                 isInside = !isInside
             }
             j = i
