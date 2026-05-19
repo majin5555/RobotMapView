@@ -45,6 +45,17 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
 
     private val mWorldToPixelMatrix = Matrix()
 
+    // 控制是否绘制
+    private var isDrawingEnabled: Boolean = false
+
+    /**
+     * 设置是否启用绘制
+     */
+    fun setDrawingEnabled(enabled: Boolean) {
+        this.isDrawingEnabled = enabled
+        postInvalidate()
+    }
+
     /**
      * 设置工作模式
      */
@@ -176,17 +187,20 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
                 canvas.drawPoints(pointArray, 0, index, mPaint)
             }
 
-            synchronized(keyFrames3D) {
-                // 6. 批量绘制关键帧位置 (也使用世界坐标)
+            //控制关键帧
+            if (isDrawingEnabled) {
+                synchronized(keyFrames3D) {
+                    // 6. 批量绘制关键帧位置 (也使用世界坐标)
 
-                //drawKeyFrame(canvas)
+                    //drawKeyFrame(canvas)
 
-                // 7. 绘制关键帧角度
-                drawKeyFrameAngles(canvas, totalScale)
+                    // 7. 绘制关键帧角度
+                    drawKeyFrameAngles(canvas, totalScale)
 
-                // 8. 绘制关键帧ID
-                drawKeyFrameIds(canvas, totalMatrix)
+                    // 8. 绘制关键帧ID
+                    drawKeyFrameIds(canvas, totalMatrix)
 
+                }
             }
         }
         canvas.restore()

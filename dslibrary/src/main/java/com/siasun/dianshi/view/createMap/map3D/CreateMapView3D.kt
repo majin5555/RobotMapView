@@ -609,6 +609,12 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     fun parseOptPose(laserData: laser_t) = mMapOutline3D?.parseOptPose(laserData)
 
     /**
+     * 外部接口：是否绘制关键帧
+     */
+    fun showKeyFrames(boolean: Boolean) = mMapOutline3D?.setDrawingEnabled(boolean)
+
+
+    /**
      * 外部接口：添加人工约束节点数据 3D
      */
 
