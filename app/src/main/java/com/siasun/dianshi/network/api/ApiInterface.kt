@@ -1,7 +1,6 @@
 package com.siasun.dianshi.network.api
 
 import VirtualWallNew
-import androidx.room.MapInfo
 import com.siasun.dianshi.network.request.RequestCommonMapId
 import com.pnc.core.network.response.BaseResponse
 import com.siasun.dianshi.bean.CleanAreaNew
@@ -11,6 +10,7 @@ import com.siasun.dianshi.bean.CmsWorkAreasListRoot
 import com.siasun.dianshi.bean.ElevatorRoot
 import com.siasun.dianshi.bean.InitPoseRoot
 import com.siasun.dianshi.bean.MachineStation
+import com.siasun.dianshi.bean.MapInfo
 import com.siasun.dianshi.bean.MergedPoseBean
 import com.siasun.dianshi.bean.RequestSaveArea
 import com.siasun.dianshi.bean.RequestSaveCmsWorkArea

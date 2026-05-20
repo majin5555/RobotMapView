@@ -129,7 +129,7 @@ class CreateMap3DActivity :
         super.initData()
         if (BuildConfig.DEBUG) {
             mBinding.mapView.setWorkMode(WorkMode.MODE_CREATE_MAP)
-//            startMockPosStream()
+           startMockPosStream()
         }
         //下载地图结果
         LiveEventBus.get(KEY_UPDATE_MAP, UpdateMapBean::class.java).observe(this) {

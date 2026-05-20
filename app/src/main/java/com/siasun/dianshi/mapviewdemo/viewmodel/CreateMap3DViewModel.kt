@@ -3,13 +3,13 @@ package com.siasun.dianshi.mapviewdemo.viewmodel
 import android.os.Parcelable
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import androidx.room.MapInfo
 import com.jeremyliao.liveeventbus.LiveEventBus
 import com.pnc.core.network.callback.IApiErrorCallback
 import com.siasun.dianshi.ConstantBase.PAD_MAP_NAME_PNG
 import com.siasun.dianshi.ConstantBase.PAD_MAP_NAME_YAML
 import com.siasun.dianshi.ConstantBase.getFolderPath
 import com.siasun.dianshi.ConstantBase.getMRC05FolderPath
+import com.siasun.dianshi.bean.MapInfo
 import com.siasun.dianshi.bean.RequestSaveMap
 import com.siasun.dianshi.bean.SwitchMapBean
 import com.siasun.dianshi.bean.UpdateMapBean
