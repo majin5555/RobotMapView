@@ -1066,6 +1066,20 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     }
 
     /**
+     * 批量设置要高亮（绿色）显示的任务清扫区域
+     */
+    fun setHighlightTaskAreas(areas: List<CleanAreaNew>) {
+        mTaskPolygonEditView?.setHighlightAreas(areas)
+    }
+
+    /**
+     * 清除批量高亮显示的任务清扫区域
+     */
+    fun clearHighlightTaskAreas() {
+        mTaskPolygonEditView?.clearHighlightAreas()
+    }
+
+    /**
      * 清除区域数据源
      */
     fun cleanAreaStartPoint() = mPolygonEditViewPoint?.cleanAreaStartPoint()

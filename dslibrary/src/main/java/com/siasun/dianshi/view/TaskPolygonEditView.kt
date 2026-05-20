@@ -19,6 +19,7 @@ class TaskPolygonEditView(context: Context?, val parent: WeakReference<MapView>)
     private val list: MutableList<CleanAreaNew> = mutableListOf()
 
     open var selectedArea: CleanAreaNew? = null
+    private val highlightAreas: MutableList<CleanAreaNew> = mutableListOf()
 
     // 回调监听
     private var onTaskAreaSelectedListener: OnTaskAreaSelectedListener? = null
@@ -42,14 +43,21 @@ class TaskPolygonEditView(context: Context?, val parent: WeakReference<MapView>)
     companion object {
         private val areaPaint = Paint().apply {
             style = Paint.Style.STROKE
-            color = Color.BLACK
+            color = Color.GRAY // 默认灰色
             strokeWidth = 2f
+            isAntiAlias = true
+        }
+
+        private val highlightAreaPaint = Paint().apply {
+            style = Paint.Style.STROKE
+            color = Color.GREEN // 批量高亮绿色
+            strokeWidth = 4f
             isAntiAlias = true
         }
 
         private val selectedAreaPaint = Paint().apply {
             style = Paint.Style.STROKE
-            color = Color.GREEN
+            color = Color.RED // 选中红色
             strokeWidth = 4f
             isAntiAlias = true
         }
@@ -99,6 +107,7 @@ class TaskPolygonEditView(context: Context?, val parent: WeakReference<MapView>)
     fun cleanData() {
         synchronized(list) {
             list.clear()
+            highlightAreas.clear()
         }
         postInvalidate()
     }
@@ -117,6 +126,27 @@ class TaskPolygonEditView(context: Context?, val parent: WeakReference<MapView>)
      */
     fun setCleanAreaHighlight(area: CleanAreaNew?) {
         this.selectedArea = area
+        invalidate()
+    }
+
+    /**
+     * 批量设置要高亮（绿色）显示的区域
+     */
+    fun setHighlightAreas(areas: List<CleanAreaNew>) {
+        synchronized(list) {
+            highlightAreas.clear()
+            highlightAreas.addAll(areas)
+        }
+        invalidate()
+    }
+
+    /**
+     * 清除批量高亮显示的区域
+     */
+    fun clearHighlightAreas() {
+        synchronized(list) {
+            highlightAreas.clear()
+        }
         invalidate()
     }
 
@@ -218,12 +248,14 @@ class TaskPolygonEditView(context: Context?, val parent: WeakReference<MapView>)
         canvas.save()
         val areasCopy = synchronized(list) { list.toList() }
         for (area in areasCopy) {
-            drawPolygon(canvas, area, area == selectedArea)
+            val isSelected = area == selectedArea
+            val isHighlighted = highlightAreas.contains(area)
+            drawPolygon(canvas, area, isSelected, isHighlighted)
         }
         canvas.restore()
     }
 
-    private fun drawPolygon(canvas: Canvas, area: CleanAreaNew, isSelected: Boolean) {
+    private fun drawPolygon(canvas: Canvas, area: CleanAreaNew, isSelected: Boolean, isHighlighted: Boolean) {
         val points = area.m_VertexPnt
         if (points.size < 3) return
 
@@ -247,7 +279,13 @@ class TaskPolygonEditView(context: Context?, val parent: WeakReference<MapView>)
         path.close()
 
         canvas.drawPath(path, fillPaint)
-        canvas.drawPath(path, if (isSelected) selectedAreaPaint else areaPaint)
+        
+        val paint = when {
+            isSelected -> selectedAreaPaint
+            isHighlighted -> highlightAreaPaint
+            else -> areaPaint
+        }
+        canvas.drawPath(path, paint)
 
         // 绘制区域名称在最右边点的下边
         getRightmostPointIndex(points)?.let { rightIndex ->
@@ -278,6 +316,7 @@ class TaskPolygonEditView(context: Context?, val parent: WeakReference<MapView>)
         super.onDetachedFromWindow()
         synchronized(list) {
             list.clear()
+            highlightAreas.clear()
         }
         selectedArea = null
         onTaskAreaSelectedListener = null
