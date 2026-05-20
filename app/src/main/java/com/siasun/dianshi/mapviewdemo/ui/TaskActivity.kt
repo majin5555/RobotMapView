@@ -15,6 +15,7 @@ import com.siasun.dianshi.view.TaskPolygonEditView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import androidx.core.view.isVisible
+import com.blankj.utilcode.util.ToastUtils
 import com.chad.library.adapter4.dragswipe.QuickDragAndSwipe
 import com.chad.library.adapter4.dragswipe.listener.DragAndSwipeDataCallback
 import com.siasun.dianshi.AreaType
@@ -28,6 +29,7 @@ import com.siasun.dianshi.dialog.CommonWarnDialog
 import com.siasun.dianshi.dialog.SwitchMapDialog
 import com.siasun.dianshi.framework.ext.onClick
 import com.siasun.dianshi.framework.log.LogUtil
+import com.siasun.dianshi.mapviewdemo.R
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityTaskBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.TaskViewModel
 
@@ -202,8 +204,28 @@ class TaskActivity : BaseMvvmActivity<ActivityTaskBinding, TaskViewModel>() {
                 subTask.areaVertexPnt = (area.m_VertexPnt)
                 mSelectedAreaAdapter.add(subTask)
 
+                // 滚动并高亮左侧列表新增的项
+                // 注意：由于 add 内部 submitList 是异步的，为了保证能滚动到正确位置，
+                // 我们通过延时或者依赖 submitList 完成后的回调来滚动。
+                val insertPos = mSelectedAreaAdapter.getSelectedPosition()
+                mBinding.rvSelected.post {
+                    mBinding.rvSelected.smoothScrollToPosition(insertPos)
+                }
+
                 // 更新地图高亮
-                mBinding.mapView.setCleanAreaHighlight(area)
+                val selectedRegIds =
+                    mSelectedAreaAdapter.items.filter { it.sub_region_layer == mapID && it !== subTask }
+                        .map { it.sub_region_id }.toMutableList()
+                selectedRegIds.add(subTask.sub_region_id)
+                val highlightList = currentAreas.filter { selectedRegIds.contains(it.regId) }
+                mBinding.mapView.setHighlightTaskAreas(highlightList)
+
+                // 将新添加的区域在地图上设为蓝色当前选中状态
+                currentAreas.forEach { area ->
+                    if (area.regId == subTask.sub_region_id) mBinding.mapView.setSelectedTaskArea(
+                        area
+                    )
+                }
             }
         })
 
@@ -220,13 +242,13 @@ class TaskActivity : BaseMvvmActivity<ActivityTaskBinding, TaskViewModel>() {
 
                     // 同步取消地图高亮
                     if (item.sub_region_layer == mapID) {
-                        val hasSameArea =
-                            mSelectedAreaAdapter.items.any { it.sub_region_id == item.sub_region_id && it.sub_region_layer == mapID }
-                        if (!hasSameArea) {
-                            currentAreas.find { it.regId == item.sub_region_id }?.let { area ->
-//                                mBinding.mapView.setCleanAreaCancelHighlight(area)
-                            }
-                        }
+                        val selectedRegIds =
+                            mSelectedAreaAdapter.items.filter { it.sub_region_layer == mapID && it !== item }
+                                .map { it.sub_region_id }
+                        val highlightList =
+                            currentAreas.filter { selectedRegIds.contains(it.regId) }
+                        mBinding.mapView.setHighlightTaskAreas(highlightList)
+                        mBinding.mapView.setSelectedTaskArea(null)
                     }
                 }
             })
@@ -239,13 +261,13 @@ class TaskActivity : BaseMvvmActivity<ActivityTaskBinding, TaskViewModel>() {
 
                     // 同步取消地图高亮
                     if (item.sub_region_layer == mapID) {
-                        val hasSameArea =
-                            mSelectedAreaAdapter.items.any { it.sub_region_id == item.sub_region_id && it.sub_region_layer == mapID }
-                        if (!hasSameArea) {
-                            currentAreas.find { it.regId == item.sub_region_id }?.let { area ->
-//                               mBinding.mapView.setCleanAreaCancelHighlight(area)
-                            }
-                        }
+                        val selectedRegIds =
+                            mSelectedAreaAdapter.items.filter { it.sub_region_layer == mapID && it !== item }
+                                .map { it.sub_region_id }
+                        val highlightList =
+                            currentAreas.filter { selectedRegIds.contains(it.regId) }
+                        mBinding.mapView.setHighlightTaskAreas(highlightList)
+                        mBinding.mapView.setSelectedTaskArea(null)
                     }
                 }.create().show()
         }
@@ -281,7 +303,7 @@ class TaskActivity : BaseMvvmActivity<ActivityTaskBinding, TaskViewModel>() {
             } else {
                 // 如果是当前地图，直接高亮显示
                 currentAreas.forEach { area ->
-                    if (area.regId == areaRegId) mBinding.mapView.setCleanAreaHighlight(area)
+                    if (area.regId == areaRegId) mBinding.mapView.setSelectedTaskArea(area)
                 }
 
             }
@@ -311,8 +333,7 @@ class TaskActivity : BaseMvvmActivity<ActivityTaskBinding, TaskViewModel>() {
      * 获取当前地图下的区域
      */
     fun setAreaList(highlightAreaId: Int? = null) {
-        val selectedRegIds = mSelectedAreaAdapter.items
-            .filter { it.sub_region_layer == mapID }
+        val selectedRegIds = mSelectedAreaAdapter.items.filter { it.sub_region_layer == mapID }
             .map { it.sub_region_id }
 
         mViewModel.getAreaList(mapID) { areas ->
@@ -325,17 +346,21 @@ class TaskActivity : BaseMvvmActivity<ActivityTaskBinding, TaskViewModel>() {
                 currentAreas.clear()
                 currentAreas.addAll(filteredAreas)
 
-                //排序
                 if (filteredAreas.isNotEmpty()) {
                     lifecycleScope.launch(Dispatchers.Main) {
                         mBinding.mapView.setTaskAreaData(filteredAreas)
 
-                        // 批量高亮显示已选中的区域
-                        filteredAreas.forEach { area ->
-                            if (selectedRegIds.contains(area.regId) || area.regId == highlightAreaId) {
-                                mBinding.mapView.setCleanAreaHighlight(area)
-                            }
+                        // 批量高亮显示已选中的区域 (绿色)
+                        val highlightList =
+                            filteredAreas.filter { selectedRegIds.contains(it.regId) }
+                        mBinding.mapView.setHighlightTaskAreas(highlightList)
+
+                        // 高亮当前选中的区域 (蓝色)
+                        var selectedArea: CleanAreaNew? = null
+                        if (highlightAreaId != null) {
+                            selectedArea = filteredAreas.find { it.regId == highlightAreaId }
                         }
+                        mBinding.mapView.setSelectedTaskArea(selectedArea)
                     }
                 } else {
                     lifecycleScope.launch(Dispatchers.Main) {

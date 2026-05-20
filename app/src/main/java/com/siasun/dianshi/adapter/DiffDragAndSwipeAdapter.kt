@@ -5,6 +5,7 @@ import android.content.Context
 import android.os.Build
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -33,41 +34,29 @@ class DiffDragAndSwipeAdapter() :
     private var onItemSettingClickListener: ((subTask: Sub_Task, position: Int) -> Unit)? = null
     private var onItemClickListener: ((item: Sub_Task, position: Int) -> Unit)? = null
 
-    private var selectedPosition = 0
-    private var scrollListener: RecyclerView.OnScrollListener? = null
+    private var selectedPosition = -1
+    // private var scrollListener: RecyclerView.OnScrollListener? = null
+
+    fun getSelectedPosition(): Int {
+        return selectedPosition
+    }
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         super.onAttachedToRecyclerView(recyclerView)
-        scrollListener = object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-                val layoutManager = recyclerView.layoutManager as? LinearLayoutManager
-                if (layoutManager != null) {
-                    val firstVisiblePosition = layoutManager.findFirstVisibleItemPosition()
-                    if (firstVisiblePosition != RecyclerView.NO_POSITION && firstVisiblePosition != selectedPosition) {
-                        val previousPosition = selectedPosition
-                        selectedPosition = firstVisiblePosition
-                        // 使用 post 避免在滚动计算布局期间调用 notifyItemChanged
-                        recyclerView.post {
-                            notifyItemChanged(previousPosition)
-                            notifyItemChanged(selectedPosition)
-                        }
-                    }
-                }
-            }
-        }
-        recyclerView.addOnScrollListener(scrollListener!!)
+        // 移除了根据可视区域滚动自动选中的逻辑
     }
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         super.onDetachedFromRecyclerView(recyclerView)
-        scrollListener?.let { recyclerView.removeOnScrollListener(it) }
-        scrollListener = null
     }
 
-    /**
-     * 设置所有清洁模式
-     */
+    fun setSelectedPosition(position: Int) {
+        if (position == selectedPosition) return
+        val previousPosition = selectedPosition
+        selectedPosition = position
+        notifyItemChanged(previousPosition)
+        notifyItemChanged(selectedPosition)
+    }
     @SuppressLint("NotifyDataSetChanged")
     fun setSweepingModeList(data: MutableList<SweepingModeBean>) {
         sweepingModeBeanData.addAll(data)
@@ -102,6 +91,8 @@ class DiffDragAndSwipeAdapter() :
             }
         }
         submitList(currentList)
+        // 拖拽后，使高亮状态跟随拖拽的 item
+        setSelectedPosition(toPosition)
     }
 
     override fun add(data: Sub_Task) {
@@ -116,8 +107,11 @@ class DiffDragAndSwipeAdapter() :
         val previousPosition = selectedPosition
         selectedPosition = insertPos
 
-        if (previousPosition in 0 until currentSize) {
-            notifyItemChanged(previousPosition)
+        recyclerView.post {
+            if (previousPosition in 0 until currentSize) {
+                notifyItemChanged(previousPosition)
+            }
+            notifyItemChanged(selectedPosition)
         }
     }
 
@@ -148,9 +142,9 @@ class DiffDragAndSwipeAdapter() :
         }
 
         //区域设置
-//        holder.getView<TextView>(R.id.btn_area_setting).onClick {
-//            onItemSettingClickListener?.invoke(item, position)
-//        }
+        holder.getView<TextView>(R.id.btn_area_setting).onClick {
+            onItemSettingClickListener?.invoke(item, position)
+        }
         //删除区域
         holder.getView<ImageView>(R.id.iv_delete).onClick {
             onItemDeleteClickListener?.invoke(item)

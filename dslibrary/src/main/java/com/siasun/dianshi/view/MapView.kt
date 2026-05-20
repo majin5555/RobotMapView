@@ -1046,37 +1046,25 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     fun getTaskAreaData(): List<CleanAreaNew> = mTaskPolygonEditView?.getData() ?: mutableListOf()
 
     /**
-     * 设置选中的任务清扫区域
+     * 设置当前选中的任务清扫区域（蓝色高亮）
+     * @param notify 是否触发选中回调
      */
-    fun setSelectedTaskArea(area: CleanAreaNew?) {
-        mTaskPolygonEditView?.setSelectedCleanArea(area)
-    }
-   /**
-     * 设置选中的任务清扫区域
-     */
-    fun setCleanAreaHighlight(area: CleanAreaNew?) {
-        mTaskPolygonEditView?.setCleanAreaHighlight(area)
+    fun setSelectedTaskArea(area: CleanAreaNew?, notify: Boolean = false) {
+        mTaskPolygonEditView?.setSelectedCleanArea(area, notify)
     }
 
     /**
-     * 清除任务清扫区域
+     * 清除任务清扫区域数据
      */
     fun cleanTaskArea() {
         mTaskPolygonEditView?.cleanData()
     }
 
     /**
-     * 批量设置要高亮（绿色）显示的任务清扫区域
+     * 批量设置要高亮（绿色）显示的任务清扫区域，传null或空列表则清除高亮
      */
-    fun setHighlightTaskAreas(areas: List<CleanAreaNew>) {
+    fun setHighlightTaskAreas(areas: List<CleanAreaNew>?) {
         mTaskPolygonEditView?.setHighlightAreas(areas)
-    }
-
-    /**
-     * 清除批量高亮显示的任务清扫区域
-     */
-    fun clearHighlightTaskAreas() {
-        mTaskPolygonEditView?.clearHighlightAreas()
     }
 
     /**

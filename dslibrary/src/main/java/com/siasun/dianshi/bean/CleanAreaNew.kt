@@ -38,6 +38,9 @@ class CleanAreaNew : LiveEvent {
     //当前区域的贴边路线贴边类型 0：不需要  1：普通贴边  2 极限贴边
     var m_iCleanAreaEdgeType = 0
 
+    // UI展示状态
+    var isSelected: Boolean = false // 当前选中状态（蓝色）
+    var isHighlighted: Boolean = false // 批量选中状态（绿色）
 
     override fun toString(): String {
         return "CleanArea{sub_name='$sub_name', regId=$regId, layer_id=$layer_id, endPoint=$endPoint, m_VertexPnt=$m_VertexPnt, areaStartPoint=$areaStartPoint, areaPathType=$areaPathType, pathPlanInfo=$pathPlanInfo, cleanShape=$cleanShape, routeType=$routeType, areaType=$areaType}"

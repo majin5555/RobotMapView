@@ -3,6 +3,7 @@ package com.siasun.dianshi.view
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.*
+import android.util.Log
 import android.view.MotionEvent
 import com.siasun.dianshi.bean.CleanAreaNew
 import com.siasun.dianshi.bean.PointNew
@@ -17,9 +18,6 @@ class TaskPolygonEditView(context: Context?, val parent: WeakReference<MapView>)
 
     private val mapViewRef: WeakReference<MapView> = parent
     private val list: MutableList<CleanAreaNew> = mutableListOf()
-
-    open var selectedArea: CleanAreaNew? = null
-    private val highlightAreas: MutableList<CleanAreaNew> = mutableListOf()
 
     // 回调监听
     private var onTaskAreaSelectedListener: OnTaskAreaSelectedListener? = null
@@ -40,31 +38,44 @@ class TaskPolygonEditView(context: Context?, val parent: WeakReference<MapView>)
     private val dstPoints = FloatArray(6)
     private var floatBuffer = FloatArray(100)
 
+    // 文本缓存优化
+    private val textBoundsCache = mutableMapOf<String, Rect>()
+    private val rightmostIndexCache = mutableMapOf<Int, Int>()
+
     companion object {
-        private val areaPaint = Paint().apply {
+        private val unselectedAreaPaint = Paint().apply {
             style = Paint.Style.STROKE
             color = Color.GRAY // 默认灰色
             strokeWidth = 2f
             isAntiAlias = true
         }
+        private val unselectedFillPaint = Paint().apply {
+            style = Paint.Style.FILL
+            color = Color.argb(50, 128, 128, 128) // 灰色半透明
+            isAntiAlias = true
+        }
 
         private val highlightAreaPaint = Paint().apply {
             style = Paint.Style.STROKE
-            color = Color.GREEN // 批量高亮绿色
+            color = Color.GREEN // 已经区域绿色
             strokeWidth = 4f
+            isAntiAlias = true
+        }
+        private val highlightFillPaint = Paint().apply {
+            style = Paint.Style.FILL
+            color = Color.argb(50, 0, 255, 0) // 绿色半透明
             isAntiAlias = true
         }
 
         private val selectedAreaPaint = Paint().apply {
             style = Paint.Style.STROKE
-            color = Color.RED // 选中红色
+            color = Color.BLUE // 当前已选蓝色
             strokeWidth = 4f
             isAntiAlias = true
         }
-
-        private val fillPaint = Paint().apply {
+        private val selectedFillPaint = Paint().apply {
             style = Paint.Style.FILL
-            color = Color.argb(50, 0, 0, 255)
+            color = Color.argb(50, 0, 0, 255) // 蓝色半透明
             isAntiAlias = true
         }
 
@@ -88,6 +99,14 @@ class TaskPolygonEditView(context: Context?, val parent: WeakReference<MapView>)
         synchronized(list) {
             this.list.clear()
             this.list.addAll(data)
+            
+            // 预先计算最右侧点的索引以避免在onDraw中循环
+            rightmostIndexCache.clear()
+            for (area in data) {
+                getRightmostPointIndex(area.m_VertexPnt)?.let {
+                    rightmostIndexCache[area.regId] = it
+                }
+            }
         }
         invalidate()
     }
@@ -107,45 +126,37 @@ class TaskPolygonEditView(context: Context?, val parent: WeakReference<MapView>)
     fun cleanData() {
         synchronized(list) {
             list.clear()
-            highlightAreas.clear()
+            rightmostIndexCache.clear()
         }
         postInvalidate()
     }
 
     /**
-     * 设置要高亮选中的区域（带回调）
+     * 设置当前选中的区域（蓝色），可以选择是否触发回调
      */
-    fun setSelectedCleanArea(area: CleanAreaNew?) {
-        this.selectedArea = area
-        onTaskAreaSelectedListener?.onSelectedAreaChanged(area)
-        invalidate()
-    }
-
-    /**
-     * 设置要高亮选中的区域（不回调的）
-     */
-    fun setCleanAreaHighlight(area: CleanAreaNew?) {
-        this.selectedArea = area
-        invalidate()
-    }
-
-    /**
-     * 批量设置要高亮（绿色）显示的区域
-     */
-    fun setHighlightAreas(areas: List<CleanAreaNew>) {
+    fun setSelectedCleanArea(area: CleanAreaNew?, notify: Boolean = false) {
         synchronized(list) {
-            highlightAreas.clear()
-            highlightAreas.addAll(areas)
+            list.forEach { it.isSelected = (it.regId == area?.regId) }
+        }
+        if (notify) {
+            onTaskAreaSelectedListener?.onSelectedAreaChanged(area)
         }
         invalidate()
     }
 
     /**
-     * 清除批量高亮显示的区域
+     * 批量设置要高亮（绿色）显示的区域，传null或空列表则清除高亮
      */
-    fun clearHighlightAreas() {
-        synchronized(list) {
-            highlightAreas.clear()
+    fun setHighlightAreas(areas: List<CleanAreaNew>?) {
+        if (areas == null) {
+            synchronized(list) {
+                list.forEach { it.isHighlighted = false }
+            }
+        } else {
+            val highlightIds = areas.map { it.regId }
+            synchronized(list) {
+                list.forEach { it.isHighlighted = highlightIds.contains(it.regId) }
+            }
         }
         invalidate()
     }
@@ -204,7 +215,7 @@ class TaskPolygonEditView(context: Context?, val parent: WeakReference<MapView>)
         }
 
         if (clickedArea != null) {
-            setSelectedCleanArea(clickedArea)
+            setSelectedCleanArea(clickedArea, true)
         }
     }
 
@@ -246,11 +257,11 @@ class TaskPolygonEditView(context: Context?, val parent: WeakReference<MapView>)
         updateWorldToScreenMatrix()
 
         canvas.save()
-        val areasCopy = synchronized(list) { list.toList() }
-        for (area in areasCopy) {
-            val isSelected = area == selectedArea
-            val isHighlighted = highlightAreas.contains(area)
-            drawPolygon(canvas, area, isSelected, isHighlighted)
+        synchronized(list) {
+            for (i in list.indices) {
+                val area = list[i]
+                drawPolygon(canvas, area, area.isSelected, area.isHighlighted)
+            }
         }
         canvas.restore()
     }
@@ -278,23 +289,43 @@ class TaskPolygonEditView(context: Context?, val parent: WeakReference<MapView>)
         }
         path.close()
 
-        canvas.drawPath(path, fillPaint)
+        val fillPaintToUse = when {
+            isSelected -> selectedFillPaint
+            isHighlighted -> highlightFillPaint
+            else -> unselectedFillPaint
+        }
+        canvas.drawPath(path, fillPaintToUse)
         
-        val paint = when {
+        val paintToUse = when {
             isSelected -> selectedAreaPaint
             isHighlighted -> highlightAreaPaint
-            else -> areaPaint
+            else -> unselectedAreaPaint
         }
-        canvas.drawPath(path, paint)
+        canvas.drawPath(path, paintToUse)
 
         // 绘制区域名称在最右边点的下边
-        getRightmostPointIndex(points)?.let { rightIndex ->
+        var rightIndex = rightmostIndexCache[area.regId]
+        if (rightIndex == null) {
+            rightIndex = getRightmostPointIndex(points)
+            if (rightIndex != null) {
+                rightmostIndexCache[area.regId] = rightIndex
+            }
+        }
+        
+        if (rightIndex != null && rightIndex < points.size) {
             val screenX = floatBuffer[rightIndex * 2]
             val screenY = floatBuffer[rightIndex * 2 + 1]
 
-            textPaint.getTextBounds(area.sub_name, 0, area.sub_name.length, textRect)
-            val textX = screenX - textRect.width() / 2f
-            val textY = screenY + textRect.height() + 10f // 10像素间距
+            // 缓存文本边界
+            var bounds = textBoundsCache[area.sub_name]
+            if (bounds == null) {
+                bounds = Rect()
+                textPaint.getTextBounds(area.sub_name, 0, area.sub_name.length, bounds)
+                textBoundsCache[area.sub_name] = bounds
+            }
+            
+            val textX = screenX - bounds.width() / 2f
+            val textY = screenY + bounds.height() + 10f // 10像素间距
             canvas.drawText(area.sub_name, textX, textY, textPaint)
         }
     }
@@ -316,9 +347,9 @@ class TaskPolygonEditView(context: Context?, val parent: WeakReference<MapView>)
         super.onDetachedFromWindow()
         synchronized(list) {
             list.clear()
-            highlightAreas.clear()
+            rightmostIndexCache.clear()
+            textBoundsCache.clear()
         }
-        selectedArea = null
         onTaskAreaSelectedListener = null
     }
 
