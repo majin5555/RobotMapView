@@ -1,6 +1,8 @@
 package com.siasun.dianshi.bean
 
+import android.os.Parcelable
 import com.jeremyliao.liveeventbus.core.LiveEvent
+import com.siasun.dianshi.bean.task.Task
 
 
 /**
@@ -225,7 +227,6 @@ data class BlackBoxBean(val blackbox_path: String) : LiveEvent
 //
 
 
-
 /**
  * 多地图切换地图LCM回执
  */
@@ -260,3 +261,26 @@ data class DateTimeBean(var current_time: String, var current_date: String, var 
     LiveEvent
 
 data class DispatchingSystemBean(var name: String, var type: String, val id: Int)
+
+
+/**
+ * 新建、编辑 任务传参数实体
+ */
+data class IntentParamTask(
+    var createTask: Boolean,
+    val task: Task = Task(),
+) : LiveEvent
+
+
+data class SweepingModeBean(
+    var id: Int = 1,//清扫模式ID
+    var modeName: String = "",
+    var sprinklerQuantity: Int = 0,//撒水量
+    var bodySpeed: Float = 0.0f,//车速
+    var brushDownHeight: Int = 0,//刷盘下降高度
+    var mode: Int = 1, //清扫模式
+    var detergent: Int = 0,//清洗剂
+)
+
+data class SweepingModeListBean(var data: MutableList<SweepingModeBean> = mutableListOf())
+

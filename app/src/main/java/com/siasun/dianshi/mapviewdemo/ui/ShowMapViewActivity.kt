@@ -17,13 +17,13 @@ import com.siasun.dianshi.ConstantBase.PAD_WORLD_NAME
 import com.siasun.dianshi.ConstantBase.getFolderPath
 import com.siasun.dianshi.base.BaseMvvmActivity
 import com.siasun.dianshi.bean.CleanAreaNew
-import com.siasun.dianshi.dialog.CommonWarnDialog
 import com.siasun.dianshi.bean.CmsStation
 import com.siasun.dianshi.bean.DragLocationBean
 import com.siasun.dianshi.bean.ElevatorPoint
 import com.siasun.dianshi.bean.Gate
 import com.siasun.dianshi.bean.GatePointBean
 import com.siasun.dianshi.bean.Inspection
+import com.siasun.dianshi.bean.IntentParamTask
 import com.siasun.dianshi.bean.PassPoints
 import com.siasun.dianshi.bean.PlanPathResult
 import com.siasun.dianshi.bean.PositingArea
@@ -38,6 +38,7 @@ import com.siasun.dianshi.bean.WaitPointBean
 import com.siasun.dianshi.bean.WorkAreasNew
 import com.siasun.dianshi.bean.pp.world.PathIndex
 import com.siasun.dianshi.controller.MainController
+import com.siasun.dianshi.dialog.CommonWarnDialog
 import com.siasun.dianshi.framework.ext.onClick
 import com.siasun.dianshi.framework.ext.toBean
 import com.siasun.dianshi.framework.ext.toJson
@@ -78,10 +79,10 @@ import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.jetbrains.anko.startActivityForResult
 import org.jetbrains.anko.toast
 import java.io.File
 import java.util.UUID
-import kotlin.collections.get
 import kotlin.random.Random
 
 /**
@@ -122,6 +123,17 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 
         mBinding.mapView.laserDrawingEnabled(false)
 
+
+        //新建
+        mBinding.btnCreate.onClick {
+            startActivityForResult<TaskActivity>(
+                10002, "key_jump_create_task" to IntentParamTask(
+                    true,
+
+                    )
+            )
+        }
+
 //        initMergedPose()
 //        initStation()
 //        iniVirtualWall()
@@ -129,7 +141,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initPostingArea()
 //        initRemoveNoise()
 //        initPostingArea()
-        initCleanArea()
+//        initCleanArea()
 //        initElevator()
 //        initPose()
 //        initMachineStation()

@@ -16,7 +16,9 @@ import com.siasun.dianshi.bean.RequestSaveArea
 import com.siasun.dianshi.bean.RequestSaveCmsWorkArea
 import com.siasun.dianshi.bean.RequestSaveMap
 import com.siasun.dianshi.bean.SpArea
+import com.siasun.dianshi.bean.SweepingModeListBean
 import com.siasun.dianshi.bean.SwitchMapBean
+import com.siasun.dianshi.bean.task.Task
 import com.siasun.dianshi.mapviewdemo.viewmodel.CreateMap3DViewModel
 import com.siasun.dianshi.network.request.RequestGetSpecialArea
 import com.siasun.dianshi.network.request.RequestSaveSpecialArea
@@ -246,6 +248,21 @@ interface ApiInterface {
      */
     @POST("/save_map")
     suspend fun upLoadMapInfo(@Body mapInfo: RequestSaveMap): BaseResponse<MutableList<MapInfo>>
+    /**
+     * 获取地图列表
+     */
+    @POST("/get_map")
+    suspend fun getMapListData(): BaseResponse<MutableList<MapInfo>>
+    /**
+     * 获取所有任务
+     */
+    @POST("/get_pad_jobs_list")
+    suspend fun getPadJobsList(): BaseResponse<MutableList<Task>>
 
+    /**
+     * 获取清扫模式
+     */
+    @POST("/get_sweeping_mode")
+    suspend fun getSweepingMode(): BaseResponse<SweepingModeListBean>?
 
 }

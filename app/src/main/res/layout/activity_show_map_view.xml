@@ -39,6 +39,13 @@
 
             <!-- 路线编辑控件 -->
             <Button
+                android:id="@+id/btn_create"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="新建任务" />
+
+            <!-- 路线编辑控件 -->
+            <Button
                 android:id="@+id/btn_edit_path_mangy_config"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

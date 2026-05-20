@@ -7,12 +7,10 @@ import android.os.Build
 import android.view.LayoutInflater
 import android.view.View
 import android.view.Window
-import android.widget.Button
 import android.widget.TextView
 import androidx.annotation.RequiresApi
-import com.hjq.shape.view.ShapeTextView
+import androidx.appcompat.widget.AppCompatButton
 import com.siasun.dianshi.mapviewdemo.R
-import kotlin.let
 
 
 /**
@@ -24,8 +22,8 @@ class CommonWarnDialog(context: Context?, themeResId: Int) : Dialog(context!!, t
         private var dialog: CommonWarnDialog
         private lateinit var tvTitle: TextView
         private lateinit var tvMsg: TextView
-        private lateinit var btnSure: Button
-        private lateinit var btnClo: Button
+        private lateinit var btnSure: AppCompatButton
+        private lateinit var btnClo: AppCompatButton
         private var call: CommonWarnDialogListener? = null
 
         init {
@@ -53,7 +51,7 @@ class CommonWarnDialog(context: Context?, themeResId: Int) : Dialog(context!!, t
             dialog.setCanceledOnTouchOutside(false)
             val window = dialog.window
             val attributes = window!!.attributes
-            attributes?.width = (context.display!!.width * 0.6).toInt()
+            attributes?.width = (context.display!!.width * 0.4).toInt()
 
             window.attributes = attributes
             return dialog
@@ -96,8 +94,9 @@ class CommonWarnDialog(context: Context?, themeResId: Int) : Dialog(context!!, t
         /**
          * 取消按钮文字
          */
-        fun setDiscard(discard: Int) {
+        fun setDiscard(discard: Int): Builder {
             btnClo.text = context.getString(discard)
+            return this
         }
 
         /**
@@ -111,8 +110,9 @@ class CommonWarnDialog(context: Context?, themeResId: Int) : Dialog(context!!, t
         /**
          * 确定按钮文字
          */
-        fun setConfirm(confirm: Int) {
+        fun setConfirm(confirm: Int): Builder {
             btnSure.text = context.getString(confirm)
+            return this
         }
 
         /**
@@ -160,7 +160,7 @@ class CommonWarnDialog(context: Context?, themeResId: Int) : Dialog(context!!, t
             }
         }
 
-        interface CommonWarnDialogListener {
+        fun interface CommonWarnDialogListener {
             fun confirm()
             fun discard() {}
         }

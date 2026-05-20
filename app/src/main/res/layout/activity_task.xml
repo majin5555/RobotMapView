@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+
+    <!-- 地图页面-->
+    <com.siasun.dianshi.view.MapView
+        android:id="@+id/map_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:shape_radius="20dp"
+        app:shape_solidColor="@color/white"
+        app:showLegendView="false"
+        app:showMapNameView="true"
+        app:showTaskArea="true" />
+
+    <!--控制已选区域列表显示的图标-->
+    <com.hjq.shape.view.ShapeImageView
+        android:id="@+id/iv_toggle_list"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:padding="10dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:shape_radius="28dp"
+        app:shape_solidColor="@color/white" />
+
+    <com.hjq.shape.view.ShapeButton
+        android:id="@+id/btn_map"
+        android:layout_width="180dp"
+        android:layout_height="60dp"
+        android:layout_margin="16dp"
+        android:background="@color/app_bg"
+        android:gravity="center"
+        android:text="切换地图"
+        android:textColor="@color/white"
+        android:textSize="22sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/btn_mode"
+        app:shape_radius="8dp"
+        app:shape_solidColor="@color/app_bg"
+        app:shape_solidPressedColor="@color/white" />
+
+    <com.hjq.shape.view.ShapeButton
+        android:id="@+id/btn_mode"
+        android:layout_width="180dp"
+        android:layout_height="60dp"
+        android:layout_margin="16dp"
+        android:background="@color/app_bg"
+        android:gravity="center"
+        android:text="修改模式"
+        android:textColor="@color/white"
+        android:textSize="22sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/btn_save_task"
+        app:shape_radius="8dp"
+        app:shape_solidColor="@color/app_bg"
+        app:shape_solidPressedColor="@color/white" />
+
+    <!--已选区域-->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_selected"
+        android:layout_width="400dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:fadeScrollbars="false"
+        android:paddingLeft="10dp"
+        android:paddingTop="5dp"
+        android:paddingRight="10dp"
+        android:paddingBottom="5dp"
+        android:scrollbars="vertical"
+        app:layout_constraintBottom_toTopOf="@+id/btn_save_task"
+        app:layout_constraintEnd_toEndOf="@+id/map_view"
+        app:layout_constraintTop_toBottomOf="@+id/iv_toggle_list" />
+
+    <!--确认-->
+    <com.hjq.shape.view.ShapeButton
+        android:id="@+id/btn_save_task"
+        android:layout_width="160dp"
+        android:layout_height="60dp"
+        android:layout_margin="16dp"
+        android:gravity="center"
+        android:padding="10dp"
+        android:text="保存"
+        android:textColor="@color/white"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:shape_radius="8dp"
+        app:shape_solidColor="@color/app_bg"
+        app:shape_solidPressedColor="@color/white" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
