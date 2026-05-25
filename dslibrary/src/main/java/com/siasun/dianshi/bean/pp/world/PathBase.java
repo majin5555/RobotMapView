@@ -129,9 +129,10 @@ public class PathBase {
 
                 for (int i = 0; i < m_uCount; i++) {
                     m_pPathIdx[i] = new PathIndex();
-//                Log.d("readWorld", "路径索引数组，存储所有路径的索引指针 m_pPathIdx[" + i + "] " + m_pPathIdx[i]);
                 }
 
+                short actualCount = 0;
+                try {
                     for (short i = 0; i < this.m_uCount; i++) {
                         Path pPath = null;
                         short uType;
@@ -142,7 +143,6 @@ public class PathBase {
                         }
 
                         uType = (short) ((ch2 << 8) + (ch1 << 0));
-//                        Log.e("readWorld", "uType == " + uType);
                         switch (uType) {
                             case 0:
                                 pPath = new LinePath();
@@ -150,13 +150,21 @@ public class PathBase {
                             case 10:
                                 pPath = new GenericPath();
                                 break;
+                            default:
+                                throw new IOException("Unsupported path type: " + uType);
                         }
                         // 确保路径对象创建成功
-                        pPath.m_pNodeBase = m_MyNode;
-                        pPath.Create(dis);
-                        pPath.m_uType = uType;
-                        m_pPathIdx[i].m_ptr = pPath;
+                        if (pPath != null) {
+                            pPath.m_pNodeBase = m_MyNode;
+                            pPath.Create(dis);
+                            pPath.m_uType = uType;
+                            m_pPathIdx[i].m_ptr = pPath;
+                            actualCount++;
+                        }
                     }
+                } finally {
+                    this.m_uCount = actualCount;
+                }
             } else {
                 this.m_uCount = 0;
                 this.m_pPathIdx = null;

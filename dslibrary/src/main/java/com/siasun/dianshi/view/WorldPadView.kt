@@ -360,12 +360,14 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
         // 遍历所有路线，检查是否在框选区域内
         if (cLayer.m_PathBase != null && cLayer.m_PathBase.m_pPathIdx != null) {
             for (i in 0 until cLayer.m_PathBase.m_uCount) {
-                val path = cLayer.m_PathBase.m_pPathIdx[i].m_ptr
-                if (isPathInBox(path, minX, minY, maxX, maxY)) {
-                    if (currentWorkMode == WorkMode.MODE_PATH_DELETE_MULTIPLE) {
-                        selectedPathsForDeletion.add(path)
-                    } else if (currentWorkMode == WorkMode.MODE_PATH_SEGMENT_MULTIPLE_ATTR_EDIT) {
-                        selectedPathsForEdit.add(path)
+                if (cLayer.m_PathBase.m_pPathIdx[i] != null && cLayer.m_PathBase.m_pPathIdx[i].m_ptr != null) {
+                    val path = cLayer.m_PathBase.m_pPathIdx[i].m_ptr
+                    if (isPathInBox(path, minX, minY, maxX, maxY)) {
+                        if (currentWorkMode == WorkMode.MODE_PATH_DELETE_MULTIPLE) {
+                            selectedPathsForDeletion.add(path)
+                        } else if (currentWorkMode == WorkMode.MODE_PATH_SEGMENT_MULTIPLE_ATTR_EDIT) {
+                            selectedPathsForEdit.add(path)
+                        }
                     }
                 }
             }
@@ -564,9 +566,10 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
 
         if (cLayer.m_PathBase != null && cLayer.m_PathBase.m_pPathIdx != null) {
             for (i in 0 until cLayer.m_PathBase.m_uCount) {
-                val path = cLayer.m_PathBase.m_pPathIdx[i].m_ptr
-                val startNode = path.GetStartNode()
-                val endNode = path.GetEndNode()
+                if (cLayer.m_PathBase.m_pPathIdx[i] != null && cLayer.m_PathBase.m_pPathIdx[i].m_ptr != null) {
+                    val path = cLayer.m_PathBase.m_pPathIdx[i].m_ptr
+                    val startNode = path.GetStartNode()
+                    val endNode = path.GetEndNode()
 
                 // 检查路段点击
                 if (startNode != null && endNode != null) {
@@ -730,6 +733,7 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                         }
                     }
                 }
+                } // added closing brace for if
             }
         }
 
