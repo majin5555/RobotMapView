@@ -269,7 +269,8 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
     fun addKeyFrames(laserData: laser_t, keyPoints: MutableList<KeyframePoint>?) {
         val mapView = parent.get() ?: return
         val rad0 = laserData.rad0.toInt()
-        if (rad0 != -1) {
+        // rad0等于0的时候添加，其余的时候隔3帧添加(即0, 4, 8...)
+        if (rad0 != -1 && (rad0 == 0 || rad0 % 4 == 0)) {
             if (!keyFrames3D.containsKey(rad0)) {
 //            Log.i(TAG, "关键帧 ID $rad0")
 //            Log.i(TAG, "关键帧 x ${robotPose[0]}")
