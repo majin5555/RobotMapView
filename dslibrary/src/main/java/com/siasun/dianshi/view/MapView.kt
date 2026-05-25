@@ -7,6 +7,7 @@ import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.graphics.PointF
 import android.graphics.RectF
+import android.graphics.drawable.Drawable
 import android.os.Build
 import android.util.AttributeSet
 import android.view.MotionEvent
@@ -46,6 +47,7 @@ import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.CopyOnWriteArrayList
 import androidx.core.content.withStyledAttributes
+import com.bumptech.glide.request.target.CustomTarget
 import com.hjq.shape.layout.ShapeFrameLayout
 import com.siasun.dianshi.bean.CrossDoor
 import com.siasun.dianshi.bean.Inspection
@@ -54,7 +56,6 @@ import com.siasun.dianshi.bean.ReflectorMapBean
 import com.siasun.dianshi.bean.SameSwitchBean
 import com.siasun.dianshi.view.createMap.MapViewInterface
 import java.util.Locale
-import kotlin.math.atan2
 
 /**
  * 地图画布
@@ -113,6 +114,9 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     var mDragPositioningView: DragPositioningView? = null //拖拽定位view
     var mReflectMapView: ReflectMapView? = null //反光板地图view
     var mInspectionView: InspectionView? = null //巡检点
+
+    // 在现有成员变量声明后面添加
+    private var currentBitmapTarget: CustomTarget<Bitmap>? = null
 
     // TEACH模式下是否跟随车体，保持可见
     private var followRobotInTeach: Boolean = false
@@ -557,6 +561,9 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
+        // 取消 Glide 加载
+        currentBitmapTarget?.let { Glide.with(this).clear(it) }
+        currentBitmapTarget = null
 
         // 清理所有资源，避免内存泄漏
         mapLayers.clear()
@@ -699,20 +706,47 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      * yamlPath yaml文件路径
      */
     fun loadMap(pngPath: String, yamlPath: String) {
+        currentBitmapTarget?.let { Glide.with(this).clear(it) }
+        currentBitmapTarget = null
+
+        // 释放旧 Bitmap
+        mPngMapView?.release()
+
         val file = File(pngPath)
+
+//        Glide.with(this).asBitmap().load(file).skipMemoryCache(true)
+//            .diskCacheStrategy(DiskCacheStrategy.NONE).into(object : SimpleTarget<Bitmap?>() {
+//                override fun onResourceReady(
+//                    resource: Bitmap, transition: Transition<in Bitmap?>?
+//                ) {
+//                    val mPngMapData = YamlNew().loadYaml(
+//                        yamlPath,
+//                        resource.height.toFloat(),
+//                        resource.width.toFloat(),
+//                    )
+//                    setBitmap(mPngMapData, resource)
+//                }
+//            })
+
+        currentBitmapTarget = object : CustomTarget<Bitmap>() {
+            override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                val mPngMapData = YamlNew().loadYaml(
+                    yamlPath,
+                    resource.height.toFloat(),
+                    resource.width.toFloat()
+                )
+                setBitmap(mPngMapData, resource)
+                currentBitmapTarget = null
+            }
+
+            override fun onLoadCleared(placeholder: Drawable?) {
+                // Glide 将要清除资源，此时应释放对 Bitmap 的引用
+                // 注意：不要在这里调用 recycle()，Glide 会自动管理
+                currentBitmapTarget = null
+            }
+        }
         Glide.with(this).asBitmap().load(file).skipMemoryCache(true)
-            .diskCacheStrategy(DiskCacheStrategy.NONE).into(object : SimpleTarget<Bitmap?>() {
-                override fun onResourceReady(
-                    resource: Bitmap, transition: Transition<in Bitmap?>?
-                ) {
-                    val mPngMapData = YamlNew().loadYaml(
-                        yamlPath,
-                        resource.height.toFloat(),
-                        resource.width.toFloat(),
-                    )
-                    setBitmap(mPngMapData, resource)
-                }
-            })
+            .diskCacheStrategy(DiskCacheStrategy.NONE).into(currentBitmapTarget!!)
     }
 
     /**
@@ -721,63 +755,137 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      * yamlPath yaml文件路径
      */
     fun reloadMap(pngPath: String, yamlPath: String) {
+        // 取消旧的 Glide 加载
+        currentBitmapTarget?.let { Glide.with(this).clear(it) }
+        currentBitmapTarget = null
+        // 释放旧地图 Bitmap
+        mPngMapView?.release()
+
+        // 3. 保存当前视图状态（缩放、中心点、旋转角度等）
+        var currentScale = mMapScale
+        var currentCenterX = mMapCenterX
+        var currentCenterY = mMapCenterY
+        var currentRotation = 0f
+        var hasSavedState = false
+        val oldRes = synchronized(mSrf.mapData) { mSrf.mapData.resolution }
+
+        if (VIEW_WIDTH > 0 && VIEW_HEIGHT > 0) {
+            try {
+                val center = screenToWorld(VIEW_WIDTH / 2f, VIEW_HEIGHT / 2f)
+                currentCenterX = center.x
+                currentCenterY = center.y
+
+                val values = FloatArray(9)
+                mOuterMatrix.getValues(values)
+                val skewY = values[Matrix.MSKEW_Y]
+                val scaleX = values[Matrix.MSCALE_X]
+                currentRotation = Math.toDegrees(Math.atan2(skewY.toDouble(), scaleX.toDouble())).toFloat()
+                hasSavedState = true
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        // 4. 开始加载新地图
         val file = File(pngPath)
-        Glide.with(this).asBitmap().load(file).skipMemoryCache(true)
-            .diskCacheStrategy(DiskCacheStrategy.NONE).into(object : SimpleTarget<Bitmap?>() {
-                override fun onResourceReady(
-                    resource: Bitmap, transition: Transition<in Bitmap?>?
-                ) {
-                    // 1. 保存当前视图状态
-                    var currentScale = mMapScale
-                    var currentCenterX = mMapCenterX
-                    var currentCenterY = mMapCenterY
-                    var currentRotation = 0f
-                    var hasSavedState = false
-                    val oldRes = synchronized(mSrf.mapData) { mSrf.mapData.resolution }
+        currentBitmapTarget = object : CustomTarget<Bitmap>() {
+            override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                // 解析 YAML，设置地图数据
+                val mPngMapData = YamlNew().loadYaml(
+                    yamlPath,
+                    resource.height.toFloat(),
+                    resource.width.toFloat(),
+                )
 
-                    if (VIEW_WIDTH > 0 && VIEW_HEIGHT > 0) {
-                        try {
-                            val center = screenToWorld(VIEW_WIDTH / 2f, VIEW_HEIGHT / 2f)
-                            currentCenterX = center.x
-                            currentCenterY = center.y
+                // 设置新地图（不居中，稍后手动恢复状态）
+                setBitmap(mPngMapData, resource, false)
 
-                            val values = FloatArray(9)
-                            mOuterMatrix.getValues(values)
-                            // 计算旋转角度
-                            val skewY = values[Matrix.MSKEW_Y]
-                            val scaleX = values[Matrix.MSCALE_X]
-                            currentRotation =
-                                Math.toDegrees(Math.atan2(skewY.toDouble(), scaleX.toDouble()))
-                                    .toFloat()
+                // 释放当前 target 引用
+                currentBitmapTarget = null
 
-                            hasSavedState = true
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
+                // 5. 恢复视图状态
+                if (hasSavedState) {
+                    // 如果分辨率发生变化，调整缩放比例以保持视觉一致性
+                    val newRes = mPngMapData.resolution
+                    if (oldRes > 0 && newRes > 0 && oldRes != newRes) {
+                        currentScale = currentScale * (newRes / oldRes)
                     }
-
-                    val mPngMapData = YamlNew().loadYaml(
-                        yamlPath,
-                        resource.height.toFloat(),
-                        resource.width.toFloat(),
-                    )
-
-                    // 2. 设置新地图数据
-                    setBitmap(mPngMapData, resource, false)
-
-                    // 3. 恢复视图状态
-                    if (hasSavedState) {
-                        // 如果分辨率发生变化，调整缩放比例以保持视觉一致性
-                        val newRes = mPngMapData.resolution
-                        if (oldRes > 0 && newRes > 0 && oldRes != newRes) {
-                            currentScale = currentScale * (newRes / oldRes)
-                        }
-                        setMapStatus(currentScale, currentCenterX, currentCenterY, currentRotation)
-                    } else {
-                        setMapStatus()
-                    }
+                    setMapStatus(currentScale, currentCenterX, currentCenterY, currentRotation)
+                } else {
+                    setMapStatus()
                 }
-            })
+            }
+
+            override fun onLoadCleared(placeholder: Drawable?) {
+                // Glide 将要清除资源（例如 View 被移除），安全释放引用
+                currentBitmapTarget = null
+            }
+        }
+
+        Glide.with(this)
+            .asBitmap()
+            .load(file)
+            .skipMemoryCache(true)
+            .diskCacheStrategy(DiskCacheStrategy.NONE)
+            .into(currentBitmapTarget!!)
+
+//        val file = File(pngPath)
+//        Glide.with(this).asBitmap().load(file).skipMemoryCache(true)
+//            .diskCacheStrategy(DiskCacheStrategy.NONE).into(object : SimpleTarget<Bitmap?>() {
+//                override fun onResourceReady(
+//                    resource: Bitmap, transition: Transition<in Bitmap?>?
+//                ) {
+//                    // 1. 保存当前视图状态
+//                    var currentScale = mMapScale
+//                    var currentCenterX = mMapCenterX
+//                    var currentCenterY = mMapCenterY
+//                    var currentRotation = 0f
+//                    var hasSavedState = false
+//                    val oldRes = synchronized(mSrf.mapData) { mSrf.mapData.resolution }
+//
+//                    if (VIEW_WIDTH > 0 && VIEW_HEIGHT > 0) {
+//                        try {
+//                            val center = screenToWorld(VIEW_WIDTH / 2f, VIEW_HEIGHT / 2f)
+//                            currentCenterX = center.x
+//                            currentCenterY = center.y
+//
+//                            val values = FloatArray(9)
+//                            mOuterMatrix.getValues(values)
+//                            // 计算旋转角度
+//                            val skewY = values[Matrix.MSKEW_Y]
+//                            val scaleX = values[Matrix.MSCALE_X]
+//                            currentRotation =
+//                                Math.toDegrees(Math.atan2(skewY.toDouble(), scaleX.toDouble()))
+//                                    .toFloat()
+//
+//                            hasSavedState = true
+//                        } catch (e: Exception) {
+//                            e.printStackTrace()
+//                        }
+//                    }
+//
+//                    val mPngMapData = YamlNew().loadYaml(
+//                        yamlPath,
+//                        resource.height.toFloat(),
+//                        resource.width.toFloat(),
+//                    )
+//
+//                    // 2. 设置新地图数据
+//                    setBitmap(mPngMapData, resource, false)
+//
+//                    // 3. 恢复视图状态
+//                    if (hasSavedState) {
+//                        // 如果分辨率发生变化，调整缩放比例以保持视觉一致性
+//                        val newRes = mPngMapData.resolution
+//                        if (oldRes > 0 && newRes > 0 && oldRes != newRes) {
+//                            currentScale = currentScale * (newRes / oldRes)
+//                        }
+//                        setMapStatus(currentScale, currentCenterX, currentCenterY, currentRotation)
+//                    } else {
+//                        setMapStatus()
+//                    }
+//                }
+//            })
     }
 
     /**

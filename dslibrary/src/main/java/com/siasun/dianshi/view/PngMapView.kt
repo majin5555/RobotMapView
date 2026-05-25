@@ -8,6 +8,7 @@ import android.graphics.Matrix
 import android.graphics.Paint
 import android.util.AttributeSet
 import android.view.View
+import androidx.core.graphics.withSave
 
 /**
  * 绘制Png地图
@@ -47,17 +48,17 @@ class PngMapView : View {
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         mPngBitmap?.also {
-            canvas.save()
-            // 如果有偏移，先应用偏移
-            if (offsetX != 0f || offsetY != 0f) {
-                // 创建临时矩阵以避免修改 mOuterMatrix
-                val drawMatrix = Matrix(mOuterMatrix)
-                drawMatrix.preTranslate(offsetX, offsetY)
-                canvas.drawBitmap(it, drawMatrix, mPaint)
-            } else {
-                canvas.drawBitmap(it, mOuterMatrix, mPaint)
+            //使用withsave替换原本成对save和restore，并删除临时Matrix，通过concat构建，降低内存抖动
+            canvas.withSave {
+                // 如果有偏移，先应用偏移
+                if (offsetX != 0f || offsetY != 0f) {
+                    translate(offsetX, offsetY)   // 直接修改画布变换
+                    concat(mOuterMatrix)          // 组合矩阵
+                } else {
+                    concat(mOuterMatrix)
+                }
+                drawBitmap(it, 0f, 0f, mPaint)
             }
-            canvas.restore()
         }
     }
 
@@ -74,7 +75,7 @@ class PngMapView : View {
      *
      * @param bitmap
      */
-    fun setBitmap(bitmap: Bitmap) {
+    fun setBitmap(bitmap: Bitmap?) {
         // 清理旧的Bitmap资源
         if (mPngBitmap != null && mPngBitmap != bitmap && !mPngBitmap!!.isRecycled) {
             mPngBitmap!!.recycle()
@@ -110,16 +111,29 @@ class PngMapView : View {
     fun getBitmapHeight(): Int {
         return mPngBitmap?.height ?: 0
     }
-    
-    override fun onDetachedFromWindow() {
-        super.onDetachedFromWindow()
-        
-        // 清理资源，防止内存泄漏
+
+    /**
+     * 主动释放资源，应在 MapView 销毁时调用
+     */
+    fun release() {
         if (mPngBitmap != null && !mPngBitmap!!.isRecycled) {
             mPngBitmap!!.recycle()
             mPngBitmap = null
         }
-        // 重置Matrix
         mOuterMatrix.reset()
+        offsetX = 0f
+        offsetY = 0f
+    }
+    
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        release()  // 复用清理逻辑
+//        // 清理资源，防止内存泄漏
+//        if (mPngBitmap != null && !mPngBitmap!!.isRecycled) {
+//            mPngBitmap!!.recycle()
+//            mPngBitmap = null
+//        }
+//        // 重置Matrix
+//        mOuterMatrix.reset()
     }
 }

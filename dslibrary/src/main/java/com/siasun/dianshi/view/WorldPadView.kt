@@ -77,6 +77,25 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                 textSize = 3f
             }
         }
+
+        // 框选矩形边框画笔
+        private val boxStrokePaint by lazy {
+            Paint().apply {
+                color = Color.YELLOW
+                strokeWidth = 1f
+                style = Paint.Style.STROKE
+                alpha = 150
+            }
+        }
+
+        // 框选矩形填充画笔
+        private val boxFillPaint by lazy {
+            Paint().apply {
+                color = Color.YELLOW
+                style = Paint.Style.FILL
+                alpha = 50
+            }
+        }
     }
 
 
@@ -1158,12 +1177,12 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
 
                     // 绘制框选区域（不应用矩阵变换，使用屏幕坐标直接绘制）
                     if (isBoxSelecting && boxSelectStartPoint != null && boxSelectEndPoint != null) {
-                        val boxPaint = Paint().apply {
-                            color = Color.YELLOW
-                            strokeWidth = 1f
-                            style = Paint.Style.STROKE
-                            alpha = 150
-                        }
+//                        val boxPaint = Paint().apply {
+//                            color = Color.YELLOW
+//                            strokeWidth = 1f
+//                            style = Paint.Style.STROKE
+//                            alpha = 150
+//                        }
 
                         val left = Math.min(boxSelectStartPoint!!.x, boxSelectEndPoint!!.x)
                         val top = Math.min(boxSelectStartPoint!!.y, boxSelectEndPoint!!.y)
@@ -1171,15 +1190,15 @@ class WorldPadView @SuppressLint("ViewConstructor") constructor(
                         val bottom = Math.max(boxSelectStartPoint!!.y, boxSelectEndPoint!!.y)
 
                         // 绘制框选矩形
-                        canvas.drawRect(left, top, right, bottom, boxPaint)
+                        canvas.drawRect(left, top, right, bottom, boxStrokePaint)
 
                         // 绘制半透明填充
-                        val fillPaint = Paint().apply {
-                            color = Color.YELLOW
-                            style = Paint.Style.FILL
-                            alpha = 50
-                        }
-                        canvas.drawRect(left, top, right, bottom, fillPaint)
+//                        val fillPaint = Paint().apply {
+//                            color = Color.YELLOW
+//                            style = Paint.Style.FILL
+//                            alpha = 50
+//                        }
+                        canvas.drawRect(left, top, right, bottom, boxFillPaint)
                     }
                 }
 
