@@ -610,7 +610,10 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     /**
      * 外部接口：是否绘制关键帧
      */
-    fun showKeyFrames(boolean: Boolean) = mMapOutline3D?.setDrawingEnabled(boolean)
+    fun showKeyFrames(boolean: Boolean){
+        mMapOutline3D?.setDrawingEnabled(boolean)
+        mAllKeyFrames?.setDrawingEnabled(boolean)
+    }
 
 
     /**

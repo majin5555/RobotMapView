@@ -29,6 +29,18 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
     private val mWorldToPixelMatrix = android.graphics.Matrix()
     private val mTotalMatrix = android.graphics.Matrix()
 
+    // 控制是否绘制
+    private var isDrawingEnabled: Boolean = false
+
+    /**
+     * 设置是否启用绘制
+     */
+    fun setDrawingEnabled(enabled: Boolean) {
+        this.isDrawingEnabled = enabled
+        postInvalidate()
+    }
+
+
     companion object {
         private val paint: Paint = Paint().apply {
             color = Color.parseColor("#800080")
@@ -100,10 +112,13 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
         mTotalMatrix.preConcat(mWorldToPixelMatrix)
         canvas.concat(mTotalMatrix)
 
+        //控制关键帧
+        if (isDrawingEnabled) {
 //           drawKeyFrame(this)
-        drawKeyFrameAngles(canvas, mapView.mSrf.scale / resolution)
-        canvas.restore()
-        drawKeyFrameId(canvas)
+            drawKeyFrameAngles(canvas, mapView.mSrf.scale / resolution)
+            canvas.restore()
+            drawKeyFrameId(canvas)
+        }
     }
 
     private fun drawKeyFrame(canvas: Canvas) {
@@ -130,7 +145,7 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
             canvas.save()
             canvas.translate(frame.x, frame.y)
             // frame.theta 为弧度，转换为角度（在翻转的Y轴坐标系中，正角度会自动逆时针旋转即向上）
-            canvas.rotate(Math.toDegrees(frame.theta.toDouble()).toFloat() )
+            canvas.rotate(Math.toDegrees(frame.theta.toDouble()).toFloat())
             // 缩放以保持屏幕上的恒定大小
             canvas.scale(inverseScale, inverseScale)
             canvas.drawPath(mArrowPath, paint)
