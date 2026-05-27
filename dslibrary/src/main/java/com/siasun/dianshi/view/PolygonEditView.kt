@@ -649,6 +649,10 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (currentWorkMode == WorkMode.MODE_SHOW_MAP) {
+            return false
+        }
+
         // 先处理手势事件
         if (gestureDetector.onTouchEvent(event)) {
             return true
