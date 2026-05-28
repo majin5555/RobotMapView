@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace 'com.siasun.dianshi'
+    namespace 'lcm'
     compileSdk 34
 
     defaultConfig {
@@ -28,28 +28,9 @@ android {
         jvmTarget = '1.8'
     }
 
-    buildFeatures {
-        buildConfig true
-        dataBinding = true
-        viewBinding = true
-    }
+
 }
 
 dependencies {
-    api fileTree(include: ['*.jar', '*.aar'], dir: 'libs')
-    implementation libs.androidx.core.ktx
-    implementation libs.material
-    testImplementation libs.junit
-    androidTestImplementation libs.androidx.junit
-    androidTestImplementation libs.androidx.espresso.core
 
-    api(libs.snakeYaml)
-    api(libs.shapeView)
-    api(libs.shapeDrawable)
-    api(libs.liveEventBus.core)
-    api(libs.liveEventBus.gson)
-    api(libs.glide.core)
-    api(libs.commons)
-    api(project(":lcm"))
-//    api(libs.fastjson)
 }
