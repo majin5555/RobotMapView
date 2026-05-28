@@ -50,6 +50,6 @@ dependencies {
     api(libs.liveEventBus.gson)
     api(libs.glide.core)
     api(libs.commons)
-    api(project(":lcm"))
+//    api(project(":lcm"))
 //    api(libs.fastjson)
 }
