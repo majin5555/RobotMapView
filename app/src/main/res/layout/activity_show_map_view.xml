@@ -13,7 +13,7 @@
         app:shape_solidColor="@color/white"
         app:showTaskArea="true"
         app:showLowerLaserPointCloud="true"
-        app:showMapNameView="false"
+        app:showMapNameView="true"
         app:showMixArea="true"
         app:showOnlinePose="true"
         app:showPositingArea="true"

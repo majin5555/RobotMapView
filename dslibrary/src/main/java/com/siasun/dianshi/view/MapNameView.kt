@@ -6,6 +6,9 @@ import android.graphics.PointF
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.LinearLayout
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
+import android.util.TypedValue
 import com.siasun.dianshi.databinding.MapViewMapInfoBinding
 import java.lang.ref.WeakReference
 import java.util.Locale
@@ -87,6 +90,78 @@ class MapNameView(context: Context, parent: WeakReference<MapView>) : LinearLayo
      */
     fun showCoordinates(boolean: Boolean) {
         mBinding.shaCoordinates.visibility = if (boolean) View.VISIBLE else View.INVISIBLE
+    }
+
+    /**
+     * 设置显示隐藏坐标
+     */
+    fun showMapName(boolean: Boolean) {
+        mBinding.conMap.visibility = if (boolean) View.VISIBLE else View.INVISIBLE
+    }
+
+    enum class Position {
+        TOP_LEFT, BOTTOM_LEFT
+    }
+
+    /**
+     * 设置位置：左上角或左下角
+     */
+    fun setPosition(position: Position) {
+        val constraintLayout = mBinding.root as? ConstraintLayout ?: return
+        val constraintSet = ConstraintSet()
+        constraintSet.clone(constraintLayout)
+
+        val margin10 = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP, 10f, context.resources.displayMetrics
+        ).toInt()
+
+        when (position) {
+            Position.TOP_LEFT -> {
+                // con_map 恢复到顶部
+                constraintSet.clear(mBinding.conMap.id, ConstraintSet.BOTTOM)
+                constraintSet.connect(
+                    mBinding.conMap.id,
+                    ConstraintSet.TOP,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.TOP,
+                    0
+                )
+
+                // sha_coordinates 在 con_map 下方
+                constraintSet.clear(mBinding.shaCoordinates.id, ConstraintSet.BOTTOM)
+                constraintSet.connect(
+                    mBinding.shaCoordinates.id,
+                    ConstraintSet.TOP,
+                    mBinding.conMap.id,
+                    ConstraintSet.BOTTOM,
+                    margin10
+                )
+            }
+
+            Position.BOTTOM_LEFT -> {
+                // sha_coordinates 到屏幕底部
+                constraintSet.clear(mBinding.shaCoordinates.id, ConstraintSet.TOP)
+                constraintSet.connect(
+                    mBinding.shaCoordinates.id,
+                    ConstraintSet.BOTTOM,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.BOTTOM,
+                    margin10
+                )
+
+                // con_map 在 sha_coordinates 上方
+                constraintSet.clear(mBinding.conMap.id, ConstraintSet.TOP)
+                constraintSet.connect(
+                    mBinding.conMap.id,
+                    ConstraintSet.BOTTOM,
+                    mBinding.shaCoordinates.id,
+                    ConstraintSet.TOP,
+                    margin10
+                )
+            }
+        }
+        constraintSet.applyTo(constraintLayout)
+        invalidate()
     }
 
     override fun onDetachedFromWindow() {

@@ -54,6 +54,7 @@ import com.siasun.dianshi.bean.Inspection
 import com.siasun.dianshi.bean.RFID
 import com.siasun.dianshi.bean.ReflectorMapBean
 import com.siasun.dianshi.bean.SameSwitchBean
+import com.siasun.dianshi.view.MapNameView.Position
 import com.siasun.dianshi.view.createMap.MapViewInterface
 import java.util.Locale
 
@@ -779,7 +780,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
                 mOuterMatrix.getValues(values)
                 val skewY = values[Matrix.MSKEW_Y]
                 val scaleX = values[Matrix.MSCALE_X]
-                currentRotation = Math.toDegrees(Math.atan2(skewY.toDouble(), scaleX.toDouble())).toFloat()
+                currentRotation =
+                    Math.toDegrees(Math.atan2(skewY.toDouble(), scaleX.toDouble())).toFloat()
                 hasSavedState = true
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -1004,6 +1006,10 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      * 设置显示隐藏坐标
      */
     fun showCoordinates(boolean: Boolean) = mMapNameView?.showCoordinates(boolean)
+
+    fun showMapName(boolean: Boolean) = mMapNameView?.showMapName(boolean)
+
+    fun showMapNamePosition(position: Position) = mMapNameView?.setPosition(position)
 
     /**
      * 设置AGV 位姿 机器人图标的实时位置

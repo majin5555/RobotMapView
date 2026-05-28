@@ -63,6 +63,7 @@ import com.siasun.dianshi.network.constant.KEY_NEY_IP
 import com.siasun.dianshi.utils.World
 import com.siasun.dianshi.view.HomeDockView
 import com.siasun.dianshi.view.InspectionView
+import com.siasun.dianshi.view.MapNameView.Position
 import com.siasun.dianshi.view.MapView.ISingleTapListener
 import com.siasun.dianshi.view.MixAreaView
 import com.siasun.dianshi.view.PolygonEditView
@@ -122,6 +123,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         }
 
         mBinding.mapView.laserDrawingEnabled(false)
+
+        mBinding.mapView.showMapNamePosition(Position.BOTTOM_LEFT)
 
 
         //新建
