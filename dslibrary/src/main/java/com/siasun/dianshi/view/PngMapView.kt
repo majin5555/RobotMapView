@@ -16,13 +16,13 @@ import androidx.core.graphics.withSave
 class PngMapView : View {
     // 优化：使用伴生对象创建Paint实例，避免重复创建
     companion object {
-        private val mPaint: Paint by lazy {
-            Paint().apply {
-                isDither = false
-                color = Color.BLUE
-                isAntiAlias = true // 添加抗锯齿，提升绘制质量
-            }
-        }
+//        private val mPaint: Paint by lazy {
+//            Paint().apply {
+//                isDither = false
+//                color = Color.BLUE
+//                isAntiAlias = true // 添加抗锯齿，提升绘制质量
+//            }
+//        }
     }
     
     private val mOuterMatrix = Matrix() // 使用val而不是var，避免重复创建
@@ -57,7 +57,7 @@ class PngMapView : View {
                 } else {
                     concat(mOuterMatrix)
                 }
-                drawBitmap(it, 0f, 0f, mPaint)
+                drawBitmap(it, 0f, 0f, null)
             }
         }
     }

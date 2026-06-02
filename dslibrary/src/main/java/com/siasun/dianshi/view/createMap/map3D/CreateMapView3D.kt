@@ -16,6 +16,7 @@ import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import android.widget.ImageView
 import androidx.annotation.RequiresApi
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DecodeFormat
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
@@ -469,6 +470,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     fun loadMap(pngPath: String, yamlPath: String) {
         val file = File(pngPath)
         Glide.with(this).asBitmap().load(file).skipMemoryCache(true)
+            .format(DecodeFormat.PREFER_RGB_565)  // 关键行：强制 RGB_565.skipMemoryCache(true)
             .diskCacheStrategy(DiskCacheStrategy.NONE).into(object : SimpleTarget<Bitmap?>() {
                 override fun onResourceReady(
                     resource: Bitmap, transition: Transition<in Bitmap?>?
@@ -610,7 +612,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     /**
      * 外部接口：是否绘制关键帧
      */
-    fun showKeyFrames(boolean: Boolean){
+    fun showKeyFrames(boolean: Boolean) {
         mMapOutline3D?.setDrawingEnabled(boolean)
         mAllKeyFrames?.setDrawingEnabled(boolean)
     }
@@ -765,7 +767,8 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
 
                 // 控制帧率，避免过度消耗 CPU
                 try {
-                    sleep(16) // ~60 FPS
+                    //修改sleep时间为25 原16  将刷新频率降为40帧每秒
+                    sleep(25) // ~60 FPS
                 } catch (e: InterruptedException) {
                     e.printStackTrace()
                 }

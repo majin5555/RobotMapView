@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.os.Build
 import android.os.Environment
+import com.jeremyliao.liveeventbus.LiveEventBus
 import com.kongzue.dialogx.DialogX
 import com.kongzue.dialogx.style.MaterialStyle
 import com.siasun.dianshi.framework.helper.AppHelper
@@ -36,6 +37,7 @@ class CRLApplication : Application() {
         AppManager.init(this)
         MMKV.initialize(this)
         initDialogX()
+        LiveEventBus.config().enableLogger(false)
     }
 
     private fun initDialogX() {

@@ -47,6 +47,7 @@ import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.CopyOnWriteArrayList
 import androidx.core.content.withStyledAttributes
+import com.bumptech.glide.load.DecodeFormat
 import com.bumptech.glide.request.target.CustomTarget
 import com.hjq.shape.layout.ShapeFrameLayout
 import com.siasun.dianshi.bean.CrossDoor
@@ -747,6 +748,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
             }
         }
         Glide.with(this).asBitmap().load(file).skipMemoryCache(true)
+            .format(DecodeFormat.PREFER_RGB_565)  // 关键行：强制 RGB_565.skipMemoryCache(true).skipMemoryCache(true)
             .diskCacheStrategy(DiskCacheStrategy.NONE).into(currentBitmapTarget!!)
     }
 
@@ -827,6 +829,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         Glide.with(this)
             .asBitmap()
             .load(file)
+            .format(DecodeFormat.PREFER_RGB_565)  // 关键行：强制 RGB_565.skipMemoryCache(true)
             .skipMemoryCache(true)
             .diskCacheStrategy(DiskCacheStrategy.NONE)
             .into(currentBitmapTarget!!)
