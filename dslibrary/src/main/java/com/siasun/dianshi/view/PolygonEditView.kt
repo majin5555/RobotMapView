@@ -658,10 +658,6 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
             return true
         }
 
-//        if ((currentWorkMode != WorkMode.MODE_CLEAN_AREA_EDIT && currentWorkMode != WorkMode.MODE_CLEAN_AREA_ADD) || selectedArea == null) {
-//            return false
-//        }
-
         val x = event.x
         val y = event.y
         var handled = false
@@ -670,31 +666,6 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
             MotionEvent.ACTION_DOWN -> {
                 downX = x
                 downY = y
-
-                // 点击区域判断
-                val touchedArea = findTouchedArea(x, y)
-                if (touchedArea != null) {
-
-                    //重置起始点
-                    mapViewRef.get()?.mPolygonEditViewPoint?.setWorkMode(WorkMode.MODE_SHOW_MAP)
-
-                    setWorkMode(WorkMode.MODE_CLEAN_AREA_EDIT)
-
-                    // 切换选中区域
-                    if (selectedArea != touchedArea) {
-                        selectedArea = touchedArea
-                        selectedPointIndex = -1
-                        isDragging = false
-
-                        // 回调
-                        onCleanAreaEditListener?.onSelectedAreaChanged(selectedArea)
-                    }
-
-                    // 点击回调（无论是否已选中）
-                    onCleanAreaEditListener?.onAreaClick(touchedArea)
-
-                    invalidate()
-                }
 
                 // 查找点击位置附近的顶点
                 selectedPointIndex = findNearbyVertexIndex(selectedArea, x, y)
@@ -706,12 +677,14 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
                     // 如果没有点击到顶点，检查是否点击到边中点
                     val edgeIndex = findNearbyEdgeIndex(selectedArea, x, y)
                     if (edgeIndex != -1) {
-                        // 在边上添加新顶点
-                        addVertexOnEdge(selectedArea, edgeIndex)
+                        // 消费事件以支持双击添加顶点
                         handled = true
                     } else if (isPointInPolygon(selectedArea, x, y)) {
-                        // 检查是否在多边形内部，如果是则开启区域拖动
+                        // 检查是否在选中的多边形内部，如果是则开启区域拖动
                         isAreaDraggingStartDelayed = true
+                        handled = true
+                    } else if (findTouchedArea(x, y) != null) {
+                        // 如果点击到了其他未选中的区域，也要消费事件，以便能够检测到双击
                         handled = true
                     }
                 }
@@ -885,32 +858,65 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
     }
 
     override fun onDoubleTap(e: MotionEvent): Boolean {
-        if ((currentWorkMode != WorkMode.MODE_CLEAN_AREA_EDIT && currentWorkMode != WorkMode.MODE_CLEAN_AREA_ADD) || selectedArea == null) {
-            return false
-        }
-
         val x = e.x
         val y = e.y
-        val points = selectedArea!!.m_VertexPnt
 
-        // 先检查是否双击在顶点上
-        val clickedVertexIndex = findNearbyVertexIndex(selectedArea, x, y)
-        if (clickedVertexIndex != -1) {
-            // 请求删除该顶点
-            requestRemoveVertex(selectedArea, clickedVertexIndex)
-            return true
-        }
+        // 如果已有选中区域，优先检查是否双击在顶点或边上（用于删除）
+        if (selectedArea != null && (currentWorkMode == WorkMode.MODE_CLEAN_AREA_EDIT || currentWorkMode == WorkMode.MODE_CLEAN_AREA_ADD)) {
+            val points = selectedArea!!.m_VertexPnt
 
-        // 查找双击位置所在的线段
-        for (i in points.indices) {
-            val p1 = points[i]
-            val p2 = points[(i + 1) % points.size]
-
-            if (isPointOnLine(x, y, p1, p2)) {
-                // 删除该线段
-                removeEdge(selectedArea, i)
+            // 先检查是否双击在顶点上
+            val clickedVertexIndex = findNearbyVertexIndex(selectedArea, x, y)
+            if (clickedVertexIndex != -1) {
+                // 请求删除该顶点
+                requestRemoveVertex(selectedArea, clickedVertexIndex)
                 return true
             }
+
+            // 检查是否双击在边中点（用于添加新顶点）
+            val edgeIndex = findNearbyEdgeIndex(selectedArea, x, y)
+            if (edgeIndex != -1) {
+                // 在边上添加新顶点
+                addVertexOnEdge(selectedArea, edgeIndex)
+                return true
+            }
+
+            // 查找双击位置所在的线段
+            for (i in points.indices) {
+                val p1 = points[i]
+                val p2 = points[(i + 1) % points.size]
+
+                if (isPointOnLine(x, y, p1, p2)) {
+                    // 删除该线段
+                    removeEdge(selectedArea, i)
+                    return true
+                }
+            }
+        }
+
+        // 双击区域判断，如果双击在区域内，则选中该区域
+        val touchedArea = findTouchedArea(x, y)
+        if (touchedArea != null) {
+            //重置起始点
+            mapViewRef.get()?.mPolygonEditViewPoint?.setWorkMode(WorkMode.MODE_SHOW_MAP)
+
+            setWorkMode(WorkMode.MODE_CLEAN_AREA_EDIT)
+
+            // 切换选中区域
+            if (selectedArea != touchedArea) {
+                selectedArea = touchedArea
+                selectedPointIndex = -1
+                isDragging = false
+
+                // 回调
+                onCleanAreaEditListener?.onSelectedAreaChanged(selectedArea)
+            }
+
+            // 点击回调（无论是否已选中）
+            onCleanAreaEditListener?.onAreaClick(touchedArea)
+
+            invalidate()
+            return true
         }
 
         return false
@@ -928,8 +934,19 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
             val areasCopy = synchronized(list) {
                 list.toList()
             }
+            
+            // 先绘制未选中的区域
             areasCopy.forEach { area ->
-                drawPolygon(canvas, area, area == selectedArea)
+                if (area != selectedArea) {
+                    drawPolygon(canvas, area, false)
+                }
+            }
+            
+            // 再绘制选中的区域，使其显示在最上层
+            selectedArea?.let { area ->
+                if (areasCopy.contains(area)) {
+                    drawPolygon(canvas, area, true)
+                }
             }
 
             canvas.restore()
@@ -1019,9 +1036,17 @@ class PolygonEditView(context: Context?, val parent: WeakReference<MapView>) :
     private fun findTouchedArea(screenX: Float, screenY: Float): CleanAreaNew? {
         val areasCopy = synchronized(list) { list.toList() }
 
+        // 优先检查当前选中的区域，因为它在最上层显示
+        selectedArea?.let { area ->
+            if (areasCopy.contains(area) && isPointInPolygon(area, screenX, screenY)) {
+                return area
+            }
+        }
+
         // 倒序，保证点击最上层区域
         for (i in areasCopy.indices.reversed()) {
             val area = areasCopy[i]
+            if (area == selectedArea) continue // 已经检查过了
             if (isPointInPolygon(area, screenX, screenY)) {
                 return area
             }

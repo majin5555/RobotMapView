@@ -95,7 +95,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     private val mReflectorMaps = mutableListOf<com.siasun.dianshi.bean.ReflectorMapBean>()
 
 
-    val mapId = 100
+    val mapId = 1
     var cleanAreas: MutableList<CleanAreaNew> = mutableListOf()
     var mSpArea: MutableList<SpArea> = mutableListOf()
     var mMixArea: MutableList<WorkAreasNew> = mutableListOf()
@@ -144,7 +144,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initPostingArea()
 //        initRemoveNoise()
 //        initPostingArea()
-//        initCleanArea()
+        initCleanArea()
 //        initElevator()
 //        initPose()
 //        initMachineStation()
@@ -154,8 +154,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initRFId()
 //        initInspectionView()
 //        initSameSwitch()
-        initTeach()
-        initPath()
+//        initTeach()
+//        initPath()
     }
 
 
@@ -930,8 +930,9 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mViewModel.getAreaList(mapId, onComplete = { cleanAreasRoot ->
             cleanAreasRoot?.let {
                 cleanAreas.addAll(it.cleanAreas)
-//                mBinding.mapView.setCleanAreaData(cleanAreas)
-                mBinding.mapView.setTaskAreaData(cleanAreas)
+//                mBinding.mapView.setTaskAreaData(cleanAreas)
+                mBinding.mapView.setCleanAreaData(cleanAreas)
+
             }
         })
         mBinding.mapView.setOnTaskAreaSelectedListener(object :
@@ -977,6 +978,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 
                 // 通过随机索引获取要删除的定位区域
                 val randomArea = mBinding.mapView.getCleanAreaData().toMutableList()[randomIndex]
+                ToastUtils.showLong(randomArea.sub_name)
 
                 // 设置地图的工作模式为编辑清扫区域模式
                 mBinding.mapView.setWorkMode(WorkMode.MODE_CLEAN_AREA_EDIT)
@@ -1318,14 +1320,14 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.btnCreateStation.onClick {
             XpopUtils(this).showCmsStationDialog(
                 onConfirmCall = { result ->
-                result?.let {
-                    cmsStation.add(result)
-                    mBinding.mapView.setCmsStations(cmsStation)
-                }
+                    result?.let {
+                        cmsStation.add(result)
+                        mBinding.mapView.setCmsStations(cmsStation)
+                    }
 
-            }, onDeleteCall = {
+                }, onDeleteCall = {
 
-            }, mapId
+                }, mapId
             )
         }
         //编辑避让点
