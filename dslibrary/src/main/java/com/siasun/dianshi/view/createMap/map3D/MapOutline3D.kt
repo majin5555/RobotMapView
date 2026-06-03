@@ -81,18 +81,6 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
             strokeJoin = Paint.Join.ROUND
         }
 
-//        val mArrowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-//            color = Color.GREEN
-//            style = Paint.Style.FILL
-//        }
-
-        val mArrowPath = Path().apply {
-            moveTo(12f, 0f)
-            lineTo(-6f, -4f)
-            lineTo(-6f, 4f)
-            close()
-        }
-
         val mTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
             textSize = 10f
@@ -187,12 +175,11 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
                 canvas.drawPoints(pointArray, 0, index, mPaint)
             }
 
+            drawKeyFrame(canvas)
+
             //控制关键帧
             if (isDrawingEnabled) {
                 synchronized(keyFrames3D) {
-                    // 6. 批量绘制关键帧位置 (也使用世界坐标)
-
-                    //drawKeyFrame(canvas)
 
                     // 7. 绘制关键帧角度
                     drawKeyFrameAngles(canvas, totalScale)
@@ -224,16 +211,24 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
     private fun drawKeyFrameAngles(canvas: Canvas, totalScale: Float) {
         if (totalScale <= 0) return
         val inverseScale = 1f / totalScale
+
+        // 线段在屏幕上长度为5像素，转换到地图坐标系中
+        val lineLength = 10f * inverseScale
+        // 线段在屏幕上宽度设为2像素，转换到地图坐标系中
+        mGreenDrawPaint.strokeWidth = 3f * inverseScale
+
         for ((_, frame) in keyFrames3D) {
             canvas.save()
             canvas.translate(frame.robotPos[0], frame.robotPos[1])
-            // frame.robotPos[2] 为弧度，转换为角度（在翻转的Y轴坐标系中，正角度会自动逆时针旋转即向上）
+            // frame.theta 为弧度，转换为角度（在翻转的Y轴坐标系中，正角度会自动逆时针旋转即向上）
             canvas.rotate(Math.toDegrees(frame.robotPos[2].toDouble()).toFloat())
-            // 缩放以保持屏幕上的恒定大小
-            canvas.scale(inverseScale, inverseScale)
-            canvas.drawPath(mArrowPath, mGreenDrawPaint)
+            // 绘制线段，起点为关键帧中心点(0,0)，终点为起点加5像素(lineLength, 0)
+            canvas.drawLine(0f, 0f, lineLength, 0f, mGreenDrawPaint)
             canvas.restore()
         }
+
+        // 恢复原有线宽设置（屏幕上8像素），供下一帧 drawKeyFrame 使用
+        mGreenDrawPaint.strokeWidth = 8f / totalScale
     }
 
     /**

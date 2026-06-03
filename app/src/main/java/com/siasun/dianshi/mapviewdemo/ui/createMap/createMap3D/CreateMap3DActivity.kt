@@ -53,6 +53,7 @@ class CreateMap3DActivity :
     private val mTimer = Timer()
 
     val mapID = 11
+    var boolean = false
 
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
@@ -69,8 +70,12 @@ class CreateMap3DActivity :
             }
         }, 0, 500)
 
-
         //保存
+        mBinding.btnShowFrame.onClick {
+            boolean = !boolean
+            mBinding.mapView.showKeyFrames(boolean)
+
+        }    //保存
         mBinding.tvSave.onClick {
             showSavaMapDialog()
         }
@@ -128,8 +133,8 @@ class CreateMap3DActivity :
     override fun initData() {
         super.initData()
         if (BuildConfig.DEBUG) {
-            mBinding.mapView.setWorkMode(WorkMode.MODE_CREATE_MAP)
-           startMockPosStream()
+//            mBinding.mapView.setWorkMode(WorkMode.MODE_CREATE_MAP)
+//           startMockPosStream()
         }
         //下载地图结果
         LiveEventBus.get(KEY_UPDATE_MAP, UpdateMapBean::class.java).observe(this) {

@@ -89,11 +89,6 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     var isStartRevSubMaps = false
 
     /**
-     * 旋转弧度
-     */
-//    override var rotationRadians = 0f
-
-    /**
      * *************** 监听器   start ***********************
      */
 

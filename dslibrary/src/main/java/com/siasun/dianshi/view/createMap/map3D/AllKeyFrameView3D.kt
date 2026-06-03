@@ -49,12 +49,6 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
             style = Paint.Style.FILL
         }
 
-        val mArrowPath = Path().apply {
-            moveTo(12f, 0f)
-            lineTo(-6f, -4f)
-            lineTo(-6f, 4f)
-            close()
-        }
         val mTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
             textSize = 10f
@@ -114,9 +108,14 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
 
         //控制关键帧
         if (isDrawingEnabled) {
-//           drawKeyFrame(this)
             drawKeyFrameAngles(canvas, mapView.mSrf.scale / resolution)
-            canvas.restore()
+        }
+        
+        canvas.restore()
+        
+        drawKeyFrame(canvas)
+        
+        if (isDrawingEnabled) {
             drawKeyFrameId(canvas)
         }
     }
@@ -139,18 +138,23 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
         if (totalScale <= 0) return
         val inverseScale = 1f / totalScale
 
-        paint.strokeWidth = 8f / totalScale
+        // 线段在屏幕上长度设为30像素，转换到地图坐标系中，以解决线段过短的问题
+        val lineLength = 30f * inverseScale
+        // 线段在屏幕上宽度设为4像素，使其更加明显，转换到地图坐标系中
+        paint.strokeWidth = 3f * inverseScale
 
         for (frame in mMapPath) {
             canvas.save()
             canvas.translate(frame.x, frame.y)
             // frame.theta 为弧度，转换为角度（在翻转的Y轴坐标系中，正角度会自动逆时针旋转即向上）
             canvas.rotate(Math.toDegrees(frame.theta.toDouble()).toFloat())
-            // 缩放以保持屏幕上的恒定大小
-            canvas.scale(inverseScale, inverseScale)
-            canvas.drawPath(mArrowPath, paint)
+            // 绘制线段，起点为关键帧中心点(0,0)，终点为起点加 lineLength 像素
+            canvas.drawLine(0f, 0f, lineLength, 0f, paint)
             canvas.restore()
         }
+
+        // 恢复原有线宽设置（屏幕上8像素），供下一帧 drawKeyFrame 使用
+        paint.strokeWidth = 8f
     }
 
     private fun drawKeyFrameId(canvas: Canvas) {
