@@ -86,6 +86,7 @@ class DownLaserScanView(context: Context?, val parent: WeakReference<MapView>) :
      * 下激光点云
      */
     fun updateDownLaserScan(laser: laser_t) {
+        if (!isDrawingEnabled) return
         val robotX = laser.ranges[0]
         val robotY = laser.ranges[1]
         val robotT = laser.ranges[2]

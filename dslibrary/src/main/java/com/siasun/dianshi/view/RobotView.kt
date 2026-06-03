@@ -81,6 +81,7 @@ class RobotView(context: Context?, val parent: WeakReference<MapView>) :
      * 车体实时坐标
      */
     fun setAgvData(array: DoubleArray) {
+        if (!isDrawingEnabled) return
         agvPose = array
         postInvalidate()
     }

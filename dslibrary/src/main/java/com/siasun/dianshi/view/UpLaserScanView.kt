@@ -88,6 +88,7 @@ class UpLaserScanView<T>(context: Context?, val parent: WeakReference<T>) :
      * 上激光点云
      */
     fun updateUpLaserScan(laser: laser_t) {
+        if (!isDrawingEnabled) return
         val robotX = laser.ranges[0]
         val robotY = laser.ranges[1]
         val robotT = laser.ranges[2]
