@@ -72,7 +72,8 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     private var mMapView: WeakReference<CreateMapView3D> = WeakReference(this)
     private var mapLayers: MutableList<SlamWareBaseView<CreateMapView3D>> = CopyOnWriteArrayList()
     private var mPngMapView: PngMapView? = null //png地图
-    var mMapOutline3D: MapOutline3D? = null //地图轮廓
+//    var mMapOutline3D: MapOutline3D? = null //地图轮廓
+    var mMapOutline3D: GPUMapOutline3D? = null //地图轮廓
     private var mCreatingUpLaserScanView: UpLaserScanView3D? = null//上激光点云
     private var mAllKeyFrames: AllKeyFrameView3D? = null//所有关键帧
     private var mUpLaserScanView: UpLaserScanView<CreateMapView3D>? = null//上激光点云（非建图显示）
@@ -115,7 +116,8 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         mAllKeyFrames = AllKeyFrameView3D(context, mMapView)
         mUpLaserScanView = UpLaserScanView(context, mMapView)
         mConstrainNodes = ConstrainNodes(context, mMapView)
-        mMapOutline3D = MapOutline3D(context, mMapView)
+//        mMapOutline3D = MapOutline3D(context, mMapView)
+        mMapOutline3D = GPUMapOutline3D(context, mMapView)
         mCreateMapRobotView = RobotViewCreateMap(context, mMapView)
         mExpandAreaView = ExpandAreaView(context, mMapView)
 
