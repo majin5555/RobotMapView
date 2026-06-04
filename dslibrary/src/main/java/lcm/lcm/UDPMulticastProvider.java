@@ -5,6 +5,9 @@
 
 package lcm.lcm;
 
+
+import lcm.logging.DefaultLogger;
+
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -14,7 +17,19 @@ import java.net.MulticastSocket;
 import java.net.SocketAddress;
 import java.util.HashMap;
 
+import lcm.logging.ILCMLogger;
+
 public class UDPMulticastProvider implements Provider {
+    private static final String TAG = "LCM_UDPMulticastProvider";
+    // 日志接口，可在外部设置
+    private static ILCMLogger sLogger = new DefaultLogger();
+
+    public static void setLogger(ILCMLogger logger) {
+        if (logger != null) {
+            sLogger = logger;
+        }
+    }
+
     MulticastSocket sock;
     static final String DEFAULT_NETWORK = "239.255.76.67:7667";
     static final int DEFAULT_TTL = 0;
@@ -28,6 +43,9 @@ public class UDPMulticastProvider implements Provider {
     InetAddress inetAddr;
     int inetPort;
 
+    // 最大允许的消息大小，防止恶意/异常分片耗尽内存（50 MB）
+    private static final int MAX_MESSAGE_SIZE = 20 * 1024 * 1024;
+
     public UDPMulticastProvider(LCM var1, URLParser var2) throws IOException {
         this.lcm = var1;
         String[] var3 = var2.get("network", "239.255.76.67:7667").split(":");
@@ -38,11 +56,11 @@ public class UDPMulticastProvider implements Provider {
         this.sock.setLoopbackMode(false);
         int var4 = var2.get("ttl", 0);
         if (var4 == 0) {
-            System.err.println("LCM: TTL set to zero, traffic will not leave localhost.");
+            sLogger.w(TAG, "LCM: TTL set to zero, traffic will not leave localhost.");
         } else if (var4 > 1) {
-            System.err.println("LCM: TTL set to > 1... That's almost never correct!");
+            sLogger.w(TAG, "LCM: TTL set to > 1... That's almost never correct!");
         } else {
-            System.err.println("LCM: TTL set to 1.");
+            sLogger.i(TAG, "LCM: TTL set to 1.");
         }
 
         this.sock.setTimeToLive(var2.get("ttl", 0));
@@ -53,7 +71,7 @@ public class UDPMulticastProvider implements Provider {
         try {
             this.publishEx(var1, var2, var3, var4);
         } catch (Exception var6) {
-            System.err.println("ex: " + var6);
+            sLogger.e(TAG, "LCM: publish exception", var6);
         }
 
     }
@@ -76,6 +94,7 @@ public class UDPMulticastProvider implements Provider {
             try {
                 this.reader.join();
             } catch (InterruptedException var2) {
+                sLogger.w(TAG, "LCM: interrupted while waiting for reader thread to join", var2);
             }
         }
 
@@ -102,7 +121,7 @@ public class UDPMulticastProvider implements Provider {
             }
 
             if (var15 > 65535) {
-                System.err.println("LC error: too much data for a single message");
+                sLogger.e(TAG, "LC error: too much data for a single message");
                 return;
             }
 
@@ -124,7 +143,7 @@ public class UDPMulticastProvider implements Provider {
             this.sock.send(new DatagramPacket(var13, 0, var13.length, this.inetAddr, this.inetPort));
             var10 += var12;
 
-            for(int var19 = 1; var19 < var15; ++var19) {
+            for (int var19 = 1; var19 < var15; ++var19) {
                 var8 = new ByteArrayOutputStream(64010);
                 var9 = new DataOutputStream(var8);
                 var9.writeInt(1279471667);
@@ -146,7 +165,22 @@ public class UDPMulticastProvider implements Provider {
 
     static {
         System.setProperty("java.net.preferIPv4Stack", "true");
-        System.err.println("LCM: Disabling IPV6 support");
+        sLogger.i(TAG, "LCM: Disabling IPV6 support");
+    }
+
+    /**
+     * 将字节数格式化为易读的字符串（自动选择单位 B/KB/MB/GB）
+     */
+    private static String formatSize(long bytes) {
+        if (bytes < 1024) {
+            return bytes + " B";
+        } else if (bytes < 1024 * 1024) {
+            return String.format("%.2f KB", bytes / 1024.0);
+        } else if (bytes < 1024 * 1024 * 1024) {
+            return String.format("%.2f MB", bytes / (1024.0 * 1024));
+        } else {
+            return String.format("%.2f GB", bytes / (1024.0 * 1024 * 1024));
+        }
     }
 
     class FragmentBuffer {
@@ -177,12 +211,12 @@ public class UDPMulticastProvider implements Provider {
         public void run() {
             DatagramPacket var1 = new DatagramPacket(new byte[65536], 65536);
 
-            while(true) {
+            while (true) {
                 try {
                     UDPMulticastProvider.this.sock.receive(var1);
                     this.handlePacket(var1);
                 } catch (IOException var3) {
-                    System.err.println("ex: " + var3);
+                    sLogger.e(TAG, "LCM: socket receive exception", var3);
                 }
             }
         }
@@ -190,6 +224,7 @@ public class UDPMulticastProvider implements Provider {
         void handleShortMessage(DatagramPacket var1, LCMDataInputStream var2) throws IOException {
             int var3 = var2.readInt();
             String var4 = var2.readStringZ();
+            // 正常短消息不打印地址和大小，直接传递
             UDPMulticastProvider.this.lcm.receiveMessage(var4, var2.getBuffer(), var2.getBufferOffset(), var2.available());
         }
 
@@ -202,13 +237,24 @@ public class UDPMulticastProvider implements Provider {
             byte[] var8 = new byte[var2.available()];
             var2.readFully(var8);
             if (var2.available() > 0) {
-                System.err.println("Unread data! " + var2.available());
+                sLogger.w(TAG, "LCM: unread data in fragment packet: " + var2.available() + " bytes");
+            }
+
+            // 修复：检查声明的消息总长度是否超过允许的最大值
+            if (var4 < 0 || var4 > MAX_MESSAGE_SIZE) {
+                // 仅在此处打印来源地址和声明的异常大小
+                sLogger.e(TAG, "LCM: dropping fragment from " + var1.getSocketAddress() +
+                        ", declared message size out of range: " + formatSize(var4) +
+                        " (max allowed: " + formatSize(MAX_MESSAGE_SIZE) + ")");
+                // 移除可能残留的 FragmentBuffer 以释放资源
+                UDPMulticastProvider.this.fragBufs.remove(var1.getSocketAddress());
+                return;
             }
 
             int var9 = 0;
             int var10 = var8.length;
             SocketAddress var11 = var1.getSocketAddress();
-            FragmentBuffer var12 = (FragmentBuffer)UDPMulticastProvider.this.fragBufs.get(var11);
+            FragmentBuffer var12 = (FragmentBuffer) UDPMulticastProvider.this.fragBufs.get(var11);
             if (var12 != null && (var12.msgSeqNumber != var3 || var12.data_size != var4)) {
                 UDPMulticastProvider.this.fragBufs.remove(var12.from);
                 var12 = null;
@@ -216,7 +262,7 @@ public class UDPMulticastProvider implements Provider {
 
             if (null == var12 && 0 == var6) {
                 int var13;
-                for(var13 = 0; var13 < var8.length && 0 != var8[var13]; ++var13) {
+                for (var13 = 0; var13 < var8.length && 0 != var8[var13]; ++var13) {
                 }
 
                 var9 = var13 + 1;
@@ -228,7 +274,7 @@ public class UDPMulticastProvider implements Provider {
 
             if (null != var12) {
                 if (var5 + var10 > var12.data_size) {
-                    System.err.println("LC: dropping invalid fragment");
+                    sLogger.e(TAG, "LC: dropping invalid fragment (offset + length > total)");
                     UDPMulticastProvider.this.fragBufs.remove(var12.from);
                 } else {
                     if (!var12.frag_received[var6]) {
@@ -238,6 +284,7 @@ public class UDPMulticastProvider implements Provider {
                     }
 
                     if (0 == var12.fragments_remaining) {
+                        // 正常组装完成不打印，直接传递
                         UDPMulticastProvider.this.lcm.receiveMessage(var12.channel, var12.data, 0, var12.data_size);
                         UDPMulticastProvider.this.fragBufs.remove(var12.from);
                     }
@@ -253,7 +300,7 @@ public class UDPMulticastProvider implements Provider {
                 this.handleShortMessage(var1, var2);
             } else {
                 if (var3 != 1279471667) {
-                    System.err.println("bad magic: " + Integer.toHexString(var3));
+                    sLogger.e(TAG, "bad magic: " + Integer.toHexString(var3));
                     return;
                 }
 
