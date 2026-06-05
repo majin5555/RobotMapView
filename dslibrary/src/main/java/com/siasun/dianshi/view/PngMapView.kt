@@ -52,8 +52,8 @@ class PngMapView : View {
             canvas.withSave {
                 // 如果有偏移，先应用偏移
                 if (offsetX != 0f || offsetY != 0f) {
-                    translate(offsetX, offsetY)   // 直接修改画布变换
                     concat(mOuterMatrix)          // 组合矩阵
+                    translate(offsetX, offsetY)   // 直接修改画布变换
                 } else {
                     concat(mOuterMatrix)
                 }
