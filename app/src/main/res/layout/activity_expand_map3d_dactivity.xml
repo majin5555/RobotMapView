@@ -37,6 +37,13 @@
         app:layout_constraintEnd_toEndOf="parent">
 
         <Button
+            android:id="@+id/btn_show_key_frame"
+            android:layout_width="160dp"
+            android:layout_height="60dp"
+            android:gravity="center"
+            android:text="显示关键帧" />
+
+        <Button
             android:id="@+id/btn_location"
             android:layout_width="160dp"
             android:layout_height="60dp"

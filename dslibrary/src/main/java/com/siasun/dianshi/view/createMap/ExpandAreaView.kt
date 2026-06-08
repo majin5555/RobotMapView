@@ -7,7 +7,6 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PointF
-import android.graphics.RectF
 import android.view.MotionEvent
 import com.siasun.dianshi.bean.End
 import com.siasun.dianshi.bean.ExpandArea
@@ -20,7 +19,7 @@ import kotlin.math.min
 
 /**
  * 扩展地图的View 支持2D、3D
- * 支持拖拽生成矩形功能
+ * 支持拖拽和编辑生成矩形功能
  */
 @SuppressLint("ViewConstructor")
 class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakReference<T>) :
@@ -30,12 +29,17 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
 
     // 创建过程状态
     private var isCreating = false
-    private var isDragging = false
+    private var editMode = EditMode.NONE
     private var lastTouchX = 0f
     private var lastTouchY = 0f
     private var createStartPoint: Start? = null
     private var createEndPoint: End? = null
 
+    private enum class EditMode {
+        NONE, DRAG_ALL,
+        RESIZE_TL, RESIZE_TR, RESIZE_BL, RESIZE_BR,
+        RESIZE_LEFT, RESIZE_RIGHT, RESIZE_TOP, RESIZE_BOTTOM
+    }
 
     // 画笔定义（使用伴生对象创建静态实例，避免重复创建）
     companion object {
@@ -44,6 +48,19 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
             style = Paint.Style.FILL
             strokeWidth = 3f
             alpha = 180 // 半透明
+            isAntiAlias = true
+        }
+        
+        private val cornerPaint = Paint().apply {
+            color = Color.WHITE
+            style = Paint.Style.FILL
+            isAntiAlias = true
+        }
+        
+        private val cornerStrokePaint = Paint().apply {
+            color = Color.parseColor("#1976D2") // 蓝色描边
+            style = Paint.Style.STROKE
+            strokeWidth = 4f
             isAntiAlias = true
         }
     }
@@ -61,6 +78,7 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
         // 重置状态
         if (mode != WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
             isCreating = false
+            editMode = EditMode.NONE
         }
 
         currentWorkMode = mode
@@ -72,6 +90,7 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
      */
     fun resetCreateState() {
         isCreating = false
+        editMode = EditMode.NONE
         createStartPoint = null
         createEndPoint = null
         postInvalidate()
@@ -99,6 +118,34 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
         return handleCreateModeTouch(event)
     }
 
+    private fun getEditMode(eventX: Float, eventY: Float, pTL: PointF, pTR: PointF, pBR: PointF, pBL: PointF): EditMode {
+        val threshold = 60f // 增加边缘和角点的点击阈值(屏幕像素)
+        
+        fun dist(px: Float, py: Float) = Math.hypot((eventX - px).toDouble(), (eventY - py).toDouble()).toFloat()
+        
+        // 优先判断角点拖拽
+        if (dist(pTL.x, pTL.y) < threshold) return EditMode.RESIZE_TL
+        if (dist(pTR.x, pTR.y) < threshold) return EditMode.RESIZE_TR
+        if (dist(pBR.x, pBR.y) < threshold) return EditMode.RESIZE_BR
+        if (dist(pBL.x, pBL.y) < threshold) return EditMode.RESIZE_BL
+        
+        // 再判断边缘拖拽
+        fun distToSegment(x: Float, y: Float, x1: Float, y1: Float, x2: Float, y2: Float): Float {
+            val l2 = (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)
+            if (l2 == 0f) return dist(x1, y1)
+            var t = ((x - x1) * (x2 - x1) + (y - y1) * (y2 - y1)) / l2
+            t = max(0f, min(1f, t))
+            return dist(x1 + t * (x2 - x1), y1 + t * (y2 - y1))
+        }
+        
+        if (distToSegment(eventX, eventY, pTL.x, pTL.y, pBL.x, pBL.y) < threshold) return EditMode.RESIZE_LEFT
+        if (distToSegment(eventX, eventY, pTR.x, pTR.y, pBR.x, pBR.y) < threshold) return EditMode.RESIZE_RIGHT
+        if (distToSegment(eventX, eventY, pTL.x, pTL.y, pTR.x, pTR.y) < threshold) return EditMode.RESIZE_TOP
+        if (distToSegment(eventX, eventY, pBL.x, pBL.y, pBR.x, pBR.y) < threshold) return EditMode.RESIZE_BOTTOM
+        
+        return EditMode.NONE
+    }
+
     /**
      * 处理创建模式的触摸事件
      */
@@ -110,24 +157,44 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
 
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    // 1. 检查是否点击在已有矩形内 (拖拽模式)
                     if (createStartPoint != null && createEndPoint != null) {
                         val minX = min(createStartPoint!!.x, createEndPoint!!.x)
                         val maxX = max(createStartPoint!!.x, createEndPoint!!.x)
                         val minY = min(createStartPoint!!.y, createEndPoint!!.y)
                         val maxY = max(createStartPoint!!.y, createEndPoint!!.y)
 
-                        if (worldPoint.x in minX..maxX && worldPoint.y in minY..maxY) {
-                            isDragging = true
+                        // 规范化坐标点为 左上角 和 右下角
+                        createStartPoint = Start(minX, minY)
+                        createEndPoint = End(maxX, maxY)
+
+                        // 转换为屏幕坐标进行距离计算（以提供稳定的点击热区）
+                        val pTL = mapView.worldToScreen(minX, minY)
+                        val pTR = mapView.worldToScreen(maxX, minY)
+                        val pBR = mapView.worldToScreen(maxX, maxY)
+                        val pBL = mapView.worldToScreen(minX, maxY)
+
+                        // 检测是否点击到了边缘或角点
+                        editMode = getEditMode(event.x, event.y, pTL, pTR, pBR, pBL)
+
+                        if (editMode != EditMode.NONE) {
                             lastTouchX = worldPoint.x
                             lastTouchY = worldPoint.y
                             return true
+                        } 
+                        // 检测是否点击在矩形内部 (拖拽整个框)
+                        else if (worldPoint.x in minX..maxX && worldPoint.y in minY..maxY) {
+                            editMode = EditMode.DRAG_ALL
+                            lastTouchX = worldPoint.x
+                            lastTouchY = worldPoint.y
+                            return true
+                        } else {
+                            // 点击在区域外部，交给父 View 处理（允许缩放/拖动地图）
+                            return false
                         }
                     }
 
-                    // 2. 只有在 MODE_EXTEND_MAP_ADD_REGION 模式下，并且当前没有正在创建的区域时，才能开始新的绘制
+                    // 只有当前没有正在创建的区域时，才能开始新的绘制
                     if (!isCreating) {
-                        // 开始创建新区域
                         isCreating = true
                         createStartPoint = Start(worldPoint.x, worldPoint.y)
                         createEndPoint = End(worldPoint.x, worldPoint.y)
@@ -137,18 +204,36 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
                 }
 
                 MotionEvent.ACTION_MOVE -> {
-                    if (isDragging && createStartPoint != null && createEndPoint != null) {
+                    if (editMode != EditMode.NONE && createStartPoint != null && createEndPoint != null) {
                         val dx = worldPoint.x - lastTouchX
                         val dy = worldPoint.y - lastTouchY
 
-                        // 更新 Start 和 End 坐标
-                        val newStartX = createStartPoint!!.x + dx
-                        val newStartY = createStartPoint!!.y + dy
-                        val newEndX = createEndPoint!!.x + dx
-                        val newEndY = createEndPoint!!.y + dy
+                        var newMinX = createStartPoint!!.x
+                        var newMinY = createStartPoint!!.y
+                        var newMaxX = createEndPoint!!.x
+                        var newMaxY = createEndPoint!!.y
 
-                        createStartPoint = Start(newStartX, newStartY)
-                        createEndPoint = End(newEndX, newEndY)
+                        when (editMode) {
+                            EditMode.DRAG_ALL -> {
+                                newMinX += dx
+                                newMinY += dy
+                                newMaxX += dx
+                                newMaxY += dy
+                            }
+                            EditMode.RESIZE_TL -> { newMinX += dx; newMinY += dy }
+                            EditMode.RESIZE_TR -> { newMaxX += dx; newMinY += dy }
+                            EditMode.RESIZE_BL -> { newMinX += dx; newMaxY += dy }
+                            EditMode.RESIZE_BR -> { newMaxX += dx; newMaxY += dy }
+                            EditMode.RESIZE_LEFT -> { newMinX += dx }
+                            EditMode.RESIZE_RIGHT -> { newMaxX += dx }
+                            EditMode.RESIZE_TOP -> { newMinY += dy }
+                            EditMode.RESIZE_BOTTOM -> { newMaxY += dy }
+                            else -> {}
+                        }
+
+                        // 保证 min < max，防止反向拖拽导致坐标系翻转
+                        createStartPoint = Start(min(newMinX, newMaxX), min(newMinY, newMaxY))
+                        createEndPoint = End(max(newMinX, newMaxX), max(newMinY, newMaxY))
 
                         lastTouchX = worldPoint.x
                         lastTouchY = worldPoint.y
@@ -164,8 +249,8 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
                 }
 
                 MotionEvent.ACTION_UP -> {
-                    if (isDragging) {
-                        isDragging = false
+                    if (editMode != EditMode.NONE) {
+                        editMode = EditMode.NONE
                         if (createStartPoint != null && createEndPoint != null) {
                             val newArea = ExpandArea(
                                 start = PointF(createStartPoint!!.x, createStartPoint!!.y),
@@ -177,6 +262,7 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
                     }
 
                     if (isCreating && createStartPoint != null && createEndPoint != null) {
+                        isCreating = false
                         val newArea = ExpandArea(
                             start = PointF(createStartPoint!!.x, createStartPoint!!.y),
                             end = PointF(createEndPoint!!.x, createEndPoint!!.y)
@@ -199,7 +285,6 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
         val mapView = mParent.get() ?: return
 
         canvas.save()
-
 
         // 绘制正在创建的区域
         if (createStartPoint != null && createEndPoint != null) {
@@ -225,6 +310,23 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
             tempPath.close()
 
             canvas.drawPath(tempPath, creatingRectPaint)
+
+            // 如果区域已经存在，绘制控制角点提供编辑视觉反馈
+            if (!isCreating) {
+                val radius = 12f
+                
+                canvas.drawCircle(p1.x, p1.y, radius, cornerPaint)
+                canvas.drawCircle(p1.x, p1.y, radius, cornerStrokePaint)
+                
+                canvas.drawCircle(p2.x, p2.y, radius, cornerPaint)
+                canvas.drawCircle(p2.x, p2.y, radius, cornerStrokePaint)
+                
+                canvas.drawCircle(p3.x, p3.y, radius, cornerPaint)
+                canvas.drawCircle(p3.x, p3.y, radius, cornerStrokePaint)
+                
+                canvas.drawCircle(p4.x, p4.y, radius, cornerPaint)
+                canvas.drawCircle(p4.x, p4.y, radius, cornerStrokePaint)
+            }
         }
 
         canvas.restore()

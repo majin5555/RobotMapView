@@ -145,12 +145,13 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (currentWorkMode == WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
             // SurfaceView 模式下，需要手动分发事件给 ExpandAreaView
-            mExpandAreaView?.onTouchEvent(event)
-            // 返回true表示事件已处理，禁止手势检测器处理，从而禁止底图拖动
-            return true
+            val handled = mExpandAreaView?.onTouchEvent(event) ?: false
+            if (handled) {
+                return true
+            }
         }
 
-        // 非特殊模式，由手势检测器处理事件
+        // 非特殊模式或在扩展区域模式下未被处理的事件，由手势检测器处理
         return mGestureDetector!!.onTouchEvent(event, this)
     }
 
@@ -163,8 +164,8 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     }
 
     override fun onMapMove(distanceX: Int, distanceY: Int) {
-        // 在扩展地图增加区域模式下禁止滑动
-        if (currentWorkMode != WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+        // 在建图模式下禁止滑动
+        if (currentWorkMode != WorkMode.MODE_CREATE_MAP) {
             setTransition(distanceX, distanceY)
         }
     }
@@ -205,16 +206,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
 
     private fun setTransition(dx: Int, dy: Int) {
         mOuterMatrix.postTranslate(dx.toFloat(), dy.toFloat())
-        if (currentWorkMode == WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
-            // 在扩展地图增加区域模式下，只更新子图层的矩阵，不更新 png 地图
-            for (mapLayer in mapLayers) {
-                mapLayer.setMatrix(mOuterMatrix)
-            }
-            postInvalidate()
-        } else {
-            // 其他模式下正常更新所有图层
-            setMatrix(mOuterMatrix)
-        }
+        setMatrix(mOuterMatrix)
     }
 
     private fun setScale(factor: Float, cx: Float, cy: Float) {
@@ -235,9 +227,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     private fun setMatrix(matrix: Matrix) {
         // 复制矩阵以保证渲染线程安全
         val matrixCopy = Matrix(matrix)
-        if (currentWorkMode != WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
-            mPngMapView?.setMatrix(matrixCopy)
-        }
+        mPngMapView?.setMatrix(matrixCopy)
         for (mapLayer in mapLayers) {
             mapLayer.setMatrix(matrixCopy)
         }
@@ -249,9 +239,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         mMapScale = scale
         // 复制矩阵以保证渲染线程安全
         val matrixCopy = Matrix(matrix)
-        if (currentWorkMode != WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
-            mPngMapView?.setMatrix(matrixCopy)
-        }
+        mPngMapView?.setMatrix(matrixCopy)
         for (mapLayer in mapLayers) {
             mapLayer.setMatrixWithScale(matrixCopy, scale)
         }
@@ -272,9 +260,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         mOuterMatrix = matrix
         // 复制矩阵以保证渲染线程安全
         val matrixCopy = Matrix(matrix)
-        if (currentWorkMode != WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
-            mPngMapView?.setMatrix(matrixCopy)
-        }
+        mPngMapView?.setMatrix(matrixCopy)
         for (mapLayer in mapLayers) {
             mapLayer.setMatrixWithRotation(matrixCopy, rotation)
         }

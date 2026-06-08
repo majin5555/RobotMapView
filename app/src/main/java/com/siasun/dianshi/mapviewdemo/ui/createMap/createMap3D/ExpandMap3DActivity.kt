@@ -54,6 +54,8 @@ class ExpandMap3DActivity :
     var mExpandArea: ExpandArea = ExpandArea(PointF(0f, 0f), PointF(0f, 0f))
     val robotPose = DoubleArray(6)
 
+    var show = true
+
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
         MainController.init()
@@ -72,7 +74,14 @@ class ExpandMap3DActivity :
             ConstantBase.getFilePath(mapID, ConstantBase.PAD_MAP_NAME_YAML)
         )
 
-        //保存
+        var show = true
+        mBinding.mapView.showKeyFrames(show)
+
+        //显示关键帧呢
+        mBinding.btnShowKeyFrame.onClick {
+            show = !show
+            mBinding.mapView.showKeyFrames(show)
+        }  //保存
         mBinding.tvSave.onClick {
             showSavaMapDialog()
         }

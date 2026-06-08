@@ -110,12 +110,10 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
         if (isDrawingEnabled) {
             drawKeyFrameAngles(canvas, mapView.mSrf.scale / resolution)
         }
-        
+
         canvas.restore()
-        
-        drawKeyFrame(canvas)
-        
         if (isDrawingEnabled) {
+            drawKeyFrame(canvas)
             drawKeyFrameId(canvas)
         }
     }
@@ -139,7 +137,7 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
         val inverseScale = 1f / totalScale
 
         // 线段在屏幕上长度设为30像素，转换到地图坐标系中，以解决线段过短的问题
-        val lineLength = 30f * inverseScale
+        val lineLength = 10f * inverseScale
         // 线段在屏幕上宽度设为4像素，使其更加明显，转换到地图坐标系中
         paint.strokeWidth = 3f * inverseScale
 
