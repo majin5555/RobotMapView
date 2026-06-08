@@ -50,13 +50,13 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
             alpha = 180 // 半透明
             isAntiAlias = true
         }
-        
+
         private val cornerPaint = Paint().apply {
             color = Color.WHITE
             style = Paint.Style.FILL
             isAntiAlias = true
         }
-        
+
         private val cornerStrokePaint = Paint().apply {
             color = Color.parseColor("#1976D2") // 蓝色描边
             style = Paint.Style.STROKE
@@ -120,15 +120,15 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
 
     private fun getEditMode(eventX: Float, eventY: Float, pTL: PointF, pTR: PointF, pBR: PointF, pBL: PointF): EditMode {
         val threshold = 60f // 增加边缘和角点的点击阈值(屏幕像素)
-        
+
         fun dist(px: Float, py: Float) = Math.hypot((eventX - px).toDouble(), (eventY - py).toDouble()).toFloat()
-        
+
         // 优先判断角点拖拽
         if (dist(pTL.x, pTL.y) < threshold) return EditMode.RESIZE_TL
         if (dist(pTR.x, pTR.y) < threshold) return EditMode.RESIZE_TR
         if (dist(pBR.x, pBR.y) < threshold) return EditMode.RESIZE_BR
         if (dist(pBL.x, pBL.y) < threshold) return EditMode.RESIZE_BL
-        
+
         // 再判断边缘拖拽
         fun distToSegment(x: Float, y: Float, x1: Float, y1: Float, x2: Float, y2: Float): Float {
             val l2 = (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)
@@ -137,12 +137,12 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
             t = max(0f, min(1f, t))
             return dist(x1 + t * (x2 - x1), y1 + t * (y2 - y1))
         }
-        
+
         if (distToSegment(eventX, eventY, pTL.x, pTL.y, pBL.x, pBL.y) < threshold) return EditMode.RESIZE_LEFT
         if (distToSegment(eventX, eventY, pTR.x, pTR.y, pBR.x, pBR.y) < threshold) return EditMode.RESIZE_RIGHT
         if (distToSegment(eventX, eventY, pTL.x, pTL.y, pTR.x, pTR.y) < threshold) return EditMode.RESIZE_TOP
         if (distToSegment(eventX, eventY, pBL.x, pBL.y, pBR.x, pBR.y) < threshold) return EditMode.RESIZE_BOTTOM
-        
+
         return EditMode.NONE
     }
 
@@ -180,7 +180,7 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
                             lastTouchX = worldPoint.x
                             lastTouchY = worldPoint.y
                             return true
-                        } 
+                        }
                         // 检测是否点击在矩形内部 (拖拽整个框)
                         else if (worldPoint.x in minX..maxX && worldPoint.y in minY..maxY) {
                             editMode = EditMode.DRAG_ALL
@@ -311,19 +311,19 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
 
             canvas.drawPath(tempPath, creatingRectPaint)
 
-            // 如果区域已经存在，绘制控制角点提供编辑视觉反馈
-            if (!isCreating) {
+            // 如果区域已经存在，且处于扩展地图增加区域模式，绘制控制角点提供编辑视觉反馈
+            if (!isCreating && currentWorkMode == WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
                 val radius = 12f
-                
+
                 canvas.drawCircle(p1.x, p1.y, radius, cornerPaint)
                 canvas.drawCircle(p1.x, p1.y, radius, cornerStrokePaint)
-                
+
                 canvas.drawCircle(p2.x, p2.y, radius, cornerPaint)
                 canvas.drawCircle(p2.x, p2.y, radius, cornerStrokePaint)
-                
+
                 canvas.drawCircle(p3.x, p3.y, radius, cornerPaint)
                 canvas.drawCircle(p3.x, p3.y, radius, cornerStrokePaint)
-                
+
                 canvas.drawCircle(p4.x, p4.y, radius, cornerPaint)
                 canvas.drawCircle(p4.x, p4.y, radius, cornerStrokePaint)
             }
