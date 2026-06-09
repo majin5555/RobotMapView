@@ -6,7 +6,6 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import com.ngu.lcmtypes.laser_t
-import com.siasun.dianshi.bean.KeyframePoint
 import com.siasun.dianshi.view.SlamWareBaseView
 import com.siasun.dianshi.view.WorkMode
 import java.lang.ref.WeakReference
@@ -30,7 +29,7 @@ class UpLaserScanView3D(context: Context?, val parent: WeakReference<CreateMapVi
     // 矩阵对象，复用避免分配
     private val mWorldToPixelMatrix = Matrix()
     private val mTotalMatrix = Matrix()
-    
+
 
     private var currentWorkMode = WorkMode.MODE_SHOW_MAP
 
@@ -61,15 +60,23 @@ class UpLaserScanView3D(context: Context?, val parent: WeakReference<CreateMapVi
             return // 最少包含机器人位置数据
         }
         val mapView = parent.get() ?: return
-        var keyPoints: MutableList<KeyframePoint>? = null
+        var keyPoints: FloatArray? = null
+        var keyPointCount = 0
 
-        if (laserData.rad0.toInt() != -1) {
-            keyPoints = mutableListOf()
-        }
+        val rad0 = laserData.rad0.toInt()
+        val isKeyFrame = rad0 != -1 && (rad0 == 0 || rad0 % 4 == 0)
+        val needsKeyFrame = isKeyFrame && mapView.mMapOutline3D?.hasKeyFrame(rad0) != true
 
         // 动态计算采样间隔（根据数据量和缩放比例）
         val totalPoints = minOf((laserData.ranges.size - 6) / 3, 500)
-        val baseSampleInterval = totalPoints / 10
+
+        if (needsKeyFrame) {
+            // 预分配足够大的数组 [cloudX, cloudY, x, y, ...]
+            keyPoints = FloatArray(totalPoints * 4)
+        }
+
+        val baseSampleInterval = totalPoints / 50
+//        val baseSampleInterval = 1
         val dynamicSampleInterval =
             maxOf(baseSampleInterval, (1f / mapView.mSrf.scale).toInt()) // 缩放越小，间隔越大
 
@@ -78,7 +85,7 @@ class UpLaserScanView3D(context: Context?, val parent: WeakReference<CreateMapVi
         if (cloudPoints.size < estimatedMaxPoints * 2) {
             cloudPoints = FloatArray(estimatedMaxPoints * 2)
         }
-        
+
         pointCount = 0
 
         // 缓存机器人位姿三角函数值，避免循环内重复计算
@@ -108,11 +115,24 @@ class UpLaserScanView3D(context: Context?, val parent: WeakReference<CreateMapVi
             }
 
             // 仅在关键帧时收集完整点云数据
-            keyPoints?.add(KeyframePoint(laserX, laserY, laserXNew, laserYNew))
+            if (keyPoints != null) {
+                val isDuplicate = mapView.mMapOutline3D?.filterPoint(laserXNew, laserYNew) == true
+                if (!isDuplicate) {
+                    if (keyPointCount + 3 < keyPoints.size) {
+                        keyPoints[keyPointCount++] = laserX
+                        keyPoints[keyPointCount++] = laserY
+                        keyPoints[keyPointCount++] = laserXNew
+                        keyPoints[keyPointCount++] = laserYNew
+                    }
+                }
+            }
         }
 
         //添加地图轮廓关键帧
-        mapView.mMapOutline3D?.addKeyFrames(laserData, keyPoints)
+        if (needsKeyFrame) {
+            val exactKeyPoints = keyPoints?.copyOfRange(0, keyPointCount)
+            mapView.mMapOutline3D?.addKeyFrames(laserData, exactKeyPoints)
+        }
         postInvalidate()
     }
 
@@ -122,32 +142,32 @@ class UpLaserScanView3D(context: Context?, val parent: WeakReference<CreateMapVi
         canvas.save()
         if (pointCount > 0) {
             val mapView = parent.get() ?: return
-            
+
             // 使用 Canvas 矩阵变换 (Hardware Accelerated)
             // 1. 构建变换矩阵
-             var resolution = 0.05f
+            var resolution = 0.05f
             synchronized(mapView.mSrf.mapData) {
                 val mapData = mapView.mSrf.mapData
                 resolution = mapData.resolution
                 if (resolution <= 0) resolution = 0.05f
-                
+
                 mWorldToPixelMatrix.reset()
                 mWorldToPixelMatrix.postTranslate(-mapData.originX, -mapData.originY)
                 mWorldToPixelMatrix.postScale(1f / resolution, -1f / resolution)
                 mWorldToPixelMatrix.postTranslate(0f, mapData.height.toFloat())
             }
-            
+
             mTotalMatrix.set(mapView.outerMatrix)
             mTotalMatrix.preConcat(mWorldToPixelMatrix)
-            
+
             canvas.concat(mTotalMatrix)
-            
+
             // 2. 调整 Paint 大小以抵消缩放
-             val totalScale = mapView.mSrf.scale / resolution
-             if (totalScale > 0) {
-                 paint.strokeWidth = 3f / totalScale
-             }
-             
+            val totalScale = mapView.mSrf.scale / resolution
+            if (totalScale > 0) {
+                paint.strokeWidth = 3f / totalScale
+            }
+
             // 3. 直接绘制世界坐标点
             canvas.drawPoints(cloudPoints, 0, pointCount * 2, paint)
         }

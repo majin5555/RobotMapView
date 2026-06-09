@@ -5,7 +5,6 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.Path
 import com.ngu.lcmtypes.laser_t
 import com.siasun.dianshi.bean.ConstraintNode
 import com.siasun.dianshi.view.SlamWareBaseView
@@ -13,10 +12,12 @@ import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import com.siasun.dianshi.bean.KeyFrame
-import com.siasun.dianshi.bean.KeyframePoint
 import com.siasun.dianshi.view.WorkMode
 import kotlin.math.cos
 import kotlin.math.sin
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.FloatBuffer
 
 import android.graphics.Matrix
 import android.util.Log
@@ -36,14 +37,27 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
     // 缓存点数，避免每次遍历计算
     private val mCachedPointCount = AtomicInteger(0)
 
-    // 缓存点云绘制数组，避免频繁GC
-    private var mPointArray: FloatArray? = null
-    private var isDirty = false
+    // 空间哈希集，用于过滤重复点云数据，网格大小 0.05m
+    private val mPointGridMap = ConcurrentHashMap<Long, Byte>()
 
-    // 记录数组中实际有效的数据长度（Float个数），避免画出未填充的脏区域
-    private var mValidDataLength = 0
+    // 双缓冲点云绘制数组，使用 DirectBuffer 移至 Native 内存，彻底避免 Java 堆内存溢出和抖动
+    private var mBufferA: FloatBuffer? = null
+    private var mBufferB: FloatBuffer? = null
+
+    @Volatile
+    private var mDrawingBuffer: FloatBuffer? = null
+
+    @Volatile
+    private var mDrawingLength = 0
+
+    // 用于 onDraw 中分块读取 DirectBuffer 并绘制的临时数组，避免在 onDraw 中分配内存
+    private val mDrawChunkSize = 65536 // 每次绘制 32768 个点
+    private val mDrawChunk = FloatArray(mDrawChunkSize)
+
+    private val mBuildLock = Any()
 
     private val mWorldToPixelMatrix = Matrix()
+    private val mTotalMatrix = Matrix()
 
     // 控制是否绘制
     private var isDrawingEnabled: Boolean = false
@@ -64,6 +78,58 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
 
         currentWorkMode = mode
 
+    }
+
+    /**
+     * 在后台重建渲染数组，双缓冲无锁刷新
+     */
+    private fun rebuildPointArray() {
+        synchronized(mBuildLock) {
+            val totalPointsCount = mCachedPointCount.get()
+            if (totalPointsCount <= 0) return
+
+            // 获取非绘制状态的 buffer
+            val backBuffer = if (mDrawingBuffer === mBufferA) mBufferB else mBufferA
+
+            var targetBuffer = backBuffer
+            val requiredCapacity = totalPointsCount * 2
+
+            if (targetBuffer == null || targetBuffer.capacity() < requiredCapacity) {
+                // 2. 分配 DirectBuffer 并填充，移至 Native 内存，防止内存溢出和抖动
+                // 扩容策略：按需容量的 1.5 倍分配，避免频繁分配导致内存抖动
+                val capacityFloats = (requiredCapacity * 1.5).toInt() + 10000
+                val buffer =
+                    ByteBuffer.allocateDirect(capacityFloats * 4).order(ByteOrder.nativeOrder())
+                targetBuffer = buffer.asFloatBuffer()
+
+                if (mDrawingBuffer === mBufferA) {
+                    mBufferB = targetBuffer
+                } else {
+                    mBufferA = targetBuffer
+                }
+            }
+
+            var index = 0
+            for (frame in keyFrames3D.values) {
+                val pts = frame.points
+                if (pts != null) {
+                    val size = pts.size
+                    // pts format: [cloudX, cloudY, x, y, ...]
+                    var i = 0
+                    while (i + 3 < size) {
+                        if (index + 1 < targetBuffer!!.capacity()) {
+                            // 使用绝对 put，避免修改 position 导致和 onDraw 发生竞态
+                            targetBuffer.put(index++, pts[i + 2])
+                            targetBuffer.put(index++, pts[i + 3])
+                        }
+                        i += 4
+                    }
+                }
+            }
+
+            mDrawingBuffer = targetBuffer
+            mDrawingLength = index
+        }
     }
 
     companion object {
@@ -120,11 +186,11 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
             // Pixel = WorldToPixel * World
             // screen = Outer * (WorldToPixel * World)
             // 所以 M_total = Outer * WorldToPixel
-            val totalMatrix = Matrix(mapView.outerMatrix)
-            totalMatrix.preConcat(mWorldToPixelMatrix)
+            mTotalMatrix.set(mapView.outerMatrix)
+            mTotalMatrix.preConcat(mWorldToPixelMatrix)
 
             // 3. 应用矩阵到 Canvas
-            canvas.concat(totalMatrix)
+            canvas.concat(mTotalMatrix)
 
             // 4. 调整 Paint 线宽，抵消缩放影响，保持屏幕上固定像素大小
             // 总缩放比例 approx = mapScale / resolution
@@ -134,64 +200,38 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
                 mGreenDrawPaint.strokeWidth = 8f / totalScale
             }
 
-            // 5. 准备点云数据 (仅在脏标记时更新)
-            // 获取预估需要的数组大小
-            val totalPointsCount = mCachedPointCount.get()
+            // 5. 使用无锁双缓冲分块读取 DirectBuffer 点云数据，并绘制
+            val pointBuffer = mDrawingBuffer
+            val length = mDrawingLength
 
-            if (totalPointsCount > 0) {
-                // 优化：复用数组，避免频繁分配内存
-                if (mPointArray == null || mPointArray!!.size < totalPointsCount * 2) {
-                    mPointArray = FloatArray(totalPointsCount * 2)
-                    isDirty = true // 数组扩容需要重新填充
+            if (pointBuffer != null && length > 0) {
+                // 保存当前的 position 为 0
+                pointBuffer.position(0)
+                var remaining = length
+                while (remaining > 0) {
+                    val readSize = Math.min(remaining, mDrawChunkSize)
+                    pointBuffer.get(mDrawChunk, 0, readSize)
+                    canvas.drawPoints(mDrawChunk, 0, readSize, mPaint)
+                    remaining -= readSize
                 }
-
-                val pointArray = mPointArray!!
-                var index = 0
-
-                // 如果数据脏了，重新填充世界坐标
-                synchronized(keyFrames3D) {
-                    if (isDirty) {
-                        keyFrames3D.values.forEach { frame ->
-                            frame.points?.forEach { point ->
-                                // 直接存储世界坐标，无需 worldToScreen 转换
-                                if (index + 1 < pointArray.size) {
-                                    pointArray[index++] = point.x
-                                    pointArray[index++] = point.y
-                                }
-                            }
-                        }
-                        // 更新有效数据长度
-                        mValidDataLength = index
-                        isDirty = false
-                    } else {
-                        // 如果不脏，使用上次记录的有效长度
-                        index = mValidDataLength
-                        // 安全截断
-                        if (index > pointArray.size) index = pointArray.size
-                    }
-                }
-
-                // 一次性绘制所有点云
-                canvas.drawPoints(pointArray, 0, index, mPaint)
             }
 
             drawKeyFrame(canvas)
 
             //控制关键帧
             if (isDrawingEnabled) {
-                synchronized(keyFrames3D) {
+                // 7. 绘制关键帧角度
+                drawKeyFrameAngles(canvas, totalScale)
 
-                    // 7. 绘制关键帧角度
-                    drawKeyFrameAngles(canvas, totalScale)
-
-                    // 8. 绘制关键帧ID
-                    drawKeyFrameIds(canvas, totalMatrix)
-
-                }
+                // 8. 绘制关键帧ID
+                drawKeyFrameIds(canvas, mTotalMatrix)
             }
         }
         canvas.restore()
     }
+
+    // 缓存关键帧位置点，避免每次 onDraw 时分配数组
+    private var mKeyFramePointsArray = FloatArray(0)
 
     private fun drawKeyFrame(canvas: Canvas) {
 //        keyFrames3D.values.forEach { frame ->
@@ -202,13 +242,18 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
 
 // 方案二（可选）：如果想保留批量绘制，可以收集所有点后一次性绘制（但关键帧数量通常不多，方案一已足够）
         if (keyFrames3D.isEmpty()) return
-        val points = FloatArray(keyFrames3D.size * 2)
+
+        val currentSize = keyFrames3D.size
+        if (mKeyFramePointsArray.size < currentSize * 2) {
+            mKeyFramePointsArray = FloatArray(currentSize * 2 + 20) // 多预留一些空间
+        }
+
         var idx = 0
         for (frame in keyFrames3D.values) {
-            points[idx++] = frame.robotPos[0]
-            points[idx++] = frame.robotPos[1]
+            mKeyFramePointsArray[idx++] = frame.robotPos[0]
+            mKeyFramePointsArray[idx++] = frame.robotPos[1]
         }
-        canvas.drawPoints(points, 0, idx, mGreenDrawPaint)
+        canvas.drawPoints(mKeyFramePointsArray, 0, idx, mGreenDrawPaint)
     }
 
     // 预分配对象，避免 onDraw 中频繁 GC 和对象创建
@@ -227,7 +272,7 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
         // 线段在屏幕上宽度设为2像素，转换到地图坐标系中
         mGreenDrawPaint.strokeWidth = 3f * inverseScale
 
-        for ((_, frame) in keyFrames3D) {
+        for (frame in keyFrames3D.values) {
             canvas.save()
             canvas.translate(frame.robotPos[0], frame.robotPos[1])
             // frame.theta 为弧度，转换为角度（在翻转的Y轴坐标系中，正角度会自动逆时针旋转即向上）
@@ -240,6 +285,9 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
         // 恢复原有线宽设置（屏幕上8像素），供下一帧 drawKeyFrame 使用
         mGreenDrawPaint.strokeWidth = 8f / totalScale
     }
+
+    // 缓存 id 到 String 的映射，避免频繁创建字符串对象
+    private val mKeyFrameIdStrings = ConcurrentHashMap<Int, String>()
 
     /**
      * 绘制关键帧ID，防重叠、防镜像，显示在正下方
@@ -255,23 +303,49 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
         // 提前计算文字 Y 轴偏移量，避免在循环中重复计算
         val textOffset = -(mTextPaint.descent() + mTextPaint.ascent()) / 2f + 10f
 
-        for ((id, frame) in keyFrames3D) {
+        for (entry in keyFrames3D.entries) {
+            val id = entry.key
+            val frame = entry.value
             // 使用 totalMatrix.mapPoints 替代 worldToScreen，避免在循环内分配 PointF 和数组对象
             mTempPts[0] = frame.robotPos[0]
             mTempPts[1] = frame.robotPos[1]
             totalMatrix.mapPoints(mTempPts)
 
-            val text = id.toString()
+            var text = mKeyFrameIdStrings[id]
+            if (text == null) {
+                text = id.toString()
+                mKeyFrameIdStrings[id] = text
+            }
             canvas.drawText(text, mTempPts[0], mTempPts[1] + textOffset, mTextPaint)
         }
 
         canvas.restore()
     }
 
+    /**
+     * 判断是否已包含该关键帧
+     */
+    fun hasKeyFrame(rad0: Int): Boolean {
+        return keyFrames3D.containsKey(rad0)
+    }
+
+    /**
+     * 空间哈希过滤：判断并记录点云是否已存在于网格中
+     * @return true 表示已存在（重复数据），应当过滤掉
+     */
+    fun filterPoint(worldX: Float, worldY: Float): Boolean {
+        // 使用 0.05m (5cm) 作为网格分辨率 (1 / 0.05 = 20)
+        val gridX = (worldX * 20f).toLong()
+        val gridY = (worldY * 20f).toLong()
+        val key = (gridX shl 32) or (gridY and 0xFFFFFFFFL)
+        // 如果 put 返回 null，说明是新点；如果返回 1，说明该网格已存在点
+        return mPointGridMap.put(key, 1) != null
+    }
+
     /***
      * 添加关键帧
      */
-    fun addKeyFrames(laserData: laser_t, keyPoints: MutableList<KeyframePoint>?) {
+    fun addKeyFrames(laserData: laser_t, keyPoints: FloatArray?) {
         val mapView = parent.get() ?: return
         val rad0 = laserData.rad0.toInt()
         // rad0等于0的时候添加，其余的时候隔3帧添加(即0, 4, 8...)
@@ -300,14 +374,16 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
                     // 累加点数缓存
                     keyPoints?.size?.let { count ->
                         if (count > 0) {
-                            mCachedPointCount.addAndGet(count)
+                            mCachedPointCount.addAndGet(count / 4)
                         }
                     }
 
                     keyFrames3D[rad0] = KeyFrame(keyPoints, mapView.robotPose.clone())
                     mapView.isStartRevSubMaps = true
-                    isDirty = true // 数据更新，标记脏
                 }
+
+                // 在后台触发点云重建
+                rebuildPointArray()
             }
         }
     }
@@ -327,48 +403,50 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
             // 标记脏数据，需要重绘
             var hasUpdate = false
 
-            synchronized(keyFrames3D) {
-                val size = laserData.ranges.size
-                for (i in 0 until size step 4) {
-                    // 关键帧ID
-                    val rad0: Int = laserData.ranges[i].toInt()
+            // 这里不需要 synchronized(keyFrames3D)，因为 ConcurrentHashMap 支持并发遍历和修改值
+            val size = laserData.ranges.size
+            for (i in 0 until size step 4) {
+                // 关键帧ID
+                val rad0: Int = laserData.ranges[i].toInt()
 
-                    // 关键帧位置
-                    val radX: Float = laserData.ranges[i + 1]
-                    val radY: Float = laserData.ranges[i + 2]
-                    val robotTheta: Float = laserData.ranges[i + 3]
+                // 关键帧位置
+                val radX: Float = laserData.ranges[i + 1]
+                val radY: Float = laserData.ranges[i + 2]
+                val robotTheta: Float = laserData.ranges[i + 3]
 
-                    // 获取关键帧数据（非空校验）
-                    val keyFrame = keyFrames3D[rad0] ?: continue
-//                    Log.e(TAG, "3D回环检测关键帧id  $rad0")
-//                    Log.d(
-//                        TAG,
-//                        "old x y robotTheta ${keyFrame.robotPos[0]}  ${keyFrame.robotPos[1]}  ${keyFrame.robotPos[2]}"
-//                    )
-//                    Log.d(TAG, "new x y robotTheta $radX  $radY  $robotTheta")
+                // 获取关键帧数据（非空校验）
+                val keyFrame = keyFrames3D[rad0] ?: continue
 
-                    // 更新机器人位置（原子操作，避免中间状态）
-                    keyFrame.robotPos[0] = radX
-                    keyFrame.robotPos[1] = radY
-                    keyFrame.robotPos[2] = robotTheta
+                // 更新机器人位置（原子操作，避免中间状态）
+                keyFrame.robotPos[0] = radX
+                keyFrame.robotPos[1] = radY
+                keyFrame.robotPos[2] = robotTheta
 
-                    // 优化点：批量更新点云坐标（使用数学运算优化）
-                    val cosT = cos(robotTheta)
-                    val sinT = sin(robotTheta)
+                // 优化点：批量更新点云坐标（使用数学运算优化）
+                val cosT = cos(robotTheta)
+                val sinT = sin(robotTheta)
 
-                    // 仅更新当前关键帧的点云（避免遍历所有关键帧）
-                    keyFrame.points?.forEach { item ->
+                // 仅更新当前关键帧的点云（避免遍历所有关键帧）
+                val pts = keyFrame.points
+                if (pts != null) {
+                    val sizePts = pts.size
+                    var j = 0
+                    while (j + 3 < sizePts) {
+                        val cloudX = pts[j]
+                        val cloudY = pts[j + 1]
                         // 复用预计算的三角函数值
-                        item.x = item.cloudX * cosT - item.cloudY * sinT + radX
-                        item.y = item.cloudX * sinT + item.cloudY * cosT + radY
+                        pts[j + 2] = cloudX * cosT - cloudY * sinT + radX
+                        pts[j + 3] = cloudX * sinT + cloudY * cosT + radY
+                        j += 4
                     }
+                }
 
-                    hasUpdate = true
-                }
-                if (hasUpdate) {
-                    isDirty = true
-                    postInvalidate()
-                }
+                hasUpdate = true
+            }
+            if (hasUpdate) {
+                // 在后台触发点云重建
+                rebuildPointArray()
+                postInvalidate()
             }
             Log.d(TAG, "3D回环检测结束 更新关键帧数据：处理 ${laserData.ranges.size / 4} 个关键帧")
         }
@@ -381,7 +459,15 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
         super.onDetachedFromWindow()
         // 清理点云数据
         keyFrames3D.clear()
+        mKeyFrameIdStrings.clear()
+        mPointGridMap.clear()
         mCachedPointCount.set(0)
+
+        // 释放 DirectBuffer 引用
+        mBufferA = null
+        mBufferB = null
+        mDrawingBuffer = null
+
         // 清理父引用
         parent.clear()
     }

@@ -473,24 +473,34 @@ class CreateMap3DActivity :
     private fun startMockPosStream() {
         if (mockJob != null) return
         mockJob = lifecycleScope.launch {
-            val targetKeyframes = 100
+            val targetKeyframes = 10000
             var step = 0f
             var angle = 0f
             while (step < targetKeyframes) {
                 val lt = laser_t()
-                val numPoints = 720
+                val numPoints = 350
                 val ranges = FloatArray(6 + numPoints * 6)
-                val r = 2f
-                val x = cos(angle) * 5f
-                val y = sin(angle) * 5f
-                val theta = angle
+
+                // 螺旋线参数：起始半径 0，每步增长 0.001（最大半径 ≈ 10）
+                val startRadius = 0f
+                val radiusGrowth = 0.001f
+                val carRadius = startRadius + radiusGrowth * step
+
+                // 车体位置：极坐标转直角坐标
+                val x = cos(angle) * carRadius
+                val y = sin(angle) * carRadius
+                val theta = angle   // 朝向仍用当前角度
+
                 ranges[0] = x
                 ranges[1] = y
                 ranges[2] = theta
                 ranges[3] = 0f
                 ranges[4] = 0f
                 ranges[5] = 0f
+
+                // 生成点云（与原来相同，一个半径2的圆，相对车体坐标系）
                 var idx = 6
+                val r = 2f
                 for (i in 0 until numPoints) {
                     val a = i * (2f * Math.PI.toFloat() / numPoints)
                     val px = cos(a) * r
@@ -503,14 +513,15 @@ class CreateMap3DActivity :
                     ranges[idx + 5] = 0f
                     idx += 6
                 }
+
                 lt.ranges = ranges
                 lt.intensities = floatArrayOf(1000f, 1000f, 0f, 0f, 0.05f)
                 lt.rad0 = step
                 LiveEventBus.get(KEY_UPDATE_POS, laser_t::class.java).post(lt)
+
                 step += 1f
-                angle += 0.05f
-                if (angle > (2f * Math.PI.toFloat())) angle -= (2f * Math.PI.toFloat())
-                delay(5)
+                angle += 0.05f   // 不再取模，角度持续增长
+                delay(30)
             }
         }
     }
