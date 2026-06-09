@@ -71,12 +71,12 @@ class UpLaserScanView3D(context: Context?, val parent: WeakReference<CreateMapVi
         val totalPoints = (laserData.ranges.size - 6) / 3 // 总激光点数（排除机器人位置）
 
         val baseSampleInterval = when {
-            totalPoints > 350 -> 50
-            totalPoints > 320 -> 30
-            totalPoints > 300 -> 20
-            totalPoints > 250 -> 15
-            totalPoints > 200 -> 10
-            else -> 8  // 数据量较小时，间隔2
+            totalPoints > 350 -> 10
+            totalPoints > 320 -> 9
+            totalPoints > 300 -> 8
+            totalPoints > 250 -> 7
+            totalPoints > 200 -> 6
+            else -> 4  // 数据量较小时，间隔2
         }
         val dynamicSampleInterval =
             maxOf(baseSampleInterval, (1f / mapView.mSrf.scale).toInt()) // 缩放越小，间隔越大
