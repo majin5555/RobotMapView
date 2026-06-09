@@ -194,11 +194,21 @@ class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>
     }
 
     private fun drawKeyFrame(canvas: Canvas) {
-        keyFrames3D.values.forEach { frame ->
-            // 使用局部变量减少重复计算
-            val mPoints = floatArrayOf(frame.robotPos[0], frame.robotPos[1])
-            canvas.drawPoints(mPoints, mGreenDrawPaint)
+//        keyFrames3D.values.forEach { frame ->
+//            // 使用局部变量减少重复计算
+//            val mPoints = floatArrayOf(frame.robotPos[0], frame.robotPos[1])
+//            canvas.drawPoints(mPoints, mGreenDrawPaint)
+//        }
+
+// 方案二（可选）：如果想保留批量绘制，可以收集所有点后一次性绘制（但关键帧数量通常不多，方案一已足够）
+        if (keyFrames3D.isEmpty()) return
+        val points = FloatArray(keyFrames3D.size * 2)
+        var idx = 0
+        for (frame in keyFrames3D.values) {
+            points[idx++] = frame.robotPos[0]
+            points[idx++] = frame.robotPos[1]
         }
+        canvas.drawPoints(points, 0, idx, mGreenDrawPaint)
     }
 
     // 预分配对象，避免 onDraw 中频繁 GC 和对象创建
