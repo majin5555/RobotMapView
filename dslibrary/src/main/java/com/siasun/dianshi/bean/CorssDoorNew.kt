@@ -5,6 +5,8 @@ import com.jeremyliao.liveeventbus.core.LiveEvent
 
 /**
  * 过门
+ *
+ *       "door_type": "frame",	#屏蔽门/风淋门：screen, 电梯门/闸机门：twin
 [
 {
 "name": "lora模块",
@@ -24,6 +26,7 @@ import com.jeremyliao.liveeventbus.core.LiveEvent
 data class CrossDoor(
     val id: Int,
     val map_id: Int,
+    var door_type: String,
     var door_msg: DoorMsg,
     var start_point: PointF = PointF(),
     var end_point: PointF = PointF()
