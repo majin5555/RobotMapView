@@ -29,6 +29,7 @@ import com.siasun.dianshi.utils.RadianUtil
 import com.siasun.dianshi.utils.SlamGestureDetector
 import com.siasun.dianshi.utils.YamlNew
 import com.siasun.dianshi.view.PngMapView
+import com.siasun.dianshi.view.RobotView
 import com.siasun.dianshi.view.SlamWareBaseView
 import com.siasun.dianshi.view.UpLaserScanView
 import com.siasun.dianshi.view.WorkMode
@@ -187,6 +188,11 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
      * 恢复旋转角度
      */
     fun resetRotation() = mGestureDetector?.resetRotation()
+
+    /**
+     * 是否是建图模式
+     */
+    fun isCreateMapMode(): Boolean = currentWorkMode == WorkMode.MODE_CREATE_MAP
 
     /**
      * 获取当前视图的旋转弧度
@@ -572,7 +578,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     /**
      * 更新机器人位置（弧度制）
      */
-    private fun updateRobotPose(
+    fun updateRobotPose(
         x: Float, y: Float, theta: Float, z: Float = 0f, roll: Float = 0f, pitch: Float = 0f
     ) {
         // 使用辅助方法将可能是科学计数法的float值转换为正常的float值
