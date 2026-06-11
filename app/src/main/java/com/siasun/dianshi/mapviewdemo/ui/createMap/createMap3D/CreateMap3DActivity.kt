@@ -513,12 +513,10 @@ class CreateMap3DActivity :
                     ranges[idx + 5] = 0f
                     idx += 6
                 }
-
                 lt.ranges = ranges
                 lt.intensities = floatArrayOf(1000f, 1000f, 0f, 0f, 0.05f)
                 lt.rad0 = step
                 LiveEventBus.get(KEY_UPDATE_POS, laser_t::class.java).post(lt)
-
                 step += 1f
                 angle += 0.05f   // 不再取模，角度持续增长
                 delay(30)
