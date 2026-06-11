@@ -113,11 +113,11 @@ class CrossDoorView(
         style = Paint.Style.FILL
     }
 
-    private val doorMsgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#0099FF")
-        textSize = 14f
-        isAntiAlias = true
-    }
+//    private val doorMsgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+//        color = Color.parseColor("#0099FF")
+//        textSize = 14f
+//        isAntiAlias = true
+//    }
 
     /***
      * 绘制过门
@@ -157,15 +157,15 @@ class CrossDoorView(
                 drawCircle(canvas, endScreenPoint, 8f, pointStrokePaint)
             }
 
-            // 绘制过门信息
-            val centerX = (startScreenPoint.x + endScreenPoint.x) / 2f
-            val centerY = (startScreenPoint.y + endScreenPoint.y) / 2f
-            drawLabel(
-                canvas,
-                crossDoor.door_msg.type,
-                PointF(centerX, centerY - 15f),
-                doorMsgPaint
-            )
+//            // 绘制过门信息
+//            val centerX = (startScreenPoint.x + endScreenPoint.x) / 2f
+//            val centerY = (startScreenPoint.y + endScreenPoint.y) / 2f
+//            drawLabel(
+//                canvas,
+//                crossDoor.door_msg.type,
+//                PointF(centerX, centerY - 15f),
+//                doorMsgPaint
+//            )
         }
     }
 
