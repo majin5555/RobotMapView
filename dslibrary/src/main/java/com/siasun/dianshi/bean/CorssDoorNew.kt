@@ -27,7 +27,7 @@ data class CrossDoor(
     val id: Int,
     val map_id: Int,
     var door_type: String,
-    var door_msg: DoorMsg,
+    var door_msg: DoorMsg?,
     var start_point: PointF = PointF(),
     var end_point: PointF = PointF()
 ) : LiveEvent
