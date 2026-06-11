@@ -293,6 +293,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             val crossDoor = com.siasun.dianshi.bean.CrossDoor(
                 id = 1,
                 map_id = 2,
+                door_type = "",
                 door_msg = com.siasun.dianshi.bean.DoorMsg(
                     type = "DOOR_001"
                 ),

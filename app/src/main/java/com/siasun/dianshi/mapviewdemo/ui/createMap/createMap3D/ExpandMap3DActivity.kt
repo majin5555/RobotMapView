@@ -266,6 +266,17 @@ class ExpandMap3DActivity :
                 robotPose[4] = it.dparams[9]
                 robotPose[5] = it.dparams[10]
             }
+
+            //非建图模式显示定位
+            if (!mBinding.mapView.isCreateMapMode())
+                mBinding.mapView.updateRobotPose(
+                    robotPose[0].toFloat(),
+                    robotPose[1].toFloat(),
+                    robotPose[2].toFloat(),
+                    robotPose[3].toFloat(),
+                    robotPose[4].toFloat(),
+                    robotPose[5].toFloat(),
+                )
         }
 
         //接收定位信息

@@ -18,6 +18,7 @@
         app:showMixArea="true"
         app:showOnlinePose="true"
         app:showPositingArea="true"
+        app:showCrossDoor="true"
         app:showRFID="true"
         app:showPath="true"
         app:showSameSwitch="true"
