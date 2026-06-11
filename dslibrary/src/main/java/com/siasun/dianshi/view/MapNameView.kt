@@ -89,14 +89,14 @@ class MapNameView(context: Context, parent: WeakReference<MapView>) : LinearLayo
      * 设置显示隐藏坐标
      */
     fun showCoordinates(boolean: Boolean) {
-        mBinding.shaCoordinates.visibility = if (boolean) View.VISIBLE else View.INVISIBLE
+        mBinding.shaCoordinates.visibility = if (boolean) View.VISIBLE else View.GONE
     }
 
     /**
-     * 设置显示隐藏坐标
+     * 设置显示隐藏地图名称
      */
     fun showMapName(boolean: Boolean) {
-        mBinding.conMap.visibility = if (boolean) View.VISIBLE else View.INVISIBLE
+        mBinding.conMap.visibility = if (boolean) View.VISIBLE else View.GONE
     }
 
     enum class Position {
