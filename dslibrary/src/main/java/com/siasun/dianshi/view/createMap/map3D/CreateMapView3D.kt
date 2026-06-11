@@ -4,23 +4,24 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.PointF
 import android.graphics.RectF
-import android.os.Build
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
-import android.view.ViewTreeObserver.OnGlobalLayoutListener
+import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
-import androidx.annotation.RequiresApi
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DecodeFormat
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
 import com.ngu.lcmtypes.laser_t
+import com.siasun.dianshi.R
 import com.siasun.dianshi.bean.ConstraintNode
 import com.siasun.dianshi.bean.MapData
 import com.siasun.dianshi.utils.CoordinateConversion
@@ -35,21 +36,22 @@ import com.siasun.dianshi.view.WorkMode
 import com.siasun.dianshi.view.createMap.ExpandAreaView
 import com.siasun.dianshi.view.createMap.MapViewInterface
 import com.siasun.dianshi.view.createMap.RobotViewCreateMap
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.*
 import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.atan2
 
 /**
- * 地图画布
- * 3D 建图View
+ * 地图画布（3D 建图 View）
+ * 基于 SurfaceView + Flow 按需刷新，使用 throttleLatest 限制绘制频率并保证最后帧不丢失。
  */
 open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(context, attrs),
     SlamGestureDetector.OnRPGestureListener, MapViewInterface, SurfaceHolder.Callback {
-    private val TAG = this::class.java.simpleName
 
-    // 渲染线程
-    private var mRenderThread: RenderThread? = null
+    private val TAG = this::class.java.simpleName
 
     // 当前工作模式
     private var currentWorkMode = WorkMode.MODE_SHOW_MAP
@@ -64,16 +66,16 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     private val mMaxMapScale = 5f //最大缩放级别
     private var mMinMapScale = 0.1f //最小缩放级别
 
-    // 初始地图参数（用于计算扩展地图时的偏移量）
+    // 初始地图参数（扩展地图偏移计算）
     private var initialOriginX = 0f
     private var initialOriginY = 0f
     private var initialHeight = 0f
 
     private var mMapView: WeakReference<CreateMapView3D> = WeakReference(this)
     private var mapLayers: MutableList<SlamWareBaseView<CreateMapView3D>> = CopyOnWriteArrayList()
+
     private var mPngMapView: PngMapView? = null //png地图
-//    var mMapOutline3D: MapOutline3D? = null //地图轮廓
-    var mMapOutline3D: GPUMapOutline3D? = null //地图轮廓
+    var mMapOutline3D: MapOutline3DGL? = null // OpenGL 轮廓
     private var mCreatingUpLaserScanView: UpLaserScanView3D? = null//上激光点云
     private var mAllKeyFrames: AllKeyFrameView3D? = null//所有关键帧
     private var mUpLaserScanView: UpLaserScanView<CreateMapView3D>? = null//上激光点云（非建图显示）
@@ -85,26 +87,81 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     override val robotPose = FloatArray(6)
 
     var isMapping = false//是否建图标志
-
     //是否第一次接收到子图数据，如果没收到子图，直接跳过旋转环境
     var isStartRevSubMaps = false
 
-    /**
-     * *************** 监听器   start ***********************
-     */
-
+    // 监听器
     private var mSingleTapListener: ISingleTapListener? = null
     private var mGestureDetector: SlamGestureDetector? = null
 
+    // ──────────────── Flow 刷新相关 ────────────────
+    // 用于按需刷新的触发流
+    private val renderTrigger = MutableSharedFlow<Unit>(
+        replay = 0,
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+    // 协程作用域（与 Surface 生命周期绑定）
+    private var renderScope: CoroutineScope? = null
+    // 标记 Surface 是否已创建
+    private var surfaceCreated = false
 
     /**
-     * *************** 监听器   end ***********************
+     * 节流发射运算符：保证发射间隔 ≥ periodMs，并总是发射时间窗口内的最新值。
+     * 第一个元素立即发射，后续元素会被延迟直到距上一次发射至少 periodMs。
+     * 上游结束时，最后一个累积值也会在 periodMs 内发射（尾随保证）。
+     * 使用 channelFlow 解决 emit 在不同协程调用的线程安全问题。
      */
+    private fun <T> Flow<T>.throttleLatest(periodMs: Long): Flow<T> = channelFlow {
+        val scope = CoroutineScope(coroutineContext + SupervisorJob())
+        var latestValue: T? = null
+        var emissionJob: Job? = null
+        var lastEmitTime = 0L
+        val lock = Any()
 
+        suspend fun emitLatest() {
+            val value = synchronized(lock) { latestValue }
+            if (value != null) {
+                send(value)
+                lastEmitTime = System.currentTimeMillis()
+                synchronized(lock) { latestValue = null }
+            }
+        }
+
+        // 收集上游
+        val collectorJob = launch {
+            collect { value ->
+                synchronized(lock) { latestValue = value }
+                val now = System.currentTimeMillis()
+                val elapsed = now - lastEmitTime
+                if (elapsed >= periodMs) {
+                    // 取消之前的延迟任务
+                    emissionJob?.cancel()
+                    emissionJob = null
+                    emitLatest()
+                } else {
+                    if (emissionJob == null || emissionJob?.isCompleted == true) {
+                        emissionJob = launch {
+                            delay(periodMs - elapsed)
+                            emitLatest()
+                        }
+                    }
+                }
+            }
+            // 上游完成时处理最后的值
+            emissionJob?.join()
+            emitLatest()
+        }
+
+        // 等待收集完成
+        collectorJob.join()
+        scope.cancel()
+    }
+
+    // ──────────────── 初始化 ────────────────
     init {
         // 初始化 SurfaceHolder 回调
         holder.addCallback(this)
-
         mOuterMatrix = Matrix()
         mGestureDetector = SlamGestureDetector(this, this)
         initView()
@@ -116,18 +173,12 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         mAllKeyFrames = AllKeyFrameView3D(context, mMapView)
         mUpLaserScanView = UpLaserScanView(context, mMapView)
         mConstrainNodes = ConstrainNodes(context, mMapView)
-//        mMapOutline3D = MapOutline3D(context, mMapView)
-        mMapOutline3D = GPUMapOutline3D(context, mMapView)
         mCreateMapRobotView = RobotViewCreateMap(context, mMapView)
         mExpandAreaView = ExpandAreaView(context, mMapView)
 
-        // 注意：SurfaceView 模式下不再使用 addView 添加子 View
-        // 而是通过 RenderThread 手动绘制这些 View
-
+        // 图层顺序：扩展区域→约束→建图激光→关键帧→非建图激光→机器人
         //扩展区域
         addMapLayers(mExpandAreaView)
-        //地图轮廓
-        addMapLayers(mMapOutline3D)
         //人工约束节点
         addMapLayers(mConstrainNodes)
         //建图上激光点云
@@ -138,24 +189,165 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         addMapLayers(mUpLaserScanView)
         //机器人图标
         addMapLayers(mCreateMapRobotView)
-
-        setCentred()
     }
 
+    // ──────────────── SurfaceHolder.Callback ────────────────
+    override fun surfaceCreated(holder: SurfaceHolder) {
+        surfaceCreated = true
+        // 启动渲染协程
+        renderScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+        renderScope?.launch {
+            renderTrigger
+                .throttleLatest(25L)   // 每 25ms 最多绘制一次
+                .collect {
+                    drawFrame(holder)
+                }
+        }
+        // 触发首次绘制
+        requestRender()
+    }
 
-    @SuppressLint("ClickableViewAccessibility")
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (currentWorkMode == WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
-            // SurfaceView 模式下，需要手动分发事件给 ExpandAreaView
-            mExpandAreaView?.onTouchEvent(event)
-            // 返回true表示事件已处理，禁止手势检测器处理，从而禁止底图拖动
-            return true
+    override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+        VIEW_WIDTH = width
+        VIEW_HEIGHT = height
+
+        // 更新虚拟子 View 的布局尺寸
+        mPngMapView?.layout(0, 0, width, height)
+        for (layer in mapLayers) {
+            layer.layout(0, 0, width, height)
         }
 
-        // 非特殊模式，由手势检测器处理事件
+        // 尺寸变化后重新计算居中（如果地图已加载）
+        if (mSrf.mapData.width > 0 && mSrf.mapData.height > 0) {
+            setCentred()
+        }
+    }
+
+    override fun surfaceDestroyed(holder: SurfaceHolder) {
+        surfaceCreated = false
+        renderScope?.cancel()
+        renderScope = null
+    }
+
+    /**
+     * 执行一帧绘制（在协程中调用）
+     */
+    private fun drawFrame(holder: SurfaceHolder) {
+        var canvas: Canvas? = null
+        try {
+            canvas = holder.lockCanvas()
+            if (canvas != null) {
+                synchronized(holder) {
+                    // 白色背景
+                    canvas.drawColor(Color.WHITE)
+                    // 绘制底图
+                    mPngMapView?.draw(canvas)
+                    // 绘制各图层
+                    for (layer in mapLayers) {
+                        layer.draw(canvas)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } finally {
+            if (canvas != null) {
+                try {
+                    holder.unlockCanvasAndPost(canvas)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
+
+    /**
+     * 请求一次绘制（数据更新时调用）
+     */
+    fun requestRender() {
+        if (surfaceCreated) {
+            renderTrigger.tryEmit(Unit)
+        }
+    }
+
+    // ──────────────── 视图生命周期 ────────────────
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        // 添加 OpenGL 图层
+        if (mMapOutline3D == null && parent is ViewGroup) {
+            val parentGroup = parent as ViewGroup
+            val glLayer = MapOutline3DGL(context, WeakReference(this)).apply {
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+                setZOrderOnTop(false)
+                setZOrderMediaOverlay(false)
+                // 按需刷新模式（配合 requestRender）
+                renderMode = android.opengl.GLSurfaceView.RENDERMODE_WHEN_DIRTY
+            }
+            val myIndex = parentGroup.indexOfChild(this)
+            parentGroup.addView(glLayer, myIndex + 1)
+
+            // 确保按钮容器在最顶层
+            parentGroup.findViewById<View>(R.id.ll_rotate)?.bringToFront()
+
+            mMapOutline3D = glLayer
+        }
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+
+        // 移除 OpenGL 图层
+        mMapOutline3D?.let {
+            (it.parent as? ViewGroup)?.removeView(it)
+        }
+        mMapOutline3D = null
+
+        // 清理协程
+        renderScope?.cancel()
+        renderScope = null
+
+        // 清理资源
+        mapLayers.clear()
+        mPngMapView = null
+        mCreatingUpLaserScanView = null
+        mAllKeyFrames = null
+        mUpLaserScanView = null
+        mCreateMapRobotView = null
+        mSingleTapListener = null
+        mGestureDetector = null
+        mOuterMatrix = Matrix()
+    }
+
+    // ──────────────── 触控与手势 ────────────────
+    @SuppressLint("ClickableViewAccessibility")
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (isTouchInButtonArea(event)) {
+            return false
+        }
+        if (currentWorkMode == WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+            // SurfaceView 模式下，需要手动分发事件给 ExpandAreaView
+            val handled = mExpandAreaView?.onTouchEvent(event) ?: false
+            // 返回true表示事件已处理，禁止手势检测器处理，从而禁止底图拖动
+            if (handled) return true
+        }
         return mGestureDetector!!.onTouchEvent(event, this)
     }
 
+    private fun isTouchInButtonArea(event: MotionEvent): Boolean {
+        val container = (parent as? ViewGroup)?.findViewById<View>(R.id.ll_rotate) ?: return false
+        val rect = android.graphics.Rect()
+        container.getGlobalVisibleRect(rect)
+        return rect.contains(event.rawX.toInt(), event.rawY.toInt())
+    }
+
+    fun dispatchGestureEvent(event: MotionEvent): Boolean {
+        return mGestureDetector?.onTouchEvent(event, this) ?: false
+    }
+
+    // ──────────────── 手势回调 ────────────────
     override fun onMapTap(event: MotionEvent) {
         singleTap(event)
     }
@@ -175,34 +367,16 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         setRotation(factor, center.x.toInt(), center.y.toInt())
     }
 
+    private fun singleTap(event: MotionEvent) {
+        mSingleTapListener?.onSingleTapListener(screenToWorld(event.x, event.y))
+    }
+
+    // ──────────────── 矩阵变换（每次变换后调用 requestRender） ────────────────
     private fun setRotation(factor: Float, cx: Int, cy: Int) {
         mOuterMatrix.postRotate(RadianUtil.toAngel(factor), cx.toFloat(), cy.toFloat())
         setMatrixWithRotation(mOuterMatrix, factor)
-//        val viewRotation = getViewRotation()
-//        Log.e("CreateMapView3D", "矩阵弧度:${viewRotation}")
-//        Log.i("CreateMapView3D", "弧度->角度 :${RadianUtil.toAngel(viewRotation)}")
-    }
-
-
-    /**
-     * 恢复旋转角度
-     */
-    fun resetRotation() = mGestureDetector?.resetRotation()
-
-    /**
-     * 获取当前视图的旋转弧度
-     */
-    open fun getViewRotation(): Float {
-        val values = FloatArray(9)
-        mOuterMatrix.getValues(values)
-        var angle = atan2(
-            values[Matrix.MSKEW_Y].toDouble(), values[Matrix.MSCALE_X].toDouble()
-        ).toFloat()
-        // 解决精度丢失导致角度不为0的问题
-        if (Math.abs(angle) < 0.001f) {
-            angle = 0f
-        }
-        return angle
+        mMapOutline3D?.notifyMatrixChanged()
+        requestRender()
     }
 
     private fun setTransition(dx: Int, dy: Int) {
@@ -212,28 +386,31 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
             for (mapLayer in mapLayers) {
                 mapLayer.setMatrix(mOuterMatrix)
             }
-            postInvalidate()
         } else {
-            // 其他模式下正常更新所有图层
             setMatrix(mOuterMatrix)
         }
+        mMapOutline3D?.notifyMatrixChanged()
+        requestRender()
     }
 
     private fun setScale(factor: Float, cx: Float, cy: Float) {
         val scale = mMapScale * factor
-        if (scale > mMaxMapScale || scale < mMinMapScale) {
-            return
-        }
+        if (scale > mMaxMapScale || scale < mMinMapScale) return
         mMapScale = scale
         mSrf.scale = mMapScale
         mOuterMatrix.postScale(factor, factor, cx, cy)
         setMatrixWithScale(mOuterMatrix, mMapScale)
+        mMapOutline3D?.notifyMatrixChanged()
+        requestRender()
     }
 
-    private fun singleTap(event: MotionEvent) {
-        mSingleTapListener?.onSingleTapListener(screenToWorld(event.x, event.y))
+    fun resetRotation() = mGestureDetector?.resetRotation()
+
+    fun setRotate(boolean: Boolean) {
+        mGestureDetector?.isRotate = boolean
     }
 
+    // ──────────────── 矩阵分发（内部使用，不再主动调用 invalidate） ────────────────
     private fun setMatrix(matrix: Matrix) {
         // 复制矩阵以保证渲染线程安全
         val matrixCopy = Matrix(matrix)
@@ -243,7 +420,6 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         for (mapLayer in mapLayers) {
             mapLayer.setMatrix(matrixCopy)
         }
-        // postInvalidate() // RenderThread 自动循环渲染，不需要 invalidate
     }
 
     private fun setMatrixWithScale(matrix: Matrix, scale: Float) {
@@ -282,39 +458,20 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         }
     }
 
+    // ──────────────── 地图居中 ────────────────
     fun setCentred() {
-        val scaledRect = RectF()
+        // 等待视图有尺寸
         if (VIEW_WIDTH == 0 || VIEW_HEIGHT == 0) {
-            // 使用弱引用避免内存泄漏
-            val weakRef = WeakReference(this)
-            val listener = object : OnGlobalLayoutListener {
-                @RequiresApi(Build.VERSION_CODES.KITKAT)
-                override fun onGlobalLayout() {
-                    val mapView = weakRef.get()
-                    if (mapView != null && mapView.isAttachedToWindow) {
-                        mapView.VIEW_HEIGHT = mapView.height
-                        mapView.VIEW_WIDTH = mapView.width
-                        // 使用兼容版本的移除方法
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                            mapView.viewTreeObserver.removeOnGlobalLayoutListener(this)
-                        } else {
-                            mapView.viewTreeObserver.removeGlobalOnLayoutListener(this)
-                        }
-                        mapView.setCentred()
-                    }
-                }
-            }
-            getViewTreeObserver().addOnGlobalLayoutListener(listener)
+            post { setCentred() }
             return
         }
         if (mSrf.mapData.width > 0 && mSrf.mapData.height > 0) {
             val iWidth = mSrf.mapData.width
             val iHeight = mSrf.mapData.height
-
+            val scaledRect = RectF()
             MathUtils.calculateScaledRectInContainer(
-                RectF(
-                    0f, 0f, VIEW_WIDTH.toFloat(), VIEW_HEIGHT.toFloat()
-                ), iWidth, iHeight, ImageView.ScaleType.FIT_CENTER, scaledRect
+                RectF(0f, 0f, VIEW_WIDTH.toFloat(), VIEW_HEIGHT.toFloat()),
+                iWidth, iHeight, ImageView.ScaleType.FIT_CENTER, scaledRect
             )
             val scale = scaledRect.width() / iWidth
             mMinMapScale = scale / 4
@@ -322,32 +479,14 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
             mOuterMatrix = Matrix()
             mOuterMatrix.postScale(mMapScale, mMapScale)
             mOuterMatrix.postTranslate(
-                (VIEW_WIDTH - mMapScale * iWidth) / 2, (VIEW_HEIGHT - mMapScale * iHeight) / 2
+                (VIEW_WIDTH - mMapScale * iWidth) / 2,
+                (VIEW_HEIGHT - mMapScale * iHeight) / 2
             )
             setMatrixWithScaleAndRotation(mOuterMatrix, mMapScale, 0f)
+            mMapOutline3D?.notifyMatrixChanged()
+            requestRender()
         }
     }
-
-    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        VIEW_WIDTH = MeasureSpec.getSize(widthMeasureSpec)
-        VIEW_HEIGHT = MeasureSpec.getSize(heightMeasureSpec)
-    }
-
-    val outerMatrix: Matrix
-        get() = mOuterMatrix
-
-    /**
-     * 获取视图宽度
-     */
-    val viewWidth: Int
-        get() = VIEW_WIDTH
-
-    /**
-     * 获取视图高度
-     */
-    val viewHeight: Int
-        get() = VIEW_HEIGHT
 
     /**
      * 世界坐标转屏幕坐标
@@ -357,7 +496,6 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
             return mapPixelCoordinateToMapWidthCoordinateF(mSrf.worldToScreen(x, y))
         }
     }
-
 
     /**
      * 屏幕坐标转世界坐标
@@ -386,61 +524,6 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     }
 
     /**
-     * 刷新所有层数据
-     */
-    override fun invalidate() {
-        super.postInvalidate()
-        mPngMapView?.postInvalidate()
-        for (mapLayer in mapLayers) {
-            mapLayer.postInvalidate()
-        }
-    }
-
-    private fun addMapLayers(mapLayer: SlamWareBaseView<CreateMapView3D>?) {
-        if (mapLayer != null && !mapLayers.contains(mapLayer)) {
-            mapLayers.add(mapLayer)
-        }
-    }
-
-
-    override fun onDetachedFromWindow() {
-        super.onDetachedFromWindow()
-
-        // 停止渲染线程
-        mRenderThread?.setRunning(false)
-        try {
-            mRenderThread?.join()
-        } catch (e: InterruptedException) {
-            e.printStackTrace()
-        }
-        mRenderThread = null
-
-        // 清理所有资源，避免内存泄漏
-        mapLayers.clear()
-
-        // 清理视图引用
-        mPngMapView = null
-        mCreatingUpLaserScanView = null
-        mAllKeyFrames = null
-        mUpLaserScanView = null
-        mCreateMapRobotView = null
-
-        // 清理监听器
-        mSingleTapListener = null
-        mGestureDetector = null
-
-        // 清理矩阵和其他对象
-        mOuterMatrix = Matrix()
-    }
-
-
-    /**
-     * ******************************************************
-     * *******************      外部接口        **************
-     * ******************************************************
-     */
-
-    /**
      * 设置工作模式
      */
     fun setWorkMode(mode: WorkMode) {
@@ -450,15 +533,12 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         mAllKeyFrames?.setWorkMode(mode)
         mCreateMapRobotView?.setWorkMode(mode)
         mExpandAreaView?.setWorkMode(mode)
+        requestRender()
     }
-
     /**
      * 获取当前工作模式
      */
-    override fun getCurrentWorkMode(): WorkMode {
-        return currentWorkMode
-    }
-
+    override fun getCurrentWorkMode() = currentWorkMode
     /**
      * 加载地图
      * pngPath png文件路径
@@ -466,22 +546,23 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
      */
     fun loadMap(pngPath: String, yamlPath: String) {
         val file = File(pngPath)
-        Glide.with(this).asBitmap().load(file).skipMemoryCache(true)
-            .format(DecodeFormat.PREFER_RGB_565)  // 关键行：强制 RGB_565.skipMemoryCache(true)
-            .diskCacheStrategy(DiskCacheStrategy.NONE).into(object : SimpleTarget<Bitmap?>() {
-                override fun onResourceReady(
-                    resource: Bitmap, transition: Transition<in Bitmap?>?
-                ) {
+        Glide.with(this)
+            .asBitmap()
+            .load(file)
+            .skipMemoryCache(true)
+            .format(DecodeFormat.PREFER_RGB_565)
+            .diskCacheStrategy(DiskCacheStrategy.NONE)
+            .into(object : SimpleTarget<Bitmap?>() {
+                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap?>?) {
                     val mPngMapData = YamlNew().loadYaml(
                         yamlPath,
                         resource.height.toFloat(),
-                        resource.width.toFloat(),
+                        resource.width.toFloat()
                     )
                     setBitmap(mPngMapData, resource)
                 }
             })
     }
-
     /**
      * 设置地图数据信息
      * 设置地图
@@ -501,12 +582,10 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
             initialOriginY = mapData.originY
             initialHeight = mapData.height
         }
-
         mPngMapView?.setBitmap(bitmap)
         // 设置地图后自动居中显示
         setCentred()
     }
-
     /**
      * 外部接口 解析激光点云数据（建图模式） 3D
      *      * type 更新0
@@ -514,7 +593,6 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
      *      * type 新建2
      */
     fun parseLaserData(laserData: laser_t, type: Int) {
-
 
         // 更新机器人位置（始终需要处理，不参与降采样）
         updateRobotPose(
@@ -525,72 +603,81 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
             laserData.ranges[4],
             laserData.ranges[5]
         )
-
         if (laserData.ranges.size <= 6) return // 最少包含机器人位置数据
 
         //保持居中
         if (currentWorkMode == WorkMode.MODE_CREATE_MAP) {
             keepRobotCentered()
         }
-
         calBinding(laserData, type)
-
         //更新点云数据
         mCreatingUpLaserScanView?.updateUpLaserScan(laserData)
+        requestRender()
     }
 
-    /**
-     * 扩展地图前显示点云数据
-     */
-    fun loadCurPointCloud(laserData: laser_t) = mUpLaserScanView?.updateUpLaserScan(laserData)
+    fun loadCurPointCloud(laserData: laser_t) {
+        mUpLaserScanView?.updateUpLaserScan(laserData)
+        requestRender()
+    }
 
+    fun parseOptPose(laserData: laser_t) {
+        mMapOutline3D?.parseOptPose(laserData)
+        mMapOutline3D?.requestRender()
+        requestRender()
+    }
 
-    /**
-     * 计算新建地图宽高
-     */
+    fun showKeyFrames(boolean: Boolean) {
+        mMapOutline3D?.setDrawingEnabled(boolean)
+        mAllKeyFrames?.setDrawingEnabled(boolean)
+        requestRender()
+    }
+
+    fun addConstraintNodes(constraintNode: ConstraintNode) {
+        mConstrainNodes?.addConstraintNodes(constraintNode)
+        requestRender()
+    }
+
+    fun parseKeyFramePose(mLaserT: laser_t) {
+        mAllKeyFrames?.parseKeyFramePose(mLaserT)
+        requestRender()
+    }
+
     private fun calBinding(laserData: laser_t, type: Int) {
-//        Log.d(TAG, "calBinding mSrf.mapData.width ${laserData.intensities[0]}")
-//        Log.d(TAG, "calBinding mSrf.mapData.height ${laserData.intensities[1]}")
-//        Log.d(TAG, "calBinding originX ${laserData.intensities[2]}")
-//        Log.d(TAG, "calBinding originY ${laserData.intensities[3]}")
-
         synchronized(mSrf.mapData) {
-            if (type == 0) {//更新 使用地图PNG原有的宽高
-
-
-            } else if (type == 1) {//扩展 （1地图内的时候使用地图宽高、2地图外的时候使用子图计算的宽高）
-                // 更新地图元数据
-                mSrf.mapData.height = laserData.intensities[0]
-                mSrf.mapData.width = laserData.intensities[1]
-                mSrf.mapData.originX = laserData.intensities[2]
-                mSrf.mapData.originY = laserData.intensities[3]
-
-                // 计算并设置PngMapView的偏移量
-                val res = mSrf.mapData.resolution
-                if (res > 0.0001f) {
-                    val offX = (initialOriginX - mSrf.mapData.originX) / res
-                    val offY =
-                        (mSrf.mapData.height - initialHeight) + (mSrf.mapData.originY - initialOriginY) / res
-                    mPngMapView?.setOffset(offX, offY)
+            when (type) {
+                0 -> {
+                    //更新 使用地图PNG原有的宽高
                 }
-
-            } else {//新建
-                // 解析地图元数据（关键帧或非关键帧均需要）
-                mSrf.mapData.height = laserData.intensities[0]
-                mSrf.mapData.width = laserData.intensities[1]
-                mSrf.mapData.originX = laserData.intensities[2]
-                mSrf.mapData.originY = laserData.intensities[3]
-                mSrf.mapData.resolution = laserData.intensities[4]
+                1 -> {//扩展 （1地图内的时候使用地图宽高、2地图外的时候使用子图计算的宽高）
+                    // 更新地图元数据
+                    mSrf.mapData.height = laserData.intensities[0]
+                    mSrf.mapData.width = laserData.intensities[1]
+                    mSrf.mapData.originX = laserData.intensities[2]
+                    mSrf.mapData.originY = laserData.intensities[3]
+                    // 计算并设置PngMapView的偏移量
+                    val res = mSrf.mapData.resolution
+                    if (res > 0.0001f) {
+                        val offX = (initialOriginX - mSrf.mapData.originX) / res
+                        val offY = (mSrf.mapData.height - initialHeight) + (mSrf.mapData.originY - initialOriginY) / res
+                        mPngMapView?.setOffset(offX, offY)
+                    }
+                }
+                2 -> {
+                    //新建
+                    // 解析地图元数据（关键帧或非关键帧均需要）
+                    mSrf.mapData.height = laserData.intensities[0]
+                    mSrf.mapData.width = laserData.intensities[1]
+                    mSrf.mapData.originX = laserData.intensities[2]
+                    mSrf.mapData.originY = laserData.intensities[3]
+                    mSrf.mapData.resolution = laserData.intensities[4]
+                }
             }
         }
     }
-
     /**
      * 更新机器人位置（弧度制）
      */
-    private fun updateRobotPose(
-        x: Float, y: Float, theta: Float, z: Float = 0f, roll: Float = 0f, pitch: Float = 0f
-    ) {
+    private fun updateRobotPose(x: Float, y: Float, theta: Float, z: Float = 0f, roll: Float = 0f, pitch: Float = 0f) {
         // 使用辅助方法将可能是科学计数法的float值转换为正常的float值
         robotPose[0] = convertScientificToDecimal(x)
         robotPose[1] = convertScientificToDecimal(y)
@@ -599,45 +686,6 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         robotPose[4] = convertScientificToDecimal(roll)
         robotPose[5] = convertScientificToDecimal(pitch)
     }
-
-
-    /**
-     * 外部接口：更新关键帧数据 nav做回环检测 3D
-     */
-    fun parseOptPose(laserData: laser_t) = mMapOutline3D?.parseOptPose(laserData)
-
-    /**
-     * 外部接口：是否绘制关键帧
-     */
-    fun showKeyFrames(boolean: Boolean) {
-        mMapOutline3D?.setDrawingEnabled(boolean)
-        mAllKeyFrames?.setDrawingEnabled(boolean)
-    }
-
-
-    /**
-     * 外部接口：添加人工约束节点数据 3D
-     */
-
-    fun addConstraintNodes(constraintNode: ConstraintNode) {
-        mConstrainNodes?.addConstraintNodes(constraintNode)
-    }
-
-
-    /**
-     * 外部接口：更新关键帧数据 拓展地图时显示所有关键帧位置
-     */
-    fun parseKeyFramePose(mLaserT: laser_t) {
-        mAllKeyFrames?.parseKeyFramePose(mLaserT)
-    }
-
-    /**
-     * 是否旋转地图
-     */
-    fun setRotate(boolean: Boolean) {
-        mGestureDetector?.isRotate = boolean
-    }
-
     /**
      * 辅助方法：将科学计数法表示的float值转换为普通小数表示的float值
      * 解决激光数据中theta值（laserData.ranges[2]）可能以科学计数法形式存在的问题
@@ -667,10 +715,12 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
 
         // 移动地图使机器人居中
         setTransition(dx.toInt(), dy.toInt())
-//        Log.d("LogUtil", "移动地图使机器人居中")
     }
 
-    fun resetExpandAreaView() = mExpandAreaView?.resetCreateState()
+    fun resetExpandAreaView() {
+        mExpandAreaView?.resetCreateState()
+        requestRender()
+    }
 
 
     /**
@@ -679,97 +729,37 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     fun setSingleTapListener(listener: ISingleTapListener?) {
         mSingleTapListener = listener
     }
-
     /**
      * 获取扩展区域视图实例
      */
-    fun getExpandAreaView(): ExpandAreaView<CreateMapView3D>? {
-        return mExpandAreaView
+    fun getExpandAreaView(): ExpandAreaView<CreateMapView3D>? = mExpandAreaView
+
+     fun getViewRotation(): Float {
+        val values = FloatArray(9)
+        mOuterMatrix.getValues(values)
+        var angle = atan2(
+            values[Matrix.MSKEW_Y].toDouble(), values[Matrix.MSCALE_X].toDouble()
+        ).toFloat()
+        if (Math.abs(angle) < 0.001f) angle = 0f
+        return angle
+    }
+
+    // 兼容旧版 invalidate 调用，现统一转为按需请求
+    override fun invalidate() {
+        requestRender()
+    }
+
+    val outerMatrix: Matrix get() = mOuterMatrix
+    val viewWidth: Int get() = VIEW_WIDTH
+    val viewHeight: Int get() = VIEW_HEIGHT
+
+    private fun addMapLayers(mapLayer: SlamWareBaseView<CreateMapView3D>?) {
+        if (mapLayer != null && !mapLayers.contains(mapLayer)) {
+            mapLayers.add(mapLayer)
+        }
     }
 
     interface ISingleTapListener {
         fun onSingleTapListener(point: PointF)
-    }
-
-    // SurfaceHolder.Callback 实现
-    override fun surfaceCreated(holder: SurfaceHolder) {
-        mRenderThread = RenderThread(holder)
-        mRenderThread?.setRunning(true)
-        mRenderThread?.start()
-    }
-
-    override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
-        VIEW_WIDTH = width
-        VIEW_HEIGHT = height
-
-        // 更新虚拟子 View 的布局大小
-        mPngMapView?.layout(0, 0, width, height)
-        for (layer in mapLayers) {
-            layer.layout(0, 0, width, height)
-        }
-    }
-
-    override fun surfaceDestroyed(holder: SurfaceHolder) {
-        var retry = true
-        mRenderThread?.setRunning(false)
-        while (retry) {
-            try {
-                mRenderThread?.join()
-                retry = false
-            } catch (e: InterruptedException) {
-                e.printStackTrace()
-            }
-        }
-        mRenderThread = null
-    }
-
-    // 渲染线程
-    inner class RenderThread(private val surfaceHolder: SurfaceHolder) : Thread() {
-        private var running = false
-
-        fun setRunning(isRunning: Boolean) {
-            running = isRunning
-        }
-
-        override fun run() {
-            while (running) {
-                var canvas: Canvas? = null
-                try {
-                    canvas = surfaceHolder.lockCanvas()
-                    if (canvas != null) {
-                        synchronized(surfaceHolder) {
-                            // 绘制背景
-                            canvas.drawColor(android.graphics.Color.WHITE)
-
-                            // 绘制底图
-                            mPngMapView?.draw(canvas)
-
-                            // 绘制各图层
-                            for (layer in mapLayers) {
-                                layer.draw(canvas)
-                            }
-                        }
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                } finally {
-                    if (canvas != null) {
-                        try {
-                            surfaceHolder.unlockCanvasAndPost(canvas)
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
-                    }
-                }
-
-                // 控制帧率，避免过度消耗 CPU
-                try {
-                    //修改sleep时间为25 原16  将刷新频率降为40帧每秒
-                    sleep(25) // ~60 FPS
-                } catch (e: InterruptedException) {
-                    e.printStackTrace()
-                }
-            }
-        }
     }
 }

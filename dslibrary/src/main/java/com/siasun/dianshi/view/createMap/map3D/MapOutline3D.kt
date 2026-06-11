@@ -1,378 +1,378 @@
-package com.siasun.dianshi.view.createMap.map3D
-
-import android.annotation.SuppressLint
-import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.Path
-import com.ngu.lcmtypes.laser_t
-import com.siasun.dianshi.bean.ConstraintNode
-import com.siasun.dianshi.view.SlamWareBaseView
-import java.lang.ref.WeakReference
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
-import com.siasun.dianshi.bean.KeyFrame
-import com.siasun.dianshi.bean.KeyframePoint
-import com.siasun.dianshi.view.WorkMode
-import kotlin.math.cos
-import kotlin.math.sin
-
-import android.graphics.Matrix
-import android.util.Log
-
-/**
- * 建图地图轮廓
- */
-@SuppressLint("ViewConstructor")
-class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>) :
-    SlamWareBaseView<CreateMapView3D>(context, parent) {
-    private val TAG = this::class.java.simpleName
-    private var currentWorkMode = WorkMode.MODE_SHOW_MAP
-
-    //3D建图关键帧
-    private val keyFrames3D = ConcurrentHashMap<Int, KeyFrame>()
-
-    // 缓存点数，避免每次遍历计算
-    private val mCachedPointCount = AtomicInteger(0)
-
-    // 缓存点云绘制数组，避免频繁GC
-    private var mPointArray: FloatArray? = null
-    private var isDirty = false
-
-    // 记录数组中实际有效的数据长度（Float个数），避免画出未填充的脏区域
-    private var mValidDataLength = 0
-
-    private val mWorldToPixelMatrix = Matrix()
-
-    // 控制是否绘制
-    private var isDrawingEnabled: Boolean = false
-
-    /**
-     * 设置是否启用绘制
-     */
-    fun setDrawingEnabled(enabled: Boolean) {
-        this.isDrawingEnabled = enabled
-        postInvalidate()
-    }
-
-    /**
-     * 设置工作模式
-     */
-    fun setWorkMode(mode: WorkMode) {
-        if (currentWorkMode == mode) return // 避免重复设置
-
-        currentWorkMode = mode
-
-    }
-
-    companion object {
-        val mPaint = Paint().apply {
-            color = Color.BLACK
-            style = Paint.Style.FILL
-            strokeWidth = 3f
-        }
-
-        val mGreenDrawPaint = Paint().apply {
-            color = Color.GREEN
-            style = Paint.Style.FILL
-            strokeWidth = 8f
-            strokeCap = Paint.Cap.ROUND
-            strokeJoin = Paint.Join.ROUND
-        }
-
-        val mTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.BLACK
-            textSize = 10f
-            textAlign = Paint.Align.CENTER
-        }
-    }
-
-
-    @SuppressLint("DrawAllocation")
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
-        canvas.save()
-        val mapView = parent.get() ?: return
-        if (keyFrames3D.isNotEmpty()) {
-            // 1. 构建世界坐标到地图像素坐标的变换矩阵
-            // 注意：必须在同步块中获取 mapData 数据
-            var resolution = 0.05f
-            synchronized(mapView.mSrf.mapData) {
-                val mapData = mapView.mSrf.mapData
-                resolution = mapData.resolution
-                if (resolution <= 0) resolution = 0.05f
-
-                // 构建 World -> Pixel 矩阵
-                // px = (wx - originX) / resolution
-                // py = height - (wy - originY) / resolution
-                mWorldToPixelMatrix.reset()
-                mWorldToPixelMatrix.postTranslate(-mapData.originX, -mapData.originY)
-                mWorldToPixelMatrix.postScale(1f / resolution, -1f / resolution)
-                mWorldToPixelMatrix.postTranslate(0f, mapData.height.toFloat())
-            }
-
-            // 2. 组合矩阵：Total = OuterMatrix * WorldToPixelMatrix
-            // 注意：Canvas的concat顺序是 preConcat，所以先 concat OuterMatrix (Pixel->Screen)，再 concat WorldToPixel (World->Pixel)
-            // 实际上 canvas.concat(M) 等价于 current = current * M.
-            // 我们希望 point * M_total -> screen.
-            // screen = Outer * Pixel
-            // Pixel = WorldToPixel * World
-            // screen = Outer * (WorldToPixel * World)
-            // 所以 M_total = Outer * WorldToPixel
-            val totalMatrix = Matrix(mapView.outerMatrix)
-            totalMatrix.preConcat(mWorldToPixelMatrix)
-
-            // 3. 应用矩阵到 Canvas
-            canvas.concat(totalMatrix)
-
-            // 4. 调整 Paint 线宽，抵消缩放影响，保持屏幕上固定像素大小
-            // 总缩放比例 approx = mapScale / resolution
-            val totalScale = mapView.mSrf.scale / resolution
-            if (totalScale > 0) {
-                mPaint.strokeWidth = 3f / totalScale
-                mGreenDrawPaint.strokeWidth = 8f / totalScale
-            }
-
-            // 5. 准备点云数据 (仅在脏标记时更新)
-            // 获取预估需要的数组大小
-            val totalPointsCount = mCachedPointCount.get()
-
-            if (totalPointsCount > 0) {
-                // 优化：复用数组，避免频繁分配内存
-                if (mPointArray == null || mPointArray!!.size < totalPointsCount * 2) {
-                    mPointArray = FloatArray(totalPointsCount * 2)
-                    isDirty = true // 数组扩容需要重新填充
-                }
-
-                val pointArray = mPointArray!!
-                var index = 0
-
-                // 如果数据脏了，重新填充世界坐标
-                synchronized(keyFrames3D) {
-                    if (isDirty) {
-                        keyFrames3D.values.forEach { frame ->
-                            frame.points?.forEach { point ->
-                                // 直接存储世界坐标，无需 worldToScreen 转换
-                                if (index + 1 < pointArray.size) {
-                                    pointArray[index++] = point.x
-                                    pointArray[index++] = point.y
-                                }
-                            }
-                        }
-                        // 更新有效数据长度
-                        mValidDataLength = index
-                        isDirty = false
-                    } else {
-                        // 如果不脏，使用上次记录的有效长度
-                        index = mValidDataLength
-                        // 安全截断
-                        if (index > pointArray.size) index = pointArray.size
-                    }
-                }
-
-                // 一次性绘制所有点云
-                canvas.drawPoints(pointArray, 0, index, mPaint)
-            }
-
-            drawKeyFrame(canvas)
-
-            //控制关键帧
-            if (isDrawingEnabled) {
-                synchronized(keyFrames3D) {
-
-                    // 7. 绘制关键帧角度
-                    drawKeyFrameAngles(canvas, totalScale)
-
-                    // 8. 绘制关键帧ID
-                    drawKeyFrameIds(canvas, totalMatrix)
-
-                }
-            }
-        }
-        canvas.restore()
-    }
-
-    private fun drawKeyFrame(canvas: Canvas) {
-        keyFrames3D.values.forEach { frame ->
-            // 使用局部变量减少重复计算
-            val mPoints = floatArrayOf(frame.robotPos[0], frame.robotPos[1])
-            canvas.drawPoints(mPoints, mGreenDrawPaint)
-        }
-    }
-
-    // 预分配对象，避免 onDraw 中频繁 GC 和对象创建
-    private val mInverseMatrix = Matrix()
-    private val mTempPts = FloatArray(2)
-
-    /**
-     * 绘制关键帧角度
-     */
-    private fun drawKeyFrameAngles(canvas: Canvas, totalScale: Float) {
-        if (totalScale <= 0) return
-        val inverseScale = 1f / totalScale
-
-        // 线段在屏幕上长度为5像素，转换到地图坐标系中
-        val lineLength = 10f * inverseScale
-        // 线段在屏幕上宽度设为2像素，转换到地图坐标系中
-        mGreenDrawPaint.strokeWidth = 3f * inverseScale
-
-        for ((_, frame) in keyFrames3D) {
-            canvas.save()
-            canvas.translate(frame.robotPos[0], frame.robotPos[1])
-            // frame.theta 为弧度，转换为角度（在翻转的Y轴坐标系中，正角度会自动逆时针旋转即向上）
-            canvas.rotate(Math.toDegrees(frame.robotPos[2].toDouble()).toFloat())
-            // 绘制线段，起点为关键帧中心点(0,0)，终点为起点加5像素(lineLength, 0)
-            canvas.drawLine(0f, 0f, lineLength, 0f, mGreenDrawPaint)
-            canvas.restore()
-        }
-
-        // 恢复原有线宽设置（屏幕上8像素），供下一帧 drawKeyFrame 使用
-        mGreenDrawPaint.strokeWidth = 8f / totalScale
-    }
-
-    /**
-     * 绘制关键帧ID，防重叠、防镜像，显示在正下方
-     */
-    private fun drawKeyFrameIds(canvas: Canvas, totalMatrix: Matrix) {
-        if (keyFrames3D.isEmpty()) return
-        canvas.save()
-
-        // 逆变换，使画布回到屏幕坐标系，从而保证文字大小恒定且不被镜像
-        totalMatrix.invert(mInverseMatrix)
-        canvas.concat(mInverseMatrix)
-
-        // 提前计算文字 Y 轴偏移量，避免在循环中重复计算
-        val textOffset = -(mTextPaint.descent() + mTextPaint.ascent()) / 2f + 10f
-
-        for ((id, frame) in keyFrames3D) {
-            // 使用 totalMatrix.mapPoints 替代 worldToScreen，避免在循环内分配 PointF 和数组对象
-            mTempPts[0] = frame.robotPos[0]
-            mTempPts[1] = frame.robotPos[1]
-            totalMatrix.mapPoints(mTempPts)
-
-            val text = id.toString()
-            canvas.drawText(text, mTempPts[0], mTempPts[1] + textOffset, mTextPaint)
-        }
-
-        canvas.restore()
-    }
-
-    /***
-     * 添加关键帧
-     */
-    fun addKeyFrames(laserData: laser_t, keyPoints: MutableList<KeyframePoint>?) {
-        val mapView = parent.get() ?: return
-        val rad0 = laserData.rad0.toInt()
-        // rad0等于0的时候添加，其余的时候隔3帧添加(即0, 4, 8...)
-        if (rad0 != -1 && (rad0 == 0 || rad0 % 4 == 0)) {
-            if (!keyFrames3D.containsKey(rad0)) {
-//            Log.i(TAG, "关键帧 ID $rad0")
-//            Log.i(TAG, "关键帧 x ${robotPose[0]}")
-//            Log.i(TAG, "关键帧 y ${robotPose[1]}")
-//            Log.i(TAG, "关键帧 t ${robotPose[2]}")
-//            Log.i(TAG, "关键帧 z ${robotPose[3]}")
-//            Log.i(TAG, "关键帧 roll ${robotPose[4]}")
-//            Log.i(TAG, "关键帧 pitch ${robotPose[5]}")
-                //关键帧第一帧 要单独显示
-                if (rad0 == 0) {
-                    mapView.mConstrainNodes?.addConstraintNodes(
-                        ConstraintNode(
-                            rad0,
-                            mapView.robotPose[0].toDouble(),
-                            mapView.robotPose[1].toDouble(),
-                            mapView.robotPose[2].toDouble()
-                        )
-                    )
-                }
-
-                synchronized(keyFrames3D) {
-                    // 累加点数缓存
-                    keyPoints?.size?.let { count ->
-                        if (count > 0) {
-                            mCachedPointCount.addAndGet(count)
-                        }
-                    }
-
-                    keyFrames3D[rad0] = KeyFrame(keyPoints, mapView.robotPose.clone())
-                    mapView.isStartRevSubMaps = true
-                    isDirty = true // 数据更新，标记脏
-                }
-            }
-        }
-    }
-
-    /**
-     * 外部接口：更新关键帧数据 nav做回环检测 3D
-     */
-    var rangeSize = 0
-    fun parseOptPose(laserData: laser_t) {
-        Log.e(TAG, "3D回环检测关键帧keyFrames3D  ${keyFrames3D.size}")
-
-        if (laserData.ranges.isEmpty()) return
-        if (rangeSize == laserData.ranges.size) return
-        else {
-            rangeSize = laserData.ranges.size
-            Log.d(TAG, "3D回环检测开始 ${laserData.ranges.size / 4}")
-            // 标记脏数据，需要重绘
-            var hasUpdate = false
-
-            synchronized(keyFrames3D) {
-                val size = laserData.ranges.size
-                for (i in 0 until size step 4) {
-                    // 关键帧ID
-                    val rad0: Int = laserData.ranges[i].toInt()
-
-                    // 关键帧位置
-                    val radX: Float = laserData.ranges[i + 1]
-                    val radY: Float = laserData.ranges[i + 2]
-                    val robotTheta: Float = laserData.ranges[i + 3]
-
-                    // 获取关键帧数据（非空校验）
-                    val keyFrame = keyFrames3D[rad0] ?: continue
-//                    Log.e(TAG, "3D回环检测关键帧id  $rad0")
-//                    Log.d(
-//                        TAG,
-//                        "old x y robotTheta ${keyFrame.robotPos[0]}  ${keyFrame.robotPos[1]}  ${keyFrame.robotPos[2]}"
+//package com.siasun.dianshi.view.createMap.map3D
+//
+//import android.annotation.SuppressLint
+//import android.content.Context
+//import android.graphics.Canvas
+//import android.graphics.Color
+//import android.graphics.Paint
+//import android.graphics.Path
+//import com.ngu.lcmtypes.laser_t
+//import com.siasun.dianshi.bean.ConstraintNode
+//import com.siasun.dianshi.view.SlamWareBaseView
+//import java.lang.ref.WeakReference
+//import java.util.concurrent.ConcurrentHashMap
+//import java.util.concurrent.atomic.AtomicInteger
+//import com.siasun.dianshi.bean.KeyFrame
+//import com.siasun.dianshi.bean.KeyframePoint
+//import com.siasun.dianshi.view.WorkMode
+//import kotlin.math.cos
+//import kotlin.math.sin
+//
+//import android.graphics.Matrix
+//import android.util.Log
+//
+///**
+// * 建图地图轮廓
+// */
+//@SuppressLint("ViewConstructor")
+//class MapOutline3D(context: Context?, val parent: WeakReference<CreateMapView3D>) :
+//    SlamWareBaseView<CreateMapView3D>(context, parent) {
+//    private val TAG = this::class.java.simpleName
+//    private var currentWorkMode = WorkMode.MODE_SHOW_MAP
+//
+//    //3D建图关键帧
+//    private val keyFrames3D = ConcurrentHashMap<Int, KeyFrame>()
+//
+//    // 缓存点数，避免每次遍历计算
+//    private val mCachedPointCount = AtomicInteger(0)
+//
+//    // 缓存点云绘制数组，避免频繁GC
+//    private var mPointArray: FloatArray? = null
+//    private var isDirty = false
+//
+//    // 记录数组中实际有效的数据长度（Float个数），避免画出未填充的脏区域
+//    private var mValidDataLength = 0
+//
+//    private val mWorldToPixelMatrix = Matrix()
+//
+//    // 控制是否绘制
+//    private var isDrawingEnabled: Boolean = false
+//
+//    /**
+//     * 设置是否启用绘制
+//     */
+//    fun setDrawingEnabled(enabled: Boolean) {
+//        this.isDrawingEnabled = enabled
+//        postInvalidate()
+//    }
+//
+//    /**
+//     * 设置工作模式
+//     */
+//    fun setWorkMode(mode: WorkMode) {
+//        if (currentWorkMode == mode) return // 避免重复设置
+//
+//        currentWorkMode = mode
+//
+//    }
+//
+//    companion object {
+//        val mPaint = Paint().apply {
+//            color = Color.BLACK
+//            style = Paint.Style.FILL
+//            strokeWidth = 3f
+//        }
+//
+//        val mGreenDrawPaint = Paint().apply {
+//            color = Color.GREEN
+//            style = Paint.Style.FILL
+//            strokeWidth = 8f
+//            strokeCap = Paint.Cap.ROUND
+//            strokeJoin = Paint.Join.ROUND
+//        }
+//
+//        val mTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+//            color = Color.BLACK
+//            textSize = 10f
+//            textAlign = Paint.Align.CENTER
+//        }
+//    }
+//
+//
+//    @SuppressLint("DrawAllocation")
+//    override fun onDraw(canvas: Canvas) {
+//        super.onDraw(canvas)
+//        canvas.save()
+//        val mapView = parent.get() ?: return
+//        if (keyFrames3D.isNotEmpty()) {
+//            // 1. 构建世界坐标到地图像素坐标的变换矩阵
+//            // 注意：必须在同步块中获取 mapData 数据
+//            var resolution = 0.05f
+//            synchronized(mapView.mSrf.mapData) {
+//                val mapData = mapView.mSrf.mapData
+//                resolution = mapData.resolution
+//                if (resolution <= 0) resolution = 0.05f
+//
+//                // 构建 World -> Pixel 矩阵
+//                // px = (wx - originX) / resolution
+//                // py = height - (wy - originY) / resolution
+//                mWorldToPixelMatrix.reset()
+//                mWorldToPixelMatrix.postTranslate(-mapData.originX, -mapData.originY)
+//                mWorldToPixelMatrix.postScale(1f / resolution, -1f / resolution)
+//                mWorldToPixelMatrix.postTranslate(0f, mapData.height.toFloat())
+//            }
+//
+//            // 2. 组合矩阵：Total = OuterMatrix * WorldToPixelMatrix
+//            // 注意：Canvas的concat顺序是 preConcat，所以先 concat OuterMatrix (Pixel->Screen)，再 concat WorldToPixel (World->Pixel)
+//            // 实际上 canvas.concat(M) 等价于 current = current * M.
+//            // 我们希望 point * M_total -> screen.
+//            // screen = Outer * Pixel
+//            // Pixel = WorldToPixel * World
+//            // screen = Outer * (WorldToPixel * World)
+//            // 所以 M_total = Outer * WorldToPixel
+//            val totalMatrix = Matrix(mapView.outerMatrix)
+//            totalMatrix.preConcat(mWorldToPixelMatrix)
+//
+//            // 3. 应用矩阵到 Canvas
+//            canvas.concat(totalMatrix)
+//
+//            // 4. 调整 Paint 线宽，抵消缩放影响，保持屏幕上固定像素大小
+//            // 总缩放比例 approx = mapScale / resolution
+//            val totalScale = mapView.mSrf.scale / resolution
+//            if (totalScale > 0) {
+//                mPaint.strokeWidth = 3f / totalScale
+//                mGreenDrawPaint.strokeWidth = 8f / totalScale
+//            }
+//
+//            // 5. 准备点云数据 (仅在脏标记时更新)
+//            // 获取预估需要的数组大小
+//            val totalPointsCount = mCachedPointCount.get()
+//
+//            if (totalPointsCount > 0) {
+//                // 优化：复用数组，避免频繁分配内存
+//                if (mPointArray == null || mPointArray!!.size < totalPointsCount * 2) {
+//                    mPointArray = FloatArray(totalPointsCount * 2)
+//                    isDirty = true // 数组扩容需要重新填充
+//                }
+//
+//                val pointArray = mPointArray!!
+//                var index = 0
+//
+//                // 如果数据脏了，重新填充世界坐标
+//                synchronized(keyFrames3D) {
+//                    if (isDirty) {
+//                        keyFrames3D.values.forEach { frame ->
+//                            frame.points?.forEach { point ->
+//                                // 直接存储世界坐标，无需 worldToScreen 转换
+//                                if (index + 1 < pointArray.size) {
+//                                    pointArray[index++] = point.x
+//                                    pointArray[index++] = point.y
+//                                }
+//                            }
+//                        }
+//                        // 更新有效数据长度
+//                        mValidDataLength = index
+//                        isDirty = false
+//                    } else {
+//                        // 如果不脏，使用上次记录的有效长度
+//                        index = mValidDataLength
+//                        // 安全截断
+//                        if (index > pointArray.size) index = pointArray.size
+//                    }
+//                }
+//
+//                // 一次性绘制所有点云
+//                canvas.drawPoints(pointArray, 0, index, mPaint)
+//            }
+//
+//            drawKeyFrame(canvas)
+//
+//            //控制关键帧
+//            if (isDrawingEnabled) {
+//                synchronized(keyFrames3D) {
+//
+//                    // 7. 绘制关键帧角度
+//                    drawKeyFrameAngles(canvas, totalScale)
+//
+//                    // 8. 绘制关键帧ID
+//                    drawKeyFrameIds(canvas, totalMatrix)
+//
+//                }
+//            }
+//        }
+//        canvas.restore()
+//    }
+//
+//    private fun drawKeyFrame(canvas: Canvas) {
+//        keyFrames3D.values.forEach { frame ->
+//            // 使用局部变量减少重复计算
+//            val mPoints = floatArrayOf(frame.robotPos[0], frame.robotPos[1])
+//            canvas.drawPoints(mPoints, mGreenDrawPaint)
+//        }
+//    }
+//
+//    // 预分配对象，避免 onDraw 中频繁 GC 和对象创建
+//    private val mInverseMatrix = Matrix()
+//    private val mTempPts = FloatArray(2)
+//
+//    /**
+//     * 绘制关键帧角度
+//     */
+//    private fun drawKeyFrameAngles(canvas: Canvas, totalScale: Float) {
+//        if (totalScale <= 0) return
+//        val inverseScale = 1f / totalScale
+//
+//        // 线段在屏幕上长度为5像素，转换到地图坐标系中
+//        val lineLength = 10f * inverseScale
+//        // 线段在屏幕上宽度设为2像素，转换到地图坐标系中
+//        mGreenDrawPaint.strokeWidth = 3f * inverseScale
+//
+//        for ((_, frame) in keyFrames3D) {
+//            canvas.save()
+//            canvas.translate(frame.robotPos[0], frame.robotPos[1])
+//            // frame.theta 为弧度，转换为角度（在翻转的Y轴坐标系中，正角度会自动逆时针旋转即向上）
+//            canvas.rotate(Math.toDegrees(frame.robotPos[2].toDouble()).toFloat())
+//            // 绘制线段，起点为关键帧中心点(0,0)，终点为起点加5像素(lineLength, 0)
+//            canvas.drawLine(0f, 0f, lineLength, 0f, mGreenDrawPaint)
+//            canvas.restore()
+//        }
+//
+//        // 恢复原有线宽设置（屏幕上8像素），供下一帧 drawKeyFrame 使用
+//        mGreenDrawPaint.strokeWidth = 8f / totalScale
+//    }
+//
+//    /**
+//     * 绘制关键帧ID，防重叠、防镜像，显示在正下方
+//     */
+//    private fun drawKeyFrameIds(canvas: Canvas, totalMatrix: Matrix) {
+//        if (keyFrames3D.isEmpty()) return
+//        canvas.save()
+//
+//        // 逆变换，使画布回到屏幕坐标系，从而保证文字大小恒定且不被镜像
+//        totalMatrix.invert(mInverseMatrix)
+//        canvas.concat(mInverseMatrix)
+//
+//        // 提前计算文字 Y 轴偏移量，避免在循环中重复计算
+//        val textOffset = -(mTextPaint.descent() + mTextPaint.ascent()) / 2f + 10f
+//
+//        for ((id, frame) in keyFrames3D) {
+//            // 使用 totalMatrix.mapPoints 替代 worldToScreen，避免在循环内分配 PointF 和数组对象
+//            mTempPts[0] = frame.robotPos[0]
+//            mTempPts[1] = frame.robotPos[1]
+//            totalMatrix.mapPoints(mTempPts)
+//
+//            val text = id.toString()
+//            canvas.drawText(text, mTempPts[0], mTempPts[1] + textOffset, mTextPaint)
+//        }
+//
+//        canvas.restore()
+//    }
+//
+//    /***
+//     * 添加关键帧
+//     */
+//    fun addKeyFrames(laserData: laser_t, keyPoints: MutableList<KeyframePoint>?) {
+//        val mapView = parent.get() ?: return
+//        val rad0 = laserData.rad0.toInt()
+//        // rad0等于0的时候添加，其余的时候隔3帧添加(即0, 4, 8...)
+//        if (rad0 != -1 && (rad0 == 0 || rad0 % 4 == 0)) {
+//            if (!keyFrames3D.containsKey(rad0)) {
+////            Log.i(TAG, "关键帧 ID $rad0")
+////            Log.i(TAG, "关键帧 x ${robotPose[0]}")
+////            Log.i(TAG, "关键帧 y ${robotPose[1]}")
+////            Log.i(TAG, "关键帧 t ${robotPose[2]}")
+////            Log.i(TAG, "关键帧 z ${robotPose[3]}")
+////            Log.i(TAG, "关键帧 roll ${robotPose[4]}")
+////            Log.i(TAG, "关键帧 pitch ${robotPose[5]}")
+//                //关键帧第一帧 要单独显示
+//                if (rad0 == 0) {
+//                    mapView.mConstrainNodes?.addConstraintNodes(
+//                        ConstraintNode(
+//                            rad0,
+//                            mapView.robotPose[0].toDouble(),
+//                            mapView.robotPose[1].toDouble(),
+//                            mapView.robotPose[2].toDouble()
+//                        )
 //                    )
-//                    Log.d(TAG, "new x y robotTheta $radX  $radY  $robotTheta")
-
-                    // 更新机器人位置（原子操作，避免中间状态）
-                    keyFrame.robotPos[0] = radX
-                    keyFrame.robotPos[1] = radY
-                    keyFrame.robotPos[2] = robotTheta
-
-                    // 优化点：批量更新点云坐标（使用数学运算优化）
-                    val cosT = cos(robotTheta)
-                    val sinT = sin(robotTheta)
-
-                    // 仅更新当前关键帧的点云（避免遍历所有关键帧）
-                    keyFrame.points?.forEach { item ->
-                        // 复用预计算的三角函数值
-                        item.x = item.cloudX * cosT - item.cloudY * sinT + radX
-                        item.y = item.cloudX * sinT + item.cloudY * cosT + radY
-                    }
-
-                    hasUpdate = true
-                }
-                if (hasUpdate) {
-                    isDirty = true
-                    postInvalidate()
-                }
-            }
-            Log.d(TAG, "3D回环检测结束 更新关键帧数据：处理 ${laserData.ranges.size / 4} 个关键帧")
-        }
-    }
-
-    /**
-     * 清理资源，防止内存泄漏
-     */
-    override fun onDetachedFromWindow() {
-        super.onDetachedFromWindow()
-        // 清理点云数据
-        keyFrames3D.clear()
-        mCachedPointCount.set(0)
-        // 清理父引用
-        parent.clear()
-    }
-}
+//                }
+//
+//                synchronized(keyFrames3D) {
+//                    // 累加点数缓存
+//                    keyPoints?.size?.let { count ->
+//                        if (count > 0) {
+//                            mCachedPointCount.addAndGet(count)
+//                        }
+//                    }
+//
+//                    keyFrames3D[rad0] = KeyFrame(keyPoints, mapView.robotPose.clone())
+//                    mapView.isStartRevSubMaps = true
+//                    isDirty = true // 数据更新，标记脏
+//                }
+//            }
+//        }
+//    }
+//
+//    /**
+//     * 外部接口：更新关键帧数据 nav做回环检测 3D
+//     */
+//    var rangeSize = 0
+//    fun parseOptPose(laserData: laser_t) {
+//        Log.e(TAG, "3D回环检测关键帧keyFrames3D  ${keyFrames3D.size}")
+//
+//        if (laserData.ranges.isEmpty()) return
+//        if (rangeSize == laserData.ranges.size) return
+//        else {
+//            rangeSize = laserData.ranges.size
+//            Log.d(TAG, "3D回环检测开始 ${laserData.ranges.size / 4}")
+//            // 标记脏数据，需要重绘
+//            var hasUpdate = false
+//
+//            synchronized(keyFrames3D) {
+//                val size = laserData.ranges.size
+//                for (i in 0 until size step 4) {
+//                    // 关键帧ID
+//                    val rad0: Int = laserData.ranges[i].toInt()
+//
+//                    // 关键帧位置
+//                    val radX: Float = laserData.ranges[i + 1]
+//                    val radY: Float = laserData.ranges[i + 2]
+//                    val robotTheta: Float = laserData.ranges[i + 3]
+//
+//                    // 获取关键帧数据（非空校验）
+//                    val keyFrame = keyFrames3D[rad0] ?: continue
+////                    Log.e(TAG, "3D回环检测关键帧id  $rad0")
+////                    Log.d(
+////                        TAG,
+////                        "old x y robotTheta ${keyFrame.robotPos[0]}  ${keyFrame.robotPos[1]}  ${keyFrame.robotPos[2]}"
+////                    )
+////                    Log.d(TAG, "new x y robotTheta $radX  $radY  $robotTheta")
+//
+//                    // 更新机器人位置（原子操作，避免中间状态）
+//                    keyFrame.robotPos[0] = radX
+//                    keyFrame.robotPos[1] = radY
+//                    keyFrame.robotPos[2] = robotTheta
+//
+//                    // 优化点：批量更新点云坐标（使用数学运算优化）
+//                    val cosT = cos(robotTheta)
+//                    val sinT = sin(robotTheta)
+//
+//                    // 仅更新当前关键帧的点云（避免遍历所有关键帧）
+//                    keyFrame.points?.forEach { item ->
+//                        // 复用预计算的三角函数值
+//                        item.x = item.cloudX * cosT - item.cloudY * sinT + radX
+//                        item.y = item.cloudX * sinT + item.cloudY * cosT + radY
+//                    }
+//
+//                    hasUpdate = true
+//                }
+//                if (hasUpdate) {
+//                    isDirty = true
+//                    postInvalidate()
+//                }
+//            }
+//            Log.d(TAG, "3D回环检测结束 更新关键帧数据：处理 ${laserData.ranges.size / 4} 个关键帧")
+//        }
+//    }
+//
+//    /**
+//     * 清理资源，防止内存泄漏
+//     */
+//    override fun onDetachedFromWindow() {
+//        super.onDetachedFromWindow()
+//        // 清理点云数据
+//        keyFrames3D.clear()
+//        mCachedPointCount.set(0)
+//        // 清理父引用
+//        parent.clear()
+//    }
+//}
