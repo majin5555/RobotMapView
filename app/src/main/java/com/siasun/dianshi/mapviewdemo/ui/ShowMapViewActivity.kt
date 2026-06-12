@@ -144,13 +144,13 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initPostingArea()
 //        initRemoveNoise()
 //        initPostingArea()
-        initCleanArea()
+//        initCleanArea()
 //        initElevator()
 //        initPose()
 //        initMachineStation()
 //        initMixArea()
 //        initSpAreas()
-//        initCrossDoor()
+        initCrossDoor()
 //        initRFId()
 //        initInspectionView()
 //        initSameSwitch()
@@ -291,8 +291,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         //添加过门
         mBinding.btnAddCrossDoor.onClick {
             val crossDoor = com.siasun.dianshi.bean.CrossDoor(
-                id = 1,
                 map_id = 2,
+                id = 1,
                 door_type = "",
                 door_msg = com.siasun.dianshi.bean.DoorMsg(
                     type = "DOOR_001"
@@ -1600,7 +1600,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
      */
     private fun showCrossDoorDialog(crossDoor: com.siasun.dianshi.bean.CrossDoor) {
         android.app.AlertDialog.Builder(this).setTitle("过门信息").setMessage(
-            "ID: ${crossDoor.id}\n" + "地图ID: ${crossDoor.map_id}\n" + "类型: ${crossDoor.door_msg.type}\n" + "起点: (${
+            "ID: ${crossDoor.id}\n" + "地图ID: ${crossDoor.map_id}\n" + "类型: ${crossDoor.door_msg?.type}\n" + "起点: (${
                 String.format(
                     "%.2f", crossDoor.start_point.x
                 )

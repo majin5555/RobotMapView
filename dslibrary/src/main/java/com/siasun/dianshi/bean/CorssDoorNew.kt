@@ -2,6 +2,7 @@ package com.siasun.dianshi.bean
 
 import android.graphics.PointF
 import com.jeremyliao.liveeventbus.core.LiveEvent
+import com.alibaba.fastjson.annotation.JSONField
 
 /**
  * 过门
@@ -24,12 +25,23 @@ import com.jeremyliao.liveeventbus.core.LiveEvent
  */
 
 data class CrossDoor(
-    val id: Int,
+    @JSONField(ordinal = 1)
     val map_id: Int,
+    
+    @JSONField(ordinal = 2)
+    val id: Int,
+    
+    @JSONField(ordinal = 3)
     var door_type: String,
-    var door_msg: DoorMsg?,
+    
+    @JSONField(ordinal = 4)
     var start_point: PointF = PointF(),
-    var end_point: PointF = PointF()
+    
+    @JSONField(ordinal = 5)
+    var end_point: PointF = PointF(),
+    
+    @JSONField(ordinal = 6)
+    var door_msg: DoorMsg? = null
 ) : LiveEvent
 
 data class DoorMsg(

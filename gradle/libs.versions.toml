@@ -62,8 +62,7 @@ brvahVersion = "4.1.4"
 xpopupVersion = "2.10.0"
 commonsVersion = "3.6.1"
 activity = "1.8.0"
-#fastjsonVersion = "1.2.78"
-
+fastjsonVersion = "1.2.78"
 
 [libraries]
 
@@ -135,7 +134,7 @@ shapeDrawable = { group = "com.github.getActivity", name = "ShapeDrawable", vers
 brvah = { group = "io.github.cymchad", name = "BaseRecyclerViewAdapterHelper4", version.ref = "brvahVersion" }
 xpopup = { group = "com.github.li-xiaojun", name = "XPopup", version.ref = "xpopupVersion" }
 commons = { group = "org.apache.commons", name = "commons-math3", version.ref = "commonsVersion" }
-#fastjson = { group = "com.alibaba", name = "fastjson", version.ref = "fastjsonVersion" }
+fastjson = { group = "com.alibaba", name = "fastjson", version.ref = "fastjsonVersion" }
 
 
 
