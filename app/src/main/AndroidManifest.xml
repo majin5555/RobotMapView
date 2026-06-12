@@ -72,13 +72,21 @@
 
         </activity>
         <activity
-            android:name=".ui.createMap.createMap3D.CreateMap3DActivity"
+            android:name=".ui.TestActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+        </activity>
+<!--        <activity-->
+<!--            android:name=".ui.TestActivity"-->
+<!--            android:exported="true">-->
+        <activity
+            android:name=".ui.createMap.createMap3D.CreateMap3DActivity"
+            android:exported="true">
 
         </activity>
 

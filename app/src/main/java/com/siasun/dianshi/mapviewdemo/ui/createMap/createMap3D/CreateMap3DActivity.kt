@@ -4,7 +4,11 @@ import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.ViewGroup
+import android.widget.EditText
+import android.widget.LinearLayout
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import com.blankj.utilcode.util.ToastUtils
 import com.jeremyliao.liveeventbus.LiveEventBus
@@ -103,6 +107,14 @@ class CreateMap3DActivity :
         LiveEventBus.get(EVENT_FLOATING_BTN_TEST, Boolean::class.java).observe(this) {
             ToastUtils.showShort("测试按钮")
             Log.e("YZS", "测试按钮")
+//            showInputDialog(this@CreateMap3DActivity) { userInput ->
+//                // 这里可以处理用户输入，例如 Toast 提示或保存数据
+////                Toast.makeText(this, "你输入了: $userInput", Toast.LENGTH_SHORT).show()
+//                Log.e("YZS", "测试按钮\$userInput\"")
+//            }
+            showInputDialog { userInput ->
+                Log.e("YZS", "测试按钮$userInput")
+            }
         }
 
         LiveEventBus.get(EVENT_FLOATING_BTN_SHOW_FRAME, Boolean::class.java).observe(this) {
@@ -163,12 +175,15 @@ class CreateMap3DActivity :
     override fun onStart() {
         super.onStart()
         // 显示悬浮窗
-        floatingWindow.show()
+        window.decorView.post {
+            floatingWindow.show()
+        }
     }
 
     override fun onStop() {
         super.onStop()
         // 隐藏悬浮窗
+
         floatingWindow.hide()
     }
 
@@ -247,6 +262,43 @@ class CreateMap3DActivity :
                 sendLastPose()
             }
         }
+    }
+
+    /**
+     * 显示带输入框和两个按钮的对话框
+     * @param context 上下文（Activity 或 ApplicationContext）
+     * @param onConfirm 确认回调，返回用户输入的文本（可选）
+     */
+    fun showInputDialog( onConfirm: ((String) -> Unit)? = null) {
+        // 动态创建 EditText 并设置参数
+        val editText = EditText(this).apply {
+            hint = "请输入内容"
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        // 将 EditText 放入容器（AlertDialog 支持直接设置 View）
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(64, 32, 64, 32)  // 避免贴边
+            addView(editText)
+        }
+
+        // 构建对话框
+        AlertDialog.Builder(this)
+            .setTitle("输入对话框")
+            .setView(container)
+            .setPositiveButton("确定") { dialog, _ ->
+                val inputText = editText.text.toString()
+                onConfirm?.invoke(inputText)
+                dialog.dismiss()  // 关闭对话框
+            }
+            .setNegativeButton("取消") { dialog, _ ->
+                dialog.dismiss()  // 关闭对话框
+            }
+            .show()
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
@@ -418,7 +470,7 @@ class CreateMap3DActivity :
     private fun startMockPosStream() {
         if (mockJob != null) return
         mockJob = lifecycleScope.launch {
-            val targetKeyframes = 2000            // 总关键帧数，避免轨迹太大
+            val targetKeyframes = 3000            // 总关键帧数，避免轨迹太大
             var step = 0f
             var angle = 0f
             while (step < targetKeyframes) {
@@ -462,7 +514,7 @@ class CreateMap3DActivity :
 
                 step += 1f
                 angle += 0.2f   // 每帧旋转 0.2 弧度（约 11.5°，原 0.05）
-                if (step>8000&&step<8200){
+                if (step>1000){
                     delay(500)
                 }else{
                     delay(30)       // 50ms 发送一次

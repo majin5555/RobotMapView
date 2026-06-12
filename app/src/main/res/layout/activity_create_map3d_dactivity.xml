@@ -4,12 +4,21 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:text="标题头"
+        android:gravity="center"
+        android:background="#00ff00"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <!--显示地图的View-->
     <com.siasun.dianshi.view.createMap.map3D.CreateMapView3D
         android:id="@+id/map_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@+id/tv_title"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
@@ -23,6 +32,7 @@
 
     <TextView
         android:id="@+id/tvMapSteps"
+        app:layout_constraintTop_toBottomOf="@+id/tv_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="建图步数"
@@ -36,6 +46,7 @@
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
+
         <Button
             android:id="@+id/btn_test_button"
             android:layout_width="160dp"
@@ -57,6 +68,7 @@
             android:layout_height="60dp"
             android:gravity="center"
             android:text="恢复旋转角度" />
+
         <Button
             android:id="@+id/btn_add_node"
             android:layout_width="160dp"

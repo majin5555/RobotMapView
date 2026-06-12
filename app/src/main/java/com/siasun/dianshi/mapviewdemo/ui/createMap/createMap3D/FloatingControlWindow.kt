@@ -1,6 +1,7 @@
 package com.siasun.dianshi.mapviewdemo.ui.createMap.createMap3D
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.graphics.Color
 import android.graphics.PixelFormat
@@ -25,6 +26,7 @@ class FloatingControlWindow(private val context: Context) {
     private var initialY = 0
     private var initialTouchX = 0f
     private var initialTouchY = 0f
+
 
     @SuppressLint("ClickableViewAccessibility")
     private fun createFloatingView(): View {
@@ -96,6 +98,10 @@ class FloatingControlWindow(private val context: Context) {
 
     fun show() {
         if (isShowing) return
+        // 防止 Activity 已经销毁后仍然添加视图
+        if (context is Activity && (context.isFinishing || context.isDestroyed)) {
+            return
+        }
         if (floatingView == null) {
             floatingView = createFloatingView()
             layoutParams = WindowManager.LayoutParams().apply {
@@ -126,20 +132,31 @@ class FloatingControlWindow(private val context: Context) {
 
     fun hide() {
         if (!isShowing) return
-        floatingView?.let {
-            if (it.parent != null) {
-                try {
-                    windowManager.removeView(it)
-                    isShowing = false
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
+        floatingView?.let { view ->
+            try {
+                // removeViewImmediate 是同步的，且不会因视图不存在而崩溃
+                windowManager.removeViewImmediate(view)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                isShowing = false
             }
+        }
+        // 如果 floatingView 意外为 null，也重置标志
+        if (floatingView == null) {
+            isShowing = false
         }
     }
 
     fun destroy() {
         hide()
+        // 再次尝试移除，避免 hide 中某种极端情况没移除成功
+        floatingView?.let {
+            try {
+                windowManager.removeViewImmediate(it)
+            } catch (_: Exception) {
+            }
+        }
         floatingView = null
         layoutParams = null
     }
