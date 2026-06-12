@@ -3,6 +3,7 @@ package com.siasun.dianshi.view.createMap.map3D
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -44,10 +45,20 @@ class MapOutline3DGL(
         private const val POINT_SIZE_KEYFRAME = 8f
         private const val DIR_LINE_LENGTH = 0.5f
 
-        // 文字世界高度（固定），宽度由纹理比例自动计算
-        private const val CHAR_WORLD_HEIGHT = 0.4f
+        // 文字世界尺寸
+        private const val CHAR_WORLD_HEIGHT = 0.2f
         private const val TEXT_OFFSET_WORLD_Y = 0.2f
 
+        // 机器人世界尺寸（与图标视觉大小匹配，可根据需要调整）
+        private const val ROBOT_SIZE = 0.5f
+
+        // 在 companion object 外新增成员变量
+        private var cachedMapScale = 1f
+        private var cachedResolution = 0.05f
+        private const val ROBOT_BASE_SIZE = 0.5f   // 基础世界尺寸（米）
+        private const val MIN_SCREEN_PX = 20f       // 最小屏幕像素
+
+        // 点/线着色器
         private const val VERTEX_SHADER_POINT = """
             uniform mat4 u_MVPMatrix;
             uniform float u_PointSize;
@@ -65,13 +76,13 @@ class MapOutline3DGL(
             }
         """
 
-        // 文字着色器：支持动态字符宽度和精确纹理采样
+        // 文字着色器
         private const val VERTEX_SHADER_TEXT = """
             uniform mat4 u_MVPMatrix;
-            uniform float u_CharAspectScale;   // 纹理总宽度 / 高度，用于将UV宽度转为世界宽度
+            uniform float u_CharAspectScale;
             attribute vec2 a_Vertex;
-            attribute vec2 a_TexOffset;        // x: 0(左)或1(右), y: 0(下)或1(上)
-            attribute vec2 a_WorldPos;          // 字符左下角世界坐标
+            attribute vec2 a_TexOffset;
+            attribute vec2 a_WorldPos;
             attribute float a_Umin;
             attribute float a_Umax;
             varying vec2 v_TexCoord;
@@ -90,20 +101,45 @@ class MapOutline3DGL(
                 gl_FragColor = texture2D(u_Texture, v_TexCoord);
             }
         """
+
+        // 机器人纹理着色器
+        private const val VERTEX_SHADER_ROBOT = """
+            uniform mat4 u_MVPMatrix;
+            uniform mat4 u_ModelMatrix;
+            attribute vec2 a_Position;
+            attribute vec2 a_TexCoord;
+            varying vec2 v_TexCoord;
+            void main() {
+                gl_Position = u_MVPMatrix * u_ModelMatrix * vec4(a_Position, 0.0, 1.0);
+                v_TexCoord = a_TexCoord;
+            }
+        """
+        private const val FRAGMENT_SHADER_ROBOT = """
+            precision mediump float;
+            uniform sampler2D u_Texture;
+            varying vec2 v_TexCoord;
+            void main() {
+                gl_FragColor = texture2D(u_Texture, v_TexCoord);
+            }
+        """
     }
 
+    // 状态标志
     private var isDetailedEnabled = false
     private var pointCloudDirty = true
     private var keyframeGeometryDirty = true
+    private var drawWhiteBackground = false           // 默认透明
 
     private val keyFrames3D = ConcurrentHashMap<Int, KeyFrame>()
 
+    // 点/线着色器
     private var programPoint = 0
     private var aPosPoint = 0
     private var uColorPoint = 0
     private var uMVPPoint = 0
     private var uPointSize = 0
 
+    // 文字着色器
     private var programText = 0
     private var aVertexText = 0
     private var aTexOffsetText = 0
@@ -114,15 +150,25 @@ class MapOutline3DGL(
     private var uCharAspectScaleTex = 0
     private var uTextureTex = 0
 
+    // 机器人着色器
+    private var programRobot = 0
+    private var aPosRobot = 0
+    private var aTexRobot = 0
+    private var uMVPRobot = 0
+    private var uModelMatrixRobot = 0
+    private var uTextureRobot = 0
+
     private val mvpMatrix = FloatArray(16)
     private val projectionMatrix = FloatArray(16)
     private val modelMatrix = FloatArray(16)
 
+    // VBO
     private var vboPointCloud = intArrayOf(0)
     private var vboKeyframePoints = intArrayOf(0)
     private var vboKeyframeLines = intArrayOf(0)
     private var vboTextGeometry = intArrayOf(0)
     private var vboTextInstance = intArrayOf(0)
+    private var vboRobot = intArrayOf(0)
 
     private var pointCloudVertexCount = 0
     private var keyframePointCount = 0
@@ -148,19 +194,21 @@ class MapOutline3DGL(
     private var lastRangeSize = 0
 
     private var textTexture = 0
-    private var screenWidth = 1
-    private var screenHeight = 1
-
-    // 纹理图集参数（紧凑布局后计算）
     private var charUmin = FloatArray(11)
     private var charUmax = FloatArray(11)
-    private var texAspectScale = 1f   // 纹理总宽度 / 高度
+    private var texAspectScale = 1f
+
+    // 机器人相关
+    private var robotPose = FloatArray(3)
+    private var robotBitmap: Bitmap? = null
+    private var robotTexture = 0
 
     init {
         setEGLContextClientVersion(3)
         setEGLConfigChooser(8, 8, 8, 8, 0, 0)
         holder.setFormat(PixelFormat.TRANSLUCENT)
         setZOrderOnTop(false)
+        setZOrderMediaOverlay(false)
         setRenderer(this)
         renderMode = RENDERMODE_WHEN_DIRTY
     }
@@ -256,6 +304,19 @@ class MapOutline3DGL(
         requestRender()
     }
 
+    /** 设置机器人位姿（弧度），由 CreateMapView3D 调用 */
+    fun updateRobotPose(x: Float, y: Float, theta: Float) {
+        robotPose[0] = x
+        robotPose[1] = y
+        robotPose[2] = theta
+        requestRender()
+    }
+
+    /** 设置机器人图标，需在 OpenGL 初始化前调用 */
+    fun setRobotBitmap(bitmap: Bitmap) {
+        robotBitmap = bitmap
+    }
+
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean = false
 
@@ -264,12 +325,14 @@ class MapOutline3DGL(
         GLES20.glEnable(GLES20.GL_BLEND)
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
 
+        // 点/线
         programPoint = createProgram(VERTEX_SHADER_POINT, FRAGMENT_SHADER_POINT)
         aPosPoint = GLES20.glGetAttribLocation(programPoint, "a_Position")
         uColorPoint = GLES20.glGetUniformLocation(programPoint, "u_Color")
         uMVPPoint = GLES20.glGetUniformLocation(programPoint, "u_MVPMatrix")
         uPointSize = GLES20.glGetUniformLocation(programPoint, "u_PointSize")
 
+        // 文字
         programText = createProgram(VERTEX_SHADER_TEXT, FRAGMENT_SHADER_TEXT)
         aVertexText = GLES20.glGetAttribLocation(programText, "a_Vertex")
         aTexOffsetText = GLES20.glGetAttribLocation(programText, "a_TexOffset")
@@ -280,7 +343,15 @@ class MapOutline3DGL(
         uCharAspectScaleTex = GLES20.glGetUniformLocation(programText, "u_CharAspectScale")
         uTextureTex = GLES20.glGetUniformLocation(programText, "u_Texture")
 
-        // 固定几何体 VBO（四边形 + 纹理偏移）
+        // 机器人
+        programRobot = createProgram(VERTEX_SHADER_ROBOT, FRAGMENT_SHADER_ROBOT)
+        aPosRobot = GLES20.glGetAttribLocation(programRobot, "a_Position")
+        aTexRobot = GLES20.glGetAttribLocation(programRobot, "a_TexCoord")
+        uMVPRobot = GLES20.glGetUniformLocation(programRobot, "u_MVPMatrix")
+        uModelMatrixRobot = GLES20.glGetUniformLocation(programRobot, "u_ModelMatrix")
+        uTextureRobot = GLES20.glGetUniformLocation(programRobot, "u_Texture")
+
+        // 固定几何体 VBO（文字四边形）
         val quadVertices = floatArrayOf(
             -0.5f, -0.5f, 0f, 0f,
             0.5f, -0.5f, 1f, 0f,
@@ -298,19 +369,50 @@ class MapOutline3DGL(
             quadBuffer,
             GLES20.GL_STATIC_DRAW
         )
-        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0)
 
+        // 实例 VBO
         GLES20.glGenBuffers(1, vboTextInstance, 0)
 
-        // 创建紧凑纹理并获取 uMin/uMax 数组
+        // 机器人几何体（四边形，顶点坐标+纹理坐标）
+        val half = ROBOT_SIZE / 2f
+//        val robotVertices = floatArrayOf(
+//            -half, -half, 0f, 0f,
+//            half, -half, 1f, 0f,
+//            -half,  half, 0f, 1f,
+//            half,  half, 1f, 1f
+//        )
+
+        // 在 onSurfaceCreated 中创建机器人 VBO 时：
+        val robotVertices = floatArrayOf(
+            -0.5f, -0.5f, 0f, 0f,
+            0.5f, -0.5f, 1f, 0f,
+            -0.5f, 0.5f, 0f, 1f,
+            0.5f, 0.5f, 1f, 1f
+        )
+        val robotBuffer = ByteBuffer.allocateDirect(robotVertices.size * 4)
+            .order(ByteOrder.nativeOrder()).asFloatBuffer()
+        robotBuffer.put(robotVertices).position(0)
+        GLES20.glGenBuffers(1, vboRobot, 0)
+        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vboRobot[0])
+        GLES20.glBufferData(
+            GLES20.GL_ARRAY_BUFFER,
+            robotVertices.size * 4,
+            robotBuffer,
+            GLES20.GL_STATIC_DRAW
+        )
+
+        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0)
+
+        // 纹理
         textTexture = createDigitTexture()
+        // 机器人纹理在 setRobotBitmap 后上传，这里先创建占位
+        robotTexture = 0
+        uploadRobotTexture()
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
         GLES20.glViewport(0, 0, width, height)
         GMatrix.orthoM(projectionMatrix, 0, 0f, width.toFloat(), height.toFloat(), 0f, -1f, 1f)
-        screenWidth = width
-        screenHeight = height
     }
 
     override fun onDrawFrame(gl: GL10?) {
@@ -318,6 +420,7 @@ class MapOutline3DGL(
         updateMVPMatrix(mapView)
 
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
+
         GLES20.glUseProgram(programPoint)
         GLES20.glUniformMatrix4fv(uMVPPoint, 1, false, mvpMatrix, 0)
 
@@ -352,9 +455,118 @@ class MapOutline3DGL(
             }
         }
 
+        // 最后绘制机器人（在所有元素之上）
+        drawRobot()
+
         if (keyframeGeometryDirty) keyframeGeometryDirty = false
     }
 
+    // ---------- 机器人绘制 ----------
+//    private fun drawRobot() {
+//        if (robotTexture == 0) return
+//        GLES20.glUseProgram(programRobot)
+//        GLES20.glUniformMatrix4fv(uMVPRobot, 1, false, mvpMatrix, 0)
+//
+//        // 构建模型矩阵：先旋转，后平移
+//        val model = FloatArray(16)
+//        GMatrix.setIdentityM(model, 0)
+//        GMatrix.translateM(model, 0, robotPose[0], robotPose[1], 0f)
+//        GMatrix.rotateM(model, 0, Math.toDegrees(robotPose[2].toDouble()).toFloat(), 0f, 0f, 1f)
+//        GLES20.glUniformMatrix4fv(uModelMatrixRobot, 1, false, model, 0)
+//
+//        GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
+//        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, robotTexture)
+//        GLES20.glUniform1i(uTextureRobot, 0)
+//
+//        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vboRobot[0])
+//        GLES20.glEnableVertexAttribArray(aPosRobot)
+//        GLES20.glVertexAttribPointer(aPosRobot, 2, GLES20.GL_FLOAT, false, 4 * 4, 0)
+//        GLES20.glEnableVertexAttribArray(aTexRobot)
+//        GLES20.glVertexAttribPointer(aTexRobot, 2, GLES20.GL_FLOAT, false, 4 * 4, 2 * 4)
+//
+//        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
+//
+//        GLES20.glDisableVertexAttribArray(aPosRobot)
+//        GLES20.glDisableVertexAttribArray(aTexRobot)
+//        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0)
+//    }
+
+    // 修改 drawRobot，使用动态缩放
+    private fun drawRobot() {
+        if (robotTexture == 0) return
+
+        // 计算当前缩放下的屏幕像素大小
+        val screenPx = ROBOT_BASE_SIZE * (cachedMapScale / cachedResolution)
+        // 若小于最小阈值，则扩大世界尺寸以保证可见性
+        val worldSize = if (screenPx < MIN_SCREEN_PX) {
+            MIN_SCREEN_PX * cachedResolution / cachedMapScale
+        } else {
+            ROBOT_BASE_SIZE
+        }
+
+        GLES20.glUseProgram(programRobot)
+        GLES20.glUniformMatrix4fv(uMVPRobot, 1, false, mvpMatrix, 0)
+
+        // 构建模型矩阵：缩放 → 旋转 → 平移
+        val model = FloatArray(16)
+        GMatrix.setIdentityM(model, 0)
+        GMatrix.translateM(model, 0, robotPose[0], robotPose[1], 0f)
+        GMatrix.rotateM(model, 0, Math.toDegrees(robotPose[2].toDouble()).toFloat(), 0f, 0f, 1f)
+        GMatrix.scaleM(model, 0, worldSize, worldSize, 1f)  // 注意顺序：先缩放再旋转平移，所以放在最后乘
+        GLES20.glUniformMatrix4fv(uModelMatrixRobot, 1, false, model, 0)
+
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, robotTexture)
+        GLES20.glUniform1i(uTextureRobot, 0)
+
+        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vboRobot[0])
+        GLES20.glEnableVertexAttribArray(aPosRobot)
+        GLES20.glVertexAttribPointer(aPosRobot, 2, GLES20.GL_FLOAT, false, 4 * 4, 0)
+        GLES20.glEnableVertexAttribArray(aTexRobot)
+        GLES20.glVertexAttribPointer(aTexRobot, 2, GLES20.GL_FLOAT, false, 4 * 4, 2 * 4)
+
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
+
+        GLES20.glDisableVertexAttribArray(aPosRobot)
+        GLES20.glDisableVertexAttribArray(aTexRobot)
+        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0)
+    }
+
+    // ---------- 纹理上传 ----------
+    private fun uploadRobotTexture() {
+        val bmp = robotBitmap ?: return
+        if (robotTexture == 0) {
+            val tex = IntArray(1)
+            GLES20.glGenTextures(1, tex, 0)
+            robotTexture = tex[0]
+        }
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, robotTexture)
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR)
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR)
+        GLES20.glTexParameteri(
+            GLES20.GL_TEXTURE_2D,
+            GLES20.GL_TEXTURE_WRAP_S,
+            GLES20.GL_CLAMP_TO_EDGE
+        )
+        GLES20.glTexParameteri(
+            GLES20.GL_TEXTURE_2D,
+            GLES20.GL_TEXTURE_WRAP_T,
+            GLES20.GL_CLAMP_TO_EDGE
+        )
+        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bmp, 0)
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0)
+    }
+
+    // ---------- 点云、关键帧等方法保持不变（复用现有代码） ----------
+    // ... 以下为现有的 rebuildPointCloudVBO, rebuildKeyframePointsVBO, drawPoints, drawLines 等函数 ...
+    // 由于篇幅，这里省略，直接使用你最新版本中的实现，注意不要改动任何逻辑。
+
+    // 需要包含所有原有方法：createDigitTexture, updateMVPMatrix, matrixToGL, uploadVBO, uploadVBOFromBuffer, obtainUploadBuffer, createProgram, loadShader 等。
+    // 确保 onDetachedFromWindow 中也释放 robotTexture 和 vboRobot。
+
+    // 此处占位，表示原来的完整逻辑（从你的最新版本中复制过来）
+    // ==============================================================
+    // 以下是你现有代码中的所有重建和绘制函数，保持不变
     private fun rebuildPointCloudVBO() {
         var totalPoints = 0
         var floatCount = 0
@@ -385,24 +597,6 @@ class MapOutline3DGL(
         pointCloudLastLen = floatCount
     }
 
-//    private fun rebuildKeyframePointsVBO() {
-//        val size = keyFrames3D.size
-//        if (size == 0) { keyframePointCount = 0; return }
-//        if (keyframePointsArray == null || keyframePointsArray!!.size < size * 2) {
-//            keyframePointsArray = FloatArray(size * 2)
-//        }
-//        val arr = keyframePointsArray!!
-//        var i = 0
-//        for (kf in keyFrames3D.values) {
-//            if (i + 1 >= arr.size) break
-//            arr[i++] = kf.robotPos[0]
-//            arr[i++] = kf.robotPos[1]
-//        }
-//        keyframePointCount = i / 2
-//        uploadVBO(vboKeyframePoints, arr, i, keyframePointsLastLen)
-//        keyframePointsLastLen = i
-//    }
-
     private fun rebuildKeyframePointsVBO() {
         val entries = keyFrames3D.entries.toList()
         val size = entries.size
@@ -424,7 +618,8 @@ class MapOutline3DGL(
     }
 
     private fun rebuildKeyframeLinesVBO() {
-        val size = keyFrames3D.size
+        val entries = keyFrames3D.entries.toList()
+        val size = entries.size
         if (size == 0) {
             keyframeLineVertexCount = 0; return
         }
@@ -434,11 +629,11 @@ class MapOutline3DGL(
         }
         val arr = keyframeLinesArray!!
         var i = 0
-        for (kf in keyFrames3D.values) {
+        for ((_, frame) in entries) {
             if (i + 3 >= arr.size) break
-            val x = kf.robotPos[0];
-            val y = kf.robotPos[1];
-            val t = kf.robotPos[2]
+            val x = frame.robotPos[0];
+            val y = frame.robotPos[1];
+            val t = frame.robotPos[2]
             arr[i++] = x
             arr[i++] = y
             arr[i++] = x + DIR_LINE_LENGTH * cos(t)
@@ -449,60 +644,14 @@ class MapOutline3DGL(
         keyframeLinesLastLen = i
     }
 
-    // ---------- 文字实例 VBO ----------
-//    private fun rebuildTextVBO() {
-//        var totalChars = 0
-//        for ((id) in keyFrames3D) totalChars += id.toString().length
-//        if (totalChars == 0) {
-//            textInstanceCount = 0
-//            return
-//        }
-//
-//        // 每个字符实例数据： worldX, worldY, uMin, uMax (4 floats)
-//        val instanceFloats = totalChars * 4
-//        val instanceArray = FloatArray(instanceFloats)
-//        var idx = 0
-//        for ((id, frame) in keyFrames3D) {
-//            val text = id.toString()
-//            val robotX = frame.robotPos[0]
-//            val robotY = frame.robotPos[1] + TEXT_OFFSET_WORLD_Y
-//            var cursorX = robotX
-//            for (ch in text) {
-//                val digit = if (ch == '-') 10 else ch - '0'
-//                val uMin = charUmin[digit]
-//                val uMax = charUmax[digit]
-//                instanceArray[idx++] = cursorX   // worldX
-//                instanceArray[idx++] = robotY    // worldY
-//                instanceArray[idx++] = uMin
-//                instanceArray[idx++] = uMax
-//                // 计算世界宽度（用于光标推进），与着色器一致
-//                val charWorldWidth = CHAR_WORLD_HEIGHT * (uMax - uMin) * texAspectScale
-//                cursorX += charWorldWidth
-//            }
-//        }
-//
-//        val buffer = ByteBuffer.allocateDirect(instanceArray.size * 4)
-//            .order(ByteOrder.nativeOrder()).asFloatBuffer()
-//        buffer.put(instanceArray).position(0)
-//        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vboTextInstance[0])
-//        GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, instanceArray.size * 4, buffer, GLES20.GL_DYNAMIC_DRAW)
-//        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0)
-//
-//        textInstanceCount = totalChars
-//    }
-
     private fun rebuildTextVBO() {
-        // 获取键值对快照，防止并发修改导致数组越界
         val entries = keyFrames3D.entries.toList()
         var totalChars = 0
-        for ((id, _) in entries) {
-            totalChars += id.toString().length
-        }
+        for ((id, _) in entries) totalChars += id.toString().length
         if (totalChars == 0) {
             textInstanceCount = 0
             return
         }
-
         val instanceFloats = totalChars * 4
         val instanceArray = FloatArray(instanceFloats)
         var idx = 0
@@ -515,15 +664,14 @@ class MapOutline3DGL(
                 val digit = if (ch == '-') 10 else ch - '0'
                 val uMin = charUmin[digit]
                 val uMax = charUmax[digit]
-                instanceArray[idx++] = cursorX   // worldX
-                instanceArray[idx++] = robotY    // worldY
+                instanceArray[idx++] = cursorX
+                instanceArray[idx++] = robotY
                 instanceArray[idx++] = uMin
                 instanceArray[idx++] = uMax
                 val charWorldWidth = CHAR_WORLD_HEIGHT * (uMax - uMin) * texAspectScale
                 cursorX += charWorldWidth
             }
         }
-
         val buffer = ByteBuffer.allocateDirect(instanceArray.size * 4)
             .order(ByteOrder.nativeOrder()).asFloatBuffer()
         buffer.put(instanceArray).position(0)
@@ -535,7 +683,6 @@ class MapOutline3DGL(
             GLES20.GL_DYNAMIC_DRAW
         )
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0)
-
         textInstanceCount = totalChars
     }
 
@@ -547,14 +694,12 @@ class MapOutline3DGL(
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textTexture)
         GLES20.glUniform1i(uTextureTex, 0)
 
-        // 绑定几何体 VBO
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vboTextGeometry[0])
         GLES20.glEnableVertexAttribArray(aVertexText)
         GLES20.glVertexAttribPointer(aVertexText, 2, GLES20.GL_FLOAT, false, 4 * 4, 0)
         GLES20.glEnableVertexAttribArray(aTexOffsetText)
         GLES20.glVertexAttribPointer(aTexOffsetText, 2, GLES20.GL_FLOAT, false, 4 * 4, 2 * 4)
 
-        // 绑定实例 VBO
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vboTextInstance[0])
         GLES20.glEnableVertexAttribArray(aWorldPosText)
         GLES20.glVertexAttribPointer(aWorldPosText, 2, GLES20.GL_FLOAT, false, 4 * 4, 0)
@@ -603,9 +748,25 @@ class MapOutline3DGL(
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0)
     }
 
+    //    private fun updateMVPMatrix(mapView: CreateMapView3D) {
+//        val md = mapView.mSrf.mapData
+//        val res = if (md.resolution > 0) md.resolution else 0.05f
+//        worldToPixelMatrix.reset()
+//        worldToPixelMatrix.postTranslate(-md.originX, -md.originY)
+//        worldToPixelMatrix.postScale(1f / res, -1f / res)
+//        worldToPixelMatrix.postTranslate(0f, md.height.toFloat())
+//        totalMatrix.set(mapView.outerMatrix)
+//        totalMatrix.preConcat(worldToPixelMatrix)
+//        matrixToGL(totalMatrix, modelMatrix)
+//        GMatrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, modelMatrix, 0)
+//    }
+    // 修改 updateMVPMatrix，在计算完 matrix 后缓存 scale 和 resolution
     private fun updateMVPMatrix(mapView: CreateMapView3D) {
         val md = mapView.mSrf.mapData
         val res = if (md.resolution > 0) md.resolution else 0.05f
+        cachedResolution = res
+        cachedMapScale = mapView.mSrf.scale
+
         worldToPixelMatrix.reset()
         worldToPixelMatrix.postTranslate(-md.originX, -md.originY)
         worldToPixelMatrix.postScale(1f / res, -1f / res)
@@ -669,9 +830,6 @@ class MapOutline3DGL(
         GLES20.glCreateShader(type)
             .also { s -> GLES20.glShaderSource(s, code); GLES20.glCompileShader(s) }
 
-    /**
-     * 生成紧凑数字纹理，并为每个字符计算归一化的 uMin/uMax
-     */
     private fun createDigitTexture(): Int {
         val chars = "0123456789-"
         val charCount = chars.length
@@ -684,8 +842,6 @@ class MapOutline3DGL(
             isAntiAlias = true
             textAlign = Paint.Align.LEFT
         }
-
-        // 测量每个字符的实际宽度
         val charWidths = FloatArray(charCount)
         var totalWidth = 0f
         for (i in 0 until charCount) {
@@ -693,30 +849,20 @@ class MapOutline3DGL(
             charWidths[i] = w
             totalWidth += w
         }
-
-        // 创建与总宽度匹配的 Bitmap
         val bmpWidth = totalWidth.toInt()
         val bmp = Bitmap.createBitmap(bmpWidth, bmpHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bmp)
-        paint.textAlign = Paint.Align.LEFT
         val baseline = (bmpHeight + textSize) / 2f - 4f
-
         var offsetX = 0f
         for (i in 0 until charCount) {
             canvas.drawText(chars[i].toString(), offsetX, baseline, paint)
             offsetX += charWidths[i]
         }
-
-        // 计算归一化 uMin/uMax
         for (i in 0 until charCount) {
             charUmin[i] = if (i == 0) 0f else charUmax[i - 1]
             charUmax[i] = charUmin[i] + charWidths[i] / totalWidth
         }
-
-        // 纹理宽高比
         texAspectScale = totalWidth / bmpHeight
-
-        // 上传纹理
         val tex = IntArray(1)
         GLES20.glGenTextures(1, tex, 0)
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, tex[0])
@@ -743,11 +889,13 @@ class MapOutline3DGL(
         parent.clear()
         GLES20.glDeleteProgram(programPoint)
         GLES20.glDeleteProgram(programText)
-        GLES20.glDeleteTextures(1, intArrayOf(textTexture), 0)
+        GLES20.glDeleteProgram(programRobot)
+        GLES20.glDeleteTextures(1, intArrayOf(textTexture, robotTexture), 0)
         if (vboPointCloud[0] != 0) GLES20.glDeleteBuffers(1, vboPointCloud, 0)
         if (vboKeyframePoints[0] != 0) GLES20.glDeleteBuffers(1, vboKeyframePoints, 0)
         if (vboKeyframeLines[0] != 0) GLES20.glDeleteBuffers(1, vboKeyframeLines, 0)
         if (vboTextGeometry[0] != 0) GLES20.glDeleteBuffers(1, vboTextGeometry, 0)
         if (vboTextInstance[0] != 0) GLES20.glDeleteBuffers(1, vboTextInstance, 0)
+        if (vboRobot[0] != 0) GLES20.glDeleteBuffers(1, vboRobot, 0)
     }
 }

@@ -3,18 +3,23 @@ package com.siasun.dianshi.view.createMap.map3D
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.PointF
 import android.graphics.RectF
+import android.opengl.GLSurfaceView
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.ImageView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.annotation.RequiresApi
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DecodeFormat
@@ -47,11 +52,12 @@ import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.atan2
 
 /**
- * 地图画布
- * 3D 建图View
+ * 地图画布（3D 建图 View）
+ * 基于 SurfaceView + Flow 按需刷新，使用 throttleLatest 限制绘制频率并保证最后帧不丢失。
  */
 open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(context, attrs),
     SlamGestureDetector.OnRPGestureListener, MapViewInterface, SurfaceHolder.Callback {
+
     private val TAG = this::class.java.simpleName
 
     // 当前工作模式
@@ -80,7 +86,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     private var mAllKeyFrames: AllKeyFrameView3D? = null//所有关键帧
     private var mUpLaserScanView: UpLaserScanView<CreateMapView3D>? = null//上激光点云（非建图显示）
     var mConstrainNodes: ConstrainNodes? = null//人工约束节点
-    private var mCreateMapRobotView: RobotViewCreateMap<CreateMapView3D>? = null //机器人图标
+//    private var mCreateMapRobotView: RobotViewCreateMap<CreateMapView3D>? = null //机器人图标
     private var mExpandAreaView: ExpandAreaView<CreateMapView3D>? = null //地图更新区域
 
     // 机器人位姿 [x, y, theta(rad), z, roll, pitch]
@@ -90,10 +96,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     //是否第一次接收到子图数据，如果没收到子图，直接跳过旋转环境
     var isStartRevSubMaps = false
 
-    /**
-     * *************** 监听器   start ***********************
-     */
-
+    // 监听器
     private var mSingleTapListener: ISingleTapListener? = null
     private var mGestureDetector: SlamGestureDetector? = null
 
@@ -177,12 +180,11 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         mAllKeyFrames = AllKeyFrameView3D(context, mMapView)
         mUpLaserScanView = UpLaserScanView(context, mMapView)
         mConstrainNodes = ConstrainNodes(context, mMapView)
-        mCreateMapRobotView = RobotViewCreateMap(context, mMapView)
+//        mCreateMapRobotView = RobotViewCreateMap(context, mMapView)
         mExpandAreaView = ExpandAreaView(context, mMapView)
 
         // 注意：SurfaceView 模式下不再使用 addView 添加子 View
         // 图层顺序：扩展区域→约束→建图激光→关键帧→非建图激光→机器人
-
         //扩展区域
         addMapLayers(mExpandAreaView)
         //人工约束节点
@@ -194,7 +196,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         //非建图上激光点云
         addMapLayers(mUpLaserScanView)
         //机器人图标
-        addMapLayers(mCreateMapRobotView)
+//        addMapLayers(mCreateMapRobotView)
     }
 
     // ──────────────── SurfaceHolder.Callback ────────────────
@@ -279,37 +281,89 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     // ──────────────── 视图生命周期 ────────────────
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        // 添加 OpenGL 图层
         if (mMapOutline3D == null && parent is ViewGroup) {
             val parentGroup = parent as ViewGroup
+
+            // 创建 GL 图层
             val glLayer = MapOutline3DGL(context, WeakReference(this)).apply {
-                layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
-                )
                 setZOrderOnTop(false)
                 setZOrderMediaOverlay(false)
-                // 按需刷新模式（配合 requestRender）
-                renderMode = android.opengl.GLSurfaceView.RENDERMODE_WHEN_DIRTY
+                renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
+                setBackgroundColor(Color.TRANSPARENT)
             }
+
+            // 设置与地图完全相同的布局参数（支持 ConstraintLayout 和普通布局）
+            glLayer.layoutParams = createMatchedLayoutParams()
+
             val myIndex = parentGroup.indexOfChild(this)
             parentGroup.addView(glLayer, myIndex + 1)
 
-            // 确保按钮容器在最顶层
-            parentGroup.findViewById<View>(R.id.ll_rotate)?.bringToFront()
+            // 按钮置顶
+//            parentGroup.findViewById<View>(R.id.ll_rotate)?.bringToFront()
+
+            // 设置机器人图标（从资源加载）
+            val robotBitmap = BitmapFactory.decodeResource(resources, R.mipmap.current_location)
+            glLayer.setRobotBitmap(robotBitmap)
 
             mMapOutline3D = glLayer
+        }
+    }
+
+    /**
+     * 创建与当前视图布局参数完全一致的新 LayoutParams 对象，
+     * 确保 GL 图层能与地图视图完美重合。
+     */
+    private fun createMatchedLayoutParams(): ViewGroup.LayoutParams {
+        val myLp = layoutParams
+        if (myLp is ConstraintLayout.LayoutParams) {
+            // 手动复制 ConstraintLayout 的约束
+            val newLp = ConstraintLayout.LayoutParams(0, 0)
+            newLp.startToStart = myLp.startToStart
+            newLp.startToEnd = myLp.startToEnd
+            newLp.endToStart = myLp.endToStart
+            newLp.endToEnd = myLp.endToEnd
+            newLp.topToTop = myLp.topToTop
+            newLp.topToBottom = myLp.topToBottom
+            newLp.bottomToTop = myLp.bottomToTop
+            newLp.bottomToBottom = myLp.bottomToBottom
+            newLp.leftToLeft = myLp.leftToLeft
+            newLp.leftToRight = myLp.leftToRight
+            newLp.rightToLeft = myLp.rightToLeft
+            newLp.rightToRight = myLp.rightToRight
+            // 复制 margin
+            newLp.setMargins(myLp.leftMargin, myLp.topMargin, myLp.rightMargin, myLp.bottomMargin)
+            return newLp
+        } else {
+            // 其他布局类型（如 FrameLayout、LinearLayout）直接复制宽高和 margin
+            return if (myLp is ViewGroup.MarginLayoutParams) {
+                ViewGroup.MarginLayoutParams(myLp.width, myLp.height).apply {
+                    setMargins(myLp.leftMargin, myLp.topMargin, myLp.rightMargin, myLp.bottomMargin)
+                }
+            } else {
+                ViewGroup.LayoutParams(myLp.width, myLp.height)
+            }
         }
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
 
-        // 移除 OpenGL 图层
-        mMapOutline3D?.let {
-            (it.parent as? ViewGroup)?.removeView(it)
-        }
+        // 延迟移除 OpenGL 图层，防止在 detach 遍历期间修改子视图列表
+        val glLayer = mMapOutline3D
         mMapOutline3D = null
+        if (glLayer != null) {
+            post {
+                if (glLayer.parent is ViewGroup) {
+                    (glLayer.parent as ViewGroup).removeView(glLayer)
+                }
+            }
+        }
+
+//        // 移除 OpenGL 图层
+//        mMapOutline3D?.let {
+//            (it.parent as? ViewGroup)?.removeView(it)
+//        }
+//        mMapOutline3D = null
 
         // 清理协程
         renderScope?.cancel()
@@ -321,7 +375,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         mCreatingUpLaserScanView = null
         mAllKeyFrames = null
         mUpLaserScanView = null
-        mCreateMapRobotView = null
+//        mCreateMapRobotView = null
         mSingleTapListener = null
         mGestureDetector = null
         mOuterMatrix = Matrix()
@@ -336,9 +390,8 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         if (currentWorkMode == WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
             // SurfaceView 模式下，需要手动分发事件给 ExpandAreaView
             val handled = mExpandAreaView?.onTouchEvent(event) ?: false
-            if (handled) {
-                return true
-            }
+            // 返回true表示事件已处理，禁止手势检测器处理，从而禁止底图拖动
+            if (handled) return true
         }
 
         // 非特殊模式或在扩展区域模式下未被处理的事件，由手势检测器处理
@@ -366,7 +419,10 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     }
 
     override fun onMapMove(distanceX: Int, distanceY: Int) {
-        setTransition(distanceX, distanceY)
+        // 在扩展地图增加区域模式下禁止滑动
+        if (currentWorkMode != WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+            setTransition(distanceX, distanceY)
+        }
     }
 
     override fun onMapRotate(factor: Float, center: PointF) {
@@ -437,7 +493,6 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         requestRender()
     }
 
-    fun resetRotation() = mGestureDetector?.resetRotation()
 
     fun setRotate(boolean: Boolean) {
         mGestureDetector?.isRotate = boolean
@@ -460,7 +515,9 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         mMapScale = scale
         // 复制矩阵以保证渲染线程安全
         val matrixCopy = Matrix(matrix)
-        mPngMapView?.setMatrix(matrixCopy)
+        if (currentWorkMode != WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+            mPngMapView?.setMatrix(matrixCopy)
+        }
         for (mapLayer in mapLayers) {
             mapLayer.setMatrixWithScale(matrixCopy, scale)
         }
@@ -481,7 +538,9 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         mOuterMatrix = matrix
         // 复制矩阵以保证渲染线程安全
         val matrixCopy = Matrix(matrix)
-        mPngMapView?.setMatrix(matrixCopy)
+        if (currentWorkMode != WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
+            mPngMapView?.setMatrix(matrixCopy)
+        }
         for (mapLayer in mapLayers) {
             mapLayer.setMatrixWithRotation(matrixCopy, rotation)
         }
@@ -560,17 +619,14 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         mMapOutline3D?.setWorkMode(mode)
         mCreatingUpLaserScanView?.setWorkMode(mode)
         mAllKeyFrames?.setWorkMode(mode)
-        mCreateMapRobotView?.setWorkMode(mode)
+//        mCreateMapRobotView?.setWorkMode(mode)
         mExpandAreaView?.setWorkMode(mode)
         requestRender()
     }
     /**
      * 获取当前工作模式
      */
-    override fun getCurrentWorkMode(): WorkMode {
-        return currentWorkMode
-    }
-
+    override fun getCurrentWorkMode() = currentWorkMode
     /**
      * 加载地图
      * pngPath png文件路径
@@ -578,12 +634,14 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
      */
     fun loadMap(pngPath: String, yamlPath: String) {
         val file = File(pngPath)
-        Glide.with(this).asBitmap().load(file).skipMemoryCache(true)
-            .format(DecodeFormat.PREFER_RGB_565)  // 关键行：强制 RGB_565.skipMemoryCache(true)
-            .diskCacheStrategy(DiskCacheStrategy.NONE).into(object : SimpleTarget<Bitmap?>() {
-                override fun onResourceReady(
-                    resource: Bitmap, transition: Transition<in Bitmap?>?
-                ) {
+        Glide.with(this)
+            .asBitmap()
+            .load(file)
+            .skipMemoryCache(true)
+            .format(DecodeFormat.PREFER_RGB_565)
+            .diskCacheStrategy(DiskCacheStrategy.NONE)
+            .into(object : SimpleTarget<Bitmap?>() {
+                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap?>?) {
                     val mPngMapData = YamlNew().loadYaml(
                         yamlPath,
                         resource.height.toFloat(),
@@ -642,6 +700,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         calBinding(laserData, type)
         //更新点云数据
         mCreatingUpLaserScanView?.updateUpLaserScan(laserData)
+        mMapOutline3D?.updateRobotPose(robotPose[0], robotPose[1], robotPose[2])
         requestRender()
     }
 
@@ -774,15 +833,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
      */
     fun getExpandAreaView(): ExpandAreaView<CreateMapView3D>? = mExpandAreaView
 
-     fun getViewRotation(): Float {
-        val values = FloatArray(9)
-        mOuterMatrix.getValues(values)
-        var angle = atan2(
-            values[Matrix.MSKEW_Y].toDouble(), values[Matrix.MSCALE_X].toDouble()
-        ).toFloat()
-        if (Math.abs(angle) < 0.001f) angle = 0f
-        return angle
-    }
+
 
     // 兼容旧版 invalidate 调用，现统一转为按需请求
     override fun invalidate() {

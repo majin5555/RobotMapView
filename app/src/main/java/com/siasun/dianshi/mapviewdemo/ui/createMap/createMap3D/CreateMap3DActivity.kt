@@ -3,7 +3,12 @@ package com.siasun.dianshi.mapviewdemo.ui.createMap.createMap3D
 import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
+import android.view.ViewGroup
+import android.widget.EditText
+import android.widget.LinearLayout
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import com.blankj.utilcode.util.ToastUtils
 import com.jeremyliao.liveeventbus.LiveEventBus
@@ -438,6 +443,7 @@ class CreateMap3DActivity :
                     10,
                 )
             )
+            LogUtil.e("地图有旋转", null, TAG_NAV)
         }
     }
 
