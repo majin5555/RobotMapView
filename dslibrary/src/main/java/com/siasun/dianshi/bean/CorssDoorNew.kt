@@ -27,19 +27,19 @@ import com.alibaba.fastjson.annotation.JSONField
 data class CrossDoor(
     @JSONField(ordinal = 1)
     val map_id: Int,
-    
+
     @JSONField(ordinal = 2)
     val id: Int,
-    
+
     @JSONField(ordinal = 3)
     var door_type: String,
-    
+
     @JSONField(ordinal = 4)
     var start_point: PointF = PointF(),
-    
+
     @JSONField(ordinal = 5)
     var end_point: PointF = PointF(),
-    
+
     @JSONField(ordinal = 6)
     var door_msg: DoorMsg? = null
 ) : LiveEvent
