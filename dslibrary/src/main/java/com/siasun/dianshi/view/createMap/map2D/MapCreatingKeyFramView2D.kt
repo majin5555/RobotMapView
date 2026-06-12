@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import com.ngu.lcmtypes.laser_t
 import com.siasun.dianshi.bean.KeyFrame2D
+import com.siasun.dianshi.bean.OldKeyFrame
 import com.siasun.dianshi.view.SlamWareBaseView
 import com.siasun.dianshi.view.WorkMode
 import java.lang.ref.WeakReference
@@ -20,6 +21,8 @@ class MapCreatingKeyFramView2D(context: Context?, val parent: WeakReference<Crea
     SlamWareBaseView<CreateMapView2D>(context, parent) {
     private val keyFrames2D = ConcurrentHashMap<Int, KeyFrame2D>()
 
+    //定位模式地图关键帧地图路线
+    private val mMapPath: MutableList<OldKeyFrame> = mutableListOf()
     private var currentWorkMode = WorkMode.MODE_SHOW_MAP
 
     companion object {
@@ -38,6 +41,25 @@ class MapCreatingKeyFramView2D(context: Context?, val parent: WeakReference<Crea
 
         currentWorkMode = mode
 
+    }
+
+    /**
+     * 外部接口：更新关键帧数据 拓展地图时显示所有关键帧位置
+     */
+    fun parseKeyFramePose(mLaserT: laser_t) {
+        mMapPath.clear()
+        if (mLaserT.ranges.isNotEmpty()) {
+            // 每3个数据为一组: x, y, theta
+            for (i in 0 until mLaserT.ranges.size) {
+                //关键帧  x
+                val radX: Float = mLaserT.ranges[3 * i]
+                //关键帧  y
+                val radY: Float = mLaserT.ranges[3 * i + 1]
+                //关键帧角度 theta
+                val theta: Float = mLaserT.ranges[3 * i + 2]
+                mMapPath.add(OldKeyFrame(radX, radY, theta, i))
+            }
+        }
     }
 
     /**
@@ -60,6 +82,7 @@ class MapCreatingKeyFramView2D(context: Context?, val parent: WeakReference<Crea
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         canvas.save()
+        drawKeyFrameOld(canvas)
         drawKeyFrame(canvas)
         canvas.restore()
     }
@@ -81,6 +104,17 @@ class MapCreatingKeyFramView2D(context: Context?, val parent: WeakReference<Crea
         canvas.drawPoints(points, paint)
     }
 
+
+    private fun drawKeyFrameOld(canvas: Canvas) {
+        val mapView = parent.get() ?: return
+
+        for (point in mMapPath) {
+            val worldToScreen = mapView.worldToScreen(point.x, point.y)
+            // 使用局部变量减少重复计算
+            val mPoints = floatArrayOf(worldToScreen.x, worldToScreen.y)
+            canvas.drawPoints(mPoints, paint)
+        }
+    }
 
     /**
      * 清理资源，防止内存泄漏
