@@ -63,6 +63,14 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
             strokeWidth = 4f
             isAntiAlias = true
         }
+
+        private val textPaint = Paint().apply {
+            color = Color.CYAN
+            textSize = 36f
+            isAntiAlias = true
+            // 增加阴影以保证在复杂背景下的可读性
+            setShadowLayer(4f, 1f, 1f, Color.BLACK)
+        }
     }
 
     // 复用的Path对象
@@ -342,6 +350,45 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
                 canvas.drawCircle(p4.x, p4.y, radius, cornerPaint)
                 canvas.drawCircle(p4.x, p4.y, radius, cornerStrokePaint)
             }
+
+            // 寻找屏幕上视觉的左上角和右下角顶点，使得文字始终跟随视觉角点
+            class PointWithWorld(val p: PointF, val wx: Float, val wy: Float)
+            val pointsWithWorld = arrayOf(
+                PointWithWorld(p1, sx, sy),
+                PointWithWorld(p2, ex, sy),
+                PointWithWorld(p3, ex, ey),
+                PointWithWorld(p4, sx, ey)
+            )
+
+            var tlNode = pointsWithWorld[0]
+            var brNode = pointsWithWorld[0]
+            var minSum = tlNode.p.x + tlNode.p.y
+            var maxSum = tlNode.p.x + tlNode.p.y
+
+            for (i in 1..3) {
+                val node = pointsWithWorld[i]
+                val sum = node.p.x + node.p.y
+                if (sum < minSum) {
+                    minSum = sum
+                    tlNode = node
+                }
+                if (sum > maxSum) {
+                    maxSum = sum
+                    brNode = node
+                }
+            }
+
+            // 绘制左上角和右下角的对应世界坐标
+            val tlText = String.format(java.util.Locale.US, "X:%.2f, Y:%.2f", tlNode.wx, tlNode.wy)
+            val brText = String.format(java.util.Locale.US, "X:%.2f, Y:%.2f", brNode.wx, brNode.wy)
+
+            // 左上角坐标（左对齐，显示在点外侧）
+            textPaint.textAlign = Paint.Align.LEFT
+            canvas.drawText(tlText, tlNode.p.x + 15f, tlNode.p.y - 15f, textPaint)
+
+            // 右下角坐标（右对齐，显示在点外侧）
+            textPaint.textAlign = Paint.Align.RIGHT
+            canvas.drawText(brText, brNode.p.x - 15f, brNode.p.y + 45f, textPaint)
         }
 
         canvas.restore()

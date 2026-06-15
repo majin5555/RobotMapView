@@ -48,7 +48,7 @@ class ExpandMap3DActivity :
     //建图心跳定时器
     private val mTimer = Timer()
 
-    val mapID = 11
+    val mapID = 1
 
     //    val list: MutableList<ExpandArea> = mutableListOf()
     var mExpandArea: ExpandArea = ExpandArea(PointF(0f, 0f), PointF(0f, 0f))
