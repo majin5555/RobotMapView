@@ -165,10 +165,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     }
 
     override fun onMapMove(distanceX: Int, distanceY: Int) {
-        // 在建图模式下禁止滑动
-        if (currentWorkMode != WorkMode.MODE_CREATE_MAP) {
-            setTransition(distanceX, distanceY)
-        }
+        setTransition(distanceX, distanceY)
     }
 
     override fun onMapRotate(factor: Float, center: PointF) {

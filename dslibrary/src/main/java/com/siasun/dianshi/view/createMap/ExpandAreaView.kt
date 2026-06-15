@@ -115,6 +115,11 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
         // 只在扩展地图增加区域模式下响应触摸事件
         if (currentWorkMode != WorkMode.MODE_EXTEND_MAP_ADD_REGION) return false
 
+        // 如果手指数量大于1（比如双指缩放地图），强制交回事件给父View（返回false）
+        if (event.pointerCount > 1) {
+            return false
+        }
+
         return handleCreateModeTouch(event)
     }
 
@@ -151,6 +156,14 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
      */
     private fun handleCreateModeTouch(event: MotionEvent): Boolean {
         val mapView = mParent.get() ?: return false
+
+        // 避免多指操作时（如双指缩放地图）误触发拖拽导致坐标系变化
+        if (event.pointerCount > 1) {
+            if (editMode != EditMode.NONE) {
+                editMode = EditMode.NONE
+            }
+            return false
+        }
 
         if (currentWorkMode == WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
             val worldPoint = mapView.screenToWorld(event.x, event.y)
@@ -194,6 +207,8 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
                     }
 
                     // 只有当前没有正在创建的区域时，才能开始新的绘制
+                    // 但是如果我们不想在点击空白处时立刻生成一个矩形而是想交给父View拖动，我们需要修改这里
+                    // 此处如果是按下操作，且没有创建，我们让它正常创建
                     if (!isCreating) {
                         isCreating = true
                         createStartPoint = Start(worldPoint.x, worldPoint.y)
