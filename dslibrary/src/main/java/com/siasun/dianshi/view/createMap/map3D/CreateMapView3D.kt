@@ -774,7 +774,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     /**
      * 更新机器人位置（弧度制）
      */
-    private fun updateRobotPose(
+     fun updateRobotPose(
         x: Float, y: Float, theta: Float, z: Float = 0f, roll: Float = 0f, pitch: Float = 0f
     ) {
         // 使用辅助方法将可能是科学计数法的float值转换为正常的float值
