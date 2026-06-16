@@ -34,6 +34,7 @@ import com.siasun.dianshi.bean.SameSwitchBean
 import com.siasun.dianshi.bean.SpArea
 import com.siasun.dianshi.bean.StationCoordinate
 import com.siasun.dianshi.bean.TeachPoint
+import com.siasun.dianshi.bean.TrafficArea
 import com.siasun.dianshi.bean.WaitPointBean
 import com.siasun.dianshi.bean.WorkAreasNew
 import com.siasun.dianshi.bean.pp.world.PathIndex
@@ -150,7 +151,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initMachineStation()
 //        initMixArea()
 //        initSpAreas()
-        initCrossDoor()
+//        initCrossDoor()
+        initTrafficArea()
 //        initRFId()
 //        initInspectionView()
 //        initSameSwitch()
@@ -314,6 +316,58 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             mBinding.mapView.setWorkMode(WorkMode.MODE_CROSS_DOOR_EDIT)
             ToastUtils.showLong("已进入编辑过门模式，可拖动端点修改位置")
         }
+    }
+
+    //交管区域
+    private fun initTrafficArea() {
+        mBinding.btnLoadAllTrafficArea.onClick {
+           val trafficAreasJson="{\"trafficAreasList\":[{\"areaVertexPnt\":[{\"X\":-7.8456593,\"Y\":0.486022},{\"X\":-5.566971,\"Y\":0.486022},{\"X\":-5.566971,\"Y\":-1.7926669},{\"X\":-7.8456593,\"Y\":-1.7926669}],\"id\":0,\"name\":\"新建交管区1\"},{\"areaVertexPnt\":[{\"X\":0.19690895,\"Y\":0.38032627},{\"X\":4.7211466,\"Y\":2.149805},{\"X\":7.948497,\"Y\":0.6834326},{\"X\":6.9658747,\"Y\":-2.6509485},{\"X\":0.19690895,\"Y\":-1.8983626}],\"id\":1,\"name\":\"新建交管区2\"},{\"areaVertexPnt\":[{\"X\":-1.8157072,\"Y\":-2.8455892},{\"X\":0.06650734,\"Y\":-2.8455892},{\"X\":0.06650734,\"Y\":-4.7278037},{\"X\":-1.8157072,\"Y\":-4.7278037}],\"id\":2,\"name\":\"新建交管区\"}]}"
+
+            val trafficAreaRoot = GsonUtil.gsonToBean(
+                trafficAreasJson,
+                com.siasun.dianshi.bean.TrafficAreaRoot::class.java
+            )
+            if (trafficAreaRoot != null && trafficAreaRoot.trafficAreasList.isNotEmpty()) {
+                mBinding.mapView.setTrafficAreaData(trafficAreaRoot.trafficAreasList)
+                ToastUtils.showLong("加载所有交管区成功")
+            }
+        }
+
+        mBinding.btnGetAllTrafficArea.onClick {
+            val trafficAreas = mBinding.mapView.getTrafficAreaData()
+            val trafficAreaRoot =
+                com.siasun.dianshi.bean.TrafficAreaRoot(trafficAreas.toMutableList())
+            val json = GsonUtil.gsonString(trafficAreaRoot)
+            LogUtil.d("获取所有交管区: $json")
+            ToastUtils.showLong("获取所有交管区，共 ${trafficAreas.size} 个，见日志")
+        }
+
+        mBinding.btnAddTrafficArea.onClick {
+            mBinding.mapView.setWorkMode(WorkMode.MODE_TRAFFIC_AREA_ADD)
+            val newArea = TrafficArea()
+            newArea.name = "新建交管区"
+            newArea.id = generateUniqueId()
+            mBinding.mapView.createTrafficArea(newArea)
+            ToastUtils.showLong("新建交管区")
+        }
+
+        mBinding.btnEditTrafficArea.onClick {
+            mBinding.mapView.setWorkMode(WorkMode.MODE_TRAFFIC_AREA_EDIT)
+            ToastUtils.showLong("编辑交管区")
+        }
+    }
+
+    /**
+     * 生成 0-128 之间且不重复的 ID
+     */
+    private fun generateUniqueId(): Int {
+        val existingIds = mBinding.mapView.getTrafficAreaData().map { it.id }.toSet()
+        for (id in 0..9999) {
+            if (id !in existingIds) {
+                return id
+            }
+        }
+        return 10000
     }
 
     @RequiresApi(Build.VERSION_CODES.R)

@@ -55,6 +55,7 @@ import com.siasun.dianshi.bean.Inspection
 import com.siasun.dianshi.bean.RFID
 import com.siasun.dianshi.bean.ReflectorMapBean
 import com.siasun.dianshi.bean.SameSwitchBean
+import com.siasun.dianshi.bean.TrafficArea
 import com.siasun.dianshi.view.MapNameView.Position
 import com.siasun.dianshi.view.createMap.MapViewInterface
 import java.util.Locale
@@ -116,6 +117,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     var mDragPositioningView: DragPositioningView? = null //拖拽定位view
     var mReflectMapView: ReflectMapView? = null //反光板地图view
     var mInspectionView: InspectionView? = null //巡检点
+    var mTrafficPolygonEditView: TrafficPolygonEditView? = null //交管区域
 
     // 在现有成员变量声明后面添加
     private var currentBitmapTarget: CustomTarget<Bitmap>? = null
@@ -325,6 +327,10 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
             if (getBoolean(R.styleable.MapView_showInspection, false)) {
                 mInspectionView = InspectionView(context, mMapView)
                 addMapLayers(mInspectionView)
+            }
+            if (getBoolean(R.styleable.MapView_showTrafficArea, false)) {
+                mTrafficPolygonEditView = TrafficPolygonEditView(context, mMapView)
+                addMapLayers(mTrafficPolygonEditView)
             }
             mLegendView = LegendView(context, attrs, mMapView)
             //修改LegendView的布局参数，使其显示在右上角（在地图名称下边）
@@ -644,6 +650,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mReflectMapView?.setWorkMode(mode)
         mInspectionView?.setWorkMode(mode)
         mPathView?.setWorkMode(mode)
+        mTrafficPolygonEditView?.setWorkMode(mode)
+
         // 禁用机器人图标绘制
         if (mode == WorkMode.MODE_DRAG_POSITION) {
             mRobotView?.setDrawingEnabled(false)
@@ -733,9 +741,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         currentBitmapTarget = object : CustomTarget<Bitmap>() {
             override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
                 val mPngMapData = YamlNew().loadYaml(
-                    yamlPath,
-                    resource.height.toFloat(),
-                    resource.width.toFloat()
+                    yamlPath, resource.height.toFloat(), resource.width.toFloat()
                 )
                 setBitmap(mPngMapData, resource)
                 currentBitmapTarget = null
@@ -826,12 +832,9 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
             }
         }
 
-        Glide.with(this)
-            .asBitmap()
-            .load(file)
+        Glide.with(this).asBitmap().load(file)
             .format(DecodeFormat.PREFER_RGB_565)  // 关键行：强制 RGB_565.skipMemoryCache(true)
-            .skipMemoryCache(true)
-            .diskCacheStrategy(DiskCacheStrategy.NONE)
+            .skipMemoryCache(true).diskCacheStrategy(DiskCacheStrategy.NONE)
             .into(currentBitmapTarget!!)
 
 //        val file = File(pngPath)
@@ -1240,6 +1243,30 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      * 获取特殊区域
      */
     fun getSpAreaData(): MutableList<SpArea> = mSpPolygonEditView?.getData() ?: mutableListOf()
+
+    /**
+     * 创建交管区
+     */
+    fun createTrafficArea(newArea: TrafficArea) {
+        mTrafficPolygonEditView?.createRectangularAreaAtCenter(newArea)
+    }
+
+    fun setSelectedTrafficArea(area: TrafficArea?) {
+        mTrafficPolygonEditView?.setSelectedTrafficArea(area)
+    }
+
+    /**
+     * 设置交管区
+     */
+    fun setTrafficAreaData(data: MutableList<TrafficArea>) {
+        mTrafficPolygonEditView?.setTrafficAreaData(data)
+    }
+
+    /**
+     * 获取交管区
+     */
+    fun getTrafficAreaData(): List<TrafficArea> =
+        mTrafficPolygonEditView?.getData() ?: mutableListOf()
 
 
     /**

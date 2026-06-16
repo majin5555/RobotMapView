@@ -23,6 +23,8 @@ enum class WorkMode {
     MODE_SP_AREA_ADD, // 创建特殊区域模式
     MODE_MIX_AREA_ADD, // 创建混行区域模式
     MODE_MIX_AREA_EDIT, // 编辑混行区域模式
+    MODE_TRAFFIC_AREA_ADD, // 创建交管区域模式
+    MODE_TRAFFIC_AREA_EDIT, // 编辑交管区域模式
     MODE_PATH_EDIT, // 编辑路线模式
     MODE_PATH_MERGE, // 合并路线模式
     MODE_PATH_DELETE, // 删除路线模式

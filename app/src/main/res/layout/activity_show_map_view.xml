@@ -21,6 +21,7 @@
         app:showCrossDoor="true"
         app:showRFID="true"
         app:showPath="true"
+        app:showTrafficArea="true"
         app:showSameSwitch="true"
         app:showStations="true"
         app:showTopViewPath="true"
@@ -38,6 +39,29 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
+            <Button
+                android:id="@+id/btn_add_traffic_area"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="添加交管区" />
+
+            <Button
+                android:id="@+id/btn_edit_traffic_area"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="编辑交管区" />
+
+            <Button
+                android:id="@+id/btn_get_all_traffic_area"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="获取所有交管区" />
+
+            <Button
+                android:id="@+id/btn_load_all_traffic_area"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="加载所有交管区" />
 
             <!-- 路线编辑控件 -->
             <Button
@@ -203,7 +227,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="加载清扫线" />
-
 
             <!-- 路线编辑控件 -->
             <Button
@@ -534,6 +557,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="编辑同层切换点" />
+
+
 
         </LinearLayout>
     </ScrollView>

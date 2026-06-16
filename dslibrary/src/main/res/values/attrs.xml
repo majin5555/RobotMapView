@@ -55,5 +55,7 @@
         <attr name="showReflectMap" default="false" format="boolean" />
         <!--巡检点-->
         <attr name="showInspection" default="false" format="boolean" />
+        <!--交管区域-->
+        <attr name="showTrafficArea" default="false" format="boolean" />
     </declare-styleable>
 </resources>
