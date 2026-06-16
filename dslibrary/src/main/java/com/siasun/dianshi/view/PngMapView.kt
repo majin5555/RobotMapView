@@ -42,7 +42,7 @@ class PngMapView : View {
 
     private fun init() {
         setBackgroundColor(Color.WHITE)
-        setLayerType(LAYER_TYPE_SOFTWARE, null)
+        // setLayerType(LAYER_TYPE_SOFTWARE, null) // 移除软件渲染层，解决因大图软件绘制导致的ANR问题
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -76,10 +76,7 @@ class PngMapView : View {
      * @param bitmap
      */
     fun setBitmap(bitmap: Bitmap?) {
-        // 清理旧的Bitmap资源
-        if (mPngBitmap != null && mPngBitmap != bitmap && !mPngBitmap!!.isRecycled) {
-            mPngBitmap!!.recycle()
-        }
+        // 交由 Glide 管理 Bitmap，不要手动 recycle
         mPngBitmap = bitmap
         // 重置偏移
         offsetX = 0f
@@ -116,10 +113,8 @@ class PngMapView : View {
      * 主动释放资源，应在 MapView 销毁时调用
      */
     fun release() {
-        if (mPngBitmap != null && !mPngBitmap!!.isRecycled) {
-            mPngBitmap!!.recycle()
-            mPngBitmap = null
-        }
+        // 交由 Glide 管理 Bitmap，不要手动 recycle
+        mPngBitmap = null
         mOuterMatrix.reset()
         offsetX = 0f
         offsetY = 0f
