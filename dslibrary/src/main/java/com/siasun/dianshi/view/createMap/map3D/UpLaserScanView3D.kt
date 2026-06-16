@@ -13,6 +13,10 @@ import java.lang.ref.WeakReference
 import kotlin.math.cos
 import kotlin.math.sin
 
+
+/**
+ * 建图上激光点云
+ */
 @SuppressLint("ViewConstructor")
 class UpLaserScanView3D(context: Context?, val parent: WeakReference<CreateMapView3D>) :
     SlamWareBaseView<CreateMapView3D>(context, parent) {
@@ -48,6 +52,7 @@ class UpLaserScanView3D(context: Context?, val parent: WeakReference<CreateMapVi
         if (currentWorkMode == mode) return // 避免重复设置
 
         currentWorkMode = mode
+
     }
 
     /**
@@ -177,10 +182,6 @@ class UpLaserScanView3D(context: Context?, val parent: WeakReference<CreateMapVi
         canvas.restore()
     }
 
-
-    /**
-     * 清理资源，防止内存泄漏
-     */
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         // 清理点云数据

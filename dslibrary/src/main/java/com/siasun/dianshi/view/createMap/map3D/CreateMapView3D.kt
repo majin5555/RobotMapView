@@ -80,6 +80,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
 
     private var mMapView: WeakReference<CreateMapView3D> = WeakReference(this)
     private var mapLayers: MutableList<SlamWareBaseView<CreateMapView3D>> = CopyOnWriteArrayList()
+
     private var mPngMapView: PngMapView? = null //png地图
     var mMapOutline3D: MapOutline3DGL? = null // OpenGL 轮廓
     private var mCreatingUpLaserScanView: UpLaserScanView3D? = null//上激光点云
@@ -168,7 +169,6 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     init {
         // 初始化 SurfaceHolder 回调
         holder.addCallback(this)
-
         mOuterMatrix = Matrix()
         mGestureDetector = SlamGestureDetector(this, this)
         initView()
@@ -476,6 +476,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
                 mapLayer.setMatrix(mOuterMatrix)
             }
         } else {
+            // 其他模式下正常更新所有图层
             setMatrix(mOuterMatrix)
         }
         mMapOutline3D?.notifyMatrixChanged()
@@ -773,7 +774,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     /**
      * 更新机器人位置（弧度制）
      */
-    fun updateRobotPose(
+    private fun updateRobotPose(
         x: Float, y: Float, theta: Float, z: Float = 0f, roll: Float = 0f, pitch: Float = 0f
     ) {
         // 使用辅助方法将可能是科学计数法的float值转换为正常的float值
@@ -813,7 +814,6 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
 
         // 移动地图使机器人居中
         setTransition(dx.toInt(), dy.toInt())
-//        Log.d("LogUtil", "移动地图使机器人居中")
     }
 
     fun resetExpandAreaView() {

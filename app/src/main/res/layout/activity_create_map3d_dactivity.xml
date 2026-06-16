@@ -32,10 +32,10 @@
 
     <TextView
         android:id="@+id/tvMapSteps"
+        app:layout_constraintTop_toBottomOf="@+id/tv_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="建图步数"
-        app:layout_constraintTop_toBottomOf="@+id/tv_title"
         app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- 以下为原 ll_rotate 内部的按钮，直接放置在此处，并通过约束实现垂直排列 -->
