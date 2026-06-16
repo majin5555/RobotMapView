@@ -138,8 +138,8 @@ class CreateMap3DActivity :
     override fun initData() {
         super.initData()
         if (BuildConfig.DEBUG) {
-//            mBinding.mapView.setWorkMode(WorkMode.MODE_CREATE_MAP)
-//           startMockPosStream()
+            mBinding.mapView.setWorkMode(WorkMode.MODE_CREATE_MAP)
+           startMockPosStream()
         }
         //下载地图结果
         LiveEventBus.get(KEY_UPDATE_MAP, UpdateMapBean::class.java).observe(this) {
