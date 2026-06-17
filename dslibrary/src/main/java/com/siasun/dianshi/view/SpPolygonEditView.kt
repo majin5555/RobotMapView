@@ -89,6 +89,10 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
         onSpAreaEditListener?.onEdgeRemoved(area, edgeIndex)
     }
 
+    override fun onVertexRemovedCallback(area: SpArea, vertexIndex: Int) {
+        onSpAreaEditListener?.onVertexRemoved(area, vertexIndex)
+    }
+
     override fun onAreaCreatedCallback(area: SpArea) {
         onSpAreaEditListener?.onAreaCreated(area)
     }
@@ -189,6 +193,9 @@ class SpPolygonEditView(context: Context?, parent: WeakReference<MapView>) :
 
         // 删除了边
         fun onEdgeRemoved(area: SpArea, edgeIndex: Int)
+
+        // 删除了顶点
+        fun onVertexRemoved(area: SpArea, vertexIndex: Int) {}
 
         // 创建了新区域
         fun onAreaCreated(area: SpArea) {}

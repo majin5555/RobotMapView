@@ -88,6 +88,10 @@ class MixAreaView(context: Context?, parent: WeakReference<MapView>) :
         onMixAreaEditListener?.onEdgeRemoved(area, edgeIndex)
     }
 
+    override fun onVertexRemovedCallback(area: WorkAreasNew, vertexIndex: Int) {
+        onMixAreaEditListener?.onVertexRemoved(area, vertexIndex)
+    }
+
     override fun onAreaCreatedCallback(area: WorkAreasNew) {
         onMixAreaEditListener?.onAreaCreated(area)
     }
@@ -266,6 +270,7 @@ class MixAreaView(context: Context?, parent: WeakReference<MapView>) :
         fun onVertexDragEnd(area: WorkAreasNew, vertexIndex: Int)
         fun onVertexAdded(area: WorkAreasNew, vertexIndex: Int, x: Float, y: Float)
         fun onEdgeRemoved(area: WorkAreasNew, edgeIndex: Int)
+        fun onVertexRemoved(area: WorkAreasNew, vertexIndex: Int) {}
         fun onAreaCreated(area: WorkAreasNew) {}
         fun onEditPassPoint(passPoints: PassPoints?) {}
         fun onAreaDragStart(area: WorkAreasNew) {}
