@@ -151,8 +151,8 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initMachineStation()
 //        initMixArea()
 //        initSpAreas()
-//        initCrossDoor()
-        initTrafficArea()
+        initCrossDoor()
+//        initTrafficArea()
 //        initRFId()
 //        initInspectionView()
 //        initSameSwitch()
@@ -321,11 +321,11 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     //交管区域
     private fun initTrafficArea() {
         mBinding.btnLoadAllTrafficArea.onClick {
-           val trafficAreasJson="{\"trafficAreasList\":[{\"areaVertexPnt\":[{\"X\":-7.8456593,\"Y\":0.486022},{\"X\":-5.566971,\"Y\":0.486022},{\"X\":-5.566971,\"Y\":-1.7926669},{\"X\":-7.8456593,\"Y\":-1.7926669}],\"id\":0,\"name\":\"新建交管区1\"},{\"areaVertexPnt\":[{\"X\":0.19690895,\"Y\":0.38032627},{\"X\":4.7211466,\"Y\":2.149805},{\"X\":7.948497,\"Y\":0.6834326},{\"X\":6.9658747,\"Y\":-2.6509485},{\"X\":0.19690895,\"Y\":-1.8983626}],\"id\":1,\"name\":\"新建交管区2\"},{\"areaVertexPnt\":[{\"X\":-1.8157072,\"Y\":-2.8455892},{\"X\":0.06650734,\"Y\":-2.8455892},{\"X\":0.06650734,\"Y\":-4.7278037},{\"X\":-1.8157072,\"Y\":-4.7278037}],\"id\":2,\"name\":\"新建交管区\"}]}"
+            val trafficAreasJson =
+                "{\"trafficAreasList\":[{\"areaVertexPnt\":[{\"X\":-7.8456593,\"Y\":0.486022},{\"X\":-5.566971,\"Y\":0.486022},{\"X\":-5.566971,\"Y\":-1.7926669},{\"X\":-7.8456593,\"Y\":-1.7926669}],\"id\":0,\"name\":\"新建交管区1\"},{\"areaVertexPnt\":[{\"X\":0.19690895,\"Y\":0.38032627},{\"X\":4.7211466,\"Y\":2.149805},{\"X\":7.948497,\"Y\":0.6834326},{\"X\":6.9658747,\"Y\":-2.6509485},{\"X\":0.19690895,\"Y\":-1.8983626}],\"id\":1,\"name\":\"新建交管区2\"},{\"areaVertexPnt\":[{\"X\":-1.8157072,\"Y\":-2.8455892},{\"X\":0.06650734,\"Y\":-2.8455892},{\"X\":0.06650734,\"Y\":-4.7278037},{\"X\":-1.8157072,\"Y\":-4.7278037}],\"id\":2,\"name\":\"新建交管区\"}]}"
 
             val trafficAreaRoot = GsonUtil.gsonToBean(
-                trafficAreasJson,
-                com.siasun.dianshi.bean.TrafficAreaRoot::class.java
+                trafficAreasJson, com.siasun.dianshi.bean.TrafficAreaRoot::class.java
             )
             if (trafficAreaRoot != null && trafficAreaRoot.trafficAreasList.isNotEmpty()) {
                 mBinding.mapView.setTrafficAreaData(trafficAreaRoot.trafficAreasList)

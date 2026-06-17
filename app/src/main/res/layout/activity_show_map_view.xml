@@ -19,6 +19,7 @@
         app:showOnlinePose="true"
         app:showPositingArea="true"
         app:showCrossDoor="true"
+        app:showSpArea="true"
         app:showRFID="true"
         app:showPath="true"
         app:showTrafficArea="true"

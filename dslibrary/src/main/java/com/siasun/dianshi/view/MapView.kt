@@ -1242,7 +1242,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     /**
      * 获取特殊区域
      */
-    fun getSpAreaData(): MutableList<SpArea> = mSpPolygonEditView?.getData() ?: mutableListOf()
+    fun getSpAreaData(): MutableList<SpArea> = mSpPolygonEditView?.getData()?.toMutableList() ?: mutableListOf()
 
     /**
      * 创建交管区
