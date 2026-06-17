@@ -43,8 +43,37 @@ class CrossDoorView(
 
     // 选中点类型枚举
     enum class SelectedPointType {
-        NONE, START_POINT, END_POINT
+        NONE, START_POINT, END_POINT, LINE
     }
+
+    private var lastTouchX = 0f
+    private var lastTouchY = 0f
+
+    // 手势检测器，用于处理双击事件
+    private val gestureDetector = android.view.GestureDetector(context, object : android.view.GestureDetector.SimpleOnGestureListener() {
+        override fun onDoubleTap(e: MotionEvent): Boolean {
+            if (!isEditing && !isDeleting) return false
+            val mapView = parent.get() ?: return false
+            val x = e.x
+            val y = e.y
+            
+            for (crossDoor in crossDoorList) {
+                val startScreenPoint = mapView.worldToScreen(crossDoor.start_point.x, crossDoor.start_point.y)
+                val endScreenPoint = mapView.worldToScreen(crossDoor.end_point.x, crossDoor.end_point.y)
+                
+                val distanceToLine = pointToLineDistance(x, y, startScreenPoint, endScreenPoint)
+                if (distanceToLine <= dragThreshold) {
+                    if (isDeleting) {
+                        onCrossDoorDeleteClickListener?.onCrossDoorDeleteClick(crossDoor)
+                    } else {
+                        onCrossDoorLineClickListener?.onCrossDoorLineClick(crossDoor)
+                    }
+                    return true
+                }
+            }
+            return false
+        }
+    })
 
     /**
      * 线点击事件监听器接口
@@ -178,9 +207,14 @@ class CrossDoorView(
             return false
         }
 
+        if (gestureDetector.onTouchEvent(event)) {
+            return true
+        }
+
         val mapView = parent.get() ?: return false
         val x = event.x
         val y = event.y
+        var handled = false
 
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
@@ -216,17 +250,12 @@ class CrossDoorView(
                     // 检查是否点击了线（使用点到直线的距离公式）
                     val distanceToLine = pointToLineDistance(x, y, startScreenPoint, endScreenPoint)
                     if (distanceToLine <= dragThreshold) {
-                        val currentTime = System.currentTimeMillis()
-                        // 判断是否处于防连点保护期内
-                        if (currentTime - lastClickTime >= clickInterval) {
-                            lastClickTime = currentTime
-                            // 根据当前模式触发不同的回调
-                            if (isDeleting) {
-                                onCrossDoorDeleteClickListener?.onCrossDoorDeleteClick(crossDoor)
-                            } else {
-                                onCrossDoorLineClickListener?.onCrossDoorLineClick(crossDoor)
-                            }
-                        }
+                        selectedCrossDoor = crossDoor
+                        selectedPointType = SelectedPointType.LINE
+                        isDragging = true
+                        lastTouchX = x
+                        lastTouchY = y
+                        postInvalidate()
                         return true
                     }
                 }
@@ -239,33 +268,51 @@ class CrossDoorView(
 
             MotionEvent.ACTION_MOVE -> {
                 if (isDragging && selectedCrossDoor != null) {
-                    // 将屏幕坐标转换为世界坐标
-                    val worldPoint = mapView.screenToWorld(x, y)
+                    if (selectedPointType == SelectedPointType.LINE) {
+                        val lastWorld = mapView.screenToWorld(lastTouchX, lastTouchY)
+                        val currWorld = mapView.screenToWorld(x, y)
+                        val dx = currWorld.x - lastWorld.x
+                        val dy = currWorld.y - lastWorld.y
 
-                    // 更新选中端点的坐标
-                    when (selectedPointType) {
-                        SelectedPointType.START_POINT -> {
-                            selectedCrossDoor!!.start_point = PointF(worldPoint.x, worldPoint.y)
+                        selectedCrossDoor!!.start_point.x += dx
+                        selectedCrossDoor!!.start_point.y += dy
+                        selectedCrossDoor!!.end_point.x += dx
+                        selectedCrossDoor!!.end_point.y += dy
+
+                        lastTouchX = x
+                        lastTouchY = y
+                    } else {
+                        // 将屏幕坐标转换为世界坐标
+                        val worldPoint = mapView.screenToWorld(x, y)
+
+                        // 更新选中端点的坐标
+                        when (selectedPointType) {
+                            SelectedPointType.START_POINT -> {
+                                selectedCrossDoor!!.start_point = PointF(worldPoint.x, worldPoint.y)
+                            }
+
+                            SelectedPointType.END_POINT -> {
+                                selectedCrossDoor!!.end_point = PointF(worldPoint.x, worldPoint.y)
+                            }
+
+                            else -> {}
                         }
-
-                        SelectedPointType.END_POINT -> {
-                            selectedCrossDoor!!.end_point = PointF(worldPoint.x, worldPoint.y)
-                        }
-
-                        SelectedPointType.NONE -> {}
                     }
 
                     postInvalidate()
-                    return true
+                    handled = true
                 }
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                isDragging = false
+                if (isDragging) {
+                    isDragging = false
+                    handled = true
+                }
             }
         }
 
-        return true
+        return handled
     }
 
     /**
@@ -284,15 +331,24 @@ class CrossDoorView(
     ): Float {
         val dx = endPoint.x - startPoint.x
         val dy = endPoint.y - startPoint.y
-        val denominator = Math.sqrt((dx * dx + dy * dy).toDouble()).toFloat()
-        if (denominator == 0f) {
-            // 起点和终点重合，返回点到起点的距离
-            return Math.sqrt(((x - startPoint.x) * (x - startPoint.x) + (y - startPoint.y) * (y - startPoint.y)).toDouble())
-                .toFloat()
+        val l2 = dx * dx + dy * dy
+        if (l2 == 0f) {
+            val ddx = x - startPoint.x
+            val ddy = y - startPoint.y
+            return Math.sqrt((ddx * ddx + ddy * ddy).toDouble()).toFloat()
         }
-        val numerator =
-            Math.abs(dy * x - dx * y + endPoint.x * startPoint.y - endPoint.y * startPoint.x)
-        return numerator / denominator
+        
+        // 投影点在线段上的比例 t
+        var t = ((x - startPoint.x) * dx + (y - startPoint.y) * dy) / l2
+        t = Math.max(0f, Math.min(1f, t))
+        
+        // 投影点坐标
+        val projX = startPoint.x + t * dx
+        val projY = startPoint.y + t * dy
+        
+        val ddx = x - projX
+        val ddy = y - projY
+        return Math.sqrt((ddx * ddx + ddy * ddy).toDouble()).toFloat()
     }
 
     /**
