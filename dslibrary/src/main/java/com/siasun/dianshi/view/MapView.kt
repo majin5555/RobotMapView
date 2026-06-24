@@ -1574,6 +1574,14 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mMixAreaView?.performDeleteVertex(area, vertexIndex)
     }
 
+
+    /**
+     * 确认删除交管区区域的顶点
+     */
+    fun performDeleteTrafficAreaVertex(area: TrafficArea, vertexIndex: Int) {
+        mTrafficPolygonEditView?.performDeleteVertex(area, vertexIndex)
+    }
+
     /**
      * 设置特殊域编辑监听器
      */
