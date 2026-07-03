@@ -2,6 +2,7 @@ package com.siasun.dianshi.view
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import com.bumptech.glide.Glide
@@ -32,6 +33,15 @@ class RobotView(context: Context?, val parent: WeakReference<MapView>) :
 
     private fun loadRobotDrawable() {
         context?.let { ctx ->
+            // 使用 BitmapFactory 仅解码边界，获取系统基于 density 缩放后的标准尺寸
+            // 这样能确保 Glide 加载的尺寸与原生 decodeResource 保持一致，避免渲染过大及占用过多内存
+            val options = BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+            }
+            BitmapFactory.decodeResource(ctx.resources, R.mipmap.current_location, options)
+            val targetWidth = if (options.outWidth > 0) options.outWidth else com.bumptech.glide.request.target.Target.SIZE_ORIGINAL
+            val targetHeight = if (options.outHeight > 0) options.outHeight else com.bumptech.glide.request.target.Target.SIZE_ORIGINAL
+
             customTarget = object : CustomTarget<Drawable>() {
                 override fun onResourceReady(resource: Drawable, transition: Transition<in Drawable>?) {
                     robotDrawable = resource
@@ -45,6 +55,7 @@ class RobotView(context: Context?, val parent: WeakReference<MapView>) :
             }
             Glide.with(ctx.applicationContext)
                 .load(R.mipmap.current_location)
+                .override(targetWidth, targetHeight)
                 .into(customTarget!!)
         }
     }
