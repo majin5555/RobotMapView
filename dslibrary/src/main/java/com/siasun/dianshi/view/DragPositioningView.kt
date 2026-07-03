@@ -53,8 +53,10 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
     private val onRobotMatrix = Matrix()
 
     // 机器人相关
-    private val robotBitmap: Bitmap? by lazy {
-        BitmapFactory.decodeResource(resources, R.mipmap.current_location)
+    private var robotBitmap: Bitmap? = null
+
+    init {
+        robotBitmap = BitmapFactory.decodeResource(resources, R.mipmap.current_location)
     }
 
     // 控制是否绘制
@@ -360,6 +362,14 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
      */
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
+        // 释放 Bitmap 资源，防止内存泄漏
+        robotBitmap?.let { bitmap ->
+            if (!bitmap.isRecycled) {
+                bitmap.recycle()
+            }
+        }
+        robotBitmap = null
+
         // 清理点云数据
         cloudList.clear()
         // 清理父引用
