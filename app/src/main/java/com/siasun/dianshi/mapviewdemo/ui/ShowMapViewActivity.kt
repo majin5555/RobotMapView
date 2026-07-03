@@ -152,7 +152,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         initMixArea()
 //        initSpAreas()
 //        initCrossDoor()
-//        initTrafficArea()
+        initTrafficArea()
 //        initRFId()
 //        initInspectionView()
 //        initSameSwitch()
