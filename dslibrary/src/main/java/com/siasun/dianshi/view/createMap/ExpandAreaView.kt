@@ -35,6 +35,9 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
     private var createStartPoint: Start? = null
     private var createEndPoint: End? = null
 
+    // 控制是否显示坐标文本
+    private var isShowCoordinates = false
+
     private enum class EditMode {
         NONE, DRAG_ALL,
         RESIZE_TL, RESIZE_TR, RESIZE_BL, RESIZE_BR,
@@ -112,10 +115,18 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
     }
 
     /**
-     * 区域创建完成监听器接口
+     * 设置区域创建完成监听器接口
      */
     interface OnExpandAreaCreatedListener {
         fun onExpandAreaCreated(area: ExpandArea)
+    }
+
+    /**
+     * 设置是否显示坐标
+     */
+    fun setShowCoordinates(show: Boolean) {
+        isShowCoordinates = show
+        postInvalidate()
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -351,47 +362,60 @@ class ExpandAreaView<T : MapViewInterface>(context: Context?, parent: WeakRefere
                 canvas.drawCircle(p4.x, p4.y, radius, cornerStrokePaint)
             }
 
-            // 寻找屏幕上视觉的左上角和右下角顶点，使得文字始终跟随视觉角点
-            class PointWithWorld(val p: PointF, val wx: Float, val wy: Float)
-            val pointsWithWorld = arrayOf(
-                PointWithWorld(p1, sx, sy),
-                PointWithWorld(p2, ex, sy),
-                PointWithWorld(p3, ex, ey),
-                PointWithWorld(p4, sx, ey)
-            )
-
-            var tlNode = pointsWithWorld[0]
-            var brNode = pointsWithWorld[0]
-            var minSum = tlNode.p.x + tlNode.p.y
-            var maxSum = tlNode.p.x + tlNode.p.y
-
-            for (i in 1..3) {
-                val node = pointsWithWorld[i]
-                val sum = node.p.x + node.p.y
-                if (sum < minSum) {
-                    minSum = sum
-                    tlNode = node
-                }
-                if (sum > maxSum) {
-                    maxSum = sum
-                    brNode = node
-                }
+            // 如果允许显示坐标，则绘制坐标文本
+            if (isShowCoordinates) {
+                drawCoordinatesText(canvas, sx, sy, ex, ey, p1, p2, p3, p4)
             }
-
-            // 绘制左上角和右下角的对应世界坐标
-            val tlText = String.format(java.util.Locale.US, "X:%.2f, Y:%.2f", tlNode.wx, tlNode.wy)
-            val brText = String.format(java.util.Locale.US, "X:%.2f, Y:%.2f", brNode.wx, brNode.wy)
-
-            // 左上角坐标（左对齐，显示在点外侧）
-            textPaint.textAlign = Paint.Align.LEFT
-            canvas.drawText(tlText, tlNode.p.x + 15f, tlNode.p.y - 15f, textPaint)
-
-            // 右下角坐标（右对齐，显示在点外侧）
-            textPaint.textAlign = Paint.Align.RIGHT
-            canvas.drawText(brText, brNode.p.x - 15f, brNode.p.y + 45f, textPaint)
         }
 
         canvas.restore()
+    }
+
+    /**
+     * 寻找屏幕上视觉的左上角和右下角顶点，使得文字始终跟随视觉角点并绘制
+     */
+    private fun drawCoordinatesText(
+        canvas: Canvas,
+        sx: Float, sy: Float, ex: Float, ey: Float,
+        p1: PointF, p2: PointF, p3: PointF, p4: PointF
+    ) {
+        class PointWithWorld(val p: PointF, val wx: Float, val wy: Float)
+        val pointsWithWorld = arrayOf(
+            PointWithWorld(p1, sx, sy),
+            PointWithWorld(p2, ex, sy),
+            PointWithWorld(p3, ex, ey),
+            PointWithWorld(p4, sx, ey)
+        )
+
+        var tlNode = pointsWithWorld[0]
+        var brNode = pointsWithWorld[0]
+        var minSum = tlNode.p.x + tlNode.p.y
+        var maxSum = tlNode.p.x + tlNode.p.y
+
+        for (i in 1..3) {
+            val node = pointsWithWorld[i]
+            val sum = node.p.x + node.p.y
+            if (sum < minSum) {
+                minSum = sum
+                tlNode = node
+            }
+            if (sum > maxSum) {
+                maxSum = sum
+                brNode = node
+            }
+        }
+
+        // 绘制左上角和右下角的对应世界坐标
+        val tlText = String.format(java.util.Locale.US, "X:%.2f, Y:%.2f", tlNode.wx, tlNode.wy)
+        val brText = String.format(java.util.Locale.US, "X:%.2f, Y:%.2f", brNode.wx, brNode.wy)
+
+        // 左上角坐标（左对齐，显示在点外侧）
+        textPaint.textAlign = Paint.Align.LEFT
+        canvas.drawText(tlText, tlNode.p.x + 15f, tlNode.p.y - 15f, textPaint)
+
+        // 右下角坐标（右对齐，显示在点外侧）
+        textPaint.textAlign = Paint.Align.RIGHT
+        canvas.drawText(brText, brNode.p.x - 15f, brNode.p.y + 45f, textPaint)
     }
 
 }

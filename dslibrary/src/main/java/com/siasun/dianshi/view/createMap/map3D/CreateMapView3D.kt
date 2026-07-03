@@ -674,6 +674,13 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         return mExpandAreaView
     }
 
+    /**
+     * 设置扩展区域是否显示坐标文本
+     */
+    fun setShowCoordinates(show: Boolean) {
+        mExpandAreaView?.setShowCoordinates(show)
+    }
+
     interface ISingleTapListener {
         fun onSingleTapListener(point: PointF)
     }
