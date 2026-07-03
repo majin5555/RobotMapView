@@ -183,6 +183,10 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         // 设置clipChildren为true，确保子视图不会超出父视图的圆角区域
         clipChildren = true
         clipToPadding = true
+        
+        // 强制关闭硬件加速，转为 CPU 绘制，彻底解决 libGLES_mali.so (libhwui) 10小时高频渲染崩溃
+        setLayerType(LAYER_TYPE_SOFTWARE, null)
+
         mOuterMatrix = Matrix()
         mGestureDetector = SlamGestureDetector(this, this)
         initView()

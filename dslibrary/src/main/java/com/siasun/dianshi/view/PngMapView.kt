@@ -42,7 +42,8 @@ class PngMapView : View {
 
     private fun init() {
         setBackgroundColor(Color.WHITE)
-        // setLayerType(LAYER_TYPE_SOFTWARE, null) // 移除软件渲染层，解决因大图软件绘制导致的ANR问题
+        // 强制关闭硬件加速，转为 CPU 绘制，彻底解决 libGLES_mali.so (libhwui) 长时间高频渲染崩溃
+        setLayerType(LAYER_TYPE_SOFTWARE, null) 
     }
 
     override fun onDraw(canvas: Canvas) {

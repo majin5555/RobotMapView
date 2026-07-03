@@ -40,6 +40,24 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
     private val srcPoints = floatArrayOf(0f, 0f, 1f, 0f, 0f, 1f)
     private val dstPoints = FloatArray(6)
 
+    // 缓存上次的矩阵参考点及数据状态，避免重复进行矩阵映射和数组拷贝
+    private var lastP0X = Float.NaN
+    private var lastP0Y = Float.NaN
+    private var lastP1X = Float.NaN
+    private var lastP1Y = Float.NaN
+    private var lastP2X = Float.NaN
+    private var lastP2Y = Float.NaN
+    private var lastRenderPointCount = -1
+    private var lastRenderHeadIndex = -1
+
+    // 节流控制，避免高频刷新导致消息队列拥堵
+    @Volatile
+    private var isRedrawScheduled = false
+    private val redrawRunnable = Runnable {
+        isRedrawScheduled = false
+        invalidate()
+    }
+
     // 绘制画笔 - 移至伴生对象，避免重复创建
     companion object {
         private val mPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -56,48 +74,71 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
 
         val mapView = parent.get() ?: return
 
-        var currentCount = 0
-        var currentHead = 0
-        var localScreenPosArray: FloatArray
-        synchronized(lock) {
-            currentCount = pointCount
-            currentHead = headIndex
-            if (currentCount == 0) return
-            
-            localScreenPosArray = screenPosArray
-            
-            // 从环形缓冲区中提取数据，按顺序放入连续的 localScreenPosArray
-            val firstPartCount = minOf(currentCount, MAX_PATH_POINTS - currentHead)
-            System.arraycopy(worldPosArray, currentHead * 2, localScreenPosArray, 0, firstPartCount * 2)
-            
-            val secondPartCount = currentCount - firstPartCount
-            if (secondPartCount > 0) {
-                System.arraycopy(worldPosArray, 0, localScreenPosArray, firstPartCount * 2, secondPartCount * 2)
-            }
-        }
-        
         // 计算仿射变换矩阵，映射三个参考点
         val p0 = mapView.worldToScreen(0f, 0f)
         val p1 = mapView.worldToScreen(1f, 0f)
         val p2 = mapView.worldToScreen(0f, 1f)
+
+        var currentCount = 0
+        var currentHead = 0
         
-        dstPoints[0] = p0.x; dstPoints[1] = p0.y
-        dstPoints[2] = p1.x; dstPoints[3] = p1.y
-        dstPoints[4] = p2.x; dstPoints[5] = p2.y
+        // 判断地图是否移动
+        val isMapMoved = p0.x != lastP0X || p0.y != lastP0Y || 
+                         p1.x != lastP1X || p1.y != lastP1Y || 
+                         p2.x != lastP2X || p2.y != lastP2Y
         
-        mTransformMatrix.setPolyToPoly(srcPoints, 0, dstPoints, 0, 3)
+        var needsRemap = isMapMoved
+
+        synchronized(lock) {
+            currentCount = pointCount
+            currentHead = headIndex
+            
+            if (currentCount == 0) return
+            
+            // 判断数据是否有更新
+            if (currentCount != lastRenderPointCount || currentHead != lastRenderHeadIndex) {
+                needsRemap = true
+            }
+            
+            if (needsRemap) {
+                // 仅在数据或矩阵变化时才进行数组拷贝，极大地节省 CPU 资源
+                val firstPartCount = minOf(currentCount, MAX_PATH_POINTS - currentHead)
+                System.arraycopy(worldPosArray, currentHead * 2, screenPosArray, 0, firstPartCount * 2)
+                
+                val secondPartCount = currentCount - firstPartCount
+                if (secondPartCount > 0) {
+                    System.arraycopy(worldPosArray, 0, screenPosArray, firstPartCount * 2, secondPartCount * 2)
+                }
+            }
+        }
         
-        // 批量转换所有世界坐标到屏幕坐标，避免创建海量 PointF 对象
-        mTransformMatrix.mapPoints(localScreenPosArray, 0, localScreenPosArray, 0, currentCount)
+        if (needsRemap) {
+            dstPoints[0] = p0.x; dstPoints[1] = p0.y
+            dstPoints[2] = p1.x; dstPoints[3] = p1.y
+            dstPoints[4] = p2.x; dstPoints[5] = p2.y
+            
+            mTransformMatrix.setPolyToPoly(srcPoints, 0, dstPoints, 0, 3)
+            
+            // 批量转换所有世界坐标到屏幕坐标
+            mTransformMatrix.mapPoints(screenPosArray, 0, screenPosArray, 0, currentCount)
+            
+            // 更新缓存状态
+            lastP0X = p0.x; lastP0Y = p0.y
+            lastP1X = p1.x; lastP1Y = p1.y
+            lastP2X = p2.x; lastP2Y = p2.y
+            lastRenderPointCount = currentCount
+            lastRenderHeadIndex = currentHead
+        }
         
         // 一次性绘制所有点
-        canvas.drawPoints(localScreenPosArray, 0, currentCount * 2, mPaint)
+        canvas.drawPoints(screenPosArray, 0, currentCount * 2, mPaint)
     }
 
     /**
      * 机器人有任务实时路径
      */
     fun setData(mCarPoint: PointF) {
+        var shouldPost = false
         synchronized(lock) {
             // 验证坐标的有效性
             if (mCarPoint.x.isFinite() && mCarPoint.y.isFinite()) {
@@ -123,9 +164,17 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
                     // 数组已满，覆盖最老的数据，头部指针后移
                     headIndex = (headIndex + 1) % MAX_PATH_POINTS
                 }
+                
+                // 节流标记：控制刷新频率，防止密集推送坐标引发高频重绘
+                if (!isRedrawScheduled) {
+                    isRedrawScheduled = true
+                    shouldPost = true
+                }
             }
         }
-        postInvalidate()
+        if (shouldPost) {
+            postOnAnimation(redrawRunnable)
+        }
     }
 
 
@@ -135,6 +184,10 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
             headIndex = 0
             lastX = Float.NaN
             lastY = Float.NaN
+            
+            // 重置缓存状态
+            lastRenderPointCount = -1
+            lastRenderHeadIndex = -1
         }
         postInvalidate()
     }
@@ -144,12 +197,16 @@ class WorkIngPathView(context: Context?, val parent: WeakReference<MapView>) :
      */
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
+        removeCallbacks(redrawRunnable)
         // 清空机器人位置列表
         synchronized(lock) {
             pointCount = 0
             headIndex = 0
             lastX = Float.NaN
             lastY = Float.NaN
+            
+            lastRenderPointCount = -1
+            lastRenderHeadIndex = -1
         }
     }
 

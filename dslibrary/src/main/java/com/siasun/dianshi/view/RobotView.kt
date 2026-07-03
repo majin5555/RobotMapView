@@ -2,11 +2,11 @@ package com.siasun.dianshi.view
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Canvas
-import android.graphics.Matrix
-import android.graphics.Paint
+import android.graphics.drawable.Drawable
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import com.siasun.dianshi.R
 import java.lang.ref.WeakReference
 
@@ -17,27 +17,35 @@ import java.lang.ref.WeakReference
 class RobotView(context: Context?, val parent: WeakReference<MapView>) :
     SlamWareBaseView<MapView>(context, parent) {
 
-    private var robotPaint: Paint? = null
     private var agvPose: DoubleArray? = null
-    private val onRobotMatrix = Matrix()
 
     // 控制是否绘制
     private var isDrawingEnabled: Boolean = true
 
     // 机器人相关
-    private val robotBitmap: Bitmap? by lazy {
-        BitmapFactory.decodeResource(resources, R.mipmap.current_location)
-    }
+    private var robotDrawable: Drawable? = null
+    private var customTarget: CustomTarget<Drawable>? = null
 
     init {
-        // 初始化画笔
-        initPaints()
+        loadRobotDrawable()
     }
 
-    private fun initPaints() {
-        robotPaint = Paint().apply {
-            isAntiAlias = true
-            alpha = 255 // 完全不透明
+    private fun loadRobotDrawable() {
+        context?.let { ctx ->
+            customTarget = object : CustomTarget<Drawable>() {
+                override fun onResourceReady(resource: Drawable, transition: Transition<in Drawable>?) {
+                    robotDrawable = resource
+                    postInvalidate()
+                }
+
+                override fun onLoadCleared(placeholder: Drawable?) {
+                    robotDrawable = null
+                    postInvalidate()
+                }
+            }
+            Glide.with(ctx.applicationContext)
+                .load(R.mipmap.current_location)
+                .into(customTarget!!)
         }
     }
 
@@ -46,31 +54,28 @@ class RobotView(context: Context?, val parent: WeakReference<MapView>) :
         val mapView = parent.get() as? MapView ?: return
         if (isDrawingEnabled) {
             agvPose?.let { pose ->
-                robotBitmap?.let { bitmap ->
-                    // 重置变换矩阵，避免变换累积导致的跳动
-                    onRobotMatrix.reset()
+                robotDrawable?.let { drawable ->
                     // 将世界坐标转换为屏幕坐标
                     val screenPos = mapView.worldToScreen(pose[0].toFloat(), pose[1].toFloat())
 
-                    // 计算图标中心点偏移，使图标中心与坐标点重合
-                    val offsetX = -bitmap.width / 2f
-                    val offsetY = -bitmap.height / 2f
+                    // 保存画布状态
+                    canvas.save()
 
-                    // 设置变换矩阵：
-                    // 1. 先平移到原点（以图标中心为锚点）
-                    onRobotMatrix.postTranslate(offsetX, offsetY)
-                    // 2. 然后应用旋转（以图标中心为轴心）
-                    onRobotMatrix.postRotate(
-                        -pose[2].toFloat(),
-                        0f, 0f // 旋转轴心为图标中心
-                    )
-                    // 3. 最后平移到屏幕目标位置
-                    onRobotMatrix.postTranslate(screenPos.x, screenPos.y)
+                    // 平移画布到目标坐标点
+                    canvas.translate(screenPos.x, screenPos.y)
+                    // 以当前原点（即目标坐标点）为轴心进行旋转
+                    canvas.rotate(-pose[2].toFloat())
 
-                    // 绘制机器人图标
-                    robotPaint?.let {
-                        canvas.drawBitmap(bitmap, onRobotMatrix, it)
-                    }
+                    // 设置 Drawable 的边界，使其中心与原点对齐
+                    val halfWidth = drawable.intrinsicWidth / 2
+                    val halfHeight = drawable.intrinsicHeight / 2
+                    drawable.setBounds(-halfWidth, -halfHeight, halfWidth, halfHeight)
+
+                    // 直接使用 Glide 加载出的 Drawable 进行渲染
+                    drawable.draw(canvas)
+
+                    // 恢复画布状态
+                    canvas.restore()
                 }
             }
         }
@@ -101,14 +106,16 @@ class RobotView(context: Context?, val parent: WeakReference<MapView>) :
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-        // 释放Bitmap资源，防止内存泄漏
-        robotBitmap?.let { bitmap ->
-            if (!bitmap.isRecycled) {
-                bitmap.recycle()
+        // 清除 Glide 的加载任务，释放资源防止内存泄漏
+        context?.let { ctx ->
+            customTarget?.let { target ->
+                Glide.with(ctx.applicationContext).clear(target)
             }
         }
-        robotPaint?.reset()
-        robotPaint = null
+        
+        robotDrawable = null
+        customTarget = null
+
         // 清理其他资源
         agvPose = null
     }
