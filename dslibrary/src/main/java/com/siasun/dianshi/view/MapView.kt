@@ -56,6 +56,7 @@ import com.siasun.dianshi.bean.RFID
 import com.siasun.dianshi.bean.ReflectorMapBean
 import com.siasun.dianshi.bean.SameSwitchBean
 import com.siasun.dianshi.bean.TrafficArea
+import com.siasun.dianshi.bean.DoorPrepareArea
 import com.siasun.dianshi.view.MapNameView.Position
 import com.siasun.dianshi.view.createMap.MapViewInterface
 import java.util.Locale
@@ -118,6 +119,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     var mReflectMapView: ReflectMapView? = null //反光板地图view
     var mInspectionView: InspectionView? = null //巡检点
     var mTrafficPolygonEditView: TrafficPolygonEditView? = null //交管区域
+    var mDoorPreparePolygonEditView: DoorPreparePolygonEditView? = null //过门准备区
 
     // 在现有成员变量声明后面添加
     private var currentBitmapTarget: CustomTarget<Bitmap>? = null
@@ -335,6 +337,10 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
             if (getBoolean(R.styleable.MapView_showTrafficArea, false)) {
                 mTrafficPolygonEditView = TrafficPolygonEditView(context, mMapView)
                 addMapLayers(mTrafficPolygonEditView)
+            }
+            if (getBoolean(R.styleable.MapView_showDoorPrepareArea, false)) {
+                mDoorPreparePolygonEditView = DoorPreparePolygonEditView(context, mMapView)
+                addMapLayers(mDoorPreparePolygonEditView)
             }
             mLegendView = LegendView(context, attrs, mMapView)
             //修改LegendView的布局参数，使其显示在右上角（在地图名称下边）
@@ -606,6 +612,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mCrossView = null
         mDragPositioningView = null
         mReflectMapView = null
+        mDoorPreparePolygonEditView = null
 
         // 清理监听器
         mSingleTapListener = null
@@ -655,6 +662,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         mInspectionView?.setWorkMode(mode)
         mPathView?.setWorkMode(mode)
         mTrafficPolygonEditView?.setWorkMode(mode)
+        mDoorPreparePolygonEditView?.setWorkMode(mode)
 
         // 禁用机器人图标绘制
         if (mode == WorkMode.MODE_DRAG_POSITION) {
@@ -1272,6 +1280,30 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     fun getTrafficAreaData(): List<TrafficArea> =
         mTrafficPolygonEditView?.getData() ?: mutableListOf()
 
+    /**
+     * 创建过门准备区
+     */
+    fun createDoorPrepareArea(newArea: DoorPrepareArea) {
+        mDoorPreparePolygonEditView?.createRectangularAreaAtCenter(newArea)
+    }
+
+    fun setSelectedDoorPrepareArea(area: DoorPrepareArea?) {
+        mDoorPreparePolygonEditView?.setSelectedDoorPrepareArea(area)
+    }
+
+    /**
+     * 设置过门准备区
+     */
+    fun setDoorPrepareAreaData(data: MutableList<DoorPrepareArea>) {
+        mDoorPreparePolygonEditView?.setDoorPrepareAreaData(data)
+    }
+
+    /**
+     * 获取过门准备区
+     */
+    fun getDoorPrepareAreaData(): List<DoorPrepareArea> =
+        mDoorPreparePolygonEditView?.getData() ?: mutableListOf()
+
 
     /**
      * 设置定位区域
@@ -1584,6 +1616,20 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      */
     fun performDeleteTrafficAreaVertex(area: TrafficArea, vertexIndex: Int) {
         mTrafficPolygonEditView?.performDeleteVertex(area, vertexIndex)
+    }
+
+    /**
+     * 确认删除过门准备区区域的顶点
+     */
+    fun performDeleteDoorPrepareAreaVertex(area: DoorPrepareArea, vertexIndex: Int) {
+        mDoorPreparePolygonEditView?.performDeleteVertex(area, vertexIndex)
+    }
+
+    /**
+     * 设置过门准备区编辑监听器
+     */
+    fun setOnDoorPrepareAreaEditListener(listener: DoorPreparePolygonEditView.OnDoorPrepareAreaEditListener?) {
+        mDoorPreparePolygonEditView?.setOnDoorPrepareAreaEditListener(listener)
     }
 
     /**
