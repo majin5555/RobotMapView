@@ -3,7 +3,12 @@ package com.siasun.dianshi.mapviewdemo.ui.createMap.createMap3D
 import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
+import android.view.ViewGroup
+import android.widget.EditText
+import android.widget.LinearLayout
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import com.blankj.utilcode.util.ToastUtils
 import com.jeremyliao.liveeventbus.LiveEventBus
@@ -438,6 +443,7 @@ class CreateMap3DActivity :
                     10,
                 )
             )
+            LogUtil.e("地图有旋转", null, TAG_NAV)
         }
     }
 
@@ -473,23 +479,20 @@ class CreateMap3DActivity :
     private fun startMockPosStream() {
         if (mockJob != null) return
         mockJob = lifecycleScope.launch {
-            val targetKeyframes = 10000
+            val targetKeyframes = 3000            // 总关键帧数，避免轨迹太大
             var step = 0f
             var angle = 0f
             while (step < targetKeyframes) {
                 val lt = laser_t()
-                val numPoints = 350
+                val numPoints = 360
                 val ranges = FloatArray(6 + numPoints * 6)
 
-                // 螺旋线参数：起始半径 0，每步增长 0.001（最大半径 ≈ 10）
-                val startRadius = 0f
-                val radiusGrowth = 0.001f
-                val carRadius = startRadius + radiusGrowth * step
-
-                // 车体位置：极坐标转直角坐标
+                // 机器人轨迹：阿基米德螺旋，半径随 step 线性增长
+                val radiusGrowth = 0.005f          // 每帧半径增加 5mm（原 1mm）
+                val carRadius = radiusGrowth * step
                 val x = cos(angle) * carRadius
                 val y = sin(angle) * carRadius
-                val theta = angle   // 朝向仍用当前角度
+                val theta = angle                 // 朝向始终沿切线方向
 
                 ranges[0] = x
                 ranges[1] = y
@@ -498,15 +501,12 @@ class CreateMap3DActivity :
                 ranges[4] = 0f
                 ranges[5] = 0f
 
-                // 生成点云（与原来相同，一个半径2的圆，相对车体坐标系）
+                // 生成圆形激光点云（半径 2m）
                 var idx = 6
-                val r = 2f
                 for (i in 0 until numPoints) {
                     val a = i * (2f * Math.PI.toFloat() / numPoints)
-                    val px = cos(a) * r
-                    val py = sin(a) * r
-                    ranges[idx] = px
-                    ranges[idx + 1] = py
+                    ranges[idx] = cos(a) * r
+                    ranges[idx + 1] = sin(a) * r
                     ranges[idx + 2] = 0f
                     ranges[idx + 3] = 0f
                     ranges[idx + 4] = 0f
@@ -517,11 +517,16 @@ class CreateMap3DActivity :
                 lt.ranges = ranges
                 lt.intensities = floatArrayOf(1000f, 1000f, 0f, 0f, 0.05f)
                 lt.rad0 = step
+
                 LiveEventBus.get(KEY_UPDATE_POS, laser_t::class.java).post(lt)
 
                 step += 1f
-                angle += 0.05f   // 不再取模，角度持续增长
-                delay(30)
+                angle += 0.2f   // 每帧旋转 0.2 弧度（约 11.5°，原 0.05）
+                if (step>1000){
+                    delay(500)
+                }else{
+                    delay(30)       // 50ms 发送一次
+                }
             }
         }
     }

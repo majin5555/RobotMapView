@@ -4,12 +4,21 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:text="标题头"
+        android:gravity="center"
+        android:background="#00ff00"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <!--显示地图的View-->
     <com.siasun.dianshi.view.createMap.map3D.CreateMapView3D
         android:id="@+id/map_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@+id/tv_title"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
@@ -23,95 +32,101 @@
 
     <TextView
         android:id="@+id/tvMapSteps"
+        app:layout_constraintTop_toBottomOf="@+id/tv_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="建图步数"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- 旋转-->
-    <LinearLayout
-        android:id="@+id/ll_rotate"
-        android:layout_width="0dp"
+    <!-- 以下为原 ll_rotate 内部的按钮，直接放置在此处，并通过约束实现垂直排列 -->
+    <Button
+        android:id="@+id/btn_test_button"
+        android:layout_width="160dp"
+        android:layout_height="60dp"
+        android:gravity="center"
+        android:text="测试按钮"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/btn_show_frame" />
+
+    <Button
+        android:id="@+id/btn_show_frame"
+        android:layout_width="160dp"
+        android:layout_height="60dp"
+        android:gravity="center"
+        android:text="显示关键帧"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/btn_reset_rotation" />
+
+    <Button
+        android:id="@+id/btn_reset_rotation"
+        android:layout_width="160dp"
+        android:layout_height="60dp"
+        android:gravity="center"
+        android:text="恢复旋转角度"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/btn_add_node" />
+
+    <Button
+        android:id="@+id/btn_add_node"
+        android:layout_width="160dp"
+        android:layout_height="60dp"
+        android:gravity="center"
+        android:text="添加节点"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/btn_match_node" />
+
+    <Button
+        android:id="@+id/btn_match_node"
+        android:layout_width="160dp"
+        android:layout_height="60dp"
+        android:gravity="center"
+        android:text="匹配节点"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/btn_edit_config" />
+
+    <Button
+        android:id="@+id/btn_edit_config"
+        android:layout_width="160dp"
+        android:layout_height="60dp"
+        android:gravity="center"
+        android:text="修改配置"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/tv_save" />
+
+    <Button
+        android:id="@+id/tv_save"
+        android:layout_width="180dp"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        android:gravity="center"
+        android:text="保存地图"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/tv_stop" />
 
+    <Button
+        android:id="@+id/tv_stop"
+        android:layout_width="180dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="结束扫描"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/tv_create" />
 
-        <Button
-            android:id="@+id/btn_show_frame"
-            android:layout_width="160dp"
-            android:layout_height="60dp"
-            android:gravity="center"
-            android:text="显示关键帧" />
+    <Button
+        android:id="@+id/tv_create"
+        android:layout_width="180dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="扫描新环境"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/tv_expend" />
 
-        <Button
-            android:id="@+id/btn_reset_rotation"
-            android:layout_width="160dp"
-            android:layout_height="60dp"
-            android:gravity="center"
-            android:text="恢复旋转角度" />
-        <Button
-            android:id="@+id/btn_add_node"
-            android:layout_width="160dp"
-            android:layout_height="60dp"
-            android:gravity="center"
-            android:text="添加节点" />
-
-        <Button
-            android:id="@+id/btn_match_node"
-            android:layout_width="160dp"
-            android:layout_height="60dp"
-            android:gravity="center"
-            android:text="匹配节点" />
-
-        <Button
-            android:id="@+id/btn_edit_config"
-            android:layout_width="160dp"
-            android:layout_height="60dp"
-            android:gravity="center"
-            android:text="修改配置" />
-
-
-        <Button
-            android:id="@+id/tv_save"
-            android:layout_width="180dp"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="保存地图"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/tv_stop" />
-
-        <Button
-            android:id="@+id/tv_stop"
-            android:layout_width="180dp"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="结束扫描"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/tv_create" />
-
-        <Button
-            android:id="@+id/tv_create"
-            android:layout_width="180dp"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="扫描新环境"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
-
-
-        <Button
-            android:id="@+id/tv_expend"
-            android:layout_width="180dp"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="扩展地图测试"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
-
-
-    </LinearLayout>
-
+    <Button
+        android:id="@+id/tv_expend"
+        android:layout_width="180dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="扩展地图测试"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
