@@ -41,8 +41,12 @@ data class CrossDoor(
     var end_point: PointF = PointF(),
 
     @JSONField(ordinal = 6)
-    var door_msg: DoorMsg? = null
-) : LiveEvent
+    var door_msg: DoorMsg? = null,
+
+    @JSONField(ordinal = 7)
+    var turnstile: Int? = null,
+
+    ) : LiveEvent
 
 data class DoorMsg(
     var type: String,
