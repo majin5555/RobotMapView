@@ -49,11 +49,15 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
         onCleanAreaEditListener?.onVertexDragStart(area, vertexIndex)
     }
 
-    override fun onVertexDraggingCallback(area: CleanAreaNew, vertexIndex: Int, newX: Float, newY: Float) {
+    override fun onVertexDraggingCallback(
+        area: CleanAreaNew, vertexIndex: Int, newX: Float, newY: Float
+    ) {
         onCleanAreaEditListener?.onVertexDragging(area, vertexIndex, newX, newY)
     }
 
-    override fun onVertexDragEndCallback(area: CleanAreaNew, vertexIndex: Int, isInsideMap: Boolean) {
+    override fun onVertexDragEndCallback(
+        area: CleanAreaNew, vertexIndex: Int, isInsideMap: Boolean
+    ) {
         onCleanAreaEditListener?.onVertexDragEnd(area, vertexIndex, isInsideMap)
     }
 
@@ -115,10 +119,15 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
             add(PointNew(topRight.x, topRight.y))
             add(PointNew(bottomRight.x, bottomRight.y))
             add(PointNew(bottomLeft.x, bottomLeft.y))
-
         }
-        //初始化开始点是含糊计算的(世界坐标)
-        newArea.areaStartPoint.set(topLeft.x, topLeft.y)
+
+        if (newArea.routeType == 2) {
+            //初始化开始点是含糊计算的(世界坐标)
+            newArea.areaStartPoint.set(0f, 0f)
+        } else {
+            //初始化开始点是含糊计算的(世界坐标)
+            newArea.areaStartPoint.set(topLeft.x, topLeft.y)
+        }
 
         list.add(newArea)
         selectedArea = newArea
