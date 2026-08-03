@@ -189,17 +189,7 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
      */
     fun setSelectedCleanArea(area: CleanAreaNew?) {
         this.selectedArea = area
-        //兼容之前的区域开始点为0
-        area?.let {
-            if (it.areaStartPoint.x == 0f && it.areaStartPoint.y == 0f) {
-                if (it.m_VertexPnt.isNotEmpty()) {
-                    val topLeftVertex = it.m_VertexPnt.minByOrNull { point -> point.X + point.Y }
-                    topLeftVertex?.let { point ->
-                        it.areaStartPoint.set(point.X, point.Y)
-                    }
-                }
-            }
-        }
+        ensureAreaStartPoint(area)
 
         selectedPointIndex = -1
         isDragging = false
@@ -249,11 +239,24 @@ class PolygonEditView(context: Context?, parent: WeakReference<MapView>) :
      */
     private fun validateAndFixStartPoint(area: CleanAreaNew?) {
         area ?: return
-        if (!isStartPointInArea(area.areaStartPoint.x, area.areaStartPoint.y)) {
-            val topLeft = getTopLeftVertex(area.m_VertexPnt)
-            topLeft?.let {
-                area.areaStartPoint.set(it.X, it.Y)
+        if (area.routeType != 2) {
+            if (!isStartPointInArea(area.areaStartPoint.x, area.areaStartPoint.y)) {
+                val topLeft = getTopLeftVertex(area.m_VertexPnt)
+                topLeft?.let {
+                    area.areaStartPoint.set(it.X, it.Y)
+                }
             }
+        }
+    }
+
+    private fun ensureAreaStartPoint(area: CleanAreaNew?) {
+        area ?: return
+        if (area.routeType == 2) return
+        if (area.areaStartPoint.x != 0f || area.areaStartPoint.y != 0f) return
+
+        val topLeftVertex = area.m_VertexPnt.minByOrNull { point -> point.X + point.Y }
+        topLeftVertex?.let { point ->
+            area.areaStartPoint.set(point.X, point.Y)
         }
     }
 

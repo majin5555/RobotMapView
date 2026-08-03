@@ -149,10 +149,10 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initElevator()
 //        initPose()
 //        initMachineStation()
-        initMixArea()
+//        initMixArea()
 //        initSpAreas()
 //        initCrossDoor()
-        initTrafficArea()
+//        initTrafficArea()
 //        initRFId()
 //        initInspectionView()
 //        initSameSwitch()
@@ -1132,12 +1132,13 @@ val json5 = "{\"dparams\":[],\"fparams\":[],\"iparams\":[],\"lparams\":[],\"m_cP
                 sub_name = "清扫区域${cleanAreas.size + 1}"
                 regId = cleanAreas.size + 1//随机申城
                 layer_id = mapId
-                routeType = 0 // 自动生成
+                routeType = 2 // 自动生成
                 areaType = 1
                 cleanShape = 3 // 回字型
                 areaPathType = 0 // 普通清扫区域
             }
             cleanAreas.add(newArea)
+            LogUtil.d( "9999 添加清扫区域 ${newArea}")
             mBinding.mapView.createCleanArea(newArea)
         }
 

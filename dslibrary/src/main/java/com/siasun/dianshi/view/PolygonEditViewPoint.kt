@@ -3,6 +3,7 @@ package com.siasun.dianshi.view
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.*
+import android.util.Log
 import android.view.MotionEvent
 import com.siasun.dianshi.bean.CleanAreaNew
 import java.lang.ref.WeakReference
@@ -109,13 +110,10 @@ class PolygonEditViewPoint(context: Context?, val parent: WeakReference<MapView>
                     val mapView = mapViewRef.get() ?: return false
                     val worldPoint = mapView.screenToWorld(x, y)
                     mapView.mPolygonEditView?.selectedArea?.let { area ->
+                        Log.d("majin","area.routeType ${area.routeType}")
                         //试教区 始终传0,0 配合PP，CMS逻辑
                         if (area.routeType != 2) {
-                            if (mapView.mPolygonEditView?.isStartPointInArea(
-                                    worldPoint.x,
-                                    worldPoint.y
-                                ) == true
-                            ) {
+                            if (mapView.mPolygonEditView?.isStartPointInArea(worldPoint.x, worldPoint.y) == true) {
                                 mapView.mPolygonEditView?.updateAreaStartPoint(
                                     worldPoint.x,
                                     worldPoint.y

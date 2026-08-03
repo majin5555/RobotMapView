@@ -476,60 +476,60 @@ class CreateMap3DActivity :
 
     private var mockJob: Job? = null
 
-    private fun startMockPosStream() {
-        if (mockJob != null) return
-        mockJob = lifecycleScope.launch {
-            val targetKeyframes = 3000            // 总关键帧数，避免轨迹太大
-            var step = 0f
-            var angle = 0f
-            while (step < targetKeyframes) {
-                val lt = laser_t()
-                val numPoints = 360
-                val ranges = FloatArray(6 + numPoints * 6)
-
-                // 机器人轨迹：阿基米德螺旋，半径随 step 线性增长
-                val radiusGrowth = 0.005f          // 每帧半径增加 5mm（原 1mm）
-                val carRadius = radiusGrowth * step
-                val x = cos(angle) * carRadius
-                val y = sin(angle) * carRadius
-                val theta = angle                 // 朝向始终沿切线方向
-
-                ranges[0] = x
-                ranges[1] = y
-                ranges[2] = theta
-                ranges[3] = 0f
-                ranges[4] = 0f
-                ranges[5] = 0f
-
-                // 生成圆形激光点云（半径 2m）
-                var idx = 6
-                for (i in 0 until numPoints) {
-                    val a = i * (2f * Math.PI.toFloat() / numPoints)
-                    ranges[idx] = cos(a) * r
-                    ranges[idx + 1] = sin(a) * r
-                    ranges[idx + 2] = 0f
-                    ranges[idx + 3] = 0f
-                    ranges[idx + 4] = 0f
-                    ranges[idx + 5] = 0f
-                    idx += 6
-                }
-
-                lt.ranges = ranges
-                lt.intensities = floatArrayOf(1000f, 1000f, 0f, 0f, 0.05f)
-                lt.rad0 = step
-
-                LiveEventBus.get(KEY_UPDATE_POS, laser_t::class.java).post(lt)
-
-                step += 1f
-                angle += 0.2f   // 每帧旋转 0.2 弧度（约 11.5°，原 0.05）
-                if (step>1000){
-                    delay(500)
-                }else{
-                    delay(30)       // 50ms 发送一次
-                }
-            }
-        }
-    }
+//    private fun startMockPosStream() {
+//        if (mockJob != null) return
+//        mockJob = lifecycleScope.launch {
+//            val targetKeyframes = 3000            // 总关键帧数，避免轨迹太大
+//            var step = 0f
+//            var angle = 0f
+//            while (step < targetKeyframes) {
+//                val lt = laser_t()
+//                val numPoints = 360
+//                val ranges = FloatArray(6 + numPoints * 6)
+//
+//                // 机器人轨迹：阿基米德螺旋，半径随 step 线性增长
+//                val radiusGrowth = 0.005f          // 每帧半径增加 5mm（原 1mm）
+//                val carRadius = radiusGrowth * step
+//                val x = cos(angle) * carRadius
+//                val y = sin(angle) * carRadius
+//                val theta = angle                 // 朝向始终沿切线方向
+//
+//                ranges[0] = x
+//                ranges[1] = y
+//                ranges[2] = theta
+//                ranges[3] = 0f
+//                ranges[4] = 0f
+//                ranges[5] = 0f
+//
+//                // 生成圆形激光点云（半径 2m）
+//                var idx = 6
+//                for (i in 0 until numPoints) {
+//                    val a = i * (2f * Math.PI.toFloat() / numPoints)
+//                    ranges[idx] = cos(a) * r
+//                    ranges[idx + 1] = sin(a) * r
+//                    ranges[idx + 2] = 0f
+//                    ranges[idx + 3] = 0f
+//                    ranges[idx + 4] = 0f
+//                    ranges[idx + 5] = 0f
+//                    idx += 6
+//                }
+//
+//                lt.ranges = ranges
+//                lt.intensities = floatArrayOf(1000f, 1000f, 0f, 0f, 0.05f)
+//                lt.rad0 = step
+//
+//                LiveEventBus.get(KEY_UPDATE_POS, laser_t::class.java).post(lt)
+//
+//                step += 1f
+//                angle += 0.2f   // 每帧旋转 0.2 弧度（约 11.5°，原 0.05）
+//                if (step>1000){
+//                    delay(500)
+//                }else{
+//                    delay(30)       // 50ms 发送一次
+//                }
+//            }
+//        }
+//    }
 
     override fun onDestroy() {
         mockJob?.cancel()
