@@ -108,9 +108,22 @@ class PolygonEditViewPoint(context: Context?, val parent: WeakReference<MapView>
                 if (isStartPointDragging) {
                     val mapView = mapViewRef.get() ?: return false
                     val worldPoint = mapView.screenToWorld(x, y)
-                    if (mapView.mPolygonEditView?.isStartPointInArea(worldPoint.x, worldPoint.y) == true) {
-                        mapView.mPolygonEditView?.updateAreaStartPoint(worldPoint.x, worldPoint.y)
+                    mapView.mPolygonEditView?.selectedArea?.let { area ->
+                        //试教区 始终传0,0 配合PP，CMS逻辑
+                        if (area.routeType != 2) {
+                            if (mapView.mPolygonEditView?.isStartPointInArea(
+                                    worldPoint.x,
+                                    worldPoint.y
+                                ) == true
+                            ) {
+                                mapView.mPolygonEditView?.updateAreaStartPoint(
+                                    worldPoint.x,
+                                    worldPoint.y
+                                )
+                            }
+                        }
                     }
+
                     lastTouchX = x
                     lastTouchY = y
                     invalidate()
