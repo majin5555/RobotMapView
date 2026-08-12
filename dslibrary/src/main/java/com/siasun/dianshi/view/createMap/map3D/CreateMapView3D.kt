@@ -729,6 +729,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
 
     fun parseKeyFramePose(mLaserT: laser_t) {
         mAllKeyFrames?.parseKeyFramePose(mLaserT)
+        mAllKeyFrames?.setDrawingEnabled(true)
         requestRender()
     }
 
