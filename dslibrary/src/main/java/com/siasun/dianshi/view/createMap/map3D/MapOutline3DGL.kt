@@ -419,6 +419,15 @@ class MapOutline3DGL(
         GMatrix.orthoM(projectionMatrix, 0, 0f, width.toFloat(), height.toFloat(), 0f, -1f, 1f)
         // 尺寸确定后再次触发清屏渲染，确保首帧透明背景被提交
         requestRender()
+
+        // 【临时调试】对比 GLSurfaceView 与 CreateMapView3D 的尺寸，定位竖向拉伸
+        val mapView = parent.get()
+        if (mapView != null) {
+            android.util.Log.e(
+                "MapOutline3DGL",
+                "GLSurfaceView=${width}x${height}, CreateMapView3D=${mapView.viewWidth}x${mapView.viewHeight}"
+            )
+        }
     }
 
     override fun onDrawFrame(gl: GL10?) {

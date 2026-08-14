@@ -221,6 +221,16 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         VIEW_WIDTH = width
         VIEW_HEIGHT = height
 
+        // 【临时调试】打印 View 尺寸与矩阵 scale，定位竖向拉伸
+        val mv = FloatArray(9)
+        mOuterMatrix.getValues(mv)
+        Log.e(
+            TAG,
+            "CreateMapView3D surfaceChanged=${width}x$height, mMapScale=$mMapScale, " +
+                    "outerScaleX=${mv[Matrix.MSCALE_X]}, outerScaleY=${mv[Matrix.MSCALE_Y]}, " +
+                    "mapData=${mSrf.mapData.width}x${mSrf.mapData.height}, mSrf.scale=${mSrf.scale}"
+        )
+
         // 更新虚拟子 View 的布局尺寸
         mPngMapView?.layout(0, 0, width, height)
         for (layer in mapLayers) {
