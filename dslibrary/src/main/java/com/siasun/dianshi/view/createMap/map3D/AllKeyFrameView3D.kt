@@ -46,7 +46,9 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
             color = Color.parseColor("#800080")
             strokeWidth = 10f
             strokeCap = Paint.Cap.ROUND
-            style = Paint.Style.FILL
+            // drawPoints/drawLine 依赖 stroke 渲染，必须是 STROKE（或 FILL_AND_STROKE）
+            // 若为 FILL，drawPoints/drawLine 均不绘制，导致关键帧有数据却画不出来
+            style = Paint.Style.STROKE
         }
 
         val mTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -73,7 +75,9 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
         mMapPath.clear()
         if (mLaserT.ranges.isNotEmpty()) {
             // 每3个数据为一组: x, y, theta
-            for (i in 0 until mLaserT.ranges.size) {
+            // 使用 floor(size/3) 避免 ranges.size 不是 3 的倍数时 3*i+2 越界
+            val groupCount = mLaserT.ranges.size / 3
+            for (i in 0 until groupCount) {
                 //关键帧  x
                 val radX: Float = mLaserT.ranges[3 * i]
                 //关键帧  y
