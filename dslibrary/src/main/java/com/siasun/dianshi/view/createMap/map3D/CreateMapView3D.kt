@@ -205,14 +205,16 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         // 启动渲染协程
         renderScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
         renderScope?.launch {
+            // 订阅建立后，先绘制首帧，再开始收集后续刷新事件。
+            // 若在 launch 之后立刻调用 requestRender()，此时 MutableSharedFlow(replay=0)
+            // 尚无订阅者，tryEmit 会丢弃事件，导致首帧 drawFrame 不执行、Surface 保持黑色。
+            drawFrame(holder)
             renderTrigger
                 .throttleLatest(25L)   // 每 25ms 最多绘制一次
                 .collect {
                     drawFrame(holder)
                 }
         }
-        // 触发首次绘制
-        requestRender()
     }
 
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
@@ -302,7 +304,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
 //            parentGroup.findViewById<View>(R.id.ll_rotate)?.bringToFront()
 
             // 设置机器人图标（从资源加载）
-            val robotBitmap = BitmapFactory.decodeResource(resources, R.mipmap.current_location)
+            val robotBitmap = BitmapFactory.decodeResource(resources, R.mipmap.create_current_location)
             glLayer.setRobotBitmap(robotBitmap)
 
             mMapOutline3D = glLayer
