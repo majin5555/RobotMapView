@@ -408,11 +408,17 @@ class MapOutline3DGL(
         // 机器人纹理在 setRobotBitmap 后上传，这里先创建占位
         robotTexture = 0
         uploadRobotTexture()
+
+        // 立即触发一帧渲染，将透明清屏提交到 Surface，
+        // 避免 Surface 初始缓冲停留在黑色，导致启动黑屏（需手指触摸后才恢复）。
+        requestRender()
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
         GLES20.glViewport(0, 0, width, height)
         GMatrix.orthoM(projectionMatrix, 0, 0f, width.toFloat(), height.toFloat(), 0f, -1f, 1f)
+        // 尺寸确定后再次触发清屏渲染，确保首帧透明背景被提交
+        requestRender()
     }
 
     override fun onDrawFrame(gl: GL10?) {
@@ -491,7 +497,7 @@ class MapOutline3DGL(
 //        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0)
 //    }
 
-    // 修改 drawRobot，使用动态缩放
+    // 绘制机器人：使用世界尺寸跟随地图缩放，定位在机器人位姿处
     private fun drawRobot() {
         if (robotTexture == 0) return
 
@@ -512,7 +518,7 @@ class MapOutline3DGL(
         GMatrix.setIdentityM(model, 0)
         GMatrix.translateM(model, 0, robotPose[0], robotPose[1], 0f)
         GMatrix.rotateM(model, 0, Math.toDegrees(robotPose[2].toDouble()).toFloat(), 0f, 0f, 1f)
-        GMatrix.scaleM(model, 0, worldSize, worldSize, 1f)  // 注意顺序：先缩放再旋转平移，所以放在最后乘
+        GMatrix.scaleM(model, 0, worldSize, worldSize, 1f)
         GLES20.glUniformMatrix4fv(uModelMatrixRobot, 1, false, model, 0)
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)

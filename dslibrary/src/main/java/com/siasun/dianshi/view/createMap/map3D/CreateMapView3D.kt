@@ -205,14 +205,16 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         // 启动渲染协程
         renderScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
         renderScope?.launch {
+            // 订阅建立后，先绘制首帧，再开始收集后续刷新事件。
+            // 若在 launch 之后立刻调用 requestRender()，此时 MutableSharedFlow(replay=0)
+            // 尚无订阅者，tryEmit 会丢弃事件，导致首帧 drawFrame 不执行、Surface 保持黑色。
+            drawFrame(holder)
             renderTrigger
                 .throttleLatest(25L)   // 每 25ms 最多绘制一次
                 .collect {
                     drawFrame(holder)
                 }
         }
-        // 触发首次绘制
-        requestRender()
     }
 
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
@@ -565,6 +567,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
             val scale = scaledRect.width() / iWidth
             mMinMapScale = scale / 4
             mMapScale = scale
+            mSrf.scale = mMapScale   // 同步缩放比例，保持与 setScale 一致
             mOuterMatrix = Matrix()
             mOuterMatrix.postScale(mMapScale, mMapScale)
             mOuterMatrix.postTranslate(
