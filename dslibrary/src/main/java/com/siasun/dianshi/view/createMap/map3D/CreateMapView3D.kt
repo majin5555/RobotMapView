@@ -236,6 +236,14 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         // 尺寸变化后重新计算居中（如果地图已加载）
         if (mSrf.mapData.width > 0 && mSrf.mapData.height > 0) {
             setCentred()
+        } else {
+            // 无底图（新建建图）：以世界原点为屏幕中心初始化视图，
+            // 机器人位于起点(0,0)时显示在屏幕中心而不是左上角
+            mOuterMatrix = Matrix()
+            mOuterMatrix.postTranslate(VIEW_WIDTH / 2f, VIEW_HEIGHT / 2f)
+            setMatrixWithScaleAndRotation(mOuterMatrix, mMapScale, 0f)
+            mMapOutline3D?.notifyMatrixChanged()
+            requestRender()
         }
     }
 
@@ -805,6 +813,11 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         robotPose[3] = convertScientificToDecimal(z)
         robotPose[4] = convertScientificToDecimal(roll)
         robotPose[5] = convertScientificToDecimal(pitch)
+
+        // 同步到 GL 层（机器人图标由 MapOutline3DGL 绘制，使用其内部 robotPose）。
+        // 非建图模式下（如扩展地图页重新定位后）仅调用本方法，若不推送 GL，
+        // 机器人图标会停留在旧位置不更新
+        mMapOutline3D?.updateRobotPose(robotPose[0], robotPose[1], robotPose[2])
     }
 
     /**
