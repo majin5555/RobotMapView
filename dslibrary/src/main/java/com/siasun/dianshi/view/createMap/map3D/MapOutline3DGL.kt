@@ -44,7 +44,7 @@ class MapOutline3DGL(
         private val COLOR_LIVE_POINT = floatArrayOf(1f, 0f, 0f, 1f) // 实时上激光点云（红）
         private const val POINT_SIZE_CLOUD = 3f
         private const val POINT_SIZE_KEYFRAME = 8f
-        private const val POINT_SIZE_LIVE = 4.5f
+        private const val POINT_SIZE_LIVE = 3f
         private const val DIR_LINE_LENGTH = 0.5f
 
         // 文字世界尺寸
@@ -290,12 +290,12 @@ class MapOutline3DGL(
 
         val isKeyframe = laserData.rad0.toInt() != -1
         val totalPoints = (laserData.ranges.size - 6) / 3
+        // 关键帧采样间隔（缩放越小，间隔越大，避免存储黑点过多）
         val baseSampleInterval = 5
-        val dynamicSampleInterval = maxOf(baseSampleInterval, (1f / mapView.mSrf.scale).toInt()) // 缩放越小，间隔越大
+        val dynamicSampleInterval = maxOf(baseSampleInterval, (1f / mapView.mSrf.scale).toInt())
 
-        // 预估最大需要的点数，避免频繁扩容
-        val estimatedMaxPoints = (totalPoints / dynamicSampleInterval) + 10
-        val required = estimatedMaxPoints * 2
+        // 实时红点：完全显示，不过滤（下一帧整体替换，无需压缩）
+        val required = totalPoints * 2
         if (liveBuffer == null || liveBufferCapacity < required) {
             liveBuffer = ByteBuffer.allocateDirect(required * 4)
                 .order(ByteOrder.nativeOrder()).asFloatBuffer()
@@ -304,15 +304,16 @@ class MapOutline3DGL(
             liveBuffer!!.clear()
         }
 
-        // 关键帧缓存数组（复用成员数组，仅在容量不足时扩容，避免频繁分配）
+        // 关键帧缓存数组（按采样间隔容量申请，复用、仅扩容），黑点存储需控量
         var localCloudBuf: FloatArray? = null
         var localWorldBuf: FloatArray? = null
         if (isKeyframe) {
-            if (liveKeyframeCloudBuf == null || liveKeyframeCloudBuf!!.size < required) {
-                liveKeyframeCloudBuf = FloatArray(required)
+            val keyframeRequired = (totalPoints / dynamicSampleInterval + 1) * 2
+            if (liveKeyframeCloudBuf == null || liveKeyframeCloudBuf!!.size < keyframeRequired) {
+                liveKeyframeCloudBuf = FloatArray(keyframeRequired)
             }
-            if (liveKeyframeWorldBuf == null || liveKeyframeWorldBuf!!.size < required) {
-                liveKeyframeWorldBuf = FloatArray(required)
+            if (liveKeyframeWorldBuf == null || liveKeyframeWorldBuf!!.size < keyframeRequired) {
+                liveKeyframeWorldBuf = FloatArray(keyframeRequired)
             }
             localCloudBuf = liveKeyframeCloudBuf
             localWorldBuf = liveKeyframeWorldBuf
@@ -326,7 +327,8 @@ class MapOutline3DGL(
 
         var pointCount = 0
         var keyIdx = 0
-        for (i in 0 until totalPoints step dynamicSampleInterval) {
+        // 实时红点：全量遍历（step=1，完全显示，不降采样）
+        for (i in 0 until totalPoints) {
             val index = 6 + i * 6 // 跳过机器人位置数据（前6个元素）
             if (index + 2 >= laserData.ranges.size) break // 越界保护
 
@@ -335,14 +337,16 @@ class MapOutline3DGL(
             val worldX = laserX * cosT - laserY * sinT + robotX
             val worldY = laserX * sinT + laserY * cosT + robotY
 
+            // 实时红点：全量写入
             if (pointCount * 2 + 1 < required) {
                 liveBuffer!!.put(worldX)
                 liveBuffer!!.put(worldY)
                 pointCount++
             }
 
-            if (isKeyframe && localCloudBuf != null && localWorldBuf != null) {
-                if (keyIdx + 1 < required) {
+            // 关键帧黑点：按采样间隔收集，控制存储量
+            if (isKeyframe && localCloudBuf != null && localWorldBuf != null && i % dynamicSampleInterval == 0) {
+                if (keyIdx + 1 < localCloudBuf.size) {
                     localCloudBuf[keyIdx] = laserX
                     localCloudBuf[keyIdx + 1] = laserY
                     localWorldBuf[keyIdx] = worldX
