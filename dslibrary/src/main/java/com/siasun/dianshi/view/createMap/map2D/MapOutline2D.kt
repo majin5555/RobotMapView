@@ -53,12 +53,34 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
 
     }
 
+    // 子图边框 Paint，单例共享，防内存抖动
     companion object {
         val mPaint = Paint().apply {
             isAntiAlias = true
         }
+
+        val mBorderPaint = Paint().apply {
+            isAntiAlias = true
+            style = Paint.Style.STROKE
+            strokeWidth = 2f
+        }
+
+        // 边框颜色 hue 偏移步长（质数），保证相邻子图颜色差异明显
+        private const val BORDER_HUE_STEP = 37f
+
+        // buildSubMapTileLine 用到的像素常量，放入 companion 避免每个实例重复构造
+        val colorBlue: Byte = 0.toByte()
+        val colorAlpha: Byte = (-0x10000 shr 24).toByte()
     }
 
+    // 复用 RectF，防 onDraw 内存抖动
+    private val mBorderRect = android.graphics.RectF()
+
+    // 复用 HSV 颜色数组，防 onDraw 内存抖动
+    private val mHsvTemp = FloatArray(3)
+
+    // 复用 origin 屏幕坐标缓存，防 onDraw 内存抖动
+    private val mCachedOriginScreen = PointF()
 
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
@@ -69,22 +91,80 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
             val scale = mapView.mMapScale
 
             keyFrames2d.values.forEach { subMap ->
-                val bitmap = subMap.mBitmap ?: return
-                canvas.save()
-                val leftTop = mapView.worldToScreen(subMap.leftTop.x, subMap.leftTop.y)
+                val bitmap = subMap.mBitmap ?: return@forEach
+                val bmpWidth = bitmap.width.toFloat()
+                val bmpHeight = bitmap.height.toFloat()
+                if (bmpWidth <= 0f || bmpHeight <= 0f) return@forEach
 
-                // 1. 先应用旋转
-                canvas.rotate(Math.toDegrees(getViewRotation().toDouble()).toFloat(), leftTop.x, leftTop.y)
-                // 2. 后应用缩放（地图缩放）
-                canvas.scale(scale, scale, leftTop.x, leftTop.y)
+                canvas.save()
+
+                // 关键修复：
+                // 1. 以子图 origin（= rightTop 世界坐标）作为绘制锚点
+                //    worldToScreen 内部已经通过 mOuterMatrix 包含了视图旋转/缩放/平移，
+                //    所以这里不再重复 rotate(getViewRotation)，避免子图相对底图双旋转错位。
+                val originScreen = mapView.worldToScreen(subMap.originX, subMap.originY)
+                mCachedOriginScreen.set(originScreen.x, originScreen.y)
+
+                // 2. 应用每张子图自身的旋转 originTheta（绕 origin 点）
+                //    这是之前完全缺失的步骤，也是子图叠加方向错位产生重影的核心原因
+                canvas.rotate(
+                    Math.toDegrees(subMap.originTheta.toDouble()).toFloat(),
+                    mCachedOriginScreen.x,
+                    mCachedOriginScreen.y
+                )
+
+                // 3. 应用地图缩放（绕 origin 点）
+                canvas.scale(scale, scale, mCachedOriginScreen.x, mCachedOriginScreen.y)
+
+                // 绘制基准点（origin = rightTop）对应 bitmap 的 right-top 像素：
+                // bitmap 的像素坐标原点是左上角，宽 bmpWidth、高 bmpHeight
+                // 所以 rightTop 像素 = bitmap 的 (bmpWidth, 0)，要把它对齐到画布原点（originScreen + 当前变换后的原点）
+                // 即：绘制 bitmap 的左上角位置 = originScreen + (-bmpWidth, 0)
+                val drawLeft = mCachedOriginScreen.x - bmpWidth
+                val drawTop = mCachedOriginScreen.y
 
                 // 绘制子图
-                canvas.drawBitmap(bitmap, leftTop.x, leftTop.y, mPaint)
+                canvas.drawBitmap(bitmap, drawLeft, drawTop, mPaint)
+
+                // 绘制子图边框，颜色基于子图 ID，保证每张子图颜色不同
+                val hue = ((subMap.id * BORDER_HUE_STEP) % 360f + 360f) % 360f
+                mHsvTemp[0] = hue
+                mHsvTemp[1] = 0.85f
+                mHsvTemp[2] = 0.95f
+                mBorderPaint.color = android.graphics.Color.HSVToColor(200, mHsvTemp)
+                mBorderRect.set(drawLeft, drawTop, drawLeft + bmpWidth, drawTop + bmpHeight)
+                canvas.drawRect(mBorderRect, mBorderPaint)
+
                 canvas.restore()
             }
         }
     }
 
+
+    /**
+     * 根据 originX/Y、percent、width/height 重新计算子图四个角的世界坐标
+     * 注：未考虑 originTheta 旋转，仅用于对齐未旋转的 AABB 包围盒与整体地图边界
+     */
+    private fun recalculateSubMapCorners(subMap: SubMapData) {
+        val widthInWorld = subMap.percent * subMap.width
+        val heightInWorld = subMap.percent * subMap.height
+
+        // 右上角 = origin
+        subMap.rightTop.x = subMap.originX
+        subMap.rightTop.y = subMap.originY
+
+        // 右下角 = originX, originY - height
+        subMap.rightBottom.x = subMap.originX
+        subMap.rightBottom.y = subMap.originY - heightInWorld
+
+        // 左上角 = originX - width, originY
+        subMap.leftTop.x = subMap.originX - widthInWorld
+        subMap.leftTop.y = subMap.originY
+
+        // 左下角 = originX - width, originY - height
+        subMap.leftBottom.x = subMap.originX - widthInWorld
+        subMap.leftBottom.y = subMap.originY - heightInWorld
+    }
 
     /**
      * 外部接口：更新子图数据 2D
@@ -116,17 +196,8 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
         //创建子图bitmap对象
         buildSubMapTileLine(subMapData)
 
-        //右上角角物理坐标   (世界坐标系)
-        subMapData.rightTop.x = subMapData.originX
-        subMapData.rightTop.y = subMapData.originY
-
-        //右下角角物理坐标   (世界坐标系)
-        subMapData.rightBottom.x = subMapData.originX
-        subMapData.rightBottom.y = subMapData.originY - (subMapData.percent * subMapData.height)
-
-        //左上角物理坐标  (世界坐标系)
-        subMapData.leftTop.x = subMapData.rightTop.x - (subMapData.percent * subMapData.width)
-        subMapData.leftTop.y = subMapData.originY
+        // 计算四个角的世界坐标
+        recalculateSubMapCorners(subMapData)
 
         calBinding(type)
 
@@ -142,10 +213,6 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
     /**
      * 创建子图bitmap对象
      */
-    // 提前计算常量，避免在循环中重复计算
-    val colorBlue = 0.toByte()
-    val colorAlpha = (-0x10000 shr 24).toByte()
-
     private fun buildSubMapTileLine(metaData: SubMapData) {
         val width = metaData.width.toInt()
         val height = metaData.height.toInt()
@@ -298,10 +365,15 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
             subMapData.originX = resultMatrix[0][2].toFloat()
             subMapData.originY = resultMatrix[1][2].toFloat()
             subMapData.originTheta = globalTheta
+
+            // 重新计算子图四个角的世界坐标，防止回环后绘制用旧坐标导致重影
+            recalculateSubMapCorners(subMapData)
         }
 
 
         calBinding(type)
+        // 回环完成后主动刷新视图
+        postInvalidate()
         Log.w(TAG, "回环检测2D  end")
     }
 
