@@ -134,6 +134,19 @@ class UpLaserScanView<T>(context: Context?, val parent: WeakReference<T>) :
     }
 
     /**
+     * 清空点云数据并刷新（保留绘制启用状态与父引用）
+     */
+    fun clear() {
+        if (pointCount <= 0) return
+        synchronized(dataLock) {
+            pointCount = 0
+            worldPoints = FloatArray(0)
+            screenPoints = FloatArray(0)
+        }
+        postInvalidate()
+    }
+
+    /**
      * 清理资源，防止内存泄漏
      */
     override fun onDetachedFromWindow() {

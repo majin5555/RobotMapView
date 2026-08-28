@@ -41,8 +41,10 @@ class MapOutline3DGL(
         private val COLOR_POINT_CLOUD = floatArrayOf(0f, 0f, 0f, 1f)
         private val COLOR_KEYFRAME = floatArrayOf(0f, 1f, 0f, 1f)
         private val COLOR_LINE = floatArrayOf(1f, 0f, 0f, 1f)
+        private val COLOR_LIVE_POINT = floatArrayOf(1f, 0f, 0f, 1f) // 实时上激光点云（红）
         private const val POINT_SIZE_CLOUD = 3f
         private const val POINT_SIZE_KEYFRAME = 8f
+        private const val POINT_SIZE_LIVE = 3f
         private const val DIR_LINE_LENGTH = 0.5f
 
         // 文字世界尺寸
@@ -164,6 +166,7 @@ class MapOutline3DGL(
 
     // VBO
     private var vboPointCloud = intArrayOf(0)
+    private var vboLivePoint = intArrayOf(0) // 实时上激光点云 VBO
     private var vboKeyframePoints = intArrayOf(0)
     private var vboKeyframeLines = intArrayOf(0)
     private var vboTextGeometry = intArrayOf(0)
@@ -174,13 +177,22 @@ class MapOutline3DGL(
     private var keyframePointCount = 0
     private var keyframeLineVertexCount = 0
     private var textInstanceCount = 0
+    private var liveVertexCount = 0 // 实时上激光点云顶点数
+    private var liveDirty = false // 实时点云是否需要重建 VBO
 
     private var pointCloudLastLen = 0
     private var keyframePointsLastLen = 0
     private var keyframeLinesLastLen = 0
+    private var lastLenLive = 0   // 实时点云上次长度
 
     private var pointCloudBuffer: FloatBuffer? = null
     private var pointCloudBufferCapacity = 0
+    private var liveBuffer: FloatBuffer? = null
+    private var liveBufferCapacity = 0
+
+    // 实时扫描关键帧复用缓存（grow-only，避免每次关键帧重新分配）
+    private var liveKeyframeCloudBuf: FloatArray? = null
+    private var liveKeyframeWorldBuf: FloatArray? = null
 
     private var keyframePointsArray: FloatArray? = null
     private var keyframeLinesArray: FloatArray? = null
@@ -261,6 +273,96 @@ class MapOutline3DGL(
                 requestRender()
             }
         }
+    }
+
+    /**
+     * 建图实时上激光点云计算（由 CreateMapView3D 直接调用，替代原 UpLaserScanView3D 的计算职责）。
+     * 内部同步完成：实时红点世界坐标计算 + 关键帧收集。
+     */
+    fun updateLiveScan(laserData: laser_t) {
+        if (laserData.ranges.size <= 6) {
+            liveVertexCount = 0
+            liveDirty = true
+            requestRender()
+            return // 最少包含机器人位置数据
+        }
+        val mapView = parent.get() ?: return
+
+        val isKeyframe = laserData.rad0.toInt() != -1
+        val totalPoints = (laserData.ranges.size - 6) / 3
+        // 关键帧采样间隔（缩放越小，间隔越大，避免存储黑点过多）
+        val baseSampleInterval = 5
+        val dynamicSampleInterval = maxOf(baseSampleInterval, (1f / mapView.mSrf.scale).toInt())
+
+        // 实时红点：完全显示，不过滤（下一帧整体替换，无需压缩）
+        val required = totalPoints * 2
+        if (liveBuffer == null || liveBufferCapacity < required) {
+            liveBuffer = ByteBuffer.allocateDirect(required * 4)
+                .order(ByteOrder.nativeOrder()).asFloatBuffer()
+            liveBufferCapacity = required
+        } else {
+            liveBuffer!!.clear()
+        }
+
+        // 关键帧缓存数组（按采样间隔容量申请，复用、仅扩容），黑点存储需控量
+        var localCloudBuf: FloatArray? = null
+        var localWorldBuf: FloatArray? = null
+        if (isKeyframe) {
+            val keyframeRequired = (totalPoints / dynamicSampleInterval + 1) * 2
+            if (liveKeyframeCloudBuf == null || liveKeyframeCloudBuf!!.size < keyframeRequired) {
+                liveKeyframeCloudBuf = FloatArray(keyframeRequired)
+            }
+            if (liveKeyframeWorldBuf == null || liveKeyframeWorldBuf!!.size < keyframeRequired) {
+                liveKeyframeWorldBuf = FloatArray(keyframeRequired)
+            }
+            localCloudBuf = liveKeyframeCloudBuf
+            localWorldBuf = liveKeyframeWorldBuf
+        }
+
+        val robotX = mapView.robotPose[0]
+        val robotY = mapView.robotPose[1]
+        val robotTheta = mapView.robotPose[2]
+        val cosT = cos(robotTheta)
+        val sinT = sin(robotTheta)
+
+        var pointCount = 0
+        var keyIdx = 0
+        // 实时红点：全量遍历（step=1，完全显示，不降采样）
+        for (i in 0 until totalPoints) {
+            val index = 6 + i * 6 // 跳过机器人位置数据（前6个元素）
+            if (index + 2 >= laserData.ranges.size) break // 越界保护
+
+            val laserX = laserData.ranges[index]
+            val laserY = laserData.ranges[index + 1]
+            val worldX = laserX * cosT - laserY * sinT + robotX
+            val worldY = laserX * sinT + laserY * cosT + robotY
+
+            // 实时红点：全量写入
+            if (pointCount * 2 + 1 < required) {
+                liveBuffer!!.put(worldX)
+                liveBuffer!!.put(worldY)
+                pointCount++
+            }
+
+            // 关键帧黑点：按采样间隔收集，控制存储量
+            if (isKeyframe && localCloudBuf != null && localWorldBuf != null && i % dynamicSampleInterval == 0) {
+                if (keyIdx + 1 < localCloudBuf.size) {
+                    localCloudBuf[keyIdx] = laserX
+                    localCloudBuf[keyIdx + 1] = laserY
+                    localWorldBuf[keyIdx] = worldX
+                    localWorldBuf[keyIdx + 1] = worldY
+                    keyIdx += 2
+                }
+            }
+        }
+        liveBuffer!!.flip()
+        liveVertexCount = pointCount
+        liveDirty = true
+
+        if (isKeyframe && keyIdx > 0 && localCloudBuf != null && localWorldBuf != null) {
+            addKeyFrames(laserData, localCloudBuf, localWorldBuf, keyIdx / 2)
+        }
+        requestRender()
     }
 
     fun parseOptPose(laserData: laser_t) {
@@ -455,6 +557,15 @@ class MapOutline3DGL(
             }
         }
 
+        // 绘制实时上激光点云（红，始终在黑色关键帧点云之上）
+        if (liveDirty) {
+            rebuildLivePointVBO()
+            liveDirty = false
+        }
+        if (liveVertexCount > 0) {
+            drawPoints(vboLivePoint[0], liveVertexCount, COLOR_LIVE_POINT, POINT_SIZE_LIVE)
+        }
+
         // 最后绘制机器人（在所有元素之上）
         drawRobot()
 
@@ -595,6 +706,17 @@ class MapOutline3DGL(
         pointCloudVertexCount = totalPoints
         uploadVBOFromBuffer(vboPointCloud, buffer, floatCount, pointCloudLastLen)
         pointCloudLastLen = floatCount
+    }
+
+    /**
+     * 重建实时上激光点云 VBO
+     */
+    private fun rebuildLivePointVBO() {
+        val buf = liveBuffer ?: run { liveVertexCount = 0; return }
+        val len = liveVertexCount * 2
+        if (len <= 0) return
+        uploadVBOFromBuffer(vboLivePoint, buf, len, lastLenLive)
+        lastLenLive = len
     }
 
     private fun rebuildKeyframePointsVBO() {
@@ -887,11 +1009,20 @@ class MapOutline3DGL(
         super.onDetachedFromWindow()
         keyFrames3D.clear()
         parent.clear()
+        // 清理实时点云数据与复用缓存
+        liveVertexCount = 0
+        liveDirty = false
+        liveBuffer = null
+        liveBufferCapacity = 0
+        lastLenLive = 0
+        liveKeyframeCloudBuf = null
+        liveKeyframeWorldBuf = null
         GLES20.glDeleteProgram(programPoint)
         GLES20.glDeleteProgram(programText)
         GLES20.glDeleteProgram(programRobot)
         GLES20.glDeleteTextures(1, intArrayOf(textTexture, robotTexture), 0)
         if (vboPointCloud[0] != 0) GLES20.glDeleteBuffers(1, vboPointCloud, 0)
+        if (vboLivePoint[0] != 0) GLES20.glDeleteBuffers(1, vboLivePoint, 0)
         if (vboKeyframePoints[0] != 0) GLES20.glDeleteBuffers(1, vboKeyframePoints, 0)
         if (vboKeyframeLines[0] != 0) GLES20.glDeleteBuffers(1, vboKeyframeLines, 0)
         if (vboTextGeometry[0] != 0) GLES20.glDeleteBuffers(1, vboTextGeometry, 0)

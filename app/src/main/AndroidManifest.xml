@@ -85,8 +85,10 @@
         <!--            android:exported="true">-->
 
         <!--        </activity>-->
+<!--        android:name=".ui.ShowMapViewActivity"-->
         <activity
-            android:name=".ui.ShowMapViewActivity"
+            android:name=".ui.createMap.createMap3D.CreateMap3DActivity"
+
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -97,11 +99,11 @@
 <!--        <activity-->
 <!--            android:name=".ui.TestActivity"-->
 <!--            android:exported="true">-->
-        <activity
-            android:name=".ui.createMap.createMap3D.CreateMap3DActivity"
-            android:exported="true">
+<!--        <activity-->
+<!--            android:name=".ui.createMap.createMap3D.CreateMap3DActivity"-->
+<!--            android:exported="true">-->
 
-        </activity>
+<!--        </activity>-->
 
         <activity
             android:name=".ui.createMap.createMap2D.ExpandMap2DActivity"

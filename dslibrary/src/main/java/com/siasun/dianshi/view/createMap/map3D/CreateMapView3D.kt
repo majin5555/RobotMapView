@@ -83,17 +83,19 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
 
     private var mPngMapView: PngMapView? = null //png地图
     var mMapOutline3D: MapOutline3DGL? = null // OpenGL 轮廓
-    private var mCreatingUpLaserScanView: UpLaserScanView3D? = null//上激光点云
+//    private var mCreatingUpLaserScanView: UpLaserScanView3D? = null//上激光点云
     private var mAllKeyFrames: AllKeyFrameView3D? = null//所有关键帧
     private var mUpLaserScanView: UpLaserScanView<CreateMapView3D>? = null//上激光点云（非建图显示）
     var mConstrainNodes: ConstrainNodes? = null//人工约束节点
-//    private var mCreateMapRobotView: RobotViewCreateMap<CreateMapView3D>? = null //机器人图标
+
+    //    private var mCreateMapRobotView: RobotViewCreateMap<CreateMapView3D>? = null //机器人图标
     private var mExpandAreaView: ExpandAreaView<CreateMapView3D>? = null //地图更新区域
 
     // 机器人位姿 [x, y, theta(rad), z, roll, pitch]
     override val robotPose = FloatArray(6)
 
     var isMapping = false//是否建图标志
+
     //是否第一次接收到子图数据，如果没收到子图，直接跳过旋转环境
     var isStartRevSubMaps = false
 
@@ -108,8 +110,10 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         extraBufferCapacity = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
+
     // 协程作用域（与 Surface 生命周期绑定）
     private var renderScope: CoroutineScope? = null
+
     // 标记 Surface 是否已创建
     private var surfaceCreated = false
 
@@ -176,7 +180,9 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
 
     private fun initView() {
         mPngMapView = PngMapView(context)
-        mCreatingUpLaserScanView = UpLaserScanView3D(context, mMapView)
+//        建图实时上激光点云绘制已迁移至 MapOutline3DGL(GLES 直接绘制)，
+//        原 UpLaserScanView3D 控件保留，但不再作为绘制图层使用。
+//        mCreatingUpLaserScanView = UpLaserScanView3D(context, mMapView)
         mAllKeyFrames = AllKeyFrameView3D(context, mMapView)
         mUpLaserScanView = UpLaserScanView(context, mMapView)
         mConstrainNodes = ConstrainNodes(context, mMapView)
@@ -189,8 +195,8 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         addMapLayers(mExpandAreaView)
         //人工约束节点
         addMapLayers(mConstrainNodes)
-        //建图上激光点云
-        addMapLayers(mCreatingUpLaserScanView)
+        //建图上激光点云（原 UpLaserScanView3D，现由 MapOutline3DGL 直接绘制）
+//        addMapLayers(mCreatingUpLaserScanView)
         //所有关键帧
         addMapLayers(mAllKeyFrames)
         //非建图上激光点云
@@ -230,6 +236,14 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         // 尺寸变化后重新计算居中（如果地图已加载）
         if (mSrf.mapData.width > 0 && mSrf.mapData.height > 0) {
             setCentred()
+        } else {
+            // 无底图（新建建图）：以世界原点为屏幕中心初始化视图，
+            // 机器人位于起点(0,0)时显示在屏幕中心而不是左上角
+            mOuterMatrix = Matrix()
+            mOuterMatrix.postTranslate(VIEW_WIDTH / 2f, VIEW_HEIGHT / 2f)
+            setMatrixWithScaleAndRotation(mOuterMatrix, mMapScale, 0f)
+            mMapOutline3D?.notifyMatrixChanged()
+            requestRender()
         }
     }
 
@@ -304,7 +318,8 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
 //            parentGroup.findViewById<View>(R.id.ll_rotate)?.bringToFront()
 
             // 设置机器人图标（从资源加载）
-            val robotBitmap = BitmapFactory.decodeResource(resources, R.mipmap.create_current_location)
+            val robotBitmap =
+                BitmapFactory.decodeResource(resources, R.mipmap.create_current_location)
             glLayer.setRobotBitmap(robotBitmap)
 
             mMapOutline3D = glLayer
@@ -374,7 +389,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         // 清理资源
         mapLayers.clear()
         mPngMapView = null
-        mCreatingUpLaserScanView = null
+//        mCreatingUpLaserScanView = null
         mAllKeyFrames = null
         mUpLaserScanView = null
 //        mCreateMapRobotView = null
@@ -442,6 +457,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         mMapOutline3D?.notifyMatrixChanged()
         requestRender()
     }
+
     /**
      * 恢复旋转角度
      */
@@ -451,7 +467,6 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
      * 是否是建图模式
      */
     fun isCreateMapMode(): Boolean = currentWorkMode == WorkMode.MODE_CREATE_MAP
-
 
 
     /**
@@ -620,16 +635,19 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     fun setWorkMode(mode: WorkMode) {
         currentWorkMode = mode
         mMapOutline3D?.setWorkMode(mode)
-        mCreatingUpLaserScanView?.setWorkMode(mode)
+//        建图激光点云由 MapOutline3DGL 直接绘制，不再向下发。
+//        mCreatingUpLaserScanView?.setWorkMode(mode)
         mAllKeyFrames?.setWorkMode(mode)
 //        mCreateMapRobotView?.setWorkMode(mode)
         mExpandAreaView?.setWorkMode(mode)
         requestRender()
     }
+
     /**
      * 获取当前工作模式
      */
     override fun getCurrentWorkMode() = currentWorkMode
+
     /**
      * 加载地图
      * pngPath png文件路径
@@ -644,7 +662,10 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
             .format(DecodeFormat.PREFER_RGB_565)
             .diskCacheStrategy(DiskCacheStrategy.NONE)
             .into(object : SimpleTarget<Bitmap?>() {
-                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap?>?) {
+                override fun onResourceReady(
+                    resource: Bitmap,
+                    transition: Transition<in Bitmap?>?
+                ) {
                     val mPngMapData = YamlNew().loadYaml(
                         yamlPath,
                         resource.height.toFloat(),
@@ -654,6 +675,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
                 }
             })
     }
+
     /**
      * 设置地图数据信息
      * 设置地图
@@ -677,6 +699,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         // 设置地图后自动居中显示
         setCentred()
     }
+
     /**
      * 外部接口 解析激光点云数据（建图模式） 3D
      *      * type 更新0
@@ -701,8 +724,10 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
             keepRobotCentered()
         }
         calBinding(laserData, type)
-        //更新点云数据
-        mCreatingUpLaserScanView?.updateUpLaserScan(laserData)
+        // 建图实时激光点云由 MapOutline3DGL 直接计算并绘制（GLES），
+        // 原 UpLaserScanView3D 控件的计算职责已迁移至 MapOutline3DGL#updateLiveScan。
+        mUpLaserScanView?.clear()
+        mMapOutline3D?.updateLiveScan(laserData)
         mMapOutline3D?.updateRobotPose(robotPose[0], robotPose[1], robotPose[2])
         requestRender()
     }
@@ -774,10 +799,11 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
             }
         }
     }
+
     /**
      * 更新机器人位置（弧度制）
      */
-     fun updateRobotPose(
+    fun updateRobotPose(
         x: Float, y: Float, theta: Float, z: Float = 0f, roll: Float = 0f, pitch: Float = 0f
     ) {
         // 使用辅助方法将可能是科学计数法的float值转换为正常的float值
@@ -787,7 +813,13 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         robotPose[3] = convertScientificToDecimal(z)
         robotPose[4] = convertScientificToDecimal(roll)
         robotPose[5] = convertScientificToDecimal(pitch)
+
+        // 同步到 GL 层（机器人图标由 MapOutline3DGL 绘制，使用其内部 robotPose）。
+        // 非建图模式下（如扩展地图页重新定位后）仅调用本方法，若不推送 GL，
+        // 机器人图标会停留在旧位置不更新
+        mMapOutline3D?.updateRobotPose(robotPose[0], robotPose[1], robotPose[2])
     }
+
     /**
      * 辅助方法：将科学计数法表示的float值转换为普通小数表示的float值
      * 解决激光数据中theta值（laserData.ranges[2]）可能以科学计数法形式存在的问题
@@ -831,11 +863,11 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     fun setSingleTapListener(listener: ISingleTapListener?) {
         mSingleTapListener = listener
     }
+
     /**
      * 获取扩展区域视图实例
      */
     fun getExpandAreaView(): ExpandAreaView<CreateMapView3D>? = mExpandAreaView
-
 
 
     // 兼容旧版 invalidate 调用，现统一转为按需请求
