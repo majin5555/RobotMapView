@@ -23,6 +23,10 @@ import com.siasun.dianshi.databinding.ViewLogBinding
  * 2. 函数调用：setEditText()/setSelectAllText()/setDeleteText()/setEditBackground()/setSelectAllBackground()/setDeleteBackground()、
  *    setEditDrawableStart()/setSelectAllDrawableStart()/setDeleteDrawableStart()
  *
+ * 故障/告警筛选 CheckBox 的文字同样支持两种方式传入：
+ * 1. XML 自定义属性：errorText/warnText
+ * 2. 函数调用：setErrorText()/setWarnText()/setFilterText()
+ *
  * @author majin
  */
 class LogView @JvmOverloads constructor(
@@ -55,6 +59,10 @@ class LogView @JvmOverloads constructor(
     private var selectAllText: String = "全选"
     private var cancelSelectAllText: String = "取消全选"
     private var deleteText: String = "删除"
+
+    // ===== 筛选 CheckBox 文字 =====
+    private var errorText: String = "故障信息"
+    private var warnText: String = "告警信息"
 
     // ===== 可配置背景 =====
     private var editBackground: Drawable? = null
@@ -103,6 +111,7 @@ class LogView @JvmOverloads constructor(
         parseAttributes(attrs)
         applyActionBackgrounds()
         applyActionDrawables()
+        applyFilterTexts()
         initFilterCheckBox()
         initActionArea()
     }
@@ -131,6 +140,8 @@ class LogView @JvmOverloads constructor(
             a.getDrawable(R.styleable.LogView_selectAllDrawableStart) ?: selectAllDrawableStart
         deleteDrawableStart =
             a.getDrawable(R.styleable.LogView_deleteDrawableStart) ?: deleteDrawableStart
+        errorText = a.getString(R.styleable.LogView_errorText) ?: errorText
+        warnText = a.getString(R.styleable.LogView_warnText) ?: warnText
         a.recycle()
     }
 
@@ -223,6 +234,36 @@ class LogView @JvmOverloads constructor(
     fun setDeleteText(deleteText: String) {
         this.deleteText = deleteText
         applyActionText()
+    }
+
+    /**
+     * 设置筛选 CheckBox 文字（故障/告警），传 null 表示不修改
+     */
+    fun setFilterText(errorText: String? = null, warnText: String? = null) {
+        if (errorText != null) {
+            this.errorText = errorText
+            mBinding.checkErrorMsg.text = errorText
+        }
+        if (warnText != null) {
+            this.warnText = warnText
+            mBinding.checkWarnMsg.text = warnText
+        }
+    }
+
+    /**
+     * 设置故障筛选文字
+     */
+    fun setErrorText(errorText: String) {
+        this.errorText = errorText
+        mBinding.checkErrorMsg.text = errorText
+    }
+
+    /**
+     * 设置告警筛选文字
+     */
+    fun setWarnText(warnText: String) {
+        this.warnText = warnText
+        mBinding.checkWarnMsg.text = warnText
     }
 
     /**
@@ -373,6 +414,14 @@ class LogView @JvmOverloads constructor(
         deleteDrawableStart?.let {
             mBinding.tvDelete.setCompoundDrawablesRelativeWithIntrinsicBounds(it, null, null, null)
         }
+    }
+
+    /**
+     * 应用筛选 CheckBox 文字
+     */
+    private fun applyFilterTexts() {
+        mBinding.checkErrorMsg.text = errorText
+        mBinding.checkWarnMsg.text = warnText
     }
 
     /**

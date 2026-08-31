@@ -18,9 +18,11 @@
         app:editBackground="@drawable/bg_log_action_blue"
         app:editDrawableStart="@drawable/iv_edit"
         app:editText="@string/edit"
+        app:errorText="@string/error_log"
         app:selectAllBackground="@drawable/bg_log_action_blue"
         app:selectAllDrawableStart="@drawable/iv_select_all"
-        app:selectAllText="@string/all_select" />
+        app:selectAllText="@string/all_select"
+        app:warnText="@string/warn_log" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

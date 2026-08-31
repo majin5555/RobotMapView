@@ -85,5 +85,9 @@
         <attr name="selectAllDrawableStart" format="reference" />
         <!-- 删除按钮左侧图标 -->
         <attr name="deleteDrawableStart" format="reference" />
+        <!-- 故障筛选文字 -->
+        <attr name="errorText" format="string|reference" />
+        <!-- 告警筛选文字 -->
+        <attr name="warnText" format="string|reference" />
     </declare-styleable>
 </resources>
