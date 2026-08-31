@@ -53,6 +53,71 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
 
     }
 
+    // ==================== 边框绘制控制方法 ====================
+
+    /**
+     * 控制是否绘制子图边框
+     */
+    fun setBorderVisible(visible: Boolean) {
+        if (isBorderVisible == visible) return
+        isBorderVisible = visible
+        postInvalidate()
+    }
+
+    /**
+     * 控制边框颜色模式
+     * @param bySubMap true 表示按子图 ID 自动分配不同颜色（默认）；false 表示使用 [setBorderColor] 设置的固定颜色
+     */
+    fun setBorderColorMode(bySubMap: Boolean) {
+        if (isBorderColorBySubMap == bySubMap) return
+        isBorderColorBySubMap = bySubMap
+        postInvalidate()
+    }
+
+    /**
+     * 设置边框固定颜色（仅在 [setBorderColorMode] 传入 false 时生效），
+     * 颜色中的 alpha 会被 [setBorderAlpha] 的透明度覆盖
+     */
+    fun setBorderColor(color: Int) {
+        if (mBorderColor == color) return
+        mBorderColor = color
+        if (!isBorderColorBySubMap) postInvalidate()
+    }
+
+    /**
+     * 设置边框线宽（像素）
+     */
+    fun setBorderStrokeWidth(width: Float) {
+        val w = if (width < 0f) 0f else width
+        if (mBorderPaint.strokeWidth == w) return
+        mBorderPaint.strokeWidth = w
+        postInvalidate()
+    }
+
+    /**
+     * 设置边框透明度
+     * @param alpha 取值 0-255，0 完全透明，255 完全不透明
+     */
+    fun setBorderAlpha(alpha: Int) {
+        val a = alpha.coerceIn(0, 255)
+        if (borderAlpha == a) return
+        borderAlpha = a
+        postInvalidate()
+    }
+
+    /**
+     * 一键重置边框绘制为默认配置
+     */
+    fun resetBorderStyle() {
+        isBorderVisible = true
+        isBorderColorBySubMap = true
+        mBorderColor = android.graphics.Color.rgb(0, 170, 255)
+        borderAlpha = 200
+        mBorderPaint.strokeWidth = 2f
+        postInvalidate()
+    }
+    // ==========================================================
+
     // 子图边框 Paint，单例共享，防内存抖动
     companion object {
         val mPaint = Paint().apply {
@@ -79,8 +144,22 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
     // 复用 HSV 颜色数组，防 onDraw 内存抖动
     private val mHsvTemp = FloatArray(3)
 
-    // 复用 origin 屏幕坐标缓存，防 onDraw 内存抖动
-    private val mCachedOriginScreen = PointF()
+    // 复用子图绘制矩阵，防 onDraw 内存抖动
+    private val mSubMapMatrix = android.graphics.Matrix()
+
+    // 复用"世界坐标 → 地图像素坐标"矩阵（含 y 翻转），与 CoordinateConversion.worldToScreen 保持一致
+    private val mWorldToMapPixelMatrix = android.graphics.Matrix()
+
+    // ==================== 边框绘制控制配置 ====================
+    // 是否绘制子图边框，默认开启
+    private var isBorderVisible = false
+    // 是否按子图 ID 自动分配不同颜色，true 时优先于 mBorderColor
+    private var isBorderColorBySubMap = false
+    // 固定边框颜色（isBorderColorBySubMap = false 时生效），默认蓝色
+    private var mBorderColor = android.graphics.Color.rgb(0, 170, 255)
+    // 边框透明度 0-255，两种颜色模式均生效
+    private var borderAlpha = 200
+    // ==========================================================
 
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
@@ -88,54 +167,79 @@ class MapOutline2D(context: Context?, val parent: WeakReference<CreateMapView2D>
         canvas.save()
         if (keyFrames2d.isNotEmpty()) {
             val mapView = parent.get() ?: return
-            val scale = mapView.mMapScale
 
-            keyFrames2d.values.forEach { subMap ->
-                val bitmap = subMap.mBitmap ?: return@forEach
-                val bmpWidth = bitmap.width.toFloat()
-                val bmpHeight = bitmap.height.toFloat()
-                if (bmpWidth <= 0f || bmpHeight <= 0f) return@forEach
+            // 与 worldToScreen 保持同一把锁，避免 mapData 被并发修改
+            synchronized(mapView.mSrf.mapData) {
+                val mapData = mapView.mSrf.mapData
+                val resolution = mapData.resolution
+                if (resolution <= 0f) return
 
-                canvas.save()
+                keyFrames2d.values.forEach { subMap ->
+                    val bitmap = subMap.mBitmap ?: return@forEach
+                    val bmpWidth = bitmap.width.toFloat()
+                    val bmpHeight = bitmap.height.toFloat()
+                    if (bmpWidth <= 0f || bmpHeight <= 0f) return@forEach
 
-                // 关键修复：
-                // 1. 以子图 origin（= rightTop 世界坐标）作为绘制锚点
-                //    worldToScreen 内部已经通过 mOuterMatrix 包含了视图旋转/缩放/平移，
-                //    所以这里不再重复 rotate(getViewRotation)，避免子图相对底图双旋转错位。
-                val originScreen = mapView.worldToScreen(subMap.originX, subMap.originY)
-                mCachedOriginScreen.set(originScreen.x, originScreen.y)
+                    // ============ 关键修复：子图与点云共用同一套坐标变换链 ============
+                    // 点云/底图链路：世界坐标 → mSrf.worldToScreen(世界→地图像素，含y翻转)
+                    //                           → mOuterMatrix.mapPoints(像素→屏幕)
+                    // 子图链路（旧实现）只用 worldToScreen 转锚点再手动 rotate/scale，
+                    // 缩放/旋转视图后与点云、底图不一致，产生轮廓错位。
+                    // 修复：为 bitmap 构造完整矩阵，使 bitmap 每个像素都走同一变换链：
+                    //   bitmap像素 → 子图局部坐标(percent, y向上)
+                    //             → 绕 origin 旋转 originTheta(世界坐标系 y 向上逆时针)
+                    //             → 平移到世界坐标 origin
+                    //             → 世界坐标 → 地图像素坐标(含 y 翻转)
+                    //             → mOuterMatrix → 屏幕坐标
+                    // ==================================================================
+                    mSubMapMatrix.reset()
+                    // 1. bitmap 像素 → 子图局部坐标（米），rightTop 像素 (bmpWidth, 0) 对应 origin
+                    mSubMapMatrix.postScale(subMap.percent, -subMap.percent)
+                    mSubMapMatrix.postTranslate(-bmpWidth * subMap.percent, 0f)
+                    // 2. 绕 origin 旋转 originTheta。Matrix.postRotate 为顺时针，取负角实现世界逆时针
+                    mSubMapMatrix.postRotate(
+                        -Math.toDegrees(subMap.originTheta.toDouble()).toFloat()
+                    )
+                    // 3. 平移到世界坐标 origin
+                    mSubMapMatrix.postTranslate(subMap.originX, subMap.originY)
+                    // 4. 世界坐标 → 地图像素坐标（含 y 翻转），与 CoordinateConversion.worldToScreen 一致
+                    mWorldToMapPixelMatrix.setValues(
+                        floatArrayOf(
+                            1f / resolution, 0f, -mapData.originX / resolution,
+                            0f, -1f / resolution, mapData.height + mapData.originY / resolution,
+                            0f, 0f, 1f
+                        )
+                    )
+                    mSubMapMatrix.postConcat(mWorldToMapPixelMatrix)
+                    // 5. 地图像素 → 屏幕（视图缩放/旋转/平移全部由 mOuterMatrix 承担）
+                    mSubMapMatrix.postConcat(mapView.outerMatrix)
 
-                // 2. 应用每张子图自身的旋转 originTheta（绕 origin 点）
-                //    这是之前完全缺失的步骤，也是子图叠加方向错位产生重影的核心原因
-                canvas.rotate(
-                    Math.toDegrees(subMap.originTheta.toDouble()).toFloat(),
-                    mCachedOriginScreen.x,
-                    mCachedOriginScreen.y
-                )
+                    canvas.save()
+                    canvas.concat(mSubMapMatrix)
 
-                // 3. 应用地图缩放（绕 origin 点）
-                canvas.scale(scale, scale, mCachedOriginScreen.x, mCachedOriginScreen.y)
+                    // 绘制子图
+                    canvas.drawBitmap(bitmap, 0f, 0f, mPaint)
 
-                // 绘制基准点（origin = rightTop）对应 bitmap 的 right-top 像素：
-                // bitmap 的像素坐标原点是左上角，宽 bmpWidth、高 bmpHeight
-                // 所以 rightTop 像素 = bitmap 的 (bmpWidth, 0)，要把它对齐到画布原点（originScreen + 当前变换后的原点）
-                // 即：绘制 bitmap 的左上角位置 = originScreen + (-bmpWidth, 0)
-                val drawLeft = mCachedOriginScreen.x - bmpWidth
-                val drawTop = mCachedOriginScreen.y
+                    // 绘制子图边框（与 bitmap 处于同一变换坐标系，保证边框随子图一起缩放旋转）
+                    if (isBorderVisible) {
+                        if (isBorderColorBySubMap) {
+                            // 颜色基于子图 ID，保证每张子图颜色不同
+                            val hue = ((subMap.id * BORDER_HUE_STEP) % 360f + 360f) % 360f
+                            mHsvTemp[0] = hue
+                            mHsvTemp[1] = 0.85f
+                            mHsvTemp[2] = 0.95f
+                            mBorderPaint.color =
+                                android.graphics.Color.HSVToColor(borderAlpha, mHsvTemp)
+                        } else {
+                            // 统一固定颜色（替换 alpha 为 borderAlpha）
+                            mBorderPaint.color = (mBorderColor and 0x00FFFFFF) or (borderAlpha shl 24)
+                        }
+                        mBorderRect.set(0f, 0f, bmpWidth, bmpHeight)
+                        canvas.drawRect(mBorderRect, mBorderPaint)
+                    }
 
-                // 绘制子图
-                canvas.drawBitmap(bitmap, drawLeft, drawTop, mPaint)
-
-                // 绘制子图边框，颜色基于子图 ID，保证每张子图颜色不同
-                val hue = ((subMap.id * BORDER_HUE_STEP) % 360f + 360f) % 360f
-                mHsvTemp[0] = hue
-                mHsvTemp[1] = 0.85f
-                mHsvTemp[2] = 0.95f
-                mBorderPaint.color = android.graphics.Color.HSVToColor(200, mHsvTemp)
-                mBorderRect.set(drawLeft, drawTop, drawLeft + bmpWidth, drawTop + bmpHeight)
-                canvas.drawRect(mBorderRect, mBorderPaint)
-
-                canvas.restore()
+                    canvas.restore()
+                }
             }
         }
     }
