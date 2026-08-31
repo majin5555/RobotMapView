@@ -56,6 +56,7 @@ data class LogBean(
     val err_code: String,
     val create_time: String,
     val err_level: Int,
+    val id: Int? = 0,
 ) : LiveEvent
 
 

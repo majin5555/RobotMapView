@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.siasun.dianshi.view.log.LogView xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/log_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="@dimen/dp_40"
+        app:cancelEditText="@string/cancel_edit"
+        app:cancelSelectAllText="@string/cancel_all_select"
+        app:deleteBackground="@drawable/bg_log_action_red"
+        app:deleteDrawableStart="@drawable/iv_delete"
+        app:deleteText="@string/delete_log"
+        app:editBackground="@drawable/bg_log_action_blue"
+        app:editDrawableStart="@drawable/iv_edit"
+        app:editText="@string/edit"
+        app:selectAllBackground="@drawable/bg_log_action_blue"
+        app:selectAllDrawableStart="@drawable/iv_select_all"
+        app:selectAllText="@string/all_select" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+

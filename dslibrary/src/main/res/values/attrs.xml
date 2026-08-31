@@ -60,4 +60,30 @@
         <!--过门准备区-->
         <attr name="showDoorPrepareArea" default="false" format="boolean" />
     </declare-styleable>
+
+    <!-- 日志 View -->
+    <declare-styleable name="LogView">
+        <!-- 编辑按钮文字（非编辑状态） -->
+        <attr name="editText" format="string|reference" />
+        <!-- 编辑按钮文字（编辑状态） -->
+        <attr name="cancelEditText" format="string|reference" />
+        <!-- 全选按钮文字（未全选状态） -->
+        <attr name="selectAllText" format="string|reference" />
+        <!-- 全选按钮文字（已全选状态） -->
+        <attr name="cancelSelectAllText" format="string|reference" />
+        <!-- 删除按钮文字 -->
+        <attr name="deleteText" format="string|reference" />
+        <!-- 编辑按钮背景 -->
+        <attr name="editBackground" format="reference|color" />
+        <!-- 全选按钮背景 -->
+        <attr name="selectAllBackground" format="reference|color" />
+        <!-- 删除按钮背景 -->
+        <attr name="deleteBackground" format="reference|color" />
+        <!-- 编辑按钮左侧图标 -->
+        <attr name="editDrawableStart" format="reference" />
+        <!-- 全选按钮左侧图标 -->
+        <attr name="selectAllDrawableStart" format="reference" />
+        <!-- 删除按钮左侧图标 -->
+        <attr name="deleteDrawableStart" format="reference" />
+    </declare-styleable>
 </resources>

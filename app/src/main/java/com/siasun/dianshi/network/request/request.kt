@@ -89,6 +89,11 @@ data class RequestCheckApk(var version_code: Int, var apk_type: String)
 //获取日志
 data class RequestGetLog(val type_list: MutableList<Int>)
 
+//删除日志
+data class RequestDeleteErrorList(val id_list: MutableList<Int>)
+
+
+
 ///**
 // * 获取区域
 // */

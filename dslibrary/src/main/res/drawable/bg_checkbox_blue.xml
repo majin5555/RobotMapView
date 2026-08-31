@@ -1,0 +1,4 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_checked="true" android:drawable="@drawable/bg_checkbox_blue_checked" />
+    <item android:drawable="@drawable/bg_checkbox_blue_unchecked" />
+</selector>

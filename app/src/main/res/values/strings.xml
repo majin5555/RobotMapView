@@ -12,4 +12,16 @@
     <string name="cms_station_point">避让点</string>
     <string name="delete_cms_station">确认删除该避障点吗?</string>
     <string name="cms_station_point_rotate">避让点是否旋转对应角度</string>
+    <string name="unknown_alarm_code">%1$s 未知告警码</string>
+
+    <string name="edit">编辑</string>
+    <string name="cancel_edit">取消编辑</string>
+    <string name="all_select">全选</string>
+    <string name="cancel_all_select">取消全选</string>
+    <string name="delete_log">删除</string>
+    <string name="choice_delete_log">请选择要删除的日志</string>
+    <string name="delete_this_log">确认删除该日志吗?</string>
+    <string name="error_log">故障信息</string>
+    <string name="no_log_information">暂无日志信息</string>
+
 </resources>

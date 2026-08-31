@@ -7,7 +7,6 @@ import android.util.DisplayMetrics
 import android.util.Log
 import android.view.WindowManager
 import com.blankj.utilcode.util.AppUtils
-import com.siasun.dianshi.framework.log.XLogger
 import com.siasun.dianshi.framework.utils.DeviceInfoUtils
 
 /**

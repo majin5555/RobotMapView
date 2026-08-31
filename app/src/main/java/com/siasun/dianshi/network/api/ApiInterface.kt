@@ -19,7 +19,9 @@ import com.siasun.dianshi.bean.SpArea
 import com.siasun.dianshi.bean.SweepingModeListBean
 import com.siasun.dianshi.bean.SwitchMapBean
 import com.siasun.dianshi.bean.task.Task
-import com.siasun.dianshi.mapviewdemo.viewmodel.CreateMap3DViewModel
+import com.siasun.dianshi.bean.LogBean
+import com.siasun.dianshi.network.request.RequestDeleteErrorList
+import com.siasun.dianshi.network.request.RequestGetLog
 import com.siasun.dianshi.network.request.RequestGetSpecialArea
 import com.siasun.dianshi.network.request.RequestSaveSpecialArea
 import com.siasun.dianshi.network.request.RequestSaveVirtualWall
@@ -107,21 +109,13 @@ interface ApiInterface {
 //    fun downloadFile(@Url fileUrl: String): Call<ResponseBody>
 //
 //    /**
-//     * 获取错误日志
-//     * error_level : 0: 显示 普通信息、告警、错误信息
-//     * error_level : 2: 只显示错误信息
-//     */
-//    @POST("/get_error_list")
-//    suspend fun getLog(@Body errorLevel: RequestGetLog): BaseResponse<MutableList<LogBean>>
-//
-//
-//    /**
 //     * 区域删除校验
 //     */
 //    @POST("/check_region_usage")
 //    suspend fun checkRegionUsage(@Body task: RequestDeletePadArea): BaseResponse<TaskVerification>
-//
-//
+
+
+
     @POST("/get_pad_areas")
     suspend fun getAreas(@Body area: RequestCommonMapId): BaseResponse<CleanAreaRootNew>
 
@@ -264,5 +258,19 @@ interface ApiInterface {
      */
     @POST("/get_sweeping_mode")
     suspend fun getSweepingMode(): BaseResponse<SweepingModeListBean>?
+    /**
+     * 获取错误日志
+     * error_level : 0: 显示 普通信息、告警、错误信息
+     * error_level : 2: 只显示错误信息
+     */
+    @POST("/get_error_list")
+    suspend fun getLog(@Body errorLevel: RequestGetLog): BaseResponse<MutableList<LogBean>>
+
+
+    /**
+     * 删除日志
+     */
+    @POST("/delete_error_list")
+    suspend fun deleteErrorList(@Body req: RequestDeleteErrorList): BaseResponse<Any>
 
 }
