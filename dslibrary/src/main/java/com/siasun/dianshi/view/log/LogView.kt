@@ -1,7 +1,9 @@
 package com.siasun.dianshi.view.log
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.RippleDrawable
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
@@ -41,6 +43,15 @@ class LogView @JvmOverloads constructor(
 
         /** 提示 */
         const val TYPE_WARN = 2
+
+        /** 编辑按钮水波纹颜色（半透明蓝） */
+        private const val RIPPLE_EDIT = 0x335672FF
+
+        /** 全选按钮水波纹颜色（半透明灰蓝） */
+        private const val RIPPLE_SELECT_ALL = 0x33D9E3F2
+
+        /** 删除按钮水波纹颜色（半透明红） */
+        private const val RIPPLE_DELETE = 0x33FF6D64
 
     }
 
@@ -114,6 +125,7 @@ class LogView @JvmOverloads constructor(
         applyFilterTexts()
         initFilterCheckBox()
         initActionArea()
+        applyClickEffects()
     }
 
     /**
@@ -198,15 +210,15 @@ class LogView @JvmOverloads constructor(
     ) {
         if (editBackground != null) {
             this.editBackground = editBackground
-            mBinding.tvEdit.background = editBackground
+            mBinding.tvEdit.background = wrapWithRipple(editBackground, RIPPLE_EDIT)
         }
         if (selectAllBackground != null) {
             this.selectAllBackground = selectAllBackground
-            mBinding.tvSelectAll.background = selectAllBackground
+            mBinding.tvSelectAll.background = wrapWithRipple(selectAllBackground, RIPPLE_SELECT_ALL)
         }
         if (deleteBackground != null) {
             this.deleteBackground = deleteBackground
-            mBinding.tvDelete.background = deleteBackground
+            mBinding.tvDelete.background = wrapWithRipple(deleteBackground, RIPPLE_DELETE)
         }
     }
 
@@ -271,7 +283,7 @@ class LogView @JvmOverloads constructor(
      */
     fun setEditBackground(background: Drawable?) {
         this.editBackground = background
-        mBinding.tvEdit.background = background
+        mBinding.tvEdit.background = wrapWithRipple(background, RIPPLE_EDIT)
     }
 
     /**
@@ -279,7 +291,7 @@ class LogView @JvmOverloads constructor(
      */
     fun setSelectAllBackground(background: Drawable?) {
         this.selectAllBackground = background
-        mBinding.tvSelectAll.background = background
+        mBinding.tvSelectAll.background = wrapWithRipple(background, RIPPLE_SELECT_ALL)
     }
 
     /**
@@ -287,7 +299,7 @@ class LogView @JvmOverloads constructor(
      */
     fun setDeleteBackground(background: Drawable?) {
         this.deleteBackground = background
-        mBinding.tvDelete.background = background
+        mBinding.tvDelete.background = wrapWithRipple(background, RIPPLE_DELETE)
     }
 
     /**
@@ -393,12 +405,39 @@ class LogView @JvmOverloads constructor(
     }
 
     /**
-     * 应用按钮背景
+     * 应用按钮背景（包裹点击水波纹效果）
      */
     private fun applyActionBackgrounds() {
-        editBackground?.let { mBinding.tvEdit.background = it }
-        selectAllBackground?.let { mBinding.tvSelectAll.background = it }
-        deleteBackground?.let { mBinding.tvDelete.background = it }
+        editBackground?.let { mBinding.tvEdit.background = wrapWithRipple(it, RIPPLE_EDIT) }
+        selectAllBackground?.let {
+            mBinding.tvSelectAll.background = wrapWithRipple(it, RIPPLE_SELECT_ALL)
+        }
+        deleteBackground?.let { mBinding.tvDelete.background = wrapWithRipple(it, RIPPLE_DELETE) }
+    }
+
+    /**
+     * 为按钮背景包裹点击水波纹效果。
+     * 背景可能来自 XML 属性或外部动态传入，统一在此包装以支持点击反馈。
+     */
+    private fun wrapWithRipple(background: Drawable?, rippleColor: Int): Drawable? {
+        background ?: return null
+        if (background is RippleDrawable) return background
+        return RippleDrawable(ColorStateList.valueOf(rippleColor), background, null)
+    }
+
+    /**
+     * 无自定义背景的按钮，使用前景水波纹兜底，保证点击有反馈
+     */
+    private fun applyClickEffects() {
+        applyClickEffect(mBinding.tvEdit, RIPPLE_EDIT)
+        applyClickEffect(mBinding.tvSelectAll, RIPPLE_SELECT_ALL)
+        applyClickEffect(mBinding.tvDelete, RIPPLE_DELETE)
+    }
+
+    private fun applyClickEffect(view: View, rippleColor: Int) {
+        if (view.background == null) {
+            view.foreground = RippleDrawable(ColorStateList.valueOf(rippleColor), null, null)
+        }
     }
 
     /**
