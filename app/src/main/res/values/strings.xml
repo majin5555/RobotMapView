@@ -22,6 +22,7 @@
     <string name="choice_delete_log">请选择要删除的日志</string>
     <string name="delete_this_log">确认删除该日志吗?</string>
     <string name="error_log">故障信息</string>
+    <string name="warn_log">告警信息</string>
     <string name="no_log_information">暂无日志信息</string>
 
 </resources>
