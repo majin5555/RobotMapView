@@ -127,6 +127,9 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     // TEACH模式下是否跟随车体，保持可见
     private var followRobotInTeach: Boolean = false
 
+    // 是否锁定视角，锁定后禁止手势缩放/平移/旋转
+    private var isViewLocked = false
+
     /**
      * 获取地图位图宽度
      */
@@ -380,14 +383,17 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     }
 
     override fun onMapPinch(factor: Float, center: PointF) {
+        if (isViewLocked) return
         setScale(factor, center.x, center.y)
     }
 
     override fun onMapMove(distanceX: Int, distanceY: Int) {
+        if (isViewLocked) return
         setTransition(distanceX, distanceY)
     }
 
     override fun onMapRotate(factor: Float, center: PointF) {
+        if (isViewLocked) return
         setRotation(factor, center.x.toInt(), center.y.toInt())
     }
 
@@ -636,6 +642,26 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     fun processMapGestures(event: MotionEvent) {
         mGestureDetector?.onTouchEvent(event, this)
     }
+
+    /**
+     * 锁定视角
+     * 锁定后地图不允许通过手势进行缩放、平移（旋转也随之禁止）
+     */
+    fun lockView() {
+        isViewLocked = true
+    }
+
+    /**
+     * 解锁视角
+     */
+    fun unlockView() {
+        isViewLocked = false
+    }
+
+    /**
+     * 视角是否已锁定
+     */
+    fun isViewLocked(): Boolean = isViewLocked
 
     /**
      * 设置工作模式
