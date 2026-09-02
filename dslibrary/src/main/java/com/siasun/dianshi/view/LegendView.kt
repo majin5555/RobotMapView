@@ -2,7 +2,6 @@ package com.siasun.dianshi.view
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.PointF
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.widget.LinearLayout
@@ -35,12 +34,12 @@ class LegendView(context: Context, attrs: AttributeSet, parent: WeakReference<Ma
     init {
         init(context, attrs)
 
-        mBinding.rootLegend.setOnClickListener {
+        mBinding.ivLegend.setOnClickListener {
             if (mBinding.conLegend.isVisible) {
-                mBinding.ivLegend.setImageResource(R.drawable.iv_back)
+                mBinding.ivLegend.setImageResource(R.drawable.icon_eye_invisible)
                 mBinding.conLegend.visibility = GONE
             } else {
-                mBinding.ivLegend.setImageResource(R.drawable.iv_go)
+                mBinding.ivLegend.setImageResource(R.drawable.icon_eye_visible)
                 mBinding.conLegend.visibility = VISIBLE
             }
         }

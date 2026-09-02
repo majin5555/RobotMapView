@@ -1520,6 +1520,21 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     }
 
     /**
+     * 设置图例显示位置
+     * @param position 图例位置：左上角或右上角
+     */
+    fun setLegendViewPosition(position: LegendPosition) {
+        val gravity = when (position) {
+            LegendPosition.TOP_LEFT -> android.view.Gravity.TOP or android.view.Gravity.START
+            LegendPosition.TOP_RIGHT -> android.view.Gravity.TOP or android.view.Gravity.END
+        }
+        val legendView = mLegendView ?: return
+        val lp = legendView.layoutParams as? LayoutParams ?: return
+        lp.gravity = gravity
+        legendView.layoutParams = lp
+    }
+
+    /**
      * 销毁
      */
     fun destroy() {
@@ -1785,6 +1800,14 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
 
     interface ISingleTapListener {
         fun onSingleTapListener(mMapScale: Float, point: PointF)
+    }
+
+    /**
+     * 图例显示位置
+     */
+    enum class LegendPosition {
+        TOP_LEFT,   //左上角
+        TOP_RIGHT   //右上角
     }
 
 
