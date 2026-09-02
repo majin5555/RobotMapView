@@ -189,7 +189,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         // 设置clipChildren为true，确保子视图不会超出父视图的圆角区域
         clipChildren = true
         clipToPadding = true
-        
+
         // 强制关闭硬件加速，转为 CPU 绘制，彻底解决 libGLES_mali.so (libhwui) 10小时高频渲染崩溃
         setLayerType(LAYER_TYPE_SOFTWARE, null)
 
@@ -654,6 +654,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      */
     fun lockView() {
         isViewLocked = true
+
+        setMapScale(10f)
     }
 
     /**
@@ -661,6 +663,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      */
     fun unlockView() {
         isViewLocked = false
+
+        restoreDefaultMapScale()
     }
 
     /**
@@ -1328,7 +1332,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     /**
      * 获取特殊区域
      */
-    fun getSpAreaData(): MutableList<SpArea> = mSpPolygonEditView?.getData()?.toMutableList() ?: mutableListOf()
+    fun getSpAreaData(): MutableList<SpArea> =
+        mSpPolygonEditView?.getData()?.toMutableList() ?: mutableListOf()
 
     /**
      * 创建交管区

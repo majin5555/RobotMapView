@@ -132,12 +132,10 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             LogUtil.i("  mBinding.mapView.mMapScale ${mBinding.mapView.mMapScale}")
             if (mBinding.mapView.isViewLocked()) {
                 mBinding.mapView.unlockView()
-                mBinding.mapView.restoreDefaultMapScale()
                 mBinding.btnLockMap.text = "锁定视角"
                 ToastUtils.showLong("已解锁地图视角，可进行手势操作")
             } else {
                 mBinding.mapView.lockView()
-                mBinding.mapView.setMapScale(10f)
                 mBinding.btnLockMap.text = "解锁视角"
                 ToastUtils.showLong("已锁定地图视角，禁止缩放/平移/旋转")
             }
