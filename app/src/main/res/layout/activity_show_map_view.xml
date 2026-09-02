@@ -12,27 +12,28 @@
         app:shape_radius="20dp"
         app:shape_solidColor="@color/white"
         app:showArea="true"
-        app:showTaskArea="false"
+        app:showAreaPoint="true"
+        app:showCrossDoor="true"
         app:showLowerLaserPointCloud="true"
-        app:showMapNameView="true"
+        app:showMapNameView="false"
         app:showMixArea="true"
         app:showOnlinePose="true"
-        app:showPositingArea="true"
-        app:showCrossDoor="true"
-        app:showSpArea="true"
-        app:showRFID="true"
         app:showPath="true"
-        app:showTrafficArea="true"
+        app:showPositingArea="true"
+        app:showRFID="true"
         app:showSameSwitch="true"
+        app:showSpArea="true"
         app:showStations="true"
+        app:showTaskArea="false"
         app:showTopViewPath="true"
-        app:showAreaPoint="true"
+        app:showTrafficArea="true"
         app:showUpLaserPointCloud="true"
         app:showVirtualWall="true"
         app:showWorldPath="true" />
 
 
     <ScrollView
+        android:layout_marginTop="100dp"
         android:layout_width="wrap_content"
         android:layout_height="match_parent">
 
@@ -40,6 +41,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
+
             <Button
                 android:id="@+id/btn_add_traffic_area"
                 android:layout_width="wrap_content"
@@ -560,8 +562,18 @@
                 android:text="编辑同层切换点" />
 
 
-
         </LinearLayout>
     </ScrollView>
+
+    <!-- 右下角地图视角锁定按钮 -->
+    <Button
+        android:id="@+id/btnLockMap"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:text="锁定视角"
+        app:layout_constraintBottom_toBottomOf="@+id/map_view"
+        app:layout_constraintEnd_toEndOf="@+id/map_view" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

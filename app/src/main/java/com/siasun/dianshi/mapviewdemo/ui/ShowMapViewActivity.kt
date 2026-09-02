@@ -66,6 +66,7 @@ import com.siasun.dianshi.view.HomeDockView
 import com.siasun.dianshi.view.InspectionView
 import com.siasun.dianshi.view.MapNameView.Position
 import com.siasun.dianshi.view.MapView.ISingleTapListener
+import com.siasun.dianshi.view.MapView.LegendPosition
 import com.siasun.dianshi.view.MixAreaView
 import com.siasun.dianshi.view.PolygonEditView
 import com.siasun.dianshi.view.PolygonEditViewPoint
@@ -96,7 +97,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     private val mReflectorMaps = mutableListOf<com.siasun.dianshi.bean.ReflectorMapBean>()
 
 
-    val mapId = 1
+    val mapId = 7
     var cleanAreas: MutableList<CleanAreaNew> = mutableListOf()
     var mSpArea: MutableList<SpArea> = mutableListOf()
     var mMixArea: MutableList<WorkAreasNew> = mutableListOf()
@@ -118,12 +119,29 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
             ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_PNG),
             ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_YAML)
         )
+        mBinding.mapView.setLegendViewPosition(LegendPosition.TOP_LEFT)
         //移动模式
         mBinding.btnMove.setOnClickListener {
             mBinding.mapView.setWorkMode(WorkMode.MODE_SHOW_MAP)
         }
 
         mBinding.mapView.laserDrawingEnabled(false)
+
+        //锁定视角按钮：切换地图视角锁定状态，锁定后禁止手势缩放/平移/旋转
+        mBinding.btnLockMap.onClick {
+            LogUtil.i("  mBinding.mapView.mMapScale ${mBinding.mapView.mMapScale}")
+            if (mBinding.mapView.isViewLocked()) {
+                mBinding.mapView.unlockView()
+                mBinding.mapView.restoreDefaultMapScale()
+                mBinding.btnLockMap.text = "锁定视角"
+                ToastUtils.showLong("已解锁地图视角，可进行手势操作")
+            } else {
+                mBinding.mapView.lockView()
+                mBinding.mapView.setMapScale(10f)
+                mBinding.btnLockMap.text = "解锁视角"
+                ToastUtils.showLong("已锁定地图视角，禁止缩放/平移/旋转")
+            }
+        }
 
         mBinding.mapView.showMapNamePosition(Position.BOTTOM_LEFT)
 
@@ -159,7 +177,10 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //        initTeach()
 //        initPath()
     }
-val json5 = "{\"dparams\":[],\"fparams\":[],\"iparams\":[],\"lparams\":[],\"m_cPathTypeBuffer\":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],\"m_fCleanPathPlanStartPosBuffer\":[1.1837026E-38,0.0,0.0],\"m_fElementBuffer\":[-0.863,-4.4,-0.9344588,-3.7338326,-0.9601412,-3.0601184,-1.0130172,-2.3930426,-1.0130172,-2.3930426,-1.065893,-1.7259668,-1.0223782,-1.0560983,-1.0029804,-0.39116532,-1.0029804,-0.39116532,-0.9835825,0.27376774,-0.84074545,0.96497476,-1.0873588,1.6044965,-1.0873588,1.6044965,-1.3339722,2.244018,-1.8761793,2.7162864,-2.4221098,3.1090684,-2.4221098,3.1090684,-2.9680402,3.5018504,-3.6272461,3.7009008,-4.2757034,3.8692951,-4.2757034,3.8692951,-4.924161,4.0376897,-5.5918565,4.168978,-6.259397,4.2637744,-6.259397,4.2637744,-6.9269376,4.3585706,-7.582609,4.548687,-8.250038,4.6531816,-8.250038,4.6531816,-8.917468,4.7576766,-9.607398,4.835452,-10.281899,4.7835546,-10.281899,4.7835546,-10.9564,4.7316575,-11.657868,4.9405966,-12.27794,4.5449667,-12.27794,4.5449667,-12.898012,4.149337,-12.509453,3.1647224,-11.864928,2.9557748,-11.864928,2.9557748,-11.220405,2.746827,-10.542032,2.6936615,-9.863509,2.6683412,-9.863509,2.6683412,-9.184986,2.6430209,-8.502937,2.5538006,-7.8285885,2.5048394,-7.8285885,2.5048394,-7.15424,2.4558783,-6.4765573,2.452223,-5.808301,2.45338,-5.808301,2.45338,-5.1400447,2.4545372,-4.4607778,2.5006707,-3.8092902,2.4028533,-3.8092902,2.4028533,-3.1578026,2.305036,-2.4303677,2.2554545,-1.9865848,1.681014,-1.9865848,1.681014,-1.542802,1.1065733,-1.4400291,0.6027464,-1.4711305,-0.30788904,-1.4711305,-0.30788904,-1.5022318,-1.2185245,-1.8983606,-2.7599063,-1.343,-3.762],\"m_fGloalPathPlanGoalPosBuffer\":[7.898166E31,1.78E-43,9.689E-42],\"m_fGloalPathPlanStartPosBuffer\":[0.0,1.1584871E-38,0.0],\"m_fRegionPointsBuffer\":[],\"m_iAddLaser\":6914,\"m_iCleanPathPanType\":127,\"m_iElementSum\":136,\"m_iGloalPathPlanType\":1954101472,\"m_iPathPlanPublicId\":2,\"m_iPathPlanPublicSubId\":0,\"m_iPathPlanRegionChoose\":46,\"m_iPathPlanType\":3,\"m_iPathSum\":17,\"m_iPlanResult\":1,\"m_iPlanResultMode\":0,\"m_iRegionNumber\":0,\"m_iRegionPoints\":0,\"m_strAdditionInfo\":\"1.0.1.225-MultyLayers\",\"m_strFrom\":\"PathPlan\",\"m_strTo\":\"pad\",\"m_uLayerNumber\":13357,\"ndparams\":0,\"nfparams\":0,\"niparams\":0,\"nlparams\":0,\"sparams\":\"\",\"utime\":0}\n"
+
+    val json5 =
+        "{\"dparams\":[],\"fparams\":[],\"iparams\":[],\"lparams\":[],\"m_cPathTypeBuffer\":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],\"m_fCleanPathPlanStartPosBuffer\":[1.1837026E-38,0.0,0.0],\"m_fElementBuffer\":[-0.863,-4.4,-0.9344588,-3.7338326,-0.9601412,-3.0601184,-1.0130172,-2.3930426,-1.0130172,-2.3930426,-1.065893,-1.7259668,-1.0223782,-1.0560983,-1.0029804,-0.39116532,-1.0029804,-0.39116532,-0.9835825,0.27376774,-0.84074545,0.96497476,-1.0873588,1.6044965,-1.0873588,1.6044965,-1.3339722,2.244018,-1.8761793,2.7162864,-2.4221098,3.1090684,-2.4221098,3.1090684,-2.9680402,3.5018504,-3.6272461,3.7009008,-4.2757034,3.8692951,-4.2757034,3.8692951,-4.924161,4.0376897,-5.5918565,4.168978,-6.259397,4.2637744,-6.259397,4.2637744,-6.9269376,4.3585706,-7.582609,4.548687,-8.250038,4.6531816,-8.250038,4.6531816,-8.917468,4.7576766,-9.607398,4.835452,-10.281899,4.7835546,-10.281899,4.7835546,-10.9564,4.7316575,-11.657868,4.9405966,-12.27794,4.5449667,-12.27794,4.5449667,-12.898012,4.149337,-12.509453,3.1647224,-11.864928,2.9557748,-11.864928,2.9557748,-11.220405,2.746827,-10.542032,2.6936615,-9.863509,2.6683412,-9.863509,2.6683412,-9.184986,2.6430209,-8.502937,2.5538006,-7.8285885,2.5048394,-7.8285885,2.5048394,-7.15424,2.4558783,-6.4765573,2.452223,-5.808301,2.45338,-5.808301,2.45338,-5.1400447,2.4545372,-4.4607778,2.5006707,-3.8092902,2.4028533,-3.8092902,2.4028533,-3.1578026,2.305036,-2.4303677,2.2554545,-1.9865848,1.681014,-1.9865848,1.681014,-1.542802,1.1065733,-1.4400291,0.6027464,-1.4711305,-0.30788904,-1.4711305,-0.30788904,-1.5022318,-1.2185245,-1.8983606,-2.7599063,-1.343,-3.762],\"m_fGloalPathPlanGoalPosBuffer\":[7.898166E31,1.78E-43,9.689E-42],\"m_fGloalPathPlanStartPosBuffer\":[0.0,1.1584871E-38,0.0],\"m_fRegionPointsBuffer\":[],\"m_iAddLaser\":6914,\"m_iCleanPathPanType\":127,\"m_iElementSum\":136,\"m_iGloalPathPlanType\":1954101472,\"m_iPathPlanPublicId\":2,\"m_iPathPlanPublicSubId\":0,\"m_iPathPlanRegionChoose\":46,\"m_iPathPlanType\":3,\"m_iPathSum\":17,\"m_iPlanResult\":1,\"m_iPlanResultMode\":0,\"m_iRegionNumber\":0,\"m_iRegionPoints\":0,\"m_strAdditionInfo\":\"1.0.1.225-MultyLayers\",\"m_strFrom\":\"PathPlan\",\"m_strTo\":\"pad\",\"m_uLayerNumber\":13357,\"ndparams\":0,\"nfparams\":0,\"niparams\":0,\"nlparams\":0,\"sparams\":\"\",\"utime\":0}\n"
+
     private fun initTeach() {
         mBinding.btnAddTeachPath888.onClick {
             val json1 =
@@ -1138,7 +1159,7 @@ val json5 = "{\"dparams\":[],\"fparams\":[],\"iparams\":[],\"lparams\":[],\"m_cP
                 areaPathType = 0 // 普通清扫区域
             }
             cleanAreas.add(newArea)
-            LogUtil.d( "9999 添加清扫区域 ${newArea}")
+            LogUtil.d("9999 添加清扫区域 ${newArea}")
             mBinding.mapView.createCleanArea(newArea)
         }
 

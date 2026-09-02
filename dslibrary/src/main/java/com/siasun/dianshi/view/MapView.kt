@@ -84,6 +84,7 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     var mMapCenterY = 0f//地图真实世界的中线点y
     private val mMaxMapScale = 10f //最大缩放级别
     private var mMinMapScale = 0.1f //最小缩放级别
+    var mDefaultMapScale = 0f //默认级别：首次加载地图后的缩放级别
 
     private var mMapView: WeakReference<MapView> = WeakReference(this)
     private var mapLayers: MutableList<SlamWareBaseView<MapView>> = CopyOnWriteArrayList()
@@ -126,6 +127,9 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
 
     // TEACH模式下是否跟随车体，保持可见
     private var followRobotInTeach: Boolean = false
+
+    // 是否锁定视角，锁定后禁止手势缩放/平移/旋转
+    private var isViewLocked = false
 
     /**
      * 获取地图位图宽度
@@ -380,14 +384,17 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     }
 
     override fun onMapPinch(factor: Float, center: PointF) {
+        if (isViewLocked) return
         setScale(factor, center.x, center.y)
     }
 
     override fun onMapMove(distanceX: Int, distanceY: Int) {
+        if (isViewLocked) return
         setTransition(distanceX, distanceY)
     }
 
     override fun onMapRotate(factor: Float, center: PointF) {
+        if (isViewLocked) return
         setRotation(factor, center.x.toInt(), center.y.toInt())
     }
 
@@ -489,6 +496,10 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
             )
             val scale = scaledRect.width() / iWidth
             mMinMapScale = scale / 4
+            // 首次加载地图后，记录默认级别（地图适配视图的缩放级别）
+            if (mDefaultMapScale <= 0f) {
+                mDefaultMapScale = scale
+            }
             if (isCentred) {
                 mMapScale = scale
                 mOuterMatrix = Matrix()
@@ -638,6 +649,26 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     }
 
     /**
+     * 锁定视角
+     * 锁定后地图不允许通过手势进行缩放、平移（旋转也随之禁止）
+     */
+    fun lockView() {
+        isViewLocked = true
+    }
+
+    /**
+     * 解锁视角
+     */
+    fun unlockView() {
+        isViewLocked = false
+    }
+
+    /**
+     * 视角是否已锁定
+     */
+    fun isViewLocked(): Boolean = isViewLocked
+
+    /**
      * 设置工作模式
      */
     fun setWorkMode(mode: WorkMode) {
@@ -713,6 +744,49 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
 
         // 更新矩阵
         setMatrixWithScaleAndRotation(matrix, finalScale, rotation)
+    }
+
+    /**
+     * 设置地图缩放级别
+     * 以当前视图中心为缩放锚点，缩放范围限制在最小与最大缩放级别之间
+     *
+     * @param scale 目标缩放级别
+     */
+    fun setMapScale(scale: Float) {
+        if (VIEW_WIDTH == 0 || VIEW_HEIGHT == 0 || mMapScale <= 0f) return
+        var finalScale = scale
+        if (finalScale > mMaxMapScale) finalScale = mMaxMapScale
+        if (finalScale < mMinMapScale) finalScale = mMinMapScale
+        // 计算比例因子，以视图中心为锚点进行缩放，保持当前视角中心不变
+        val factor = finalScale / mMapScale
+        setScale(factor, VIEW_WIDTH / 2f, VIEW_HEIGHT / 2f)
+    }
+
+    /**
+     * 设置地图缩放级别（指定缩放锚点）
+     * 缩放范围限制在最小与最大缩放级别之间
+     *
+     * @param scale 目标缩放级别
+     * @param centerX 缩放锚点屏幕坐标X
+     * @param centerY 缩放锚点屏幕坐标Y
+     */
+    fun setMapScale(scale: Float, centerX: Float, centerY: Float) {
+        if (VIEW_WIDTH == 0 || VIEW_HEIGHT == 0 || mMapScale <= 0f) return
+        var finalScale = scale
+        if (finalScale > mMaxMapScale) finalScale = mMaxMapScale
+        if (finalScale < mMinMapScale) finalScale = mMinMapScale
+        // 计算比例因子，以指定屏幕点为锚点进行缩放
+        val factor = finalScale / mMapScale
+        setScale(factor, centerX, centerY)
+    }
+
+    /**
+     * 恢复默认视角状态
+     * 将地图恢复到第一次加载时的状态：默认缩放级别（mDefaultMapScale）、地图居中显示、无旋转；
+     * 若地图尚未加载（无有效地图数据），则不执行任何操作
+     */
+    fun restoreDefaultMapScale() {
+        setCentred(true)
     }
 
     /**
