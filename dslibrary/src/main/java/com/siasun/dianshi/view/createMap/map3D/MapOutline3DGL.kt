@@ -14,6 +14,9 @@ import android.opengl.GLES30
 import android.opengl.GLSurfaceView
 import android.opengl.GLUtils
 import android.opengl.Matrix as GMatrix
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import android.view.MotionEvent
 import com.ngu.lcmtypes.laser_t
 import com.siasun.dianshi.bean.ConstraintNode
@@ -24,6 +27,8 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import kotlin.math.cos
@@ -46,6 +51,10 @@ class MapOutline3DGL(
         private const val POINT_SIZE_KEYFRAME = 8f
         private const val POINT_SIZE_LIVE = 3f
         private const val DIR_LINE_LENGTH = 0.5f
+
+        // 渲染节流最小帧间隔（毫秒）：GLSurfaceView 是 RENDERMODE_WHEN_DIRTY，
+        // 每个激光数据包都会触发一次全场景重绘，需要限流避免 GL 线程被打满
+        private const val RENDER_MIN_INTERVAL_MS = 40L
 
         // 文字世界尺寸
         private const val CHAR_WORLD_HEIGHT = 0.2f
@@ -190,6 +199,13 @@ class MapOutline3DGL(
     private var liveBuffer: FloatBuffer? = null
     private var liveBufferCapacity = 0
 
+    // 实时点云跨线程交换锁：写入方为激光数据回调线程(updateLiveScan)，读取方为GLThread
+    private val liveLock = Any()
+
+    // GLThread专用：当前实时点云VBO中实际顶点数（与VBO内容严格一致；
+    // 不能直接用跨线程的liveVertexCount绘制，否则count可能与VBO数据不匹配）
+    private var liveDrawCount = 0
+
     // 实时扫描关键帧复用缓存（grow-only，避免每次关键帧重新分配）
     private var liveKeyframeCloudBuf: FloatArray? = null
     private var liveKeyframeWorldBuf: FloatArray? = null
@@ -214,6 +230,54 @@ class MapOutline3DGL(
     private var robotPose = FloatArray(3)
     private var robotBitmap: Bitmap? = null
     private var robotTexture = 0
+
+    // ---------- 渲染节流 ----------
+    // 每收到一个激光数据包就会 requestRender()（updateLiveScan / updateRobotPose），
+    // 而每一帧都是全场景重绘：累积黑点云 + 关键帧点 + 关键帧线 + 文字 + 实时红点 + 机器人。
+    // 黑点云规模随建图时长线性增长，若不限流，GL 线程会被数据包率直接打满，
+    // 结果反而是最需要实时性的红色点云滞后于机器人。这里统一限到 ~25fps。
+    //
+    // 采用 leading + trailing 策略：窗口内的首个请求会安排一个补偿帧，
+    // 保证最后一次数据更新一定会被画出来（否则机器人停下后红点云会停在旧位置）。
+    //
+    // 注意：拖动 / 缩放 / 旋转走 [requestRenderImmediate]，不参与节流。
+    private val renderMinIntervalMs = RENDER_MIN_INTERVAL_MS
+    private val lastRenderTimeMs = AtomicLong(0L)
+    private val renderTrailingScheduled = AtomicBoolean(false)
+    private val renderHandler = Handler(Looper.getMainLooper())
+
+    /**
+     * 立即请求渲染，跳过节流窗口。
+     *
+     * 只给交互路径用（拖动 / 缩放 / 旋转）：手势过程中若被限流，GL 层会明显跟不上手指。
+     * 数据刷新路径（激光点云、关键帧、位姿、回环）一律走节流的 [requestRender]。
+     *
+     * 这里刻意不更新 [lastRenderTimeMs]：交互帧与数据帧各自独立计时，
+     * 否则持续拖动会不断推后节流基准，把实时红点云一起拖慢。
+     */
+    private fun requestRenderImmediate() {
+        super.requestRender()
+    }
+
+    override fun requestRender() {
+        val now = SystemClock.elapsedRealtime()
+        val last = lastRenderTimeMs.get()
+        val elapsed = now - last
+        // leading：距上一帧已足够久，立即渲染
+        if (elapsed >= renderMinIntervalMs && lastRenderTimeMs.compareAndSet(last, now)) {
+            requestRenderImmediate()
+            return
+        }
+        // trailing：窗口内已有请求在排队补帧则跳过（补帧时读的是最新数据，不会丢更新）
+        if (renderTrailingScheduled.compareAndSet(false, true)) {
+            val delay = (renderMinIntervalMs - elapsed).coerceIn(0L, renderMinIntervalMs)
+            renderHandler.postDelayed({
+                renderTrailingScheduled.set(false)
+                lastRenderTimeMs.set(SystemClock.elapsedRealtime())
+                requestRenderImmediate()
+            }, delay)
+        }
+    }
 
     init {
         setEGLContextClientVersion(3)
@@ -281,7 +345,7 @@ class MapOutline3DGL(
      */
     fun updateLiveScan(laserData: laser_t) {
         if (laserData.ranges.size <= 6) {
-            liveVertexCount = 0
+            synchronized(liveLock) { liveVertexCount = 0 }
             liveDirty = true
             requestRender()
             return // 最少包含机器人位置数据
@@ -296,13 +360,6 @@ class MapOutline3DGL(
 
         // 实时红点：完全显示，不过滤（下一帧整体替换，无需压缩）
         val required = totalPoints * 2
-        if (liveBuffer == null || liveBufferCapacity < required) {
-            liveBuffer = ByteBuffer.allocateDirect(required * 4)
-                .order(ByteOrder.nativeOrder()).asFloatBuffer()
-            liveBufferCapacity = required
-        } else {
-            liveBuffer!!.clear()
-        }
 
         // 关键帧缓存数组（按采样间隔容量申请，复用、仅扩容），黑点存储需控量
         var localCloudBuf: FloatArray? = null
@@ -327,36 +384,50 @@ class MapOutline3DGL(
 
         var pointCount = 0
         var keyIdx = 0
-        // 实时红点：全量遍历（step=1，完全显示，不降采样）
-        for (i in 0 until totalPoints) {
-            val index = 6 + i * 6 // 跳过机器人位置数据（前6个元素）
-            if (index + 2 >= laserData.ranges.size) break // 越界保护
-
-            val laserX = laserData.ranges[index]
-            val laserY = laserData.ranges[index + 1]
-            val worldX = laserX * cosT - laserY * sinT + robotX
-            val worldY = laserX * sinT + laserY * cosT + robotY
-
-            // 实时红点：全量写入
-            if (pointCount * 2 + 1 < required) {
-                liveBuffer!!.put(worldX)
-                liveBuffer!!.put(worldY)
-                pointCount++
+        // 实时红点缓冲区写入全程持锁（GLThread在锁内拷贝快照后再上传）：
+        // 修复崩溃——此前GLThread直接读取liveBuffer，若恰好读到clear()与flip()
+        // 之间写了一半的状态（position>0且缓冲区通常恰好装满），glBufferSubData
+        // 的JNI层检查remaining()<size会抛IllegalArgumentException使GLThread崩溃
+        synchronized(liveLock) {
+            if (liveBuffer == null || liveBufferCapacity < required) {
+                liveBuffer = ByteBuffer.allocateDirect(required * 4)
+                    .order(ByteOrder.nativeOrder()).asFloatBuffer()
+                liveBufferCapacity = required
+            } else {
+                liveBuffer!!.clear()
             }
+            val buf = liveBuffer!!
+            // 实时红点：全量遍历（step=1，完全显示，不降采样）
+            for (i in 0 until totalPoints) {
+                val index = 6 + i * 6 // 跳过机器人位置数据（前6个元素）
+                if (index + 2 >= laserData.ranges.size) break // 越界保护
 
-            // 关键帧黑点：按采样间隔收集，控制存储量
-            if (isKeyframe && localCloudBuf != null && localWorldBuf != null && i % dynamicSampleInterval == 0) {
-                if (keyIdx + 1 < localCloudBuf.size) {
-                    localCloudBuf[keyIdx] = laserX
-                    localCloudBuf[keyIdx + 1] = laserY
-                    localWorldBuf[keyIdx] = worldX
-                    localWorldBuf[keyIdx + 1] = worldY
-                    keyIdx += 2
+                val laserX = laserData.ranges[index]
+                val laserY = laserData.ranges[index + 1]
+                val worldX = laserX * cosT - laserY * sinT + robotX
+                val worldY = laserX * sinT + laserY * cosT + robotY
+
+                // 实时红点：全量写入
+                if (pointCount * 2 + 1 < required) {
+                    buf.put(worldX)
+                    buf.put(worldY)
+                    pointCount++
+                }
+
+                // 关键帧黑点：按采样间隔收集，控制存储量
+                if (isKeyframe && localCloudBuf != null && localWorldBuf != null && i % dynamicSampleInterval == 0) {
+                    if (keyIdx + 1 < localCloudBuf.size) {
+                        localCloudBuf[keyIdx] = laserX
+                        localCloudBuf[keyIdx + 1] = laserY
+                        localWorldBuf[keyIdx] = worldX
+                        localWorldBuf[keyIdx + 1] = worldY
+                        keyIdx += 2
+                    }
                 }
             }
+            buf.flip()
+            liveVertexCount = pointCount
         }
-        liveBuffer!!.flip()
-        liveVertexCount = pointCount
         liveDirty = true
 
         if (isKeyframe && keyIdx > 0 && localCloudBuf != null && localWorldBuf != null) {
@@ -402,8 +473,12 @@ class MapOutline3DGL(
         }
     }
 
+    /**
+     * 地图矩阵变化（拖动 / 缩放 / 旋转）时调用。
+     * 属交互路径，不参与节流，直接渲染以保证 GL 层跟手。
+     */
     fun notifyMatrixChanged() {
-        requestRender()
+        requestRenderImmediate()
     }
 
     /** 设置机器人位姿（弧度），由 CreateMapView3D 调用 */
@@ -562,8 +637,8 @@ class MapOutline3DGL(
             rebuildLivePointVBO()
             liveDirty = false
         }
-        if (liveVertexCount > 0) {
-            drawPoints(vboLivePoint[0], liveVertexCount, COLOR_LIVE_POINT, POINT_SIZE_LIVE)
+        if (liveDrawCount > 0) {
+            drawPoints(vboLivePoint[0], liveDrawCount, COLOR_LIVE_POINT, POINT_SIZE_LIVE)
         }
 
         // 最后绘制机器人（在所有元素之上）
@@ -710,13 +785,33 @@ class MapOutline3DGL(
 
     /**
      * 重建实时上激光点云 VBO
+     * 锁内从liveBuffer拷贝一份数据快照，锁外再执行GL上传（锁持有时间仅µs级，
+     * 不会阻塞激光数据写入线程），彻底避免读到写了一半的缓冲
      */
     private fun rebuildLivePointVBO() {
-        val buf = liveBuffer ?: run { liveVertexCount = 0; return }
-        val len = liveVertexCount * 2
-        if (len <= 0) return
-        uploadVBOFromBuffer(vboLivePoint, buf, len, lastLenLive)
-        lastLenLive = len
+        var len = 0
+        var snapshot: FloatBuffer? = null
+        synchronized(liveLock) {
+            val buf = liveBuffer
+            val count = liveVertexCount
+            if (buf == null || count <= 0) {
+                liveDrawCount = 0
+            } else {
+                len = count * 2
+                if (buf.remaining() >= len) {
+                    val tmp = obtainUploadBuffer(len)
+                    tmp.put(buf)
+                    tmp.position(0)
+                    snapshot = tmp
+                    liveDrawCount = count
+                }
+                // remaining不足（持锁后理论不可达）：防御性保留上一帧
+            }
+        }
+        if (snapshot != null) {
+            uploadVBOFromBuffer(vboLivePoint, snapshot!!, len, lastLenLive)
+            lastLenLive = len
+        }
     }
 
     private fun rebuildKeyframePointsVBO() {
@@ -922,6 +1017,9 @@ class MapOutline3DGL(
     }
 
     private fun uploadVBOFromBuffer(vbo: IntArray, src: FloatBuffer, length: Int, lastLen: Int) {
+        // 防御：缓冲区数据不足时跳过本帧上传（glBufferSubData/glBufferData的JNI层
+        // 在remaining()<size时会直接抛IllegalArgumentException导致GLThread崩溃）
+        if (length <= 0 || src.remaining() < length) return
         if (vbo[0] == 0) GLES20.glGenBuffers(1, vbo, 0)
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vbo[0])
         if (lastLen == length) GLES20.glBufferSubData(GLES20.GL_ARRAY_BUFFER, 0, length * 4, src)
@@ -1007,14 +1105,20 @@ class MapOutline3DGL(
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
+        // 取消尚未执行的补偿帧，避免 surface 销毁后再触发渲染
+        renderHandler.removeCallbacksAndMessages(null)
+        renderTrailingScheduled.set(false)
         keyFrames3D.clear()
         parent.clear()
         // 清理实时点云数据与复用缓存
-        liveVertexCount = 0
+        synchronized(liveLock) {
+            liveVertexCount = 0
+            liveBuffer = null
+            liveBufferCapacity = 0
+        }
         liveDirty = false
-        liveBuffer = null
-        liveBufferCapacity = 0
         lastLenLive = 0
+        liveDrawCount = 0
         liveKeyframeCloudBuf = null
         liveKeyframeWorldBuf = null
         GLES20.glDeleteProgram(programPoint)
