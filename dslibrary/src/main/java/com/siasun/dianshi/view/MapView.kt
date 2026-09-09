@@ -652,10 +652,10 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      * 锁定视角
      * 锁定后地图不允许通过手势进行缩放、平移（旋转也随之禁止）
      */
-    fun lockView() {
+    fun lockView(scale: Float) {
         isViewLocked = true
 
-        setMapScale(10f)
+        setMapScale(scale)
     }
 
     /**
