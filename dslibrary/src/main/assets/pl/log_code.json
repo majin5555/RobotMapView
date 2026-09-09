@@ -162,7 +162,7 @@
   "A1102002": "Nieprawidłowość nawigacji: przekroczenie czasu oczekiwania komunikacji z laserem lokalizacyjnym",
   "A1102003": "Nieprawidłowość nawigacji: przekroczenie czasu oczekiwania komunikacji z kamerą widoku z góry",
   "A1102004": "Nieprawidłowość nawigacji: przekroczenie czasu oczekiwania komunikacji z dolnym laserem",
-  "A1102005": "Nieprawidłowość nawigacji: błąd początkowej lokalizacji",
+  "A1102005": "Proszę przemieścić się do prawidłowego punktu wejścia do systemu i ponownie przeprowadzić lokalizację",
   "A1102101": "Nieprawidłowość dockingu: zbyt duże odchylenie",
   "A1102102": "Nieprawidłowość dockingu: przerwane dane komunikacyjne kamery",
   "A1102201": "Pusta obracja kół",

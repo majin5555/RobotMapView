@@ -162,7 +162,7 @@
   "A1102002": "Anomalie de navigation : délai dépassé communication laser de positionnement",
   "A1102003": "Anomalie de navigation : délai dépassé communication caméra de vue supérieure",
   "A1102004": "Anomalie de navigation : délai dépassé communication laser inférieur",
-  "A1102005": "Anomalie de navigation : échec du positionnement initial",
+  "A1102005": "Veuillez vous déplacer jusqu'au point de mise en ligne correct puis effectuer à nouveau le positionnement",
   "A1102101": "Anomalie d'amarrage: écart excessif",
   "A1102102": "Anomalie d'amarrage: interruption de communication de données caméra",
   "A1102201": "Patination des roues",

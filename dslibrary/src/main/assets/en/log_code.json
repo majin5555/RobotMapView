@@ -162,7 +162,7 @@
   "A1102002": "Navigation abnormal:positioning laser communication timeout",
   "A1102003": "Navigation abnormal:top view camera communication timeout",
   "A1102004": "Navigation abnormal:bottom laser communication timeout",
-  "A1102005": "Navigation abnormal:initial positioning failed",
+  "A1102005": "Please move to the correct online point and reposition",
   "A1102101": "Docking abnormal:deviation too large",
   "A1102102": "Docking abnormal:camera communication data interrupted",
   "A1102201": "Wheel spinning",

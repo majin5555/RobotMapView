@@ -162,7 +162,7 @@
   "A1102002": "Anomalia na navegação: Tempo limite de comunicação do laser de localização",
   "A1102003": "Anomalia na navegação: Tempo limite de comunicação da câmera topográfica",
   "A1102004": "Anomalia na navegação: Tempo limite de comunicação do laser inferior",
-  "A1102005": "Anomalia na navegação: Falha no posicionamento inicial",
+  "A1102005": "Mova-se até o ponto de conexão correto e faça o posicionamento novamente",
   "A1102101": "Anomalia no acoplamento: Desvio excessivo",
   "A1102102": "Anomalia no acoplamento: Interrupção de dados de comunicação da câmera",
   "A1102201": "Roda patinando",

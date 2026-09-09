@@ -162,7 +162,7 @@
   "A1102002": "Anomalía de navegación: Tiempo de espera agotado en la comunicación del láser de localización",
   "A1102003": "Anomalía de navegación: Tiempo de espera agotado en la comunicación de la cámara de visión superior",
   "A1102004": "Anomalía de navegación: Tiempo de espera agotado en la comunicación del láser inferior",
-  "A1102005": "Anomalía de navegación: Fallo de localización inicial",
+  "A1102005": "Muévase al punto de conexión correcto y vuelva a realizar la localización",
   "A1102101": "Anomalía de acoplamiento: Desviación excesiva",
   "A1102102": "Anomalía de acoplamiento: Interrupción de datos de comunicación de la cámara",
   "A1102201": "Giro vacío de ruedas",
