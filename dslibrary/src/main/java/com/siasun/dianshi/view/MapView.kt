@@ -569,7 +569,8 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
      * 刷新所有层数据
      */
     override fun invalidate() {
-        super.postInvalidate()
+        super.invalidate()
+//        super.postInvalidate()
         mPngMapView?.postInvalidate()
         for (mapLayer in mapLayers) {
             mapLayer.postInvalidate()

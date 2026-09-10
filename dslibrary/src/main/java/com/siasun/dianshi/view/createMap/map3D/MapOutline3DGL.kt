@@ -944,7 +944,16 @@ class MapOutline3DGL(
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0)
     }
 
+    // 注意：drawPoints / drawLines 必须自己绑定 programPoint，不能依赖 onDrawFrame
+    // 帧首那次 glUseProgram。原因：drawText() 会把当前程序切成 programText 并且不恢复，
+    // 若这里不重绑，drawText 之后的点/线绘制会误用文字着色器——
+    // 表现为「打开关键帧后实时红色点云消失」（u_Color/u_PointSize 的 location 不属于
+    // 当前程序，glUniform 直接 GL_INVALID_OPERATION；a_WorldPos/a_Umin/a_Umax 又处于
+    // disable 状态取常量 0，顶点被文字着色器算到同一点上）。
+    // 另外 uniform 值存储在 program 对象内，帧首设过的 u_MVPMatrix 会一直保留，
+    // 因此这里只需重绑程序，无需重新上传矩阵。
     private fun drawPoints(vbo: Int, count: Int, color: FloatArray, size: Float) {
+        GLES20.glUseProgram(programPoint)
         GLES20.glUniform4fv(uColorPoint, 1, color, 0)
         GLES20.glUniform1f(uPointSize, size)
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vbo)
@@ -956,6 +965,7 @@ class MapOutline3DGL(
     }
 
     private fun drawLines(vbo: Int, count: Int, color: FloatArray) {
+        GLES20.glUseProgram(programPoint)   // 同 drawPoints，不依赖外部程序状态
         GLES20.glUniform4fv(uColorPoint, 1, color, 0)
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vbo)
         GLES20.glEnableVertexAttribArray(aPosPoint)
