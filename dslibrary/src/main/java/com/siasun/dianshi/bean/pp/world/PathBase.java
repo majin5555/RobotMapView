@@ -113,61 +113,63 @@ public class PathBase {
      */
     public void read(DataInputStream dis) {
         try {
-            int ch1 = dis.read();
-            int ch2 = dis.read();
-            if ((ch1 | ch2) < 0) {
-                return;//throw new EOFException();
-            }
-
-            this.m_uCount = (short) ((ch2 << 8) + (ch1 << 0));// Init the count of paths
-            Log.i("readWorld", "路径总数 m_uCount " + m_uCount);
-
-            // 确保路径数量为正数，避免创建负长度数组
-            if (this.m_uCount > 0) {
-                // Allocate memory for the path indexes
-                this.m_pPathIdx = new PathIndex[m_uCount];
-
-                for (int i = 0; i < m_uCount; i++) {
-                    m_pPathIdx[i] = new PathIndex();
+            synchronized (NodeBase.WORLD_FILE_LOCK) {
+                int ch1 = dis.read();
+                int ch2 = dis.read();
+                if ((ch1 | ch2) < 0) {
+                    return;//throw new EOFException();
                 }
 
-                short actualCount = 0;
-                try {
-                    for (short i = 0; i < this.m_uCount; i++) {
-                        Path pPath = null;
-                        short uType;
-                        ch1 = dis.read();
-                        ch2 = dis.read();
-                        if ((ch1 | ch2) < 0) {
-                            throw new EOFException();
-                        }
+                this.m_uCount = (short) ((ch2 << 8) + (ch1 << 0));// Init the count of paths
+                Log.i("readWorld", "路径总数 m_uCount " + m_uCount);
 
-                        uType = (short) ((ch2 << 8) + (ch1 << 0));
-                        switch (uType) {
-                            case 0:
-                                pPath = new LinePath();
-                                break;
-                            case 10:
-                                pPath = new GenericPath();
-                                break;
-                            default:
-                                throw new IOException("Unsupported path type: " + uType);
-                        }
-                        // 确保路径对象创建成功
-                        if (pPath != null) {
-                            pPath.m_pNodeBase = m_MyNode;
-                            pPath.Create(dis);
-                            pPath.m_uType = uType;
-                            m_pPathIdx[i].m_ptr = pPath;
-                            actualCount++;
-                        }
+                // 确保路径数量为正数，避免创建负长度数组
+                if (this.m_uCount > 0) {
+                    // Allocate memory for the path indexes
+                    this.m_pPathIdx = new PathIndex[m_uCount];
+
+                    for (int i = 0; i < m_uCount; i++) {
+                        m_pPathIdx[i] = new PathIndex();
                     }
-                } finally {
-                    this.m_uCount = actualCount;
+
+                    short actualCount = 0;
+                    try {
+                        for (short i = 0; i < this.m_uCount; i++) {
+                            Path pPath = null;
+                            short uType;
+                            ch1 = dis.read();
+                            ch2 = dis.read();
+                            if ((ch1 | ch2) < 0) {
+                                throw new EOFException();
+                            }
+
+                            uType = (short) ((ch2 << 8) + (ch1 << 0));
+                            switch (uType) {
+                                case 0:
+                                    pPath = new LinePath();
+                                    break;
+                                case 10:
+                                    pPath = new GenericPath();
+                                    break;
+                                default:
+                                    throw new IOException("Unsupported path type: " + uType);
+                            }
+                            // 确保路径对象创建成功
+                            if (pPath != null) {
+                                pPath.m_pNodeBase = m_MyNode;
+                                pPath.Create(dis);
+                                pPath.m_uType = uType;
+                                m_pPathIdx[i].m_ptr = pPath;
+                                actualCount++;
+                            }
+                        }
+                    } finally {
+                        this.m_uCount = actualCount;
+                    }
+                } else {
+                    this.m_uCount = 0;
+                    this.m_pPathIdx = null;
                 }
-            } else {
-                this.m_uCount = 0;
-                this.m_pPathIdx = null;
             }
 
         } catch (FileNotFoundException e) {
@@ -181,28 +183,30 @@ public class PathBase {
     public void Save(DataOutputStream dis) {
         // Init the count of paths
         try {
-            // Save the count of paths
-            int ch1 = this.m_uCount;
-            int ch2 = this.m_uCount;
+            synchronized (NodeBase.WORLD_FILE_LOCK) {
+                // Save the count of paths
+                int ch1 = this.m_uCount;
+                int ch2 = this.m_uCount;
 
-            dis.write((ch1 & 0xff));
-            dis.write((ch2 >> 8));
+                dis.write((ch1 & 0xff));
+                dis.write((ch2 >> 8));
 
-            if (this.m_pPathIdx != null) {
-                for (short i = 0; i < this.m_uCount; i++) {
-                    if (this.m_pPathIdx[i] == null || this.m_pPathIdx[i].m_ptr == null) continue;
-                    Path pPath;
-                    pPath = this.m_pPathIdx[i].m_ptr;
-                    ch1 = pPath.m_uType;
-                    ch2 = pPath.m_uType;
-                    short sT = (short) ((ch2 >> 8) + (ch1 & 0xff) << 8);
-                    dis.writeShort(sT);
-                    if (!pPath.Save(dis)) {
-                        //assert (false); 
+                if (this.m_pPathIdx != null) {
+                    for (short i = 0; i < this.m_uCount; i++) {
+                        if (this.m_pPathIdx[i] == null || this.m_pPathIdx[i].m_ptr == null) continue;
+                        Path pPath;
+                        pPath = this.m_pPathIdx[i].m_ptr;
+                        ch1 = pPath.m_uType;
+                        ch2 = pPath.m_uType;
+                        short sT = (short) ((ch2 >> 8) + (ch1 & 0xff) << 8);
+                        dis.writeShort(sT);
+                        if (!pPath.Save(dis)) {
+                            //assert (false);
+                        }
                     }
                 }
+                //dis.flush();
             }
-            //dis.flush();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -257,23 +261,25 @@ public class PathBase {
     //   Add a node to the nodes data base.
     //
     public boolean AddPath(Path pPath) {
-        // Allocate memory for the path indexes
-        PathIndex[] pTemp = new PathIndex[m_uCount + 1];
+        synchronized (NodeBase.WORLD_FILE_LOCK) {
+            // Allocate memory for the path indexes
+            PathIndex[] pTemp = new PathIndex[m_uCount + 1];
 
-        for (short i = 0; i < m_uCount + 1; i++)
-            pTemp[i] = new PathIndex();
+            for (short i = 0; i < m_uCount + 1; i++)
+                pTemp[i] = new PathIndex();
 
-        if (m_pPathIdx != null) {
-            for (short i = 0; i < m_uCount; i++)
-                pTemp[i] = m_pPathIdx[i];
+            if (m_pPathIdx != null) {
+                for (short i = 0; i < m_uCount; i++)
+                    pTemp[i] = m_pPathIdx[i];
+            }
+
+            pTemp[m_uCount++].m_ptr = pPath;
+
+            //free(m_pPathIdx);
+            m_pPathIdx = pTemp;
+
+            return true;
         }
-
-        pTemp[m_uCount++].m_ptr = pPath;
-
-        //free(m_pPathIdx);
-        m_pPathIdx = pTemp;
-
-        return true;
     }
 
     //返回删除的节点ID
@@ -281,41 +287,43 @@ public class PathBase {
         Vector<Integer> Node = new Vector();
         short i;
 
-        if (m_pPathIdx == null || uId >= m_uCount) return Node;
+        synchronized (NodeBase.WORLD_FILE_LOCK) {
+            if (m_pPathIdx == null || uId >= m_uCount) return Node;
 
-        // Allocate memory for the path indexes
-        PathIndex[] pTemp = new PathIndex[m_uCount - 1];
-        if (pTemp == null) return Node;
+            // Allocate memory for the path indexes
+            PathIndex[] pTemp = new PathIndex[m_uCount - 1];
+            if (pTemp == null) return Node;
 
-        for (i = 0; i < m_uCount; i++) {
-            if (i != uId) {
-                pTemp[i] = m_pPathIdx[i];
-            } else {
-                if (m_pPathIdx[uId] != null && m_pPathIdx[uId].m_ptr != null) {
-                    int uNode1 = m_pPathIdx[uId].m_ptr.m_uStartNode;
-                    int uNode2 = m_pPathIdx[uId].m_ptr.m_uEndNode;
+            for (i = 0; i < m_uCount; i++) {
+                if (i != uId) {
+                    pTemp[i] = m_pPathIdx[i];
+                } else {
+                    if (m_pPathIdx[uId] != null && m_pPathIdx[uId].m_ptr != null) {
+                        int uNode1 = m_pPathIdx[uId].m_ptr.m_uStartNode;
+                        int uNode2 = m_pPathIdx[uId].m_ptr.m_uEndNode;
 
-                    // 如果删除路径后它的节点变为孤立节点，则需要将节点也删除
-                    if (GetNeighborNode(uNode1) == -1) {
-                        m_MyNode.RemoveNode(uNode1);
+                        // 如果删除路径后它的节点变为孤立节点，则需要将节点也删除
+                        if (GetNeighborNode(uNode1) == -1) {
+                            m_MyNode.RemoveNode(uNode1);
+                        }
+                        if (GetNeighborNode(uNode2) == -1) {
+                            m_MyNode.RemoveNode(uNode2);
+                        }
+                        m_pPathIdx[uId].m_ptr = null;
                     }
-                    if (GetNeighborNode(uNode2) == -1) {
-                        m_MyNode.RemoveNode(uNode2);
-                    }
-                    m_pPathIdx[uId].m_ptr = null;
+                    break;
                 }
-                break;
             }
+
+            m_uCount--;
+            for (int j = i; j < m_uCount; j++) {
+                pTemp[j] = m_pPathIdx[j + 1];
+            }
+
+            m_pPathIdx = pTemp;
+
+            return Node;
         }
-
-        m_uCount--;
-        for (int j = i; j < m_uCount; j++) {
-            pTemp[j] = m_pPathIdx[j + 1];
-        }
-
-        m_pPathIdx = pTemp;
-
-        return Node;
     }
 
 

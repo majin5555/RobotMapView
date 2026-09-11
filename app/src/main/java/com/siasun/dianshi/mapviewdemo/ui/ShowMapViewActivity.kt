@@ -156,7 +156,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 
 //        initMergedPose()
 //        initStation()
-//        iniVirtualWall()
+        iniVirtualWall()
 //        initRemoveNoise()
 //        initPostingArea()
 //        initRemoveNoise()

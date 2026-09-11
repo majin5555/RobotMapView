@@ -19,6 +19,11 @@ import java.io.IOException;
  */
 public class NodeBase {
 
+    /**
+     * 共享文件锁：用于保证「编辑（增删路径/节点）」与「保存/读取 world_pad.dat」互斥
+     * 被 NodeBase / PathBase / CLayer 共用以确保同一把 monitor，避免并发导致计数与实际数据不一致
+     */
+    public static final Object WORLD_FILE_LOCK = new Object();
 
     public short m_uCount;       // 节点集合中的节点数量
     public Node[] m_paNode;       // 节点数组指针
@@ -57,32 +62,34 @@ public class NodeBase {
      * -2: 未找到指定ID的节点
      */
     public short RemoveNode(int uId) {
-        // 检查节点是否存在
-        if (GetNode(uId) == null) return -2;
+        synchronized (WORLD_FILE_LOCK) {
+            // 检查节点是否存在
+            if (GetNode(uId) == null) return -2;
 
-        // 分配新的节点数组
-        Node[] pTemp = new Node[m_uCount - 1];
-        if (pTemp == null) return -1;
+            // 分配新的节点数组
+            Node[] pTemp = new Node[m_uCount - 1];
+            if (pTemp == null) return -1;
 
-        int pTempIndex = 0;
-        boolean found = false;
-        for (int i = 0; i < m_uCount; i++) {
-            if (m_paNode[i] != null && m_paNode[i].m_uId == uId && !found) {
-                found = true;
-                continue;
+            int pTempIndex = 0;
+            boolean found = false;
+            for (int i = 0; i < m_uCount; i++) {
+                if (m_paNode[i] != null && m_paNode[i].m_uId == uId && !found) {
+                    found = true;
+                    continue;
+                }
+                if (pTempIndex < pTemp.length) {
+                    pTemp[pTempIndex++] = m_paNode[i];
+                }
             }
-            if (pTempIndex < pTemp.length) {
-                pTemp[pTempIndex++] = m_paNode[i];
-            }
+
+            short uCount = m_uCount;
+            // 清空当前节点集合
+            Clear();
+            // 使用新节点数组替换旧数组
+            m_paNode = pTemp;
+            m_uCount = (short) (uCount - 1);
+            return 0;
         }
-
-        short uCount = m_uCount;
-        // 清空当前节点集合
-        Clear();
-        // 使用新节点数组替换旧数组
-        m_paNode = pTemp;
-        m_uCount = (short) (uCount - 1);
-        return 0;
     }
 
 
@@ -239,24 +246,26 @@ public class NodeBase {
 
 
     public short AddNode(Node nd) {
-        if (GetNode(nd.m_uId) != null) return -2;
+        synchronized (WORLD_FILE_LOCK) {
+            if (GetNode(nd.m_uId) != null) return -2;
 
-        Node[] pTemp = new Node[m_uCount + 1];
-        if (pTemp == null) return -1;
+            Node[] pTemp = new Node[m_uCount + 1];
+            if (pTemp == null) return -1;
 
-        for (short i = 0; i < m_uCount; i++) {
-            if (m_paNode != null && i < m_paNode.length) {
-                pTemp[i] = m_paNode[i];
+            for (short i = 0; i < m_uCount; i++) {
+                if (m_paNode != null && i < m_paNode.length) {
+                    pTemp[i] = m_paNode[i];
+                }
             }
+            pTemp[m_uCount] = nd;
+            short uCount = (short) (m_uCount + 1);
+
+            Clear();
+            m_paNode = pTemp;
+            m_uCount = uCount;
+
+            return 0;
         }
-        pTemp[m_uCount] = nd;
-        short uCount = (short) (m_uCount + 1);
-
-        Clear();
-        m_paNode = pTemp;
-        m_uCount = uCount;
-
-        return 0;
     }
 
     //
@@ -281,34 +290,36 @@ public class NodeBase {
      */
     public void CreateParm(DataInputStream dis) {
         try {
-            // 读取节点数量（小端字节序）
-            int ch1 = dis.read();
+            synchronized (WORLD_FILE_LOCK) {
+                // 读取节点数量（小端字节序）
+                int ch1 = dis.read();
 //            Log.d("readWorld", "读取节点数量 ch1 " + ch1);
-            int ch2 = dis.read();
+                int ch2 = dis.read();
 //            Log.d("readWorld", "CreateParm ch2 " + ch2);
 
-            // 检查是否到达文件末尾
-            if ((ch1 | ch2) < 0) return;
+                // 检查是否到达文件末尾
+                if ((ch1 | ch2) < 0) return;
 
-            // 将小端字节序转换为节点数量
-            this.m_uCount = (short) ((ch2 << 8) + (ch1 << 0));
+                // 将小端字节序转换为节点数量
+                this.m_uCount = (short) ((ch2 << 8) + (ch1 << 0));
 //            Log.d("readWorld", "节点集合中的节点数量 " + m_uCount);
-            
-            // 确保节点数量为正数，避免创建负长度数组
-            if (this.m_uCount > 0) {
-                // 为节点数组分配内存
-                this.m_paNode = new Node[this.m_uCount];
+
+                // 确保节点数量为正数，避免创建负长度数组
+                if (this.m_uCount > 0) {
+                    // 为节点数组分配内存
+                    this.m_paNode = new Node[this.m_uCount];
 //                Log.d("readWorld", "节点数组指针 " + m_paNode);
 //                Log.d("readWorld", "节点数组指针长度 " + m_paNode.length);
-                // 逐个读取节点数据
-                for (int i = 0; i < this.m_uCount; i++) {
-                    this.m_paNode[i] = new Node();
-                    this.m_paNode[i].read(dis);
+                    // 逐个读取节点数据
+                    for (int i = 0; i < this.m_uCount; i++) {
+                        this.m_paNode[i] = new Node();
+                        this.m_paNode[i].read(dis);
 //                    Log.d("readWorld", "逐个读取节点数据 m_paNode[" + i + "] " + this.m_paNode[i]);
+                    }
+                } else {
+                    this.m_uCount = 0;
+                    this.m_paNode = null;
                 }
-            } else {
-                this.m_uCount = 0;
-                this.m_paNode = null;
             }
         } catch (IOException e) {
             Log.e("readWorld", "节点NodeBase错误" + e);
@@ -324,27 +335,28 @@ public class NodeBase {
      */
     public void SaveParm(DataOutputStream dis) {
         try {
-            short actualCount = 0;
-            if (this.m_paNode != null) {
-                for (int i = 0; i < this.m_uCount; i++) {
-                    if (i < this.m_paNode.length && this.m_paNode[i] != null) {
-                        actualCount++;
+            synchronized (WORLD_FILE_LOCK) {
+                // 收集实际存活的节点，统计数量与写出内容保证严格一致
+                java.util.ArrayList<Node> aliveNodes = new java.util.ArrayList<>();
+                if (this.m_paNode != null) {
+                    int actualLen = Math.min(this.m_uCount, this.m_paNode.length);
+                    for (int i = 0; i < actualLen; i++) {
+                        if (this.m_paNode[i] != null) {
+                            aliveNodes.add(this.m_paNode[i]);
+                        }
                     }
                 }
-            }
+                short actualCount = (short) aliveNodes.size();
 
-            // 准备节点数量的小端字节序数据
-            int ch1 = actualCount;
-            int ch2 = actualCount;
-            dis.write((ch1 & 0xff));
-            dis.write((ch2 >> 8));
+                // 准备节点数量的小端字节序数据
+                int ch1 = actualCount;
+                int ch2 = actualCount;
+                dis.write((ch1 & 0xff));
+                dis.write((ch2 >> 8));
 
-            // 逐个保存节点数据
-            if (this.m_paNode != null) {
-                for (int i = 0; i < this.m_uCount; i++) {
-                    if (i < this.m_paNode.length && this.m_paNode[i] != null) {
-                        this.m_paNode[i].Save(dis);
-                    }
+                // 逐个保存存活的节点数据
+                for (Node node : aliveNodes) {
+                    node.Save(dis);
                 }
             }
         } catch (IOException e) {
