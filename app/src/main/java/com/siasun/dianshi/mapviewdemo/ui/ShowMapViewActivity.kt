@@ -135,7 +135,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
                 mBinding.btnLockMap.text = "锁定视角"
                 ToastUtils.showLong("已解锁地图视角，可进行手势操作")
             } else {
-                mBinding.mapView.lockView()
+                mBinding.mapView.lockView(1f)
                 mBinding.btnLockMap.text = "解锁视角"
                 ToastUtils.showLong("已锁定地图视角，禁止缩放/平移/旋转")
             }
@@ -156,7 +156,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 
 //        initMergedPose()
 //        initStation()
-//        iniVirtualWall()
+        iniVirtualWall()
 //        initRemoveNoise()
 //        initPostingArea()
 //        initRemoveNoise()

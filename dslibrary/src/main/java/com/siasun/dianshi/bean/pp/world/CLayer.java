@@ -1040,20 +1040,21 @@ public class CLayer extends NodeBase {
      */
     public void read(DataInputStream dis) {
         try {
-            //占位用
-            WorldFileIO.readInt(dis);
+            synchronized (WORLD_FILE_LOCK) {
+                //占位用
+                WorldFileIO.readInt(dis);
 
-            m_PathBase.m_MyNode.CreateParm(dis);
-            m_PathBase.read(dis);
+                m_PathBase.m_MyNode.CreateParm(dis);
+                m_PathBase.read(dis);
 
-            Point2d m_lenth = new Point2d();
-            Point2d m_startNode = new Point2d();
+                Point2d m_lenth = new Point2d();
+                Point2d m_startNode = new Point2d();
 
-            //占位读取
-            WorldFileIO.readFloat(dis);
-            m_lenth.read(dis);
-            m_startNode.read(dis);
-
+                //占位读取
+                WorldFileIO.readFloat(dis);
+                m_lenth.read(dis);
+                m_startNode.read(dis);
+            }
         } catch (IOException e) {
             Log.e("readWorld", "读取CLayer异常 r  " + e);
             e.printStackTrace();
@@ -1068,20 +1069,21 @@ public class CLayer extends NodeBase {
      */
     public void save(DataOutputStream dos) {
         try {
-            //占位用
-            TranBytes tan = new TranBytes();
-            dos.writeInt(tan.tranInteger(0));
+            synchronized (WORLD_FILE_LOCK) {
+                //占位用
+                TranBytes tan = new TranBytes();
+                dos.writeInt(tan.tranInteger(0));
 
-            m_PathBase.m_MyNode.SaveParm(dos);
-            m_PathBase.Save(dos);
+                m_PathBase.m_MyNode.SaveParm(dos);
+                m_PathBase.Save(dos);
 
-            //占位保存
-            Point2d m_lenth = new Point2d();
-            Point2d m_startNode = new Point2d();
-            dos.writeFloat(tan.tranFloat(2.0f));
-            m_lenth.Save(dos);
-            m_startNode.Save(dos);
-
+                //占位保存
+                Point2d m_lenth = new Point2d();
+                Point2d m_startNode = new Point2d();
+                dos.writeFloat(tan.tranFloat(2.0f));
+                m_lenth.Save(dos);
+                m_startNode.Save(dos);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

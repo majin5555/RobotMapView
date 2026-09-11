@@ -11,6 +11,9 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStream
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * World类，用于处理World文件数据
@@ -35,10 +38,10 @@ class World {
             val worldEditorVersion = WorldFileIO.readInt(dis)
             //            Log.d("readWorld", "World编辑器版本号：" + worldEditorVersion);
             // 读取两个时间戳（可能是创建时间和修改时间）
-            val time1 = dis.readInt()
+            // 与 saveWorld 写入保持一致：使用小端字节序读取
+            val time1 = WorldFileIO.readInt(dis)
             //            Log.d("readWorld", "time1：" + time1);
-            val time2 = dis.readInt()
-            //            Log.d("readWorld", "time2：" + time2);
+            val time2 = WorldFileIO.readInt(dis)
             // 读取地图版本号
             val mapVersion = WorldFileIO.readInt(dis)
             //            Log.d("readWorld", "mapVersion：" + mapVersion);
@@ -102,16 +105,25 @@ class World {
     /**
      * 保存路径数据到world_pad.dat二进制文件
      *
+     * 采用"备份 + 原子写"策略：
+     * 1. 写操作前，将现有 world_pad.dat 备份为带时间戳的 world_pad_bak_<时间戳>.dat（用于事故找回）
+     * 2. 数据写入固定缓冲文件 world_pad.tmp，flush + force 落盘后 rename 替换正式文件（原子替换，杜绝半截文件）
+     * 3. 时间戳备份按地图保留最近 5 份，超出删除最旧
+     *
      * @param strFilepath 文件保存目录路径
      * @param strFileName 保存的文件名
      * @return 是否保存成功
      */
     fun saveWorld(strFilepath: String, strFileName: String): Boolean {
         var dos: DataOutputStream? = null
+        val targetFile = File(strFilepath + File.separator + strFileName)
+        val tmpFile = File(strFilepath + File.separator + "$strFileName.tmp")
         try {
-            // 创建文件输出流和数据输出流，false表示覆盖现有文件
-            val outputStream: OutputStream =
-                FileOutputStream(strFilepath + File.separator + strFileName, false)
+            // ---------- ① 写前备份：保留最近 10 份时间戳备份 ----------
+            backupWorldFile(strFilepath, strFileName)
+
+            // ---------- ② 原子写：固定缓冲文件 ----------
+            val outputStream: OutputStream = FileOutputStream(tmpFile, false)
             dos = DataOutputStream(outputStream)
 
             // 创建字节转换工具，用于处理数据的字节序
@@ -120,8 +132,8 @@ class World {
             // 写入World编辑器版本号
             dos.writeInt(tan.tranInteger(-10005))
             // 写入时间戳
-            dos.writeInt(tan.tranInteger(0))
-            dos.writeInt(tan.tranInteger(0))
+            dos.writeInt(tan.tranInteger(System.currentTimeMillis().toInt()))
+            dos.writeInt(tan.tranInteger(System.currentTimeMillis().toInt()))
             // 写入地图版本号
             dos.writeInt(tan.tranInteger(0))
             // 写入项目名称长度
@@ -151,39 +163,107 @@ class World {
             // 写入驱动单元数量
             tan.writeInteger(dos, 0)
 
-//            // 根据驱动单元数量写入每个驱动单元的配置  fix 注释  mj
-//            for (i = 0; i < this.nDriveUnitCount; ++i) {
-//                tan.writeInteger(dos, this.UnitType);           // 驱动单元类型
-//                dos.writeFloat(tan.tranFloat(this.drive_unit_x));     // 驱动单元X坐标
-//                dos.writeFloat(tan.tranFloat(this.drive_unit_y));     // 驱动单元Y坐标
-//                dos.writeFloat(tan.tranFloat(this.fVelMax));          // 最大速度
-//                dos.writeFloat(tan.tranFloat(this.fVelACC));          // 加速度
-//                dos.writeFloat(tan.tranFloat(this.fThetaDiffMax));    // 最大角度差
-//                dos.writeFloat(tan.tranFloat(this.fAngVelACC));       // 角加速度
-//                dos.writeFloat(tan.tranFloat(this.fSteerAngle));      // 转向角度
-//
-//                // 写入用户自定义数据（10个float值）
-//                for (int j = 0; j < 10; ++j) {
-//                    dos.writeFloat(tan.tranFloat(this.fUserData[j]));
-//                }
-//            }
-            // 刷新输出流，确保所有数据写入文件
+            // ---------- ③ 落盘 ----------
             dos.flush()
+            // DataOutputStream 不支持直接 force，将其 flush 到底层 FileOutputStream 后 force
+            outputStream.flush()
+            if (outputStream is FileOutputStream) {
+                outputStream.channel?.force(true)
+            }
+            dos.close()
+            dos = null
+
+            // ---------- ④ 原子替换：tmp → 正式文件 ----------
+            // Android(Linux) 上 rename 对已存在目标是原子覆盖，不做 delete，避免产生"文件短暂不存在"窗口
+            if (!tmpFile.renameTo(targetFile)) {
+                // rename 失败则回退为直接拷贝
+                tmpFile.copyTo(targetFile, overwrite = true)
+                tmpFile.delete()
+            }
+
+            // 同步文件到磁盘，确保数据持久化
+            FileIOUtil.fileSync()
+
+            // ---------- ⑤ 保留最近 10 份时间戳备份，删除最旧 ----------
+            trimBackupFiles(strFilepath, strFileName)
+
             return true
-        } catch (var16: IOException) {
-            var16.printStackTrace()
+        } catch (e: IOException) {
+            e.printStackTrace()
+            // 写失败：删除缓冲文件，保留时间戳备份以便找回
+            try {
+                if (tmpFile.exists()) tmpFile.delete()
+            } catch (ignored: Exception) {
+            }
         } finally {
-            // 关闭输出流
             if (dos != null) {
                 try {
                     dos.close()
-                    // 同步文件到磁盘，确保数据持久化
-                    FileIOUtil.fileSync()
-                } catch (var15: IOException) {
-                    var15.printStackTrace()
+                } catch (e: IOException) {
+                    e.printStackTrace()
                 }
             }
         }
         return false
+    }
+
+    /**
+     * 写操作前备份当前 world_pad.dat 为带时间戳的备份文件。
+     *
+     * 命名：world_pad_bak_yyyyMMdd_HHmmss_SSS.dat
+     * - 与原文件同目录，实现按地图隔离
+     * - 含毫秒确保唯一，定宽前缀确保可按文件名排序
+     *
+     * 若原文件不存在（首次创建）则跳过备份。
+     * 备份失败仅记录，不影响主保存流程。
+     */
+    private fun backupWorldFile(strFilepath: String, strFileName: String) {
+        try {
+            val src = File(strFilepath + File.separator + strFileName)
+            if (!src.exists()) return
+
+            val ts = SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.getDefault()).format(Date())
+            val backupName = "${strFileName.replace(".dat", "")}_bak_$ts.dat"
+            val backupFile = File(strFilepath + File.separator + backupName)
+            src.copyTo(backupFile, overwrite = false)
+        } catch (e: Exception) {
+            // 备份是附加保护，失败不阻断保存
+            e.printStackTrace()
+        }
+    }
+
+    /**
+     * 保留最近 MAX_BACKUP_COUNT 份时间戳备份，删除最旧的。
+     * 只操作 world_pad_bak_*.dat，绝不误删正式文件或 .tmp 缓冲。
+     */
+    private fun trimBackupFiles(strFilepath: String, strFileName: String) {
+        try {
+            val dir = File(strFilepath)
+            if (!dir.exists() || !dir.isDirectory) return
+
+            val prefix = strFileName.replace(".dat", "") + "_bak_"
+            val backups = dir.listFiles { _, name ->
+                name.startsWith(prefix) && name.endsWith(".dat")
+            }?.toMutableList() ?: return
+
+            // 按文件名（时间戳）升序排序，最小的最先（最旧）
+            backups.sortBy { it.name }
+
+            while (backups.size > MAX_BACKUP_COUNT) {
+                val oldest = backups.removeAt(0)
+                try {
+                    oldest.delete()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    companion object {
+        /** 每个地图最多保留的时间戳备份份数 */
+        private const val MAX_BACKUP_COUNT = 5
     }
 }

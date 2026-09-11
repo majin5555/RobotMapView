@@ -373,7 +373,7 @@ class CreateMapView2D(context: Context, attrs: AttributeSet) : SurfaceView(conte
      * 刷新所有层数据
      */
     override fun invalidate() {
-        super.postInvalidate()
+        super.invalidate()
         mPngMapView?.postInvalidate()
         for (mapLayer in mapLayers) {
             mapLayer.postInvalidate()
