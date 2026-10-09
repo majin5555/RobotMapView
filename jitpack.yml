@@ -2,3 +2,5 @@ jdk:
   - openjdk17
 before_install:
   - git config --global --add safe.directory /build
+install:
+  - yes | sdkmanager "build-tools;34.0.0"
