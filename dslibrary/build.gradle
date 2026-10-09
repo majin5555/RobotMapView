@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.jetbrainsKotlinAndroid)
+    id 'maven-publish'
 }
 
 android {
@@ -52,4 +53,16 @@ dependencies {
     api(libs.commons)
     api(libs.fastjson)
 
+}
+
+// JitPack 发布：提供 publishToMavenLocal 任务，输出 dslibrary 的 AAR
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+                // groupId / artifactId / version 由 JitPack 依据仓库信息自动填充
+            }
+        }
+    }
 }
