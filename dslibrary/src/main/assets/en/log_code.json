@@ -379,6 +379,7 @@
   "A7100208": "The target point cannot be reached after multiple planning attempts",
   "A7100209": "Cliff detected",
   "A7100210": "Co-line: AGV motion data error",
+  "A7100211": "Perception localization reported position information inconsistent",
   "PET0020": "Front-view depth camera data disconnection",
   "PET0021": "Front-top view depth camera data disconnection",
   "PET0022": "Left-view depth camera data disconnection",

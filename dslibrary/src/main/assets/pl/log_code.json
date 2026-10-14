@@ -379,6 +379,7 @@
   "A7100208": "Punkt docelowy niemożliwy do dotarcia po wielu próbach planowania",
   "A7100209": "Wykryto przepaść",
   "A7100210": "Wspólna linia: błąd danych ruchu AGV",
+  "A7100211": "Lokalizacja percepcyjna zgłosiła niespójne dane o pozycji",
   "PET0020": "Przerwane dane z kamery głębi widoku przodem",
   "PET0021": "Przerwane dane z kamery głębi widoku z przodu-wdół",
   "PET0022": "Przerwane dane z kamery głębi widoku z lewej strony",

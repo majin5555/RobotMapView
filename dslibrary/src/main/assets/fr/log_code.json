@@ -379,6 +379,7 @@
   "A7100208": "Point cible ne peut être atteint après plusieurs planifications",
   "A7100209": "Falaise détectée",
   "A7100210": "Ligne commune: erreur de données de mouvement AGV",
+  "A7100211": "Localisation de perception : information de position incohérente",
   "PET0020": "Déconnexion de données de la caméra de profondeur avant",
   "PET0021": "Déconnexion de données de la caméra de profondeur avant bas",
   "PET0022": "Déconnexion de données de la caméra de profondeur gauche",

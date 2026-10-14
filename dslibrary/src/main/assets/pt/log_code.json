@@ -379,6 +379,7 @@
   "A7100208": "Ponto alvo inalcançável após múltiplos planejamentos de rota",
   "A7100209": "Detecção de precipício",
   "A7100210": "Co-linha: erro de dados de movimento do AGV",
+  "A7100211": "Localização de percepção reportou informação de posição inconsistente",
   "PET0020": "Desconexão de dados da câmera de profundidade de visão frontal",
   "PET0021": "Desconexão de dados da câmera de profundidade de visão frontal superior",
   "PET0022": "Desconexão de dados da câmera de profundidade de visão lateral esquerda",
