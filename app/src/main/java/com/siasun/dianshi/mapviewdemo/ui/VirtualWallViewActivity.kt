@@ -2,6 +2,7 @@ package com.siasun.dianshi.mapviewdemo.ui
 
 import android.os.Bundle
 import android.util.Log
+import com.blankj.utilcode.util.ToastUtils
 import com.jeremyliao.liveeventbus.LiveEventBus
 import com.ngu.lcmtypes.laser_t
 import com.ngu.lcmtypes.robot_control_t
@@ -36,7 +37,12 @@ class VirtualWallViewActivity : BaseMvvmActivity<ActivityVirtualwallBinding, Sho
         mBinding.mapView.loadMap(
             ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_PNG),
             ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_YAML)
-        )
+        ) { success ->
+            if (!success) {
+                LogUtil.e("地图加载失败")
+                ToastUtils.showShort("地图加载失败")
+            }
+        }
 
         initListener()
 

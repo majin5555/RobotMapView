@@ -3,6 +3,7 @@ package com.siasun.dianshi.mapviewdemo.ui.createMap
 import android.os.Build
 import android.os.Bundle
 import androidx.annotation.RequiresApi
+import com.blankj.utilcode.util.ToastUtils
 import com.ngu.lcmtypes.laser_t
 import com.siasun.dianshi.ConstantBase
 import com.siasun.dianshi.base.BaseMvvmActivity
@@ -10,6 +11,7 @@ import com.siasun.dianshi.bean.DragLocationBean
 import com.siasun.dianshi.bean.SwitchMapBean
 import com.siasun.dianshi.controller.MainController
 import com.siasun.dianshi.framework.ext.onClick
+import com.siasun.dianshi.framework.log.LogUtil
 import com.siasun.dianshi.mapviewdemo.KEY_LOCATION_DRAG
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityShowMapViewBinding
 import com.siasun.dianshi.mapviewdemo.viewmodel.ShowMapViewModel
@@ -40,7 +42,12 @@ class DragPositionViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, Sh
         mBinding.mapView.loadMap(
             ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_PNG),
             ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_YAML)
-        )
+        ) { success ->
+            if (!success) {
+                LogUtil.e("地图加载失败")
+                ToastUtils.showShort("地图加载失败")
+            }
+        }
 
         mBinding.btnLocation.onClick {
             mViewModel.switchMapInfo(

@@ -407,7 +407,12 @@ class TaskActivity : BaseMvvmActivity<ActivityTaskBinding, TaskViewModel>() {
         mBinding.mapView.loadMap(
             ConstantBase.getFilePath(mapID, ConstantBase.PAD_MAP_NAME_PNG),
             ConstantBase.getFilePath(mapID, ConstantBase.PAD_MAP_NAME_YAML)
-        )
+        ) { success ->
+            if (!success) {
+                LogUtil.e("地图加载失败")
+                ToastUtils.showShort("地图加载失败")
+            }
+        }
     }
 }
 

@@ -17,7 +17,6 @@ import android.widget.ImageView
 import androidx.annotation.RequiresApi
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
 import com.ngu.lcmtypes.laser_t
 import com.ngu.lcmtypes.robot_control_t
@@ -62,6 +61,12 @@ import com.siasun.dianshi.view.createMap.MapViewInterface
 import java.util.Locale
 
 /**
+ * 地图加载结果回调（invoke 形式）
+ * 参数：success 是否加载成功（true 成功 / false 失败），失败原因见 Log(TAG = MapView)
+ */
+typealias OnMapLoadListener = (Boolean) -> Unit
+
+/**
  * 地图画布
  * 将在此画布中绘制slam的png地图
  */
@@ -69,6 +74,9 @@ import java.util.Locale
 class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLayout(context, attrs),
     SlamGestureDetector.OnRPGestureListener, MapViewInterface {
 
+    companion object {
+        private const val TAG = "MapView"
+    }
 
     // 当前工作模式
     private var currentWorkMode = WorkMode.MODE_SHOW_MAP
@@ -802,11 +810,50 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
     }
 
     /**
+     * 校验地图文件（png / yaml）是否存在且非空
+     *
+     * @return 文件异常时返回失败原因（用于日志），正常时返回 null
+     */
+    private fun checkMapFileError(pngPath: String, yamlPath: String): String? {
+        val pngFile = File(pngPath)
+        if (!pngFile.exists() || !pngFile.isFile) return "地图图片不存在: $pngPath"
+        // 文件存在但内容为空，无法解码
+        if (pngFile.length() <= 0L) return "地图图片为空文件: $pngPath"
+
+        val yamlFile = File(yamlPath)
+        if (!yamlFile.exists() || !yamlFile.isFile) return "地图配置文件不存在: $yamlPath"
+        // 文件存在但内容为空，解析不到任何数据（等价于数据为 0）
+        if (yamlFile.length() <= 0L) return "地图配置文件为空: $yamlPath"
+        return null
+    }
+
+    /**
+     * 校验 yaml 解析出的地图数据是否合法
+     * resolution 为 0 / 负数 / NaN，或地图尺寸为 0，均视为无效数据
+     */
+    private fun isMapDataValid(mapData: MapData): Boolean {
+        if (mapData.resolution.isNaN() || mapData.resolution.isInfinite() || mapData.resolution <= 0f) {
+            return false
+        }
+        if (mapData.width.isNaN() || mapData.width <= 0f) return false
+        if (mapData.height.isNaN() || mapData.height <= 0f) return false
+        return true
+    }
+
+    /**
      * 加载地图
      * pngPath png文件路径
      * yamlPath yaml文件路径
+     * listener 本次加载的结果回调：invoke(success)
      */
-    fun loadMap(pngPath: String, yamlPath: String) {
+    fun loadMap(pngPath: String, yamlPath: String, listener: OnMapLoadListener) {
+        // 1. 校验图片与配置文件是否存在（校验失败时不释放旧地图，避免白屏）
+        val fileError = checkMapFileError(pngPath, yamlPath)
+        if (fileError != null) {
+            listener.invoke(false)
+            return
+        }
+
         currentBitmapTarget?.let { Glide.with(this).clear(it) }
         currentBitmapTarget = null
 
@@ -815,27 +862,40 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
 
         val file = File(pngPath)
 
-//        Glide.with(this).asBitmap().load(file).skipMemoryCache(true)
-//            .diskCacheStrategy(DiskCacheStrategy.NONE).into(object : SimpleTarget<Bitmap?>() {
-//                override fun onResourceReady(
-//                    resource: Bitmap, transition: Transition<in Bitmap?>?
-//                ) {
-//                    val mPngMapData = YamlNew().loadYaml(
-//                        yamlPath,
-//                        resource.height.toFloat(),
-//                        resource.width.toFloat(),
-//                    )
-//                    setBitmap(mPngMapData, resource)
-//                }
-//            })
-
         currentBitmapTarget = object : CustomTarget<Bitmap>() {
             override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                val mPngMapData = YamlNew().loadYaml(
-                    yamlPath, resource.height.toFloat(), resource.width.toFloat()
-                )
+                // 2. 图片解码成功但尺寸异常，视为解析失败
+                if (resource.width <= 0 || resource.height <= 0) {
+                    currentBitmapTarget = null
+                    listener.invoke(false)
+                    return
+                }
+
+                // 3. 解析 yaml 并校验数据（yaml 格式异常时 catch，避免崩溃）
+                val mPngMapData = try {
+                    YamlNew().loadYaml(
+                        yamlPath, resource.height.toFloat(), resource.width.toFloat()
+                    )
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    null
+                }
+
+                if (mPngMapData == null || !isMapDataValid(mPngMapData)) {
+                    currentBitmapTarget = null
+                    listener.invoke(false)
+                    return
+                }
+
                 setBitmap(mPngMapData, resource)
                 currentBitmapTarget = null
+                listener.invoke(true)
+            }
+
+            override fun onLoadFailed(errorDrawable: Drawable?) {
+                // 图片存在但解码失败（文件损坏 / 不是合法图片）
+                currentBitmapTarget = null
+                listener.invoke(false)
             }
 
             override fun onLoadCleared(placeholder: Drawable?) {
@@ -844,17 +904,33 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
                 currentBitmapTarget = null
             }
         }
-        Glide.with(this).asBitmap().load(file).skipMemoryCache(true)
-            .format(DecodeFormat.PREFER_RGB_565)  // 关键行：强制 RGB_565.skipMemoryCache(true).skipMemoryCache(true)
-            .diskCacheStrategy(DiskCacheStrategy.NONE).into(currentBitmapTarget!!)
+
+        try {
+            Glide.with(this).asBitmap().load(file).skipMemoryCache(true)
+                .format(DecodeFormat.PREFER_RGB_565)  // 关键行：强制 RGB_565
+                .skipMemoryCache(true).diskCacheStrategy(DiskCacheStrategy.NONE)
+                .into(currentBitmapTarget!!)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            currentBitmapTarget = null
+            listener.invoke(false)
+        }
     }
 
     /**
      * 加载地图
      * pngPath png文件路径
      * yamlPath yaml文件路径
+     * listener 本次加载的结果回调：invoke(success )
      */
-    fun reloadMap(pngPath: String, yamlPath: String) {
+    fun reloadMap(pngPath: String, yamlPath: String, listener: OnMapLoadListener) {
+        // 1. 校验图片与配置文件是否存在（校验失败时不释放旧地图，避免白屏）
+        val fileError = checkMapFileError(pngPath, yamlPath)
+        if (fileError != null) {
+            listener.invoke(false)
+            return
+        }
+
         // 取消旧的 Glide 加载
         currentBitmapTarget?.let { Glide.with(this).clear(it) }
         currentBitmapTarget = null
@@ -891,12 +967,30 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
         val file = File(pngPath)
         currentBitmapTarget = object : CustomTarget<Bitmap>() {
             override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                // 解析 YAML，设置地图数据
-                val mPngMapData = YamlNew().loadYaml(
-                    yamlPath,
-                    resource.height.toFloat(),
-                    resource.width.toFloat(),
-                )
+                // 4.1 图片解码成功但尺寸异常，视为解析失败
+                if (resource.width <= 0 || resource.height <= 0) {
+                    currentBitmapTarget = null
+                    listener.invoke(false)
+                    return
+                }
+
+                // 4.2 解析 YAML（格式异常时 catch，避免崩溃）
+                val mPngMapData = try {
+                    YamlNew().loadYaml(
+                        yamlPath,
+                        resource.height.toFloat(),
+                        resource.width.toFloat(),
+                    )
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    null
+                }
+
+                if (mPngMapData == null || !isMapDataValid(mPngMapData)) {
+                    currentBitmapTarget = null
+                    listener.invoke(false)
+                    return
+                }
 
                 // 设置新地图（不居中，稍后手动恢复状态）
                 setBitmap(mPngMapData, resource, false)
@@ -915,6 +1009,14 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
                 } else {
                     setMapStatus()
                 }
+
+                listener.invoke(true)
+            }
+
+            override fun onLoadFailed(errorDrawable: Drawable?) {
+                // 图片存在但解码失败（文件损坏 / 不是合法图片）
+                currentBitmapTarget = null
+                listener.invoke(false)
             }
 
             override fun onLoadCleared(placeholder: Drawable?) {
@@ -923,10 +1025,15 @@ class MapView(context: Context, private val attrs: AttributeSet) : ShapeFrameLay
             }
         }
 
-        Glide.with(this).asBitmap().load(file)
-            .format(DecodeFormat.PREFER_RGB_565)  // 关键行：强制 RGB_565.skipMemoryCache(true)
-            .skipMemoryCache(true).diskCacheStrategy(DiskCacheStrategy.NONE)
-            .into(currentBitmapTarget!!)
+        try {
+            Glide.with(this).asBitmap().load(file)
+                .format(DecodeFormat.PREFER_RGB_565)  // 关键行：强制 RGB_565
+                .skipMemoryCache(true).diskCacheStrategy(DiskCacheStrategy.NONE)
+                .into(currentBitmapTarget!!)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            currentBitmapTarget = null
+        }
 
 //        val file = File(pngPath)
 //        Glide.with(this).asBitmap().load(file).skipMemoryCache(true)

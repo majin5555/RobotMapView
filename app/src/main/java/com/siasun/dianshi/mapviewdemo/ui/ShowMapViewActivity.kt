@@ -97,7 +97,7 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
     private val mReflectorMaps = mutableListOf<com.siasun.dianshi.bean.ReflectorMapBean>()
 
 
-    val mapId = 7
+    val mapId = 1
     var cleanAreas: MutableList<CleanAreaNew> = mutableListOf()
     var mSpArea: MutableList<SpArea> = mutableListOf()
     var mMixArea: MutableList<WorkAreasNew> = mutableListOf()
@@ -118,7 +118,13 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
         mBinding.mapView.loadMap(
             ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_PNG),
             ConstantBase.getFilePath(mapId, ConstantBase.PAD_MAP_NAME_YAML)
-        )
+        ) { success ->
+            if (!success) {
+                LogUtil.e("地图加载失败")
+                ToastUtils.showShort("地图加载失败")
+            }
+        }
+
         mBinding.mapView.setLegendViewPosition(LegendPosition.TOP_LEFT)
         //移动模式
         mBinding.btnMove.setOnClickListener {
@@ -1334,7 +1340,12 @@ class ShowMapViewActivity : BaseMvvmActivity<ActivityShowMapViewBinding, ShowMap
 //                mScle,
 //                mX,
 //                mY
-            )
+            ) { success ->
+                if (!success) {
+                    LogUtil.e("地图重新加载失败")
+                    ToastUtils.showShort("地图加载失败")
+                }
+            }
         }
 
         //删除噪点
