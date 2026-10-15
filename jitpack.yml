@@ -2,5 +2,7 @@ jdk:
   - openjdk17
 before_install:
   - git config --global --add safe.directory /build
-  - yes | sdkmanager "build-tools;34.0.0"
-
+  - yes | sdkmanager "licenses"
+  - yes | sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+install:
+  - ./gradlew :dslibrary:publishToMavenLocal --no-daemon --stacktrace

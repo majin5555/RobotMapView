@@ -34,6 +34,26 @@ android {
         dataBinding = true
         viewBinding = true
     }
+
+    // AGP 7.1+ 发布 aar 必须显式声明要发布的 variant（JitPack 需要）
+    publishing {
+        singleVariant('release')
+    }
+}
+
+// JitPack 检测到 maven-publish 后会执行 publishToMavenLocal，
+// 并从 ~/.m2 收集 aar + pom（pom 中带有 api 传递依赖）
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+                groupId = project.findProperty('GROUP') ?: 'com.github.siasun'
+                artifactId = project.findProperty('POM_ARTIFACT_ID') ?: 'dslibrary'
+                version = project.findProperty('VERSION') ?: '1.0.0'
+            }
+        }
+    }
 }
 
 dependencies {
@@ -53,16 +73,4 @@ dependencies {
     api(libs.commons)
     api(libs.fastjson)
 
-}
-
-// JitPack 发布：提供 publishToMavenLocal 任务，输出 dslibrary 的 AAR
-afterEvaluate {
-    publishing {
-        publications {
-            release(MavenPublication) {
-                from components.release
-                // groupId / artifactId / version 由 JitPack 依据仓库信息自动填充
-            }
-        }
-    }
 }
