@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Matrix
+import android.graphics.Paint
 import android.graphics.PointF
 import android.graphics.RectF
 import android.opengl.GLSurfaceView
@@ -50,6 +51,9 @@ import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.atan2
+import kotlin.math.ceil
+import kotlin.math.floor
+import kotlin.math.hypot
 
 /**
  * 地图画布（3D 建图 View）
@@ -117,6 +121,27 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     // 标记 Surface 是否已创建
     private var surfaceCreated = false
 
+    // ──────────────── 底图格子（50cm 正方形） ────────────────
+    // 屏幕正交网格：线始终水平/竖直，不随地图旋转，只跟随地图的缩放与平移。
+    // 绘制位置在白色背景之后、底图位图之前，处于底图与 GL 点云之下，不影响地图显示。
+    private val GRID_CELL_METERS = 0.5f      // 格子边长（米）
+    private val GRID_MIN_CELL_PX = 4f        // 格子屏幕尺寸小于该像素数时跳过绘制
+    private val mGridPaint = Paint().apply {
+        color = Color.rgb(210, 210, 210)     // 浅灰细线
+        style = Paint.Style.STROKE
+        strokeWidth = 1f
+        isAntiAlias = false
+    }
+
+    // 复用对象，避免每帧分配
+    private val mGridWorldToPixelMatrix = Matrix()
+    private val mGridTotalMatrix = Matrix()
+    private val mGridMatrixValues = FloatArray(9)
+    private val mGridAnchor = FloatArray(2)  // 世界原点在屏幕上的位置（格子锚点）
+
+    // 临时诊断：格子绘制关键参数仅打印一次，便于定位"看不到格子"
+    private var mGridDiagLogged = false
+
     /**
      * 节流发射运算符：保证发射间隔 ≥ periodMs，并总是发射时间窗口内的最新值。
      * 第一个元素立即发射，后续元素会被延迟直到距上一次发射至少 periodMs。
@@ -180,6 +205,10 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
 
     private fun initView() {
         mPngMapView = PngMapView(context)
+        // 移除 PngMapView 自带的白色背景：drawFrame 已用 canvas.drawColor 铺白，
+        // 而 View.draw() 会先把这个不透明白色背景铺满整个视图，
+        // 会把先于底图绘制的格子盖掉（表现为扫描时看不到格子线）。
+        mPngMapView?.setBackground(null)
 //        建图实时上激光点云绘制已迁移至 MapOutline3DGL(GLES 直接绘制)，
 //        原 UpLaserScanView3D 控件保留，但不再作为绘制图层使用。
 //        mCreatingUpLaserScanView = UpLaserScanView3D(context, mMapView)
@@ -254,6 +283,96 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     }
 
     /**
+     * 绘制底图格子（50cm 正方形）。
+     *
+     * 原理：地图 resolution 为米/像素（正常 0.05，即 5cm/像素），故 50cm 一格
+     * 对应 0.5 / resolution 个地图像素；屏幕上的格距 = 世界格距 × 缩放比例。
+     *
+     * 变换：不随地图旋转。只从 世界->地图像素->屏幕 的组合矩阵中取两样东西：
+     *   1) 比例 totalScale（每 1 世界米对应的屏幕像素，旋转不影响该值）→ 决定格距；
+     *   2) 世界原点(0,0)的屏幕位置 → 作为网格锚点。
+     * 据此在屏幕坐标系画水平/竖直正交网格。旋转时锚点会移动、格距不变、线方向恒定。
+     */
+    private fun drawGrid(canvas: Canvas) {
+        if (VIEW_WIDTH == 0 || VIEW_HEIGHT == 0) return
+
+        var res: Float
+        var originX: Float
+        var originY: Float
+        var mapHeight: Float
+        synchronized(mSrf.mapData) {
+            val mapData = mSrf.mapData
+            res = mapData.resolution
+            originX = mapData.originX
+            originY = mapData.originY
+            mapHeight = mapData.height
+        }
+        if (res <= 0.0001f) res = 0.05f
+        // 地图元数据未就绪（尚未收到首帧激光数据）时不绘制
+        if (mapHeight <= 0f) return
+
+        // 世界坐标 -> 地图像素坐标：px=(wx-originX)/res, py=height-(wy-originY)/res
+        mGridWorldToPixelMatrix.reset()
+        mGridWorldToPixelMatrix.postTranslate(-originX, -originY)
+        mGridWorldToPixelMatrix.postScale(1f / res, -1f / res)
+        mGridWorldToPixelMatrix.postTranslate(0f, mapHeight)
+
+        // 组合矩阵：屏幕 = outerMatrix ∘ worldToPixel（仅用于取比例与世界原点位置）
+        mGridTotalMatrix.set(mOuterMatrix)
+        mGridTotalMatrix.preConcat(mGridWorldToPixelMatrix)
+
+        // 矩阵比例 = 每 1 世界米对应的屏幕像素数（旋转不改变该值）
+        mGridTotalMatrix.getValues(mGridMatrixValues)
+        val totalScale = hypot(
+            mGridMatrixValues[Matrix.MSCALE_X], mGridMatrixValues[Matrix.MSKEW_Y]
+        )
+        if (totalScale <= 0f) return
+
+        // 临时诊断：打印一次关键参数，便于定位"看不到格子"
+        if (!mGridDiagLogged) {
+            mGridDiagLogged = true
+            Log.d(
+                TAG,
+                "grid diag: res=$res mapHeight=$mapHeight originX=$originX originY=$originY " +
+                    "totalScale=$totalScale cellPx=${GRID_CELL_METERS * totalScale} " +
+                    "minCellPx=$GRID_MIN_CELL_PX"
+            )
+        }
+
+        // 格子过小（缩得太远）时线条会糊住画面且数量暴增，直接跳过
+        val cellPx = GRID_CELL_METERS * totalScale
+        if (cellPx < GRID_MIN_CELL_PX) return
+
+        // 世界原点(0,0)在屏幕上的位置，作为网格锚点
+        mGridAnchor[0] = 0f
+        mGridAnchor[1] = 0f
+        mGridTotalMatrix.mapPoints(mGridAnchor)
+        val anchorX = mGridAnchor[0]
+        val anchorY = mGridAnchor[1]
+
+        // 屏幕正交网格：线宽恒为 1px
+        mGridPaint.strokeWidth = 1f
+
+        // 竖线：x = anchorX + n * cellPx
+        var n = ceil((0f - anchorX) / cellPx).toInt()
+        val nEnd = floor((VIEW_WIDTH - anchorX) / cellPx).toInt()
+        while (n <= nEnd) {
+            val x = anchorX + n * cellPx
+            canvas.drawLine(x, 0f, x, VIEW_HEIGHT.toFloat(), mGridPaint)
+            n++
+        }
+
+        // 横线：y = anchorY + j * cellPx
+        var j = ceil((0f - anchorY) / cellPx).toInt()
+        val jEnd = floor((VIEW_HEIGHT - anchorY) / cellPx).toInt()
+        while (j <= jEnd) {
+            val y = anchorY + j * cellPx
+            canvas.drawLine(0f, y, VIEW_WIDTH.toFloat(), y, mGridPaint)
+            j++
+        }
+    }
+
+    /**
      * 执行一帧绘制（在协程中调用）
      */
     private fun drawFrame(holder: SurfaceHolder) {
@@ -264,6 +383,8 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
                 synchronized(holder) {
                     // 白色背景
                     canvas.drawColor(Color.WHITE)
+                    // 底图格子（画在底图下方，不影响底图与点云显示）
+                    drawGrid(canvas)
                     // 绘制底图
                     mPngMapView?.draw(canvas)
                     // 绘制各图层
