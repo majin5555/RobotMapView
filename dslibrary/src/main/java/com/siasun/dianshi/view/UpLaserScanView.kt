@@ -89,12 +89,22 @@ class UpLaserScanView<T>(context: Context?, val parent: WeakReference<T>) :
      */
     fun updateUpLaserScan(laser: laser_t) {
         if (!isDrawingEnabled) return
-        val robotX = laser.ranges[0]
-        val robotY = laser.ranges[1]
-        val robotT = laser.ranges[2]
+        // LCM 消息对象可能被接收线程复用；复制本次绘制的数据，避免数组内容或长度变化。
+        val ranges = laser.ranges.copyOf()
+        if (ranges.size < 3) {
+            synchronized(dataLock) {
+                pointCount = 0
+            }
+            postInvalidate()
+            return
+        }
 
-        if (laser.ranges.size > 3) {
-            val expectedPointCount = (laser.ranges.size / 3) - 1
+        val robotX = ranges[0]
+        val robotY = ranges[1]
+        val robotT = ranges[2]
+        val expectedPointCount = (ranges.size - 3) / 3
+
+        if (expectedPointCount > 0) {
             val requiredCapacity = expectedPointCount * 2
 
             // 计算三角函数值，避免循环内重复计算
@@ -108,9 +118,10 @@ class UpLaserScanView<T>(context: Context?, val parent: WeakReference<T>) :
                 }
 
                 var index = 0
-                for (i in 1 until laser.ranges.size / 3) {
-                    val laserX = laser.ranges[3 * i]
-                    val laserY = laser.ranges[3 * i + 1]
+                for (pointIndex in 0 until expectedPointCount) {
+                    val rangeIndex = 3 + pointIndex * 3
+                    val laserX = ranges[rangeIndex]
+                    val laserY = ranges[rangeIndex + 1]
 
                     worldPoints[index++] = laserX * cosT - laserY * sinT + robotX
                     worldPoints[index++] = laserX * sinT + laserY * cosT + robotY
