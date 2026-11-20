@@ -155,24 +155,26 @@ class DragPositioningView(context: Context?, val parent: WeakReference<MapView>)
      * 上激光点云
      */
     fun updateUpLaserScan(laser: laser_t) {
-        if (laser.ranges.isNotEmpty()) {
+        val ranges = laser.ranges.copyOf()
+        if (ranges.size >= 3) {
             cloudList.clear()
-            val robotX = laser.ranges[0]
-            val robotY = laser.ranges[1]
-            val robotT = laser.ranges[2]
+            val robotX = ranges[0]
+            val robotY = ranges[1]
+            val robotT = ranges[2]
 
             // 保存初始机器人中心
             robotCenter.set(robotX, robotY)
             initialRobotTheta = robotT
 
-            if (laser.ranges.size > 3) {
+            val expectedSize = (ranges.size - 3) / 3
+            if (expectedSize > 0) {
                 // 预分配容量
-                val expectedSize = (laser.ranges.size / 3) - 1
                 cloudList.ensureCapacity(expectedSize)
 
-                for (i in 1 until laser.ranges.size / 3) {
-                    val laserX = laser.ranges[3 * i]
-                    val laserY = laser.ranges[3 * i + 1]
+                for (pointIndex in 0 until expectedSize) {
+                    val rangeIndex = 3 + pointIndex * 3
+                    val laserX = ranges[rangeIndex]
+                    val laserY = ranges[rangeIndex + 1]
                     cloudList.add(
                         PointF(
                             laserX * cos(robotT) - laserY * sin(robotT) + robotX,
