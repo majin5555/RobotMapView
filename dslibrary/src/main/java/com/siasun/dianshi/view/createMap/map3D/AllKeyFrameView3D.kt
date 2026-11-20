@@ -37,7 +37,37 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
      */
     fun setDrawingEnabled(enabled: Boolean) {
         this.isDrawingEnabled = enabled
+        dataVersion++
         postInvalidate()
+    }
+
+    // ──────────────── GL 侧数据接口（本类仅 3D 建图使用） ────────────────
+    // 关键帧改为在 MapOutline3DGL 中用 VBO 绘制，避免"离屏位图快照"在缩放时与底图脱节。
+    // 这里只提供只读快照，原有 onDraw 逻辑不动（仍作为 Canvas 兜底路径保留）。
+    /**
+     * mMapPath 的读写锁：
+     * parseKeyFramePose 在主线程 clear+add，snapshotKeyFrames 在 GL 线程遍历，
+     * 不加锁会在关键帧频繁下发时抛 ConcurrentModificationException（实测 2000+ 时崩溃）。
+     */
+    private val pathLock = Any()
+
+    @Volatile
+    internal var dataVersion = 0
+        private set
+
+    internal fun isDrawing(): Boolean = isDrawingEnabled
+
+    /** 返回 [x, y, theta, id] × n 的交错数组 */
+    internal fun snapshotKeyFrames(): FloatArray = synchronized(pathLock) {
+        val out = FloatArray(mMapPath.size * 4)
+        var i = 0
+        for (f in mMapPath) {
+            out[i++] = f.x
+            out[i++] = f.y
+            out[i++] = f.theta
+            out[i++] = f.id.toFloat()
+        }
+        out
     }
 
 
@@ -72,7 +102,14 @@ class AllKeyFrameView3D(context: Context?, val parent: WeakReference<CreateMapVi
      * 外部接口：更新关键帧数据 拓展地图时显示所有关键帧位置
      */
     fun parseKeyFramePose(mLaserT: laser_t) {
-        mMapPath.clear()
+        synchronized(pathLock) {
+            mMapPath.clear()
+            fillKeyFrames(mLaserT)
+        }
+        dataVersion++
+    }
+
+    private fun fillKeyFrames(mLaserT: laser_t) {
         if (mLaserT.ranges.isNotEmpty()) {
             // 每3个数据为一组: x, y, theta
             // 使用 floor(size/3) 避免 ranges.size 不是 3 的倍数时 3*i+2 越界

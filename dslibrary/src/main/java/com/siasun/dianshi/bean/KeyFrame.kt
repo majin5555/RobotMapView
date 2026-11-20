@@ -9,11 +9,16 @@ package com.siasun.dianshi.bean
  * @param robotPos 机器人位姿 [x, y, theta]（弧度）
  */
 class KeyFrame(
-    val cloudPoints: FloatArray?,
+    // 原始激光坐标：仅"回环重算位姿"时需要，长时间建图时会被释放（置 null）以省一半堆内存
+    var cloudPoints: FloatArray?,
     var worldPoints: FloatArray?,
     val robotPos: FloatArray
 ) {
-    /** 点数量（每对坐标算一个点） */
+    /**
+     * 点数量（每对坐标算一个点）。
+     * 必须用 worldPoints 计算：cloudPoints 会在建图变长后被释放，用它会让 pointCount 变成 0，
+     * 表现为"老的点云突然消失"。
+     */
     val pointCount: Int
-        get() = if (cloudPoints != null) cloudPoints.size / 2 else 0
+        get() = worldPoints?.size?.div(2) ?: 0
 }

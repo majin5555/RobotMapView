@@ -92,8 +92,9 @@
         <!--        android:name=".ui.ShowMapViewActivity"-->
         <activity
             android:name=".ui.createMap.createMap3D.CreateMap3DActivity"
-
-            android:exported="true">
+            android:exported="true"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="orientation|screenSize|keyboardHidden">
 
         </activity>
         <!--        <activity-->
@@ -119,11 +120,11 @@
         <activity
             android:name="com.siasun.dianshi.mapviewdemo.ui.ShowMapViewActivity"
             android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+<!--            <intent-filter>-->
+<!--                <action android:name="android.intent.action.MAIN" />-->
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+<!--                <category android:name="android.intent.category.LAUNCHER" />-->
+<!--            </intent-filter>-->
         </activity>
 
         <!--        <activity-->
@@ -161,9 +162,15 @@
         <activity
             android:name=".ui.createMap.createMap3D.ExpandMap3DActivity"
             android:exported="true"
-            android:label="@string/app_name">
+            android:label="@string/app_name"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="orientation|screenSize|keyboardHidden">
 
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
 
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
         </activity>
 
     </application>

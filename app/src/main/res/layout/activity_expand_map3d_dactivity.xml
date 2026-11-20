@@ -36,6 +36,37 @@
         android:layout_height="wrap_content"
         android:text="定位状态" />
 
+    <!-- 假数据模拟控制（仅 debug + mock 模式显示） -->
+    <Button
+        android:id="@+id/btn_mock_start"
+        android:layout_width="140dp"
+        android:layout_height="56dp"
+        android:visibility="gone"
+        android:gravity="center"
+        android:text="开始模拟"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_title" />
+
+    <Button
+        android:id="@+id/btn_mock_pause"
+        android:layout_width="140dp"
+        android:layout_height="56dp"
+        android:visibility="gone"
+        android:gravity="center"
+        android:text="暂停模拟"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btn_mock_start" />
+
+    <Button
+        android:id="@+id/btn_mock_resume"
+        android:layout_width="140dp"
+        android:layout_height="56dp"
+        android:visibility="gone"
+        android:gravity="center"
+        android:text="继续模拟"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btn_mock_pause" />
+
     <Button
         android:id="@+id/btn_show_key_frame"
         android:layout_width="160dp"

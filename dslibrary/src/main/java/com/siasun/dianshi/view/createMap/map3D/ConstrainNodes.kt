@@ -148,6 +148,35 @@ class ConstrainNodes(context: Context?, val parent: WeakReference<CreateMapView3
     fun addConstraintNodes(constraintNode: ConstraintNode) {
         keyConstraintNodes.add(constraintNode)
         isDirty = true
+        dataVersion++
+    }
+
+    /** 清空所有约束节点（重开建图时用） */
+    fun clearNodes() {
+        synchronized(keyConstraintNodes) {
+            keyConstraintNodes.clear()
+        }
+        isDirty = true
+        dataVersion++
+    }
+
+    // ──────────────── GL 侧数据接口（本类仅 3D 建图使用） ────────────────
+    @Volatile
+    internal var dataVersion = 0
+        private set
+
+    /** 返回 [id, x, y] × n 的交错数组 */
+    internal fun snapshotNodes(): FloatArray {
+        synchronized(keyConstraintNodes) {
+            val out = FloatArray(keyConstraintNodes.size * 3)
+            var i = 0
+            for (n in keyConstraintNodes) {
+                out[i++] = n.id.toFloat()
+                out[i++] = n.x.toFloat()
+                out[i++] = n.y.toFloat()
+            }
+            return out
+        }
     }
 
     /**

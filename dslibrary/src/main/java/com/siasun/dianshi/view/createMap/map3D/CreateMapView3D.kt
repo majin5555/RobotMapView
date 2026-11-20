@@ -22,11 +22,6 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.annotation.RequiresApi
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.DecodeFormat
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.request.target.SimpleTarget
-import com.bumptech.glide.request.transition.Transition
 import com.ngu.lcmtypes.laser_t
 import com.siasun.dianshi.R
 import com.siasun.dianshi.bean.ConstraintNode
@@ -64,11 +59,51 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
 
     private val TAG = this::class.java.simpleName
 
+    companion object {
+        /**
+         * png 解码后的最大边长（像素）。
+         * 原始 png/yaml 文件不做任何改动，只在解码阶段按 2 的整数倍采样压缩，
+         * 避免 5000x5000 这类大图（RGB_565 约 50MB）带来的内存与逐帧采样开销；
+         * 同时保证纹理上传不超过绝大多数设备的 GL_MAX_TEXTURE_SIZE(4096)。
+         */
+        private const val MAX_MAP_EDGE = 3000
+    }
+
+    /** 解码结果：位图 + 原始像素尺寸 + 补偿缩放比 */
+    private class DecodedMap(
+        val bitmap: Bitmap,
+        val width: Int,
+        val height: Int,
+        val drawScale: Float
+    )
+
     // 当前工作模式
     private var currentWorkMode = WorkMode.MODE_SHOW_MAP
 
     var mSrf = CoordinateConversion()//坐标转化工具类
     private var mOuterMatrix = Matrix()
+
+    // 方案C：给 GL 线程提供"不可变矩阵快照"。
+    // mOuterMatrix 在 UI 线程被 postScale/postTranslate 就地修改，GL 线程直接读会读到半更新状态，
+    // 表现为某些图层错位一帧。这里每次变更后整体替换一个新对象（volatile 引用赋值是原子的），
+    // GL 侧拿到的始终是一个稳定快照。
+    @Volatile
+    private var mMatrixSnapshot = Matrix()
+
+    // 双缓冲：手势期每秒几十次 requestRender，每次都 new Matrix 会造成明显 GC 抖动
+    private val snapshotBuffers = arrayOf(Matrix(), Matrix())
+    private var snapshotIndex = 0
+
+    private fun publishMatrixSnapshot() {
+        val next = 1 - snapshotIndex
+        snapshotBuffers[next].set(mOuterMatrix)
+        mMatrixSnapshot = snapshotBuffers[next]
+        snapshotIndex = next
+    }
+
+    internal fun snapshotOuterMatrix(out: Matrix) {
+        out.set(mMatrixSnapshot)
+    }
     private var VIEW_WIDTH = 0 //视图宽度
     private var VIEW_HEIGHT = 0
 
@@ -109,6 +144,21 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
 
     // ──────────────── Flow 刷新相关 ────────────────
     // 用于按需刷新的触发流
+    /**
+     * 手势进行中（按下~抬起）。
+     * 用于：① GL 侧降级渲染（跳过文字/网格、点径 1px）；② 暂停自动居中，避免和拖动打架
+     */
+    @Volatile
+    private var isInteracting = false
+
+    /**
+     * 是否显示"实时关键帧"的详细内容（方向线 + 编号）。
+     * showKeyFrames() 可能在 GL 图层创建之前被调用（Activity 在 initView 里就会调用），
+     * 因此必须把状态记下来，等 GL 图层 attach 时再下发，否则开关会被丢掉。
+     */
+    @Volatile
+    private var showKeyFrameDetail = false
+
     private val renderTrigger = MutableSharedFlow<Unit>(
         replay = 0,
         extraBufferCapacity = 1,
@@ -120,6 +170,15 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
 
     // 标记 Surface 是否已创建
     private var surfaceCreated = false
+
+    // 方案A：GL 图层是否已输出过至少一帧。
+    // 为 true 时本 SurfaceView 不再产画面（避免两张 Surface 之间的提交时差），
+    // GL 图层还未就绪时仍按原逻辑在 Canvas 上绘制作为兜底，防止黑屏。
+    @Volatile
+    private var glFrameReady = false
+
+    // png 解码协程
+    private var loadJob: Job? = null
 
     // ──────────────── 底图格子（50cm 正方形） ────────────────
     // 屏幕正交网格：线始终水平/竖直，不随地图旋转，只跟随地图的缩放与平移。
@@ -220,18 +279,11 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
 
         // 注意：SurfaceView 模式下不再使用 addView 添加子 View
         // 图层顺序：扩展区域→约束→建图激光→关键帧→非建图激光→机器人
-        //扩展区域
+        //
+        // 方案C：约束节点 / 所有关键帧 / 非建图激光 已改为在 MapOutline3DGL 中用 VBO 绘制，
+        // 不再进入 canvas 图层（离屏快照）通道 —— 否则缩放时会因为快照滞后与底图脱节。
+        // 这里只保留扩展区域（交互中且仅在扩展模式）。
         addMapLayers(mExpandAreaView)
-        //人工约束节点
-        addMapLayers(mConstrainNodes)
-        //建图上激光点云（原 UpLaserScanView3D，现由 MapOutline3DGL 直接绘制）
-//        addMapLayers(mCreatingUpLaserScanView)
-        //所有关键帧
-        addMapLayers(mAllKeyFrames)
-        //非建图上激光点云
-        addMapLayers(mUpLaserScanView)
-        //机器人图标
-//        addMapLayers(mCreateMapRobotView)
     }
 
     // ──────────────── SurfaceHolder.Callback ────────────────
@@ -374,8 +426,16 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
 
     /**
      * 执行一帧绘制（在协程中调用）
+     *
+     * 方案A：底图 png、50cm 网格、canvas 图层（约束节点/关键帧/扩展区/非建图激光）、点云、机器人
+     * 已全部合并到 MapOutline3DGL 这**同一个 GL Surface** 上输出，本 SurfaceView 不再出图，
+     * 彻底消除"两张 Surface 各自排队 + 各自与 vsync 对齐"带来的拖动脱节。
+     *
+     * 仅在 GL 图层尚未产出首帧时（如 GLSurfaceView 创建失败、上下文未就绪）才回退到原 Canvas 绘制，
+     * 保证不出现黑屏，原有绘制逻辑一行未改。
      */
     private fun drawFrame(holder: SurfaceHolder) {
+        if (mMapOutline3D != null && glFrameReady) return
         var canvas: Canvas? = null
         try {
             canvas = holder.lockCanvas()
@@ -410,6 +470,10 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
      * 请求一次绘制（数据更新时调用）
      */
     fun requestRender() {
+        // 方案C：先把当前矩阵固化成快照，再触发渲染，保证本帧所有图层用同一份矩阵
+        publishMatrixSnapshot()
+        // 方案A：canvas 图层（扩展区域）仍由 GL 侧栅格化成纹理
+        mMapOutline3D?.requestOverlayRefresh()
         if (surfaceCreated) {
             renderTrigger.tryEmit(Unit)
         }
@@ -418,8 +482,21 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     // ──────────────── 视图生命周期 ────────────────
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        if (mMapOutline3D == null && parent is ViewGroup) {
+        if (parent is ViewGroup) {
             val parentGroup = parent as ViewGroup
+
+            // 去重：同一个父容器里可能已经存在上一次 attach 创建的 GL 图层
+            // （onDetachedFromWindow 里的 post 移除在 detach 后不会执行）。
+            // 若重复挂载，会出现两套画面叠加（两个机器人、两套关键帧），
+            // 且两者矩阵更新时机不同，看起来就像"图层与底图脱节"。
+            for (i in 0 until parentGroup.childCount) {
+                val child = parentGroup.getChildAt(i)
+                if (child is MapOutline3DGL) {
+                    mMapOutline3D = child
+                    return
+                }
+            }
+            if (mMapOutline3D != null) return
 
             // 创建 GL 图层
             val glLayer = MapOutline3DGL(context, WeakReference(this)).apply {
@@ -435,13 +512,13 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
             val myIndex = parentGroup.indexOfChild(this)
             parentGroup.addView(glLayer, myIndex + 1)
 
-            // 按钮置顶
-//            parentGroup.findViewById<View>(R.id.ll_rotate)?.bringToFront()
-
             // 设置机器人图标（从资源加载）
             val robotBitmap =
                 BitmapFactory.decodeResource(resources, R.mipmap.create_current_location)
             glLayer.setRobotBitmap(robotBitmap)
+
+            // 把创建前记录的"显示关键帧"状态补下发给新图层
+            glLayer.setDrawingEnabled(showKeyFrameDetail)
 
             mMapOutline3D = glLayer
         }
@@ -507,6 +584,11 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         renderScope?.cancel()
         renderScope = null
 
+        // 清理 png 解码协程
+        loadJob?.cancel()
+        loadJob = null
+        glFrameReady = false
+
         // 清理资源
         mapLayers.clear()
         mPngMapView = null
@@ -525,15 +607,39 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         if (isTouchInButtonArea(event)) {
             return false
         }
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> beginInteract()
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> endInteract()
+        }
         if (currentWorkMode == WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
             // SurfaceView 模式下，需要手动分发事件给 ExpandAreaView
             val handled = mExpandAreaView?.onTouchEvent(event) ?: false
             // 返回true表示事件已处理，禁止手势检测器处理，从而禁止底图拖动
-            if (handled) return true
+            if (handled) {
+                // 扩展区域开始编辑：只有这个场景才需要 canvas 图层快照通道
+                overlayNeeded = true
+                // ExpandAreaView 内部只用 postInvalidate() 请求刷新，
+                // 而该 View 未挂到窗口上（postInvalidate 无效），必须由这里显式请求一帧，
+                // 否则"正在拖拽的扩展区域矩形"不会跟随手指刷新（原 Canvas 路径依赖激光帧兜底）
+                requestRender()
+                return true
+            }
         }
 
         // 非特殊模式或在扩展区域模式下未被处理的事件，由手势检测器处理
         return mGestureDetector!!.onTouchEvent(event, this)
+    }
+
+    private fun beginInteract() {
+        if (isInteracting) return
+        isInteracting = true
+        mMapOutline3D?.setInteracting(true)
+    }
+
+    private fun endInteract() {
+        if (!isInteracting) return
+        isInteracting = false
+        mMapOutline3D?.setInteracting(false)
     }
 
     private fun isTouchInButtonArea(event: MotionEvent): Boolean {
@@ -649,9 +755,22 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         }
     }
 
+    /**
+     * 同步缩放状态：mMapScale 与 mSrf.scale 必须始终一致。
+     *
+     * mSrf.scale 被下游当作"屏幕像素/地图像素"使用（机器人图标尺寸、关键帧刻度线宽都读它）。
+     * 此前只有捏合手势 setScale() 会写 mSrf.scale，而 setCentred() / setMatrixWithScale*()
+     * 只改 mMapScale，导致扩展地图页加载完地图后 mSrf.scale 一直停在旧值（通常是 1），
+     * 上述换算全部失真。统一在这里同步，避免再漏。
+     */
+    private fun syncScale(scale: Float) {
+        mMapScale = scale
+        if (scale > 0f) mSrf.scale = scale
+    }
+
     private fun setMatrixWithScale(matrix: Matrix, scale: Float) {
         mOuterMatrix = matrix
-        mMapScale = scale
+        syncScale(scale)
         // 复制矩阵以保证渲染线程安全
         val matrixCopy = Matrix(matrix)
         if (currentWorkMode != WorkMode.MODE_EXTEND_MAP_ADD_REGION) {
@@ -664,7 +783,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
 
     private fun setMatrixWithScaleAndRotation(matrix: Matrix, scale: Float, rotation: Float) {
         mOuterMatrix = matrix
-        mMapScale = scale
+        syncScale(scale)
         // 复制矩阵以保证渲染线程安全
         val matrixCopy = Matrix(matrix)
         mPngMapView?.setMatrix(matrixCopy)
@@ -713,6 +832,32 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
             mMapOutline3D?.notifyMatrixChanged()
             requestRender()
         }
+    }
+
+    /**
+     * 调试 / 自动化压测用：直接设置视图缩放（不经过手势），并把世界原点置于屏幕中心。
+     * 供无手势环境的建图测试使用，正常业务流程不调用。
+     */
+    fun setDebugScale(scale: Float) {
+        if (VIEW_WIDTH == 0 || VIEW_HEIGHT == 0) {
+            post { setDebugScale(scale) }
+            return
+        }
+        val target = scale.coerceIn(mMinMapScale, mMaxMapScale)
+        val current = mMapScale
+        // 以"当前视野中心"为锚点缩放，保留原有平移量：
+        // 若直接重置矩阵到世界原点，画面会整体跳一下（表现为闪屏）。
+        val m = Matrix()
+        if (current > 0f) {
+            m.set(mOuterMatrix)
+            m.postScale(target / current, target / current, VIEW_WIDTH / 2f, VIEW_HEIGHT / 2f)
+        } else {
+            m.postScale(target, target)
+            m.postTranslate(VIEW_WIDTH / 2f, VIEW_HEIGHT / 2f)
+        }
+        setMatrixWithScaleAndRotation(m, target, 0f)
+        mMapOutline3D?.notifyMatrixChanged()
+        requestRender()
     }
 
     /**
@@ -773,37 +918,83 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
      * 加载地图
      * pngPath png文件路径
      * yamlPath yaml文件路径
+     *
+     * 解码压缩说明（原始 png / yaml 文件不做任何修改）：
+     * 1. 先只读尺寸，再按 2 的整数倍采样率解码，保证解码后最大边 ≤ [MAX_MAP_EDGE]；
+     * 2. yaml 仍按**原始像素尺寸**解析，因此 mSrf.mapData.width/height/resolution 的语义原样保留，
+     *    世界坐标↔像素坐标的换算、GL 的 MVP、激光点、机器人全部不受影响；
+     * 3. 解码缩放比交给 PngMapView / GL 在绘制阶段补偿（drawScale），屏幕显示位置与尺寸完全不变。
      */
     fun loadMap(pngPath: String, yamlPath: String) {
         val file = File(pngPath)
-        Glide.with(this)
-            .asBitmap()
-            .load(file)
-            .skipMemoryCache(true)
-            .format(DecodeFormat.PREFER_RGB_565)
-            .diskCacheStrategy(DiskCacheStrategy.NONE)
-            .into(object : SimpleTarget<Bitmap?>() {
-                override fun onResourceReady(
-                    resource: Bitmap,
-                    transition: Transition<in Bitmap?>?
-                ) {
-                    val mPngMapData = YamlNew().loadYaml(
-                        yamlPath,
-                        resource.height.toFloat(),
-                        resource.width.toFloat()
-                    )
-                    setBitmap(mPngMapData, resource)
-                }
-            })
+        if (!file.exists()) {
+            Log.w(TAG, "loadMap: png not exists -> $pngPath")
+            return
+        }
+        loadJob?.cancel()
+        loadJob = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob()).launch {
+            val decoded = withContext(Dispatchers.IO) { decodeMapBitmap(pngPath) }
+            if (decoded == null) {
+                Log.w(TAG, "loadMap: decode failed -> $pngPath")
+                return@launch
+            }
+            // 用原始像素尺寸解析 yaml，保持世界<->像素映射语义不变
+            val mPngMapData = YamlNew().loadYaml(
+                yamlPath,
+                decoded.height.toFloat(),
+                decoded.width.toFloat()
+            )
+            setBitmap(mPngMapData, decoded.bitmap, decoded.drawScale)
+        }
+    }
+
+    /**
+     * 解码 png 地图位图。
+     * 采用 inSampleSize（2 的整数倍）先降采样，既省内存又比 createScaledBitmap 少一次大图分配；
+     * 采样比取整数还能让 drawScale 恰好是 1/2、1/4…，绘制时不会出现半像素采样抖动。
+     */
+    private fun decodeMapBitmap(pngPath: String): DecodedMap? {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(pngPath, bounds)
+        val srcWidth = bounds.outWidth
+        val srcHeight = bounds.outHeight
+        if (srcWidth <= 0 || srcHeight <= 0) return null
+
+        var sample = 1
+        while (maxOf(srcWidth, srcHeight) / sample > MAX_MAP_EDGE) {
+            sample *= 2
+        }
+
+        val opts = BitmapFactory.Options().apply {
+            inSampleSize = sample
+            inPreferredConfig = Bitmap.Config.RGB_565
+            inScaled = false
+        }
+        val bitmap = try {
+            BitmapFactory.decodeFile(pngPath, opts)
+        } catch (e: Exception) {
+            Log.e(TAG, "decodeMapBitmap: ${e.message}")
+            null
+        } ?: return null
+        if (bitmap.width <= 0 || bitmap.height <= 0) return null
+
+        val drawScale = srcWidth.toFloat() / bitmap.width.toFloat()
+        Log.d(
+            TAG,
+            "decodeMapBitmap: ${srcWidth}x$srcHeight sample=$sample " +
+                "-> ${bitmap.width}x${bitmap.height} drawScale=$drawScale"
+        )
+        return DecodedMap(bitmap, srcWidth, srcHeight, drawScale)
     }
 
     /**
      * 设置地图数据信息
      * 设置地图
      *
-     * @param bitmap
+     * @param bitmap 实际参与绘制的位图
+     * @param drawScale 地图原始像素 / 位图像素，绘制时按该比例补偿
      */
-    private fun setBitmap(mapData: MapData, bitmap: Bitmap) {
+    private fun setBitmap(mapData: MapData, bitmap: Bitmap, drawScale: Float = 1f) {
         synchronized(mSrf.mapData) {
             mSrf.mapData.width = mapData.width
             mSrf.mapData.height = mapData.height
@@ -816,7 +1007,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
             initialOriginY = mapData.originY
             initialHeight = mapData.height
         }
-        mPngMapView?.setBitmap(bitmap)
+        mPngMapView?.setBitmap(bitmap, drawScale)
         // 设置地图后自动居中显示
         setCentred()
     }
@@ -840,8 +1031,8 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         )
         if (laserData.ranges.size <= 6) return // 最少包含机器人位置数据
 
-        //保持居中
-        if (currentWorkMode == WorkMode.MODE_CREATE_MAP) {
+        //保持居中（手势进行中不强行拉回，否则拖动会被"拽回去"）
+        if (currentWorkMode == WorkMode.MODE_CREATE_MAP && !isInteracting) {
             keepRobotCentered()
         }
         calBinding(laserData, type)
@@ -854,9 +1045,62 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     }
 
     fun loadCurPointCloud(laserData: laser_t) {
-        mUpLaserScanView?.updateUpLaserScan(laserData)
+        // 方案C：非建图激光改为在 GL 侧用 VBO 绘制，这里只缓存世界坐标点。
+        // UpLaserScanView 为 2D/主地图共用控件，不做任何修改，仅不再作为 3D 的绘制图层。
+        updateUpLaserPoints(laserData)
         requestRender()
     }
+
+    /** 把上激光点云转成世界坐标（与 UpLaserScanView 的换算一致），供 GL 侧绘制 */
+    private fun updateUpLaserPoints(laserData: laser_t) {
+        val ranges = laserData.ranges
+        val groups = ranges.size / 3
+        if (groups <= 1) {
+            upLaserPoints = FloatArray(0)
+            upLaserVersion++
+            return
+        }
+        val robotX = robotPose[0]
+        val robotY = robotPose[1]
+        val theta = robotPose[2]
+        val cosT = kotlin.math.cos(theta)
+        val sinT = kotlin.math.sin(theta)
+        val count = groups - 1
+        if (upLaserPoints.size < count * 2) upLaserPoints = FloatArray(count * 2)
+        var idx = 0
+        for (i in 1 until groups) {
+            val lx = ranges[3 * i]
+            val ly = ranges[3 * i + 1]
+            upLaserPoints[idx++] = lx * cosT - ly * sinT + robotX
+            upLaserPoints[idx++] = lx * sinT + ly * cosT + robotY
+        }
+        upLaserCount = count
+        upLaserVersion++
+    }
+
+    // ──────────────── GL 侧数据接口（VBO 绘制用） ────────────────
+    private var upLaserPoints = FloatArray(0)
+    private var upLaserCount = 0
+    @Volatile
+    internal var upLaserVersion = 0
+        private set
+
+    internal fun snapshotUpLaser(): FloatArray = upLaserPoints.copyOf(upLaserCount * 2)
+
+    internal fun oldKeyFramesVersion(): Int = mAllKeyFrames?.dataVersion ?: -1
+    internal fun snapshotOldKeyFrames(): FloatArray? =
+        mAllKeyFrames?.takeIf { it.isDrawing() }?.snapshotKeyFrames()
+
+    internal fun constrainNodesVersion(): Int = mConstrainNodes?.dataVersion ?: -1
+    internal fun snapshotConstraintNodes(): FloatArray? = mConstrainNodes?.snapshotNodes()
+
+    /**
+     * 只有扩展区域（canvas 交互图层）还需要离屏快照通道。
+     * 未进入扩展区域编辑时关闭 overlay，彻底避免"快照滞后"导致的缩放脱节。
+     */
+    @Volatile
+    internal var overlayNeeded = false
+        private set
 
     fun parseOptPose(laserData: laser_t) {
         mMapOutline3D?.parseOptPose(laserData)
@@ -865,6 +1109,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     }
 
     fun showKeyFrames(boolean: Boolean) {
+        showKeyFrameDetail = boolean
         mMapOutline3D?.setDrawingEnabled(boolean)
         mAllKeyFrames?.setDrawingEnabled(boolean)
         requestRender()
@@ -968,12 +1213,30 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         val dx = centerX - robotScreenPos.x
         val dy = centerY - robotScreenPos.y
 
+        // 位移小于 1px 不必重设矩阵（避免空闲时反复触发渲染与快照分配）
+        if (kotlin.math.abs(dx) < 1f && kotlin.math.abs(dy) < 1f) return
         // 移动地图使机器人居中
         setTransition(dx.toInt(), dy.toInt())
     }
 
+    /**
+     * 清空当前建图状态（关键帧/点云/约束节点/非建图激光），供"开始模拟"重开一轮使用。
+     * 只影响 3D 建图链路，不动 2D 共用控件。
+     */
+    fun resetMappingState() {
+        mMapOutline3D?.resetPointCloud()
+        mConstrainNodes?.clearNodes()
+        mAllKeyFrames?.setDrawingEnabled(false)
+        upLaserPoints = FloatArray(0)
+        upLaserCount = 0
+        upLaserVersion++
+        isStartRevSubMaps = false
+        requestRender()
+    }
+
     fun resetExpandAreaView() {
         mExpandAreaView?.resetCreateState()
+        overlayNeeded = false
         requestRender()
     }
 
@@ -999,6 +1262,52 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     val outerMatrix: Matrix get() = mOuterMatrix
     val viewWidth: Int get() = VIEW_WIDTH
     val viewHeight: Int get() = VIEW_HEIGHT
+
+    // ──────────────── 方案A：单 Surface 渲染（供 MapOutline3DGL 读取） ────────────────
+
+    /** 底图位图（可能已按 MAX_MAP_EDGE 解码压缩） */
+    internal fun getPngBitmap(): Bitmap? = mPngMapView?.pngBitmap
+
+    /** 底图位图版本号，GL 侧据此判断是否需要重传纹理 */
+    internal fun getPngBitmapVersion(): Int = mPngMapView?.pngBitmapVersion ?: -1
+
+    /** 底图解码缩放比（原始像素 / 位图像素） */
+    internal fun getPngDrawScale(): Float = mPngMapView?.pngDrawScale ?: 1f
+
+    /** 底图偏移（单位：地图原始像素），扩展地图时使用 */
+    internal fun getPngOffsetX(): Float = mPngMapView?.pngOffsetX ?: 0f
+
+    internal fun getPngOffsetY(): Float = mPngMapView?.pngOffsetY ?: 0f
+
+    /**
+     * 拷贝底图矩阵快照到 out。
+     * 这里刻意使用 PngMapView 自己的矩阵（而不是 mOuterMatrix）：
+     * 扩展地图"增加区域"模式下原逻辑就是只更新子图层、不更新底图，
+     * 合并到 GL 后必须完整保持该行为，因此底图矩阵只能从 PngMapView 取。
+     */
+    internal fun copyPngMatrixInto(out: Matrix): Boolean {
+        val png = mPngMapView ?: return false
+        if (png.pngBitmap == null) return false
+        png.copyMatrixInto(out)
+        return true
+    }
+
+    /**
+     * 把 canvas 图层（扩展区域→约束节点→关键帧→非建图激光）画到 GL 侧的离屏位图上，
+     * 绘制顺序与 [drawFrame] 中的 mapLayers 遍历顺序完全一致。
+     */
+    internal fun drawOverlayLayers(canvas: Canvas) {
+        for (layer in mapLayers) {
+            layer.draw(canvas)
+        }
+    }
+
+    /**
+     * GL 图层已输出首帧：本 SurfaceView 停止出图（避免两张 Surface 的提交时差）
+     */
+    internal fun onGlFrameReady() {
+        glFrameReady = true
+    }
 
     private fun addMapLayers(mapLayer: SlamWareBaseView<CreateMapView3D>?) {
         if (mapLayer != null && !mapLayers.contains(mapLayer)) {

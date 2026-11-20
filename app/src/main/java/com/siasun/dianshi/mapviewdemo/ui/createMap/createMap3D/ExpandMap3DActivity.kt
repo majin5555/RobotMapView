@@ -19,6 +19,7 @@ import com.siasun.dianshi.dialog.CommonEditDialog
 import com.siasun.dianshi.dialog.CommonWarnDialog
 import com.siasun.dianshi.framework.ext.onClick
 import com.siasun.dianshi.framework.log.LogUtil
+import com.siasun.dianshi.mapviewdemo.BuildConfig
 import com.siasun.dianshi.mapviewdemo.CREATE_MAP
 import com.siasun.dianshi.mapviewdemo.KEY_AGV_COORDINATE
 import com.siasun.dianshi.mapviewdemo.KEY_CURRENT_POINT_CLOUD
@@ -29,6 +30,7 @@ import com.siasun.dianshi.mapviewdemo.KEY_OPT_POSE
 import com.siasun.dianshi.mapviewdemo.KEY_UPDATE_POS
 import com.siasun.dianshi.mapviewdemo.TAG_NAV
 import com.siasun.dianshi.mapviewdemo.databinding.ActivityExpandMap3dDactivityBinding
+import com.siasun.dianshi.mapviewdemo.mock.FakeMappingMock
 import com.siasun.dianshi.mapviewdemo.viewmodel.CreateMap2DViewModel
 import com.siasun.dianshi.view.WorkMode
 import com.siasun.dianshi.view.createMap.ExpandAreaView
@@ -56,6 +58,25 @@ class ExpandMap3DActivity :
 
     var show = true
 
+    // ── 假数据测试开关：仅 debug 包 + Intent 显式带 --ez mock true 时生效 ──
+    private val mockMode: Boolean by lazy {
+        BuildConfig.DEBUG && intent.getBooleanExtra(EXTRA_MOCK, false)
+    }
+
+    // 假数据参数（默认 500m×1000m，1500 点/帧→库内采样后约 300 点/帧，10fps，1 秒 10 步）
+    private val mockConfig: FakeMappingMock.Config by lazy {
+        FakeMappingMock.Config(
+            worldW = intent.getFloatExtra(EXTRA_MOCK_W, 500f),
+            worldH = intent.getFloatExtra(EXTRA_MOCK_H, 1000f),
+            res = intent.getFloatExtra(EXTRA_MOCK_RES, 0.25f),
+            rays = intent.getIntExtra(EXTRA_MOCK_RAYS, 1500),
+            fps = intent.getIntExtra(EXTRA_MOCK_FPS, 10),
+            stepPerFrame = intent.getFloatExtra(EXTRA_MOCK_STEP, 0.30f),
+            viewScale = intent.getFloatExtra(EXTRA_MOCK_SCALE, 2.0f),
+            withOptPose = intent.getBooleanExtra(EXTRA_MOCK_OPT, false)
+        )
+    }
+
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initView(savedInstanceState: Bundle?) {
         MainController.init()
@@ -69,10 +90,16 @@ class ExpandMap3DActivity :
         }, 0, 500)
 
         //加载地图
-        mBinding.mapView.loadMap(
-            ConstantBase.getFilePath(mapID, ConstantBase.PAD_MAP_NAME_PNG),
-            ConstantBase.getFilePath(mapID, ConstantBase.PAD_MAP_NAME_YAML)
-        )
+        if (mockMode) {
+            // 假数据测试：用私有目录下程序化生成的假地图，避免覆盖真机 /sdcard 上的真实地图
+            val (pngPath, yamlPath) = FakeMappingMock.ensureMapFiles(this, mockConfig)
+            mBinding.mapView.loadMap(pngPath, yamlPath)
+        } else {
+            mBinding.mapView.loadMap(
+                ConstantBase.getFilePath(mapID, ConstantBase.PAD_MAP_NAME_PNG),
+                ConstantBase.getFilePath(mapID, ConstantBase.PAD_MAP_NAME_YAML)
+            )
+        }
 
         var show = true
         mBinding.mapView.showKeyFrames(show)
@@ -224,18 +251,23 @@ class ExpandMap3DActivity :
     @RequiresApi(Build.VERSION_CODES.R)
     override fun initData() {
         super.initData()
-//        if (BuildConfig.DEBUG) {
-//            startMockPosStream()
-//        }
-        MainController.sendGetNavKeyframe()
+        if (BuildConfig.DEBUG) {
+            startMockPosStream()
+        }
+        if (!mockMode) {
+            MainController.sendGetNavKeyframe()
+        }
         //接收导航发送所有关键帧
         LiveEventBus.get<laser_t>(KEY_FRAME_POSE).observe(this) {
+            // 假数据模式下必须屏蔽真机数据，否则两路数据互相覆盖（scale / mapData / 关键帧 id 全部打架）
+            if (mockMode) return@observe
             LogUtil.i("接收导航发送所有关键帧 ${it.ranges.size}")
             mBinding.mapView.parseKeyFramePose(it)
         }
 
         //上激光点云
         LiveEventBus.get<laser_t>(KEY_CURRENT_POINT_CLOUD).observe(this) {
+            if (mockMode) return@observe
             mBinding.mapView.loadCurPointCloud(it)
         }
 
@@ -246,6 +278,7 @@ class ExpandMap3DActivity :
 
         //接收创建地图中车体位置 导航->PAD
         LiveEventBus.get(KEY_UPDATE_POS, laser_t::class.java).observe(this) {
+            if (mockMode) return@observe
             mBinding.mapView.parseLaserData(it, 1)
             if (it.rad0 > 0f) {
                 mBinding.tvMapSteps.text = "建图步数 ${it.rad0}"
@@ -253,6 +286,7 @@ class ExpandMap3DActivity :
         }
         //NAV 做回环时候给的数据  (NAV->PAD)
         LiveEventBus.get(KEY_OPT_POSE, laser_t::class.java).observe(this) {
+            if (mockMode) return@observe
             mBinding.mapView.parseOptPose(it)
         }
         //接收车体坐标
@@ -287,6 +321,24 @@ class ExpandMap3DActivity :
             } else {
                 mBinding.tvLocation.text = "定位失败"
             }
+        }
+
+        //假数据推图测试：1 秒 10 帧点云 + 关键帧累积
+        if (mockMode) {
+            val onSteps: (Int) -> Unit = { steps ->
+                mBinding.tvMapSteps.text = "建图步数 $steps"
+            }
+            // 三个控制按钮：开始（清空重来）/ 暂停（停发数据）/ 继续
+            mBinding.btnMockStart.visibility = android.view.View.VISIBLE
+            mBinding.btnMockPause.visibility = android.view.View.VISIBLE
+            mBinding.btnMockResume.visibility = android.view.View.VISIBLE
+            mBinding.btnMockStart.onClick {
+                FakeMappingMock.restart(lifecycleScope, mBinding.mapView, mockConfig, onSteps)
+            }
+            mBinding.btnMockPause.onClick { FakeMappingMock.pause() }
+            mBinding.btnMockResume.onClick { FakeMappingMock.resume() }
+
+            FakeMappingMock.start(lifecycleScope, mBinding.mapView, mockConfig, onSteps)
         }
     }
 
@@ -440,6 +492,22 @@ class ExpandMap3DActivity :
     override fun onDestroy() {
         mockJob?.cancel()
         mockJob = null
+        if (mockMode) {
+            FakeMappingMock.stop()
+        }
         super.onDestroy()
+    }
+
+    companion object {
+        /** adb: am start ... --ez mock true [--ei mock_rays 1500 --ef mock_w 500 --ef mock_h 1000] */
+        const val EXTRA_MOCK = "mock"
+        const val EXTRA_MOCK_W = "mock_w"
+        const val EXTRA_MOCK_H = "mock_h"
+        const val EXTRA_MOCK_RES = "mock_res"
+        const val EXTRA_MOCK_RAYS = "mock_rays"
+        const val EXTRA_MOCK_FPS = "mock_fps"
+        const val EXTRA_MOCK_STEP = "mock_step"
+        const val EXTRA_MOCK_SCALE = "mock_scale"
+        const val EXTRA_MOCK_OPT = "mock_opt"
     }
 }
