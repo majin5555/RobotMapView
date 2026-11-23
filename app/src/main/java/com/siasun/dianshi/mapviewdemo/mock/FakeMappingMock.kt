@@ -97,7 +97,9 @@ object FakeMappingMock {
         val png = File(dir, "PM.png")
         val yaml = File(dir, "PM.yaml")
 
-        val bmp = Bitmap.createBitmap(pxW, pxH, Bitmap.Config.ARGB_8888)
+        // 假地图是不透明图片，使用 RGB_565（2 字节/像素，无 Alpha 通道），
+        // 相比 ARGB_8888 内存直接减半，也与 loadMap 的解码格式保持一致
+        val bmp = Bitmap.createBitmap(pxW, pxH, Bitmap.Config.RGB_565)
         val canvas = Canvas(bmp)
 
         // 未知区（浅蓝，对齐真机配色）
