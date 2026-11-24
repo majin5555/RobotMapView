@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicLong
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import kotlin.math.ceil
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.floor
 import kotlin.math.sin
@@ -55,10 +56,25 @@ class MapOutline3DGL(
         private const val POINT_SIZE_CLOUD = 3f
         // 手势进行中的点径：交互期只求跟手，1px 几乎无填充压力
         private const val POINT_SIZE_CLOUD_INTERACT = 1f
+        // 关键帧绿点：基准屏幕直径（scale = TEXT_REF_SCALE 时的值）。
+        // 原实现是固定 8px，缩到很小时 8px 绿点会互相重叠、连成一条粗带，
+        // 且与"编号随缩放变小"的规则冲突（文字缩小、点不变），所以改为同一套缩放规则：
+        //   屏幕点径 = POINT_SIZE_KEYFRAME * scale / TEXT_REF_SCALE，再钳制到 [MIN, MAX]
         private const val POINT_SIZE_KEYFRAME = 8f
+        private const val KEYFRAME_MIN_PX = 3f
+        private const val KEYFRAME_MAX_PX = 12f
+        // 缩得很小时相邻关键帧在屏幕上严重重叠，按最小屏幕间距抽稀绘制（轨迹首尾始终保留）
+        private const val KEYFRAME_MIN_GAP_PX = 3f
+        // 缩放相关几何（点径/抽稀/字号/朝向线）的统一重建阈值。
+        // 与文字"视野变化 8% 才重排"保持同一量级，避免两套阈值互相打架。
+        private const val SCALE_REBUILD_RATIO = 0.08f
         private const val POINT_SIZE_LIVE = 3f
         // 方案C：旧关键帧/约束节点/非建图激光（原 canvas 图层）的屏幕尺寸与颜色
         private const val OLD_KF_POINT_SIZE = 10f
+        // 旧关键帧点径的钳制范围：与实时关键帧共用 TEXT_REF_SCALE 作为缩放参考，
+        // 避免"缩小时文字变小、10px 紫点却连成粗带"的不一致
+        private const val OLD_KF_MIN_PX = 3f
+        private const val OLD_KF_MAX_PX = 14f
         // 朝向线：长度 14px、线宽 3px。
         // 关键帧圆点直径正好 10px，线若也取 10px 会被圆点完全盖住（看起来"没有线"），
         // 因此比点半径多出 9px，保证缩小时也能看出朝向。
@@ -349,6 +365,15 @@ class MapOutline3DGL(
     private var keyframeLinesLastLen = 0
     private var lastLenLive = 0   // 实时点云上次长度
 
+    // 缩放相关几何的统一失效判定（绿点抽稀、旧关键帧 点/线/编号、文字字号共用）：
+    // 缩放变化超过 SCALE_REBUILD_RATIO 才重建一次；手势期间不重建，抬手后按最终缩放补一次。
+    private var scaleGeomDirty = true
+    private var scaleGeomRef = 0f
+
+    // 绿点抽稀后保留的关键帧 id（点与编号共用同一份集合，保证每个编号都有对应的点）
+    private var keptKfIds = IntArray(0)
+    private var keptKfCount = 0
+
     // ──────────────── 累积点云 VBO 增量上传状态 ────────────────
     // 设计：关键帧只会按 id 追加（addKeyFrames 里 containsKey 已挡掉重复 id），
     // 因此点云可以"只追加不重建"。staging 是 Java 侧镜像，VBO 按容量分配，
@@ -434,8 +459,12 @@ class MapOutline3DGL(
     private var oldKfTickCount = 0
     private var oldKfTextCount = 0
     private var oldKfVersion = -1
-    private var oldKfTickScale = Float.NaN
     private var oldKfSnapshot = FloatArray(0)
+    // 旧关键帧几何重建的复用缓冲（捏合时只重建不分配大数组）
+    private var oldKfPtsScratch = FloatArray(0)
+    private var oldKfTickScratch = FloatArray(0)
+    private var oldKfTextScratch = FloatArray(0)
+    private val oldKfTextList = ArrayList<Float>()
 
     private var nodePointCount = 0
     private var nodeTextCount = 0
@@ -585,6 +614,9 @@ class MapOutline3DGL(
         pointCloudFullDirty = true
         pointCloudDirty = true
         keyframeGeometryDirty = true
+        scaleGeomDirty = true
+        scaleGeomRef = 0f
+        keptKfCount = 0
         keyframePointCount = 0
         keyframeLineVertexCount = 0
         textInstanceCount = 0
@@ -991,13 +1023,21 @@ class MapOutline3DGL(
         // 每帧算一次可见世界 AABB，供文字裁剪 / 点云分块剔除使用
         updateVisibleWorldRect()
 
-        // ① 50cm 网格线（屏幕正交网格，画在底图之前/之下，与原绘制顺序一致）
-        // 手势期间跳过：网格每帧重建 + 上百条线，交互期优先保证跟手
+        // 缩放相关几何的统一重建判定：
+        // 手势期间不重建（避免捏合时每帧重建点/线/文字），抬手后按最终缩放补建一次。
         if (!interacting) {
-            rebuildGridVertices(mapView)
-            if (gridVertexCount > 0) {
-                drawLines(vboGrid[0], gridVertexCount, COLOR_GRID, projectionMatrix)
+            val s = frameScale
+            if (scaleGeomRef <= 0f || abs(s / scaleGeomRef - 1f) > SCALE_REBUILD_RATIO) {
+                scaleGeomRef = s
+                scaleGeomDirty = true
             }
+        }
+
+        // ① 屏幕正交网格（固定 40px、锚定世界原点：不跟车、不随缩放）
+        // 线数很少（40px 格距下约 50 条），交互期也照常绘制，作为判断轨迹是否笔直的稳定参照
+        rebuildGridVertices(mapView)
+        if (gridVertexCount > 0) {
+            drawLines(vboGrid[0], gridVertexCount, COLOR_GRID, projectionMatrix)
         }
 
         // ② 底图 png（原逻辑：白底之后、图层之前，处于网格之上、点云之下）
@@ -1037,13 +1077,17 @@ class MapOutline3DGL(
             GLES20.glEnable(GLES20.GL_BLEND)
         }
 
-        if (keyframeGeometryDirty) rebuildKeyframePointsVBO()
+        // 关键帧绿点：抽稀密度与点径跟随缩放（与旧关键帧/文字共用同一套 scaleGeomDirty 阈值）
+        if (scaleGeomDirty) keyframeGeometryDirty = true
+        if (keyframeGeometryDirty) {
+            rebuildKeyframePointsVBO()
+        }
         if (keyframePointCount > 0) {
             drawPoints(
                 vboKeyframePoints[0],
                 keyframePointCount,
                 COLOR_KEYFRAME,
-                POINT_SIZE_KEYFRAME
+                keyframeScreenPx()
             )
         }
 
@@ -1079,6 +1123,8 @@ class MapOutline3DGL(
         drawRobot()
 
         if (keyframeGeometryDirty) keyframeGeometryDirty = false
+        // 所有缩放相关几何（旧关键帧点/线/编号、绿点、文字）都已在本帧消费，统一清标记
+        scaleGeomDirty = false
 
         // 方案A：通知地图视图"GL 已产出首帧"，此后 CreateMapView3D 的 SurfaceView 停止出图
         mapView.onGlFrameReady()
@@ -1087,10 +1133,10 @@ class MapOutline3DGL(
     // ---------- 方案A：底图 / 网格 / canvas 图层 ----------
 
     /**
-     * 生成 50cm 屏幕正交网格线顶点。
+     * 生成屏幕正交网格线顶点（格距固定 40px）。
      *
-     * 算法与 CreateMapView3D.drawGrid 完全一致（同样的锚点、格距、跳过条件、绘制顺序），
-     * 仅把 canvas.drawLine 改成 GL_LINES 顶点；网格线始终水平/竖直，只跟随缩放与平移。
+     * 与 CreateMapView3D.drawGrid 保持一致：同样的世界原点锚点、格距、跳过条件、绘制顺序。
+     * 网格锚定世界原点、不跟随机器人，格距不随缩放变化；仅把 canvas.drawLine 换成 GL_LINES。
      */
     private fun rebuildGridVertices(mapView: CreateMapView3D) {
         gridVertexCount = 0
@@ -1124,17 +1170,23 @@ class MapOutline3DGL(
         gridTotal.preConcat(gridWorldToPixel)
         gridTotal.getValues(gridValues)
 
-        // 与 CreateMapView3D.drawGrid 一致：格距固定 40px（不随缩放变化），
-        // 锚点取机器人位置的屏幕坐标，使机器人始终落在网格交叉点上。
-        gridAnchor[0] = mapView.robotPose[0]
-        gridAnchor[1] = mapView.robotPose[1]
+        // 网格属于"世界"，锚点固定在世界原点 (0,0)，不跟随机器人：
+        // 相机跟随时网格会在屏幕上相对滑动，这样一眼就能看出车体轨迹是否笔直。
+        // 格距仍是固定 40px，不随手势缩放（缩放时格距不变）。
+        gridAnchor[0] = 0f
+        gridAnchor[1] = 0f
         gridTotal.mapPoints(gridAnchor)
-        val anchorX = gridAnchor[0]
-        val anchorY = gridAnchor[1]
-        if (!anchorX.isFinite() || !anchorY.isFinite()) return
-
         val cellPx = GRID_CELL_PX
         if (cellPx <= 0f) return
+        var anchorX = gridAnchor[0]
+        var anchorY = gridAnchor[1]
+        if (!anchorX.isFinite() || !anchorY.isFinite()) return
+        // 把锚点归一化到 (-cellPx, 0]：保持网格相位不变，
+        // 同时避免世界原点远离视野时出现大坐标相减的浮点误差
+        anchorX %= cellPx
+        if (anchorX > 0f) anchorX -= cellPx
+        anchorY %= cellPx
+        if (anchorY > 0f) anchorY -= cellPx
 
         val needFloats =
             (((w / cellPx).toInt() + (h / cellPx).toInt() + 4) * 4)
@@ -1793,25 +1845,69 @@ class MapOutline3DGL(
      * 关键帧点：直接遍历追加顺序数组，不再 keyFrames3D.entries.toList()。
      * 20000 步时每次重建都会分配一个 2 万元素的 List（还含 Entry 对象），
      * 10 次/秒就是持续的 GC 压力，是缩放/平移卡顿的放大器之一。
+     *
+     * 缩得很小时，相邻关键帧在屏幕上可能不足 1px，全量绘制只会叠成一条粗绿带，
+     * 且大量点完全被覆盖（纯浪费填充）。这里按"最小屏幕间距"做一次抽稀：
+     * 只保留与上一个保留点间距 ≥ [KEYFRAME_MIN_GAP_PX] 的关键帧，轨迹首尾始终保留。
+     * 抽稀结果只取决于当前缩放，缩放变化由 onDrawFrame 触发重建。
      */
     private fun rebuildKeyframePointsVBO() {
         var i = 0
+        var keptCount = 0
+        // 当前 1 个屏幕像素对应多少世界米（与文字/点径共用同一换算）
+        val worldPerPx = if (frameScale > 0f) frameResolution / frameScale else 0.05f
+        val minGapWorld = KEYFRAME_MIN_GAP_PX * worldPerPx
+        val minGapSq = minGapWorld * minGapWorld
+        var lastKeptX = 0f
+        var lastKeptY = 0f
+        var tailX = 0f
+        var tailY = 0f
+        var tailId = 0
+        var hasTail = false
         synchronized(keyFrames3D) {
             val size = keyFrameOrder.size
             if (size == 0) {
                 keyframePointCount = 0
+                keptKfCount = 0
                 return
             }
             if (keyframePointsArray == null || keyframePointsArray!!.size < size * 2) {
                 keyframePointsArray = FloatArray(size * 2)
             }
+            // 抽稀结果同时记录 id：编号必须基于同一份集合生成，否则会出现"有编号没点"
+            if (keptKfIds.size < size) keptKfIds = IntArray(size)
             val arr = keyframePointsArray!!
-            for (frame in keyFrameOrder) {
-                arr[i++] = frame.robotPos[0]
-                arr[i++] = frame.robotPos[1]
+            for (idx in keyFrameOrder.indices) {
+                val frame = keyFrameOrder[idx]
+                val x = frame.robotPos[0]
+                val y = frame.robotPos[1]
+                tailX = x
+                tailY = y
+                tailId = keyFrameIds[idx]
+                hasTail = true
+                if (i > 0) {
+                    val dx = x - lastKeptX
+                    val dy = y - lastKeptY
+                    // 与上一个保留点过近：跳过（已被覆盖，画了也看不见）
+                    if (dx * dx + dy * dy < minGapSq) continue
+                }
+                arr[i++] = x
+                arr[i++] = y
+                keptKfIds[keptCount] = keyFrameIds[idx]
+                keptCount++
+                lastKeptX = x
+                lastKeptY = y
             }
         }
+        // 保证"最新关键帧"一定出现在轨迹末端：即使它与上一个保留点间距不足，
+        // 也用最后一个点覆盖末位，而不是继续追加（避免点数随缩放增长）。
+        if (hasTail && i >= 2 && (keyframePointsArray!![i - 2] != tailX || keyframePointsArray!![i - 1] != tailY)) {
+            keyframePointsArray!![i - 2] = tailX
+            keyframePointsArray!![i - 1] = tailY
+            if (keptCount > 0) keptKfIds[keptCount - 1] = tailId
+        }
         keyframePointCount = i / 2
+        keptKfCount = keptCount
         uploadVBO(vboKeyframePoints, keyframePointsArray!!, i, keyframePointsLastLen)
         keyframePointsLastLen = i
     }
@@ -1866,11 +1962,15 @@ class MapOutline3DGL(
             textVisMaxX = visMaxX
             textVisMaxY = visMaxY
         }
-        val ids = synchronized(keyFrames3D) { keyFrameIds.toIntArray() }
+        // 编号只基于"绿点抽稀后保留的集合"生成：
+        // 点与编号同源，才不会出现"有编号、下方却没有对应绿点"的悬空编号。
+        val keptIds = synchronized(keyFrames3D) {
+            if (keptKfCount <= 0) IntArray(0) else keptKfIds.copyOf(keptKfCount)
+        }
         val instances = ArrayList<Float>(1024)
         var lastX = Float.NaN
         var lastY = 0f
-        for (id in ids) {
+        for (id in keptIds) {
             val frame = keyFrames3D[id] ?: continue
             val x = frame.robotPos[0]
             val y = frame.robotPos[1]
@@ -2081,6 +2181,23 @@ class MapOutline3DGL(
         return (TEXT_BASE_PX * scale / TEXT_REF_SCALE).coerceIn(TEXT_MIN_PX, TEXT_MAX_PX)
     }
 
+    /**
+     * 关键帧绿点的屏幕直径：与文字共用缩放参考（TEXT_REF_SCALE），再钳制上下限。
+     * 这样"点 + 编号"随缩放同步变化，不会再出现"字缩小、8px 绿点却连成粗带"的冲突。
+     */
+    private fun keyframeScreenPx(): Float {
+        val scale = if (frameScale > 0f) frameScale else 1f
+        return (POINT_SIZE_KEYFRAME * scale / TEXT_REF_SCALE)
+            .coerceIn(KEYFRAME_MIN_PX, KEYFRAME_MAX_PX)
+    }
+
+    /** 旧关键帧紫点的屏幕直径：与实时关键帧同一套缩放规则（基准 10px） */
+    private fun oldKfScreenPx(): Float {
+        val scale = if (frameScale > 0f) frameScale else 1f
+        return (OLD_KF_POINT_SIZE * scale / TEXT_REF_SCALE)
+            .coerceIn(OLD_KF_MIN_PX, OLD_KF_MAX_PX)
+    }
+
     /** 把屏幕四角反变换到世界坐标，得到本帧可见世界 AABB */
     private fun updateVisibleWorldRect() {
         val w = surfaceW
@@ -2163,25 +2280,19 @@ class MapOutline3DGL(
             nodeTextDirty = true
         }
 
-        // 旧关键帧点位
+        // 旧关键帧：这里只更新快照。
+        // 点/朝向线/编号的几何统一在 rebuildScaleDependentGeometry 里按当前缩放重建
+        // （抽稀密度、点径、朝向线是否可见都依赖缩放），避免两条路径各生成一份。
         val kv = mapView.oldKeyFramesVersion()
         if (kv != oldKfVersion) {
             oldKfVersion = kv
             oldKfSnapshot = mapView.snapshotOldKeyFrames() ?: FloatArray(0)
-            val n = oldKfSnapshot.size / 4
-            val pts = FloatArray(n * 2)
-            for (i in 0 until n) {
-                pts[i * 2] = oldKfSnapshot[i * 4]
-                pts[i * 2 + 1] = oldKfSnapshot[i * 4 + 1]
-            }
-            oldKfPointCount = n
-            if (n > 0) uploadVBO(vboOldKfPoints, pts, pts.size, -1)
             oldKfTextDirty = true
         }
 
-        // 依赖缩放的几何：朝向线长度、文字大小
-        if (oldKfTextDirty || nodeTextDirty || oldKfTickScale != frameScale) {
-            oldKfTickScale = frameScale
+        // 依赖缩放的几何：点、朝向线、文字统一由 scaleGeomDirty（8% 阈值）驱动，
+        // 不再用 "oldKfTickScale != frameScale" 的任意浮点变化触发（捏合时会每帧重建）
+        if (oldKfTextDirty || nodeTextDirty || scaleGeomDirty) {
             rebuildScaleDependentGeometry(worldPerPx)
             oldKfTextDirty = false
             nodeTextDirty = false
@@ -2199,7 +2310,11 @@ class MapOutline3DGL(
 
     /** 朝向线长度、ID 文字大小都是"屏幕像素"语义，缩放变化时需要按新的 worldPerPx 重建 */
     private fun rebuildScaleDependentGeometry(worldPerPx: Float) {
-        // 旧关键帧：朝向线 + ID 文字
+        // 旧关键帧：点 + 朝向线 + ID 文字
+        // 三者的"抽稀密度 / 点径 / 是否画朝向线"都依赖当前缩放，所以统一在这里重建：
+        //  - 缩得很小时相邻关键帧在屏幕上只有零点几像素，全量绘制会叠成一条粗紫带；
+        //  - 朝向线固定 14px 长，点左右间距不足 14px 时画出来必然重叠，此时直接跳过；
+        //  - 编号沿用原有的屏幕间距避让（TEXT_MIN_GAP_PX）。
         val n = oldKfSnapshot.size / 4
         if (n > 0) {
             val lenWorld = OLD_KF_LINE_LEN_PX * worldPerPx
@@ -2208,55 +2323,105 @@ class MapOutline3DGL(
             val h = textWorldHeight(worldPerPx)
             val textGapWorld = TEXT_GAP_PX * worldPerPx
             oldKfTextHeight = h
+            // 抽稀阈值：相邻保留点在屏幕上的间距不足 KEYFRAME_MIN_GAP_PX 就跳过
+            val minGapWorld = KEYFRAME_MIN_GAP_PX * worldPerPx
+            val minGapSq = minGapWorld * minGapWorld
+            // 朝向线可画的最小间距：与线长同一量纲（平方比较，避免开方）
+            val tickLenSq = lenWorld * lenWorld
             // 编号避让阈值（世界单位）：屏幕间距不足时跳过该编号
-            val minGapWorld = TEXT_MIN_GAP_PX * worldPerPx
+            val textMinGapWorld = TEXT_MIN_GAP_PX * worldPerPx
+            val textMinGapSq = textMinGapWorld * textMinGapWorld
+
+            // 复用缓冲：避免捏合时每次重建都分配上 MB 的临时数组
+            if (oldKfPtsScratch.size < n * 2) oldKfPtsScratch = FloatArray(n * 2)
+            if (oldKfTickScratch.size < n * 12) oldKfTickScratch = FloatArray(n * 12)
+            val pts = oldKfPtsScratch
+            var keptCount = 0
+            var lastKeptX = 0f
+            var lastKeptY = 0f
+            // 每条线 6 个顶点（两个三角形），共 12 个 float，宽度不再依赖 glLineWidth
+            val tick = oldKfTickScratch
+            var tickFloats = 0
+            val text = oldKfTextList
+            text.clear()
             var lastTextX = Float.NaN
             var lastTextY = 0f
-            // 每条线 6 个顶点（两个三角形），共 12 个 float，宽度不再依赖 glLineWidth
-            val tick = FloatArray(n * 12)
-            val text = ArrayList<Float>(n * 16)
+
             for (i in 0 until n) {
                 val x = oldKfSnapshot[i * 4]
                 val y = oldKfSnapshot[i * 4 + 1]
                 val t = oldKfSnapshot[i * 4 + 2]
                 val id = oldKfSnapshot[i * 4 + 3].toInt()
-                val dx = cos(t)
-                val dy = sin(t)
-                // 法向偏移，把线段撑成 3px 宽的细长矩形
-                val nx = -dy * halfW
-                val ny = dx * halfW
-                val ex = x + lenWorld * dx
-                val ey = y + lenWorld * dy
-                val b = i * 12
-                tick[b] = x + nx
-                tick[b + 1] = y + ny
-                tick[b + 2] = x - nx
-                tick[b + 3] = y - ny
-                tick[b + 4] = ex + nx
-                tick[b + 5] = ey + ny
-                tick[b + 6] = ex + nx
-                tick[b + 7] = ey + ny
-                tick[b + 8] = x - nx
-                tick[b + 9] = y - ny
-                tick[b + 10] = ex - nx
-                tick[b + 11] = ey - ny
+
+                var distSq = 0f
+                if (keptCount > 0) {
+                    val ddx = x - lastKeptX
+                    val ddy = y - lastKeptY
+                    distSq = ddx * ddx + ddy * ddy
+                    // 与上一个保留点过近：跳过（点已被覆盖，朝向线/编号也无意义）
+                    if (distSq < minGapSq) continue
+                }
+
+                pts[keptCount * 2] = x
+                pts[keptCount * 2 + 1] = y
+                keptCount++
+                lastKeptX = x
+                lastKeptY = y
+
+                // 朝向线：相邻点屏幕间距不足线长时，14px 线必然互相重叠，跳过
+                if (keptCount == 1 || distSq >= tickLenSq) {
+                    val dx = cos(t)
+                    val dy = sin(t)
+                    // 法向偏移，把线段撑成 3px 宽的细长矩形
+                    val nx = -dy * halfW
+                    val ny = dx * halfW
+                    val ex = x + lenWorld * dx
+                    val ey = y + lenWorld * dy
+                    val b = tickFloats
+                    tick[b] = x + nx
+                    tick[b + 1] = y + ny
+                    tick[b + 2] = x - nx
+                    tick[b + 3] = y - ny
+                    tick[b + 4] = ex + nx
+                    tick[b + 5] = ey + ny
+                    tick[b + 6] = ex + nx
+                    tick[b + 7] = ey + ny
+                    tick[b + 8] = x - nx
+                    tick[b + 9] = y - ny
+                    tick[b + 10] = ex - nx
+                    tick[b + 11] = ey - ny
+                    tickFloats += 12
+                }
+
                 // 编号放在关键帧下方（文字中心 = 点下方 半个字高 + 间距）
                 val gapOk = lastTextX.isNaN() ||
                         (x - lastTextX) * (x - lastTextX) + (y - lastTextY) * (y - lastTextY) >=
-                        minGapWorld * minGapWorld
+                        textMinGapSq
                 if (gapOk) {
                     appendTextCentered(text, id.toString(), x, y - h * 0.5f - textGapWorld, h)
                     lastTextX = x
                     lastTextY = y
                 }
             }
-            oldKfTickCount = n * 6
-            uploadVBO(vboOldKfTicks, tick, tick.size, -1)
+
+            oldKfPointCount = keptCount
+            if (keptCount > 0) {
+                uploadVBO(vboOldKfPoints, pts, keptCount * 2, -1)
+            }
+            oldKfTickCount = tickFloats / 2
+            if (tickFloats > 0) {
+                uploadVBO(vboOldKfTicks, tick, tickFloats, -1)
+            }
             oldKfTextCount = text.size / 4
             if (oldKfTextCount > 0) {
-                uploadVBO(vboOldKfText, text.toFloatArray(), text.size, -1)
+                // 复用 FloatArray 上传，避免每次 toFloatArray() 再分配一份
+                val need = text.size
+                if (oldKfTextScratch.size < need) oldKfTextScratch = FloatArray(need)
+                for (t in 0 until need) oldKfTextScratch[t] = text[t]
+                uploadVBO(vboOldKfText, oldKfTextScratch, need, -1)
             }
         } else {
+            oldKfPointCount = 0
             oldKfTickCount = 0
             oldKfTextCount = 0
         }
@@ -2318,7 +2483,7 @@ class MapOutline3DGL(
         }
         // 旧关键帧：紫点 + 紫朝向线 + 紫字
         if (oldKfPointCount > 0) {
-            drawPoints(vboOldKfPoints[0], oldKfPointCount, COLOR_OLD_KF, OLD_KF_POINT_SIZE, true)
+            drawPoints(vboOldKfPoints[0], oldKfPointCount, COLOR_OLD_KF, oldKfScreenPx(), true)
         }
         if (oldKfTickCount > 0) {
             drawTriangles(vboOldKfTicks[0], oldKfTickCount, COLOR_OLD_KF)
@@ -2505,6 +2670,7 @@ class MapOutline3DGL(
         }
         pointCloudVertexCount = 0
         pointCloudFullDirty = true
+        keptKfCount = 0
         parent.clear()
         // 清理实时点云数据与复用缓存
         synchronized(liveLock) {

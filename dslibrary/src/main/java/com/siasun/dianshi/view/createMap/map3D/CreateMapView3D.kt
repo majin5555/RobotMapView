@@ -180,11 +180,10 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     // png 解码协程
     private var loadJob: Job? = null
 
-    // ──────────────── 底图格子（50cm 正方形） ────────────────
-    // 屏幕正交网格：线始终水平/竖直，不随地图旋转，只跟随地图的缩放与平移。
+    // ──────────────── 底图格子（固定 40px 屏幕网格） ────────────────
+    // 屏幕正交网格：线始终水平/竖直，锚定世界原点、不跟随机器人，格距不随缩放变化。
     // 绘制位置在白色背景之后、底图位图之前，处于底图与 GL 点云之下，不影响地图显示。
-    private val GRID_CELL_METERS = 0.5f      // 格子边长（米）
-    private val GRID_MIN_CELL_PX = 4f        // 格子屏幕尺寸小于该像素数时跳过绘制
+    private val GRID_CELL_PX = 40f          // 格距固定 40px（屏幕像素，不随缩放变化；与 GL 路径一致）
     private val mGridPaint = Paint().apply {
         color = Color.rgb(210, 210, 210)     // 浅灰细线
         style = Paint.Style.STROKE
@@ -386,21 +385,26 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
             Log.d(
                 TAG,
                 "grid diag: res=$res mapHeight=$mapHeight originX=$originX originY=$originY " +
-                    "totalScale=$totalScale cellPx=${GRID_CELL_METERS * totalScale} " +
-                    "minCellPx=$GRID_MIN_CELL_PX"
+                    "totalScale=$totalScale cellPx=$GRID_CELL_PX anchorWorld=(0,0)"
             )
         }
 
-        // 格子过小（缩得太远）时线条会糊住画面且数量暴增，直接跳过
-        val cellPx = GRID_CELL_METERS * totalScale
-        if (cellPx < GRID_MIN_CELL_PX) return
+        // 与 GL 路径保持一致：格距固定 40px，不随缩放变化
+        val cellPx = GRID_CELL_PX
 
-        // 世界原点(0,0)在屏幕上的位置，作为网格锚点
+        // 网格属于"世界"：锚点固定在世界原点，不跟随机器人。
+        // 相机跟随时网格会在屏幕上相对滑动，便于判断车体轨迹是否笔直。
         mGridAnchor[0] = 0f
         mGridAnchor[1] = 0f
         mGridTotalMatrix.mapPoints(mGridAnchor)
-        val anchorX = mGridAnchor[0]
-        val anchorY = mGridAnchor[1]
+        var anchorX = mGridAnchor[0]
+        var anchorY = mGridAnchor[1]
+        if (!anchorX.isFinite() || !anchorY.isFinite()) return
+        // 归一化到 (-cellPx, 0]：保持网格相位，避免世界原点远离视野时的浮点误差
+        anchorX %= cellPx
+        if (anchorX > 0f) anchorX -= cellPx
+        anchorY %= cellPx
+        if (anchorY > 0f) anchorY -= cellPx
 
         // 屏幕正交网格：线宽恒为 1px
         mGridPaint.strokeWidth = 1f
