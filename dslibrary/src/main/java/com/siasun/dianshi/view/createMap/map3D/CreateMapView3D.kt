@@ -112,6 +112,19 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     private val mMaxMapScale = 5f //最大缩放级别
     private var mMinMapScale = 0.1f //最小缩放级别
 
+    /**
+     * 视图是否已经完成过"首次居中 + 缩放初始化"。
+     *
+     * SurfaceView 的 Surface 在页面切后台、跳到其它 Activity（如设置页）时会销毁，
+     * 返回时重新创建并回调 [surfaceChanged]。原实现在该回调里无条件 [setCentred]，
+     * 而建图过程中 [mSrf.mapData] 的宽高/分辨率每帧都在被激光数据改写，
+     * 用这份"实时变化的地图尺寸"重算 FIT 缩放，会把用户当前的缩放与平移整体冲掉：
+     * 车体图标大小随 mMapScale 突变（放大/缩小），并且 mMinMapScale 被抬高后
+     * 再也缩不回原来的比例。因此只在首次初始化时居中，之后一律保留现场。
+     */
+    @Volatile
+    private var mViewInited = false
+
     // 初始地图参数（用于计算扩展地图时的偏移量）
     private var initialOriginX = 0f
     private var initialOriginY = 0f
@@ -133,7 +146,8 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     // 机器人位姿 [x, y, theta(rad), z, roll, pitch]
     override val robotPose = FloatArray(6)
 
-    var isMapping = false//是否建图标志
+    //是否建图标志（由页面依据导航心跳 1=定位 / 2=开始建图 置位）
+    var isMapping = false
 
     //是否第一次接收到子图数据，如果没收到子图，直接跳过旋转环境
     var isStartRevSubMaps = false
@@ -313,7 +327,17 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
             layer.layout(0, 0, width, height)
         }
 
-        // 尺寸变化后重新计算居中（如果地图已加载）
+        if (mViewInited) {
+            // 从设置页/后台返回、或 Surface 被重建：保留用户当前的缩放与平移，
+            // 只把现有矩阵重新分发给各图层并刷新一帧。
+            // 这里绝不能再调用 setCentred()：建图中 mapData 的宽高每帧都在变，
+            // 重新 FIT 会让车体箭头忽大忽小、且 mMinMapScale 被抬高后缩不回原比例。
+            setMatrixWithScale(mOuterMatrix, mMapScale)
+            mMapOutline3D?.notifyMatrixChanged()
+            requestRender()
+            return
+        }
+
         if (mSrf.mapData.width > 0 && mSrf.mapData.height > 0) {
             setCentred()
         } else {
@@ -322,6 +346,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
             mOuterMatrix = Matrix()
             mOuterMatrix.postTranslate(VIEW_WIDTH / 2f, VIEW_HEIGHT / 2f)
             setMatrixWithScaleAndRotation(mOuterMatrix, mMapScale, 0f)
+            mViewInited = true
             mMapOutline3D?.notifyMatrixChanged()
             requestRender()
         }
@@ -736,6 +761,8 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         if (scale > mMaxMapScale || scale < mMinMapScale) return
         mMapScale = scale
         mSrf.scale = mMapScale
+        // 用户已经手动改过视图：此后 Surface 重建必须保留用户的比例
+        mViewInited = true
         mOuterMatrix.postScale(factor, factor, cx, cy)
         setMatrixWithScale(mOuterMatrix, mMapScale)
         mMapOutline3D?.notifyMatrixChanged()
@@ -833,6 +860,7 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
                 (VIEW_HEIGHT - mMapScale * iHeight) / 2
             )
             setMatrixWithScaleAndRotation(mOuterMatrix, mMapScale, 0f)
+            mViewInited = true
             mMapOutline3D?.notifyMatrixChanged()
             requestRender()
         }
@@ -860,6 +888,8 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
             m.postTranslate(VIEW_WIDTH / 2f, VIEW_HEIGHT / 2f)
         }
         setMatrixWithScaleAndRotation(m, target, 0f)
+        // 压测/调试已显式指定缩放，后续 Surface 重建同样不要再做 FIT 居中
+        mViewInited = true
         mMapOutline3D?.notifyMatrixChanged()
         requestRender()
     }
@@ -910,6 +940,9 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         mAllKeyFrames?.setWorkMode(mode)
 //        mCreateMapRobotView?.setWorkMode(mode)
         mExpandAreaView?.setWorkMode(mode)
+        // 注意：这里**不做**点云清理。setWorkMode 只是界面状态切换，
+        // 页面初始化时就会调 MODE_SHOW_MAP，把它当"数据事件"用会导致误清空。
+        // 残留红点的清理由真正的建图数据到达时处理（parseLaserData / parseOptPose）。
         requestRender()
     }
 
@@ -1023,6 +1056,10 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
      *      * type 新建2
      */
     fun parseLaserData(laserData: laser_t, type: Int) {
+        // 建图激光（KEY_UPDATE_POS）一到位，说明建图已经在跑：非建图的上激光点云
+        // （KEY_CURRENT_POINT_CLOUD，此时已停发）不能再留在画面上。
+        // 判断 upLaserCount > 0 才清：清空后计数归零，后续每一帧只是一次 int 比较，零开销。
+        clearUselessUpLaser()
 
         // 更新机器人位置（始终需要处理，不参与降采样）
         updateRobotPose(
@@ -1051,45 +1088,101 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     fun loadCurPointCloud(laserData: laser_t) {
         // 方案C：非建图激光改为在 GL 侧用 VBO 绘制，这里只缓存世界坐标点。
         // UpLaserScanView 为 2D/主地图共用控件，不做任何修改，仅不再作为 3D 的绘制图层。
+        //
+        // 建图中（导航心跳已置 isMapping）这路点云不参与显示：
+        // 建图红点由 parseLaserData → MapOutline3DGL.updateLiveScan 单独绘制。
+        // 这里只做"忽略"，不做清空——清空统一由建图数据到达时触发（见 clearUselessUpLaser）。
+        if (isMapping) return
         updateUpLaserPoints(laserData)
         requestRender()
     }
 
-    /** 把上激光点云转成世界坐标（与 UpLaserScanView 的换算一致），供 GL 侧绘制 */
+    /**
+     * 清掉"非建图的上激光点云"留下的残影（一次有效，之后是零开销）。
+     *
+     * KEY_CURRENT_POINT_CLOUD 这条非建图通道的点云被换算成世界坐标缓存在 [upLaserPoints]，
+     * GL 每帧照画。开始建图后该通道停发，缓存却没人数它过期，于是最后一帧红点
+     * 永久钉在地图上（车开出去很远也不消失）。
+     *
+     * 调用时机：真正的建图数据到达时（[parseLaserData] / [parseOptPose]），
+     * 而不是 setWorkMode —— 后者只是界面状态切换，页面初始化就会调，不能当数据事件用。
+     */
+    private fun clearUselessUpLaser() {
+        // 没有残留就直接返回：清空之后每帧只做这一次判断，不会重复触发清空
+        if (!synchronized(upLaserLock) { upLaserCount > 0 }) return
+        clearCurPointCloud()
+    }
+
+    /**
+     * 清空"非建图"上激光点云缓存。
+     *
+     * 世界坐标缓存由 GL 每帧绘制，数据源停发（开始建图后）时不会自动消失，
+     * 会在地图上留下永远擦不掉的红点。这里置空并推进版本号，让 GL 侧同步清空 VBO 绘制。
+     */
+    fun clearCurPointCloud() {
+        synchronized(upLaserLock) {
+            upLaserPoints = FloatArray(0)
+            upLaserCount = 0
+        }
+        upLaserVersion++
+        requestRender()
+    }
+
+    /**
+     * 把上激光点云转成世界坐标，供 GL 侧绘制。
+     *
+     * 位姿必须取"这一帧自带"的 ranges[0..2]（与 1.1.69 的 UpLaserScanView 完全一致）：
+     * 激光包里的位姿是该帧扫描时刻的导航位姿，与点云严格配对；
+     * 若改用控件里的 [robotPose]（来自车体上报 KEY_AGV_COORDINATE，另外的包、另外的频率），
+     * 转弯/行驶时每帧都会被"最新的车体位姿"重新刚体变换一次，红点会跟着车头甩；
+     * 两者来源不同时还会整体偏离墙体；robotPose 尚未写入时更会全部堆到原点。
+     */
     private fun updateUpLaserPoints(laserData: laser_t) {
         val ranges = laserData.ranges
         val groups = ranges.size / 3
         if (groups <= 1) {
-            upLaserPoints = FloatArray(0)
+            synchronized(upLaserLock) {
+                upLaserPoints = FloatArray(0)
+                upLaserCount = 0
+            }
             upLaserVersion++
             return
         }
-        val robotX = robotPose[0]
-        val robotY = robotPose[1]
-        val theta = robotPose[2]
+        // 帧内位姿：[x, y, theta]，点云从第 2 组三元组开始
+        val robotX = ranges[0]
+        val robotY = ranges[1]
+        val theta = ranges[2]
         val cosT = kotlin.math.cos(theta)
         val sinT = kotlin.math.sin(theta)
         val count = groups - 1
-        if (upLaserPoints.size < count * 2) upLaserPoints = FloatArray(count * 2)
-        var idx = 0
-        for (i in 1 until groups) {
-            val lx = ranges[3 * i]
-            val ly = ranges[3 * i + 1]
-            upLaserPoints[idx++] = lx * cosT - ly * sinT + robotX
-            upLaserPoints[idx++] = lx * sinT + ly * cosT + robotY
+        // 写入与 GL 线程的 snapshotUpLaser() 互斥：否则可能拷到"半新半旧"的一帧，
+        // 表现为偶发的错位点（1.1.69 的 canvas 版同样有这把锁）
+        synchronized(upLaserLock) {
+            if (upLaserPoints.size < count * 2) upLaserPoints = FloatArray(count * 2)
+            val out = upLaserPoints
+            var idx = 0
+            for (i in 1 until groups) {
+                val lx = ranges[3 * i]
+                val ly = ranges[3 * i + 1]
+                out[idx++] = lx * cosT - ly * sinT + robotX
+                out[idx++] = lx * sinT + ly * cosT + robotY
+            }
+            upLaserCount = count
         }
-        upLaserCount = count
         upLaserVersion++
     }
 
     // ──────────────── GL 侧数据接口（VBO 绘制用） ────────────────
     private var upLaserPoints = FloatArray(0)
     private var upLaserCount = 0
+    private val upLaserLock = Any()
     @Volatile
     internal var upLaserVersion = 0
         private set
 
-    internal fun snapshotUpLaser(): FloatArray = upLaserPoints.copyOf(upLaserCount * 2)
+    internal fun snapshotUpLaser(): FloatArray = synchronized(upLaserLock) {
+        upLaserPoints.copyOf(upLaserCount * 2)
+    }
 
     internal fun oldKeyFramesVersion(): Int = mAllKeyFrames?.dataVersion ?: -1
     internal fun snapshotOldKeyFrames(): FloatArray? =
@@ -1107,6 +1200,10 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         private set
 
     fun parseOptPose(laserData: laser_t) {
+        // KEY_OPT_POSE（导航回环/子图优化）只在建图中才下发，是"确实在扫图"的可靠信号：
+        // 到这里如果还残留着非建图上激光点云的世界坐标，就地清一次（清完即 0，后续零开销）。
+        // 注意它通常是稀疏的，所以主清理由 parseLaserData（每一帧建图激光）负责，这里是兜底。
+        clearUselessUpLaser()
         mMapOutline3D?.parseOptPose(laserData)
         mMapOutline3D?.requestRender()
         requestRender()

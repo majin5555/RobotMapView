@@ -172,15 +172,15 @@ class MapOutline3DGL(
         private const val TEXT_BASE_PX = 16f
         private const val TEXT_REF_SCALE = 3f
         private const val TEXT_MIN_PX = 9f
-        private const val TEXT_MAX_PX = 26f
-        // 编号之间的最小屏幕间距（避让）：小于该值只画点/线，不画编号。
-        // 16px 字高时 3 位数字宽约 26px、4 位约 34px，所以取 48px（字宽 + 间隙），
-        // 否则 100 以后编号会连成一片
-        private const val TEXT_MIN_GAP_PX = 60f
-        // 文字与关键帧点的屏幕间距
-        private const val TEXT_GAP_PX = 12f
-        // 视野裁剪外扩（像素），避免边缘文字突然出现/消失
-        private const val TEXT_CLIP_MARGIN_PX = 48f
+        // 最大字号：原来 26px，最大缩放(5x)下编号明显偏大、压住轨迹，这里收到约一半(13px)。
+        // 实时关键帧(绿)、旧关键帧(紫)、约束节点(蓝)共用这一套，改这里三处一起生效。
+        private const val TEXT_MAX_PX = 13f
+        // 下面三个间距/裁剪量不再写死像素，而是按"当前字号 × 比例"换算：
+        // 比例为 16px 字高时的原值（60 / 12 / 48），字号一变（尤其最大缩放收小后）
+        // 这些距离会同步缩放，不会出现"字小了、间距还按老字号留着"的错位。
+        private const val TEXT_MIN_GAP_RATIO = 3.75f    // 16px 字 → 编号最小避让间距 60px
+        private const val TEXT_GAP_RATIO = 0.75f        // 16px 字 → 编号与点的间距 12px
+        private const val TEXT_CLIP_MARGIN_RATIO = 3f   // 16px 字 → 视野裁剪外扩 48px
         // 字模图集高 64px、48px 字号，数字字形实际只占图集约 0.55，
         // 所以"想要的屏幕字高"要除以该比例才是 u_CharWorldHeight
         private const val GLYPH_HEIGHT_RATIO = 0.55f
@@ -1444,11 +1444,16 @@ class MapOutline3DGL(
     private fun drawRobot() {
         if (robotTexture == 0) return
 
-        // 计算当前缩放下的屏幕像素大小
-        val screenPx = ROBOT_BASE_SIZE * (cachedMapScale / cachedResolution)
-        // 若小于最小阈值，则扩大世界尺寸以保证可见性
-        val worldSize = if (screenPx < MIN_SCREEN_PX) {
-            MIN_SCREEN_PX * cachedResolution / cachedMapScale
+        // 每米对应的屏幕像素。cachedMapScale / cachedResolution 未就绪（0 或异常）时
+        // 直接退回基础世界尺寸，避免除零得到 Infinity/NaN 把车体图标画成一片糊。
+        val pxPerMeter = if (cachedMapScale > 0f && cachedResolution > 0f) {
+            cachedMapScale / cachedResolution
+        } else {
+            0f
+        }
+        // 若小于最小阈值，则扩大世界尺寸以保证可见性；否则固定按基础世界尺寸（随缩放变化）
+        val worldSize = if (pxPerMeter > 0f && ROBOT_BASE_SIZE * pxPerMeter < MIN_SCREEN_PX) {
+            MIN_SCREEN_PX / pxPerMeter
         } else {
             ROBOT_BASE_SIZE
         }
@@ -1953,8 +1958,8 @@ class MapOutline3DGL(
         val worldPerPx = if (frameScale > 0f) frameResolution / frameScale else 0.05f
         val h = textWorldHeight(worldPerPx)
         liveTextHeight = h
-        val gapWorld = TEXT_GAP_PX * worldPerPx
-        val minGapWorld = TEXT_MIN_GAP_PX * worldPerPx
+        val gapWorld = textGapPx() * worldPerPx
+        val minGapWorld = textMinGapPx() * worldPerPx
 
         if (visValid) {
             textVisMinX = visMinX
@@ -2181,6 +2186,15 @@ class MapOutline3DGL(
         return (TEXT_BASE_PX * scale / TEXT_REF_SCALE).coerceIn(TEXT_MIN_PX, TEXT_MAX_PX)
     }
 
+    /** 编号与关键帧点之间的屏幕间距（跟着字号走，字号收小时自动贴近） */
+    private fun textGapPx(): Float = textScreenPx() * TEXT_GAP_RATIO
+
+    /** 编号之间的最小屏幕间距（避免连成一片），同样按字号换算 */
+    private fun textMinGapPx(): Float = textScreenPx() * TEXT_MIN_GAP_RATIO
+
+    /** 视野裁剪外扩：字号越小，边缘文字预留越小 */
+    private fun textClipMarginPx(): Float = textScreenPx() * TEXT_CLIP_MARGIN_RATIO
+
     /**
      * 关键帧绿点的屏幕直径：与文字共用缩放参考（TEXT_REF_SCALE），再钳制上下限。
      * 这样"点 + 编号"随缩放同步变化，不会再出现"字缩小、8px 绿点却连成粗带"的冲突。
@@ -2230,7 +2244,7 @@ class MapOutline3DGL(
             if (y < minY) minY = y
             if (y > maxY) maxY = y
         }
-        val margin = TEXT_CLIP_MARGIN_PX * (if (frameScale > 0f) frameResolution / frameScale else 0.05f)
+        val margin = textClipMarginPx() * (if (frameScale > 0f) frameResolution / frameScale else 0.05f)
         visMinX = minX - margin
         visMaxX = maxX + margin
         visMinY = minY - margin
@@ -2314,14 +2328,14 @@ class MapOutline3DGL(
         // 三者的"抽稀密度 / 点径 / 是否画朝向线"都依赖当前缩放，所以统一在这里重建：
         //  - 缩得很小时相邻关键帧在屏幕上只有零点几像素，全量绘制会叠成一条粗紫带；
         //  - 朝向线固定 14px 长，点左右间距不足 14px 时画出来必然重叠，此时直接跳过；
-        //  - 编号沿用原有的屏幕间距避让（TEXT_MIN_GAP_PX）。
+        //  - 编号沿用原有的屏幕间距避让（textMinGapPx()，随字号缩放）。
         val n = oldKfSnapshot.size / 4
         if (n > 0) {
             val lenWorld = OLD_KF_LINE_LEN_PX * worldPerPx
             val halfW = OLD_KF_LINE_WIDTH_PX * worldPerPx * 0.5f
             // 统一字号：屏幕像素 -> 世界高度（与实时关键帧同一套规则）
             val h = textWorldHeight(worldPerPx)
-            val textGapWorld = TEXT_GAP_PX * worldPerPx
+            val textGapWorld = textGapPx() * worldPerPx
             oldKfTextHeight = h
             // 抽稀阈值：相邻保留点在屏幕上的间距不足 KEYFRAME_MIN_GAP_PX 就跳过
             val minGapWorld = KEYFRAME_MIN_GAP_PX * worldPerPx
@@ -2329,7 +2343,7 @@ class MapOutline3DGL(
             // 朝向线可画的最小间距：与线长同一量纲（平方比较，避免开方）
             val tickLenSq = lenWorld * lenWorld
             // 编号避让阈值（世界单位）：屏幕间距不足时跳过该编号
-            val textMinGapWorld = TEXT_MIN_GAP_PX * worldPerPx
+            val textMinGapWorld = textMinGapPx() * worldPerPx
             val textMinGapSq = textMinGapWorld * textMinGapWorld
 
             // 复用缓冲：避免捏合时每次重建都分配上 MB 的临时数组
