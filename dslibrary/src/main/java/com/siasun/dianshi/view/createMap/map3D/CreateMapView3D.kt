@@ -67,6 +67,12 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
          * 同时保证纹理上传不超过绝大多数设备的 GL_MAX_TEXTURE_SIZE(4096)。
          */
         private const val MAX_MAP_EDGE = 3000
+
+        /**
+         * 上激光帧位姿的"主导窗口"：这段时间内机器人图标以激光帧位姿为准（与点云同源），
+         * 页面推的车体位姿被忽略；超过该窗口（上激光停发）则恢复由车体坐标驱动。
+         */
+        private const val UP_LASER_POSE_HOLD_MS = 1000L
     }
 
     /** 解码结果：位图 + 原始像素尺寸 + 补偿缩放比 */
@@ -1061,8 +1067,9 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         // 判断 upLaserCount > 0 才清：清空后计数归零，后续每一帧只是一次 int 比较，零开销。
         clearUselessUpLaser()
 
-        // 更新机器人位置（始终需要处理，不参与降采样）
-        updateRobotPose(
+        // 更新机器人位置（始终需要处理，不参与降采样）。
+        // 这里用 applyRobotPose 直写：建图通道永远是权威位姿，不能被下面的"上激光优先"规则挡掉。
+        applyRobotPose(
             laserData.ranges[0],
             laserData.ranges[1],
             laserData.ranges[2],
@@ -1094,8 +1101,33 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         // 这里只做"忽略"，不做清空——清空统一由建图数据到达时触发（见 clearUselessUpLaser）。
         if (isMapping) return
         updateUpLaserPoints(laserData)
+        applyUpLaserRobotPose(laserData)
         requestRender()
     }
+
+    /**
+     * 非建图态：让机器人图标和上激光点云用**同一帧的位姿**。
+     *
+     * 点云是用帧自带 `ranges[0..2]` 摆位的，图标原先只由页面用 `KEY_AGV_COORDINATE`
+     * （车体坐标）驱动 —— 两路不同源时就会"点云形状正常、但整体和车体错开一个位置和角度"
+     * （现场实测：帧内位姿 -1.21,-0.43,144° vs robotPose 0,0,0）。
+     * 所以这里把帧内位姿写给图标，并记录时间戳；页面后续推的车体位姿在
+     * [UP_LASER_POSE_HOLD_MS] 内会被忽略（见 [updateRobotPose]），避免两路互相覆盖导致图标来回跳。
+     */
+    private fun applyUpLaserRobotPose(laserData: laser_t) {
+        val r = laserData.ranges
+        if (r.size < 3) return
+        val x = r[0]
+        val y = r[1]
+        val t = r[2]
+        // 全 0 视为无效位姿，别把图标拉到原点
+        if (x == 0f && y == 0f && t == 0f) return
+        mLastUpLaserPoseMs = android.os.SystemClock.uptimeMillis()
+        applyRobotPose(x, y, t)
+    }
+
+    // 最近一次用上激光帧位姿驱动图标的时间（用于压制页面推的车体位姿）
+    private var mLastUpLaserPoseMs = 0L
 
     /**
      * 清掉"非建图的上激光点云"留下的残影（一次有效，之后是零开销）。
@@ -1268,9 +1300,21 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
     }
 
     /**
-     * 更新机器人位置（弧度制）
+     * 更新机器人位置（弧度制）。由页面用车体坐标（KEY_AGV_COORDINATE）驱动。
+     *
+     * 上激光在跑的时候（[UP_LASER_POSE_HOLD_MS] 内有上激光帧），图标已经跟着帧内位姿走，
+     * 此时忽略页面推的车体位姿：否则两路不同源会互相覆盖，图标会在两个位置之间来回跳，
+     * 表现为"点云和车体对不上"。上激光停发超过该窗口后，这里恢复原行为（仍以车体为准）。
      */
     fun updateRobotPose(
+        x: Float, y: Float, theta: Float, z: Float = 0f, roll: Float = 0f, pitch: Float = 0f
+    ) {
+        if (android.os.SystemClock.uptimeMillis() - mLastUpLaserPoseMs < UP_LASER_POSE_HOLD_MS) return
+        applyRobotPose(x, y, theta, z, roll, pitch)
+    }
+
+    /** 真正写入位姿并同步给 GL 图标（不受"上激光优先"规则影响） */
+    private fun applyRobotPose(
         x: Float, y: Float, theta: Float, z: Float = 0f, roll: Float = 0f, pitch: Float = 0f
     ) {
         // 使用辅助方法将可能是科学计数法的float值转换为正常的float值
@@ -1328,9 +1372,12 @@ open class CreateMapView3D(context: Context, attrs: AttributeSet) : SurfaceView(
         mMapOutline3D?.resetPointCloud()
         mConstrainNodes?.clearNodes()
         mAllKeyFrames?.setDrawingEnabled(false)
-        upLaserPoints = FloatArray(0)
-        upLaserCount = 0
+        synchronized(upLaserLock) {
+            upLaserPoints = FloatArray(0)
+            upLaserCount = 0
+        }
         upLaserVersion++
+        mLastUpLaserPoseMs = 0L
         isStartRevSubMaps = false
         requestRender()
     }
